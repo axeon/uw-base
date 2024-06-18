@@ -1,0 +1,105 @@
+{
+  "groups": [
+    {
+      "name": "uw.log",
+      "type": "uw.log.es.LogClientProperties",
+      "sourceType": "uw.log.es.LogClientProperties"
+    },
+    {
+      "name": "uw.log.es",
+      "type": "uw.log.es.LogClientProperties$EsConfig",
+      "sourceType": "uw.log.es.LogClientProperties",
+      "sourceMethod": "getEs()"
+    }
+  ],
+  "properties": [
+    {
+      "name": "uw.log.es.app-info-overwrite",
+      "type": "java.lang.Boolean",
+      "description": "是否添加执行应用信息",
+      "sourceType": "uw.log.es.LogClientProperties$EsConfig",
+      "defaultValue": true
+    },
+    {
+      "name": "uw.log.es.server",
+      "type": "java.lang.String",
+      "description": "ES服务器地址",
+      "sourceType": "uw.log.es.LogClientProperties$EsConfig"
+    },
+    {
+      "name": "uw.log.es.connect-timeout",
+      "type": "java.lang.Long",
+      "description": "连接超时",
+      "sourceType": "uw.log.es.LogClientProperties$EsConfig",
+      "defaultValue": 30000
+    },
+    {
+      "name": "uw.log.es.es-bulk",
+      "type": "java.lang.String",
+      "description": "Elasticsearch bulk api 地址",
+      "sourceType": "uw.log.es.LogClientProperties$EsConfig",
+      "defaultValue": "\/_bulk"
+    },
+    {
+      "name": "uw.log.es.max-batch-queue-size",
+      "type": "java.lang.Integer",
+      "description": "最大批量线程队列数",
+      "sourceType": "uw.log.es.LogClientProperties$EsConfig",
+      "defaultValue": 10
+    },
+    {
+      "name": "uw.log.es.max-batch-threads",
+      "type": "java.lang.Integer",
+      "description": "最大批量线程数。",
+      "sourceType": "uw.log.es.LogClientProperties$EsConfig",
+      "defaultValue": 3
+    },
+    {
+      "name": "uw.log.es.max-bytes-of-batch",
+      "type": "java.lang.Long",
+      "description": "允许最大Bucket 字节数。",
+      "sourceType": "uw.log.es.LogClientProperties$EsConfig",
+      "defaultValue": 0
+    },
+    {
+      "name": "uw.log.es.max-flush-in-milliseconds",
+      "type": "java.lang.Long",
+      "description": "刷新Bucket时间毫秒数",
+      "sourceType": "uw.log.es.LogClientProperties$EsConfig",
+      "defaultValue": 10000
+    },
+    {
+      "name": "uw.log.es.mode",
+      "type": "uw.log.es.LogClientProperties$LogMode",
+      "description": "READ_ONLY: 只读模式; READ_WRITE: 读写模式[会有后台线程开销]",
+      "sourceType": "uw.log.es.LogClientProperties$EsConfig"
+    },
+    {
+      "name": "uw.log.es.password",
+      "type": "java.lang.String",
+      "description": "密码",
+      "sourceType": "uw.log.es.LogClientProperties$EsConfig"
+    },
+    {
+      "name": "uw.log.es.read-timeout",
+      "type": "java.lang.Long",
+      "description": "读超时",
+      "sourceType": "uw.log.es.LogClientProperties$EsConfig",
+      "defaultValue": 30000
+    },
+    {
+      "name": "uw.log.es.username",
+      "type": "java.lang.String",
+      "description": "用户名",
+      "sourceType": "uw.log.es.LogClientProperties$EsConfig"
+    },
+    {
+      "name": "uw.log.es.write-timeout",
+      "type": "java.lang.Long",
+      "description": "写超时",
+      "sourceType": "uw.log.es.LogClientProperties$EsConfig",
+      "defaultValue": 30000
+    }
+  ],
+  "hints": []
+}

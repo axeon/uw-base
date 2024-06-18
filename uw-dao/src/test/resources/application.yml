@@ -1,0 +1,28 @@
+uw:
+  dao:
+    conn-pool:
+      root:
+        driver: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://192.168.88.21:3308/auth?characterEncoding=utf-8&allowPublicKeyRetrieval=true&useSSL=false&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true
+        username: root
+        password: mysqlRootPassword
+        min-conn: 3
+        max-conn: 10
+        conn-idle-timeout: 180
+        conn-busy-timeout: 180
+        conn-max-age: 600
+    redis:
+      database: 15
+      host: 192.168.88.21
+      port: 6380
+      password: redispasswd
+      lettuce:
+        pool:
+          max-active: 200
+          max-idle: 8
+          max-wait: 5000ms
+          min-idle: 1
+      timeout: 30s
+#logging:
+#  level:
+#    uw.dao: debug

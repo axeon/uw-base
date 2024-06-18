@@ -1,0 +1,3 @@
+uw:
+  task:
+    croner-thread-num: 5

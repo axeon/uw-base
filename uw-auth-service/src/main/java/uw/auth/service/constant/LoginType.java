@@ -1,0 +1,155 @@
+package uw.auth.service.constant;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.v3.oas.annotations.media.Schema;
+
+/**
+ * 登录类型
+ */
+@JsonFormat(shape = JsonFormat.Shape.OBJECT)
+@Schema(title = "登录类型", description = "登录类型")
+public enum LoginType {
+    /**
+     * TOKEN刷新。
+     */
+    REFRESH_TOKEN( 0, "TOKEN刷新" ),
+
+    /**
+     * 用户名密码登录。
+     */
+    USER_PASS( 1, "用户名密码登录" ),
+
+    /**
+     * Email密码登录。
+     */
+    EMAIL_PASS( 2, "Email密码登录" ),
+
+    /**
+     * 手机号密码登录。
+     */
+    MOBILE_PASS( 3, "手机号密码登录" ),
+
+    /**
+     * Email验证码登录
+     */
+    EMAIL_CODE( 22, "Email验证码登录" ),
+
+    /**
+     * 手机号验证码登录
+     */
+    MOBILE_CODE( 23, "手机号验证码登录" ),
+
+    /**
+     * 微信扫码登录。
+     */
+    WECHAT_QR( 31, "微信扫码登录" );
+
+    /**
+     * 参数值
+     */
+    private int value;
+
+    /**
+     * 参数信息。
+     */
+    private String label;
+
+    LoginType(int value, String label) {
+        this.value = value;
+        this.label = label;
+    }
+
+    /**
+     * 检查类型值是否合法。
+     *
+     * @param value
+     * @return
+     */
+    public static boolean checkTypeValid(int value) {
+        for (LoginType type : LoginType.values()) {
+            if (value == type.value) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 检查是否是输入登录类型。
+     * 包括密码和验证码登录。
+     *
+     * @param value
+     * @return
+     */
+    public static boolean isInputLoginType(int value) {
+        if (value >= USER_PASS.getValue() && value <= MOBILE_CODE.getValue()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * 检查是否是扫码登录类型。
+     *
+     * @param value
+     * @return
+     */
+    public static boolean isScanLoginType(int value) {
+        if (value >= WECHAT_QR.getValue() ) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * 是否是用户名密码类型。
+     *
+     * @param value
+     * @return
+     */
+    public static boolean isAccountPassLoginType(int value) {
+        if (value == USER_PASS.getValue()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * 是否是密码类型。
+     *
+     * @param value
+     * @return
+     */
+    public static boolean isPassLoginType(int value) {
+        if (value >= USER_PASS.getValue() && value <= MOBILE_PASS.getValue()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * 是否是验证码类型。
+     *
+     * @param value
+     * @return
+     */
+    public static boolean isCodeLoginType(int value) {
+        if (value >= EMAIL_CODE.getValue() && value <= MOBILE_CODE.getValue()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public int getValue() {
+        return value;
+    }
+}

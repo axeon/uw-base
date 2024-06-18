@@ -5,9 +5,9 @@
     <packaging>pom</packaging>
     <groupId>com.umtone</groupId>
     <artifactId>uw-base</artifactId>
-    <version>${revision}</version>
     <name>uw-base</name>
     <description>uw-base</description>
+    <version>${revision}</version>
     <properties>
         <revision>2024.0618.1832</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

@@ -51,6 +51,11 @@ public class MscActionLog extends LogBaseVo implements Serializable {
     private int userType;
 
     /**
+     * 请求Ip
+     */
+    private String userIp;
+
+    /**
      * 请求uri
      */
     private String apiUri;
@@ -69,11 +74,6 @@ public class MscActionLog extends LogBaseVo implements Serializable {
      * 操作状态。
      */
     private String opState;
-
-    /**
-     * 请求Ip
-     */
-    private String userIp;
 
     /**
      * 业务标识类型,用于查询

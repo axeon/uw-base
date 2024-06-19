@@ -116,7 +116,7 @@ public class SysDataHistory implements DataEntity,Serializable{
     /**
      * 实体修改信息
      */
-    @ColumnMeta(columnName="entity_update_info", dataType="String", dataSize=65535, nullable=true)
+    @ColumnMeta(columnName="entity_update_info", dataType="String", dataSize=2147483647, nullable=true)
     @Schema(title = "实体修改信息", description = "实体修改信息")
     private String entityUpdateInfo;
 

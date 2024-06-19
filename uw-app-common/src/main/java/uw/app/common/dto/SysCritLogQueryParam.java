@@ -74,15 +74,21 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
     /**
      * 请求uri
      */
-    @QueryMeta(expr = "uri like ?")
+    @QueryMeta(expr = "api_uri like ?")
     @Schema(title = "请求uri", description = "请求uri")
-    private String uri;
+    private String apiUri;
     /**
-     * 方法操作描述
+     * API名称
      */
-    @QueryMeta(expr = "info like ?")
-    @Schema(title = "方法操作描述", description = "方法操作描述")
-    private String info;
+    @QueryMeta(expr = "api_name like ?")
+    @Schema(title = "API名称", description = "API名称")
+    private String apiName;
+    /**
+     * 操作状态
+     */
+    @QueryMeta(expr = "op_state like ?")
+    @Schema(title = "操作状态", description = "操作状态")
+    private String opState;
     /**
      * 请求毫秒数
      */
@@ -283,29 +289,43 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
     /**
      * 获得请求uri。
      */
-    public String getUri() {
-        return this.uri;
+    public String getApiUri() {
+        return this.apiUri;
     }
 
     /**
      * 设置请求uri。
      */
-    public void setUri(String uri) {
-        this.uri = uri;
+    public void setApiUri(String apiUri) {
+        this.apiUri = apiUri;
     }
 
     /**
-     * 获得方法操作描述。
+     * 获得API名称。
      */
-    public String getInfo() {
-        return this.info;
+    public String getApiName() {
+        return this.apiName;
     }
 
     /**
-     * 设置方法操作描述。
+     * 设置API名称。
      */
-    public void setInfo(String info) {
-        this.info = info;
+    public void setApiName(String apiName) {
+        this.apiName = apiName;
+    }
+
+    /**
+     * 获得操作状态。
+     */
+    public String getOpState() {
+        return this.opState;
+    }
+
+    /**
+     * 设置操作状态。
+     */
+    public void setOpState(String opState) {
+        this.opState = opState;
     }
 
     /**

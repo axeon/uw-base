@@ -169,11 +169,11 @@ public class TokenFilter implements Filter {
                 logType = mscPermDeclare.log();
                 if (logType.getValue() == ActionLog.CRIT.getValue() || (logType.getValue() > ActionLog.NONE.getValue() && mscPermDeclare.type().getValue() > UserType.RPC.getValue())) {
                     //设定操作名称，mscPermDeclare有优先级
-                    String opInfo = mscPermDeclare.name();
-                    if (StringUtils.isBlank( opInfo )) {
+                    String apiName = mscPermDeclare.name();
+                    if (StringUtils.isBlank( apiName )) {
                         Operation operation = javaMethod.getAnnotation( Operation.class );
                         if (operation != null) {
-                            opInfo = operation.summary();
+                            apiName = operation.summary();
                         }
                     }
                     mscActionLog = new MscActionLog();
@@ -189,7 +189,7 @@ public class TokenFilter implements Filter {
                     mscActionLog.setGroupId( authToken.getGroupId() );
                     mscActionLog.setUserType( authToken.getUserType() );
                     mscActionLog.setApiUri( permCode );
-                    mscActionLog.setApiName( opInfo );
+                    mscActionLog.setApiName( apiName );
                     mscActionLog.setUserIp( remoteIp );
                     mscActionLog.setRequestDate( new Date() );
                     if (logType == ActionLog.REQUEST || logType == ActionLog.ALL || logType == ActionLog.CRIT) {

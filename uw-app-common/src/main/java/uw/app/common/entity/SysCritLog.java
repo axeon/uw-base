@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import io.swagger.v3.oas.annotations.media.Schema;
 import uw.dao.DataEntity;
 import uw.dao.annotation.ColumnMeta;
@@ -100,35 +101,42 @@ public class SysCritLog implements DataEntity,Serializable{
     /**
      * 请求uri
      */
-    @ColumnMeta(columnName="uri", dataType="String", dataSize=500, nullable=true)
+    @ColumnMeta(columnName="api_uri", dataType="String", dataSize=200, nullable=true)
     @Schema(title = "请求uri", description = "请求uri")
-    private String uri;
+    private String apiUri;
 
     /**
-     * 方法操作描述
+     * API名称
      */
-    @ColumnMeta(columnName="info", dataType="String", dataSize=500, nullable=true)
-    @Schema(title = "方法操作描述", description = "方法操作描述")
-    private String info;
+    @ColumnMeta(columnName="api_name", dataType="String", dataSize=200, nullable=true)
+    @Schema(title = "API名称", description = "API名称")
+    private String apiName;
+
+    /**
+     * 操作状态
+     */
+    @ColumnMeta(columnName="op_state", dataType="String", dataSize=200, nullable=true)
+    @Schema(title = "操作状态", description = "操作状态")
+    private String opState;
 
     /**
      * 日志内容
      */
-    @ColumnMeta(columnName="log", dataType="String", dataSize=65535, nullable=true)
+    @ColumnMeta(columnName="op_log", dataType="String", dataSize=65535, nullable=true)
     @Schema(title = "日志内容", description = "日志内容")
-    private String log;
+    private String opLog;
 
     /**
      * 请求参数
      */
-    @ColumnMeta(columnName="request_body", dataType="String", dataSize=65535, nullable=true)
+    @ColumnMeta(columnName="request_body", dataType="String", dataSize=2147483647, nullable=true)
     @Schema(title = "请求参数", description = "请求参数")
     private String requestBody;
 
     /**
      * 响应日志
      */
-    @ColumnMeta(columnName="response_body", dataType="String", dataSize=65535, nullable=true)
+    @ColumnMeta(columnName="response_body", dataType="String", dataSize=2147483647, nullable=true)
     @Schema(title = "响应日志", description = "响应日志")
     private String responseBody;
 
@@ -310,22 +318,29 @@ public class SysCritLog implements DataEntity,Serializable{
     /**
      * 获得请求uri。
      */
-    public String getUri(){
-        return this.uri;
+    public String getApiUri(){
+        return this.apiUri;
     }
 
     /**
-     * 获得方法操作描述。
+     * 获得API名称。
      */
-    public String getInfo(){
-        return this.info;
+    public String getApiName(){
+        return this.apiName;
+    }
+
+    /**
+     * 获得操作状态。
+     */
+    public String getOpState(){
+        return this.opState;
     }
 
     /**
      * 获得日志内容。
      */
-    public String getLog(){
-        return this.log;
+    public String getOpLog(){
+        return this.opLog;
     }
 
     /**
@@ -549,42 +564,56 @@ public class SysCritLog implements DataEntity,Serializable{
     /**
      * 设置请求uri。
      */
-    public void setUri(String uri){
-        if ((!String.valueOf(this.uri).equals(String.valueOf(uri)))) {
+    public void setApiUri(String apiUri){
+        if ((!String.valueOf(this.apiUri).equals(String.valueOf(apiUri)))) {
             if (this.UPDATED_COLUMN == null) {
                 _INIT_UPDATE_INFO();
             }
-            this.UPDATED_COLUMN.add("uri");
-            this.UPDATED_INFO.append("uri:\"" + this.uri+ "\"=>\"" + uri + "\"\r\n");
-            this.uri = uri;
+            this.UPDATED_COLUMN.add("api_uri");
+            this.UPDATED_INFO.append("api_uri:\"" + this.apiUri+ "\"=>\"" + apiUri + "\"\r\n");
+            this.apiUri = apiUri;
         }
     }
 
     /**
-     * 设置方法操作描述。
+     * 设置API名称。
      */
-    public void setInfo(String info){
-        if ((!String.valueOf(this.info).equals(String.valueOf(info)))) {
+    public void setApiName(String apiName){
+        if ((!String.valueOf(this.apiName).equals(String.valueOf(apiName)))) {
             if (this.UPDATED_COLUMN == null) {
                 _INIT_UPDATE_INFO();
             }
-            this.UPDATED_COLUMN.add("info");
-            this.UPDATED_INFO.append("info:\"" + this.info+ "\"=>\"" + info + "\"\r\n");
-            this.info = info;
+            this.UPDATED_COLUMN.add("api_name");
+            this.UPDATED_INFO.append("api_name:\"" + this.apiName+ "\"=>\"" + apiName + "\"\r\n");
+            this.apiName = apiName;
+        }
+    }
+
+    /**
+     * 设置操作状态。
+     */
+    public void setOpState(String opState){
+        if ((!String.valueOf(this.opState).equals(String.valueOf(opState)))) {
+            if (this.UPDATED_COLUMN == null) {
+                _INIT_UPDATE_INFO();
+            }
+            this.UPDATED_COLUMN.add("op_state");
+            this.UPDATED_INFO.append("op_state:\"" + this.opState+ "\"=>\"" + opState + "\"\r\n");
+            this.opState = opState;
         }
     }
 
     /**
      * 设置日志内容。
      */
-    public void setLog(String log){
-        if ((!String.valueOf(this.log).equals(String.valueOf(log)))) {
+    public void setOpLog(String opLog){
+        if ((!String.valueOf(this.opLog).equals(String.valueOf(opLog)))) {
             if (this.UPDATED_COLUMN == null) {
                 _INIT_UPDATE_INFO();
             }
-            this.UPDATED_COLUMN.add("log");
-            this.UPDATED_INFO.append("log:\"" + this.log+ "\"=>\"" + log + "\"\r\n");
-            this.log = log;
+            this.UPDATED_COLUMN.add("op_log");
+            this.UPDATED_INFO.append("op_log:\"" + this.opLog+ "\"=>\"" + opLog + "\"\r\n");
+            this.opLog = opLog;
         }
     }
 
@@ -731,9 +760,10 @@ public class SysCritLog implements DataEntity,Serializable{
         sb.append("real_name:\"" + this.realName + "\"\r\n");
         sb.append("ref_type:\"" + this.refType + "\"\r\n");
         sb.append("ref_id:\"" + this.refId + "\"\r\n");
-        sb.append("uri:\"" + this.uri + "\"\r\n");
-        sb.append("info:\"" + this.info + "\"\r\n");
-        sb.append("log:\"" + this.log + "\"\r\n");
+        sb.append("api_uri:\"" + this.apiUri + "\"\r\n");
+        sb.append("api_name:\"" + this.apiName + "\"\r\n");
+        sb.append("op_state:\"" + this.opState + "\"\r\n");
+        sb.append("op_log:\"" + this.opLog + "\"\r\n");
         sb.append("request_body:\"" + this.requestBody + "\"\r\n");
         sb.append("response_body:\"" + this.responseBody + "\"\r\n");
         sb.append("response_millis:\"" + this.responseMillis + "\"\r\n");

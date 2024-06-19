@@ -55,9 +55,10 @@ public class SysCritLogStorageService implements AuthCriticalLogStorage {
                 critLog.setRequestBody( mscActionLog.getRequestBody() );
                 critLog.setResponseBody( mscActionLog.getResponseBody() );
                 critLog.setResponseMillis( mscActionLog.getResponseMillis() );
-                critLog.setUri( mscActionLog.getApiUri() );
-                critLog.setInfo( mscActionLog.getApiName() );
-                critLog.setLog( mscActionLog.getOpLog() );
+                critLog.setApiUri( mscActionLog.getApiUri() );
+                critLog.setApiName( mscActionLog.getApiName() );
+                critLog.setOpLog( mscActionLog.getOpLog() );
+                critLog.setOpState( mscActionLog.getOpState() );
                 critLog.setException( mscActionLog.getException() );
                 critLog.setStatusCode( mscActionLog.getStatusCode() );
                 critLog.setUserIp( mscActionLog.getUserIp() );

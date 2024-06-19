@@ -9,7 +9,7 @@
     <description>uw-base</description>
     <version>${revision}</version>
     <properties>
-        <revision>2024.0618.2132</revision>
+        <revision>2024.0618.2133</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
@@ -20,7 +20,7 @@
         <uw-app-common.version>1.0.5</uw-app-common.version>
         <uw-common.version>1.0.8</uw-common.version>
         <uw-auth-client.version>6.0.16</uw-auth-client.version>
-        <uw-auth-service.version>6.0.90</uw-auth-service.version>
+        <uw-auth-service.version>6.0.91</uw-auth-service.version>
         <uw-dao.version>5.1.18</uw-dao.version>
         <uw-httpclient.version>2.1.109</uw-httpclient.version>
         <uw-logback-es.version>3.0.53</uw-logback-es.version>

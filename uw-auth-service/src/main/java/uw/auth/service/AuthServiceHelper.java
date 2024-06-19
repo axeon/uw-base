@@ -485,34 +485,51 @@ public class AuthServiceHelper {
         contextLogHolder.remove();
     }
 
+    /**
+     * 绑定ref信息。
+     *
+     * @param refType 业务类型 用户代码自行定义,不应有冲突
+     */
+    public static MscActionLog logRef(String refType) {
+        return logInfo( refType, null, null, null );
+    }
+
+    /**
+     * 绑定ref信息
+     *
+     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
+     */
+    public static MscActionLog logRef(Class refTypeClass) {
+        return logInfo( refTypeClass.getName(), null, null, null );
+    }
+
+    /**
+     * 绑定ref信息。
+     *
+     * @param refType 业务类型 用户代码自行定义,不应有冲突
+     * @param refId   业务主键
+     */
+    public static MscActionLog logRef(String refType, Serializable refId) {
+        return logInfo( refType, refId, null, null );
+    }
+
+    /**
+     * 绑定ref信息
+     *
+     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
+     * @param refId        业务主键
+     */
+    public static MscActionLog logRef(Class refTypeClass, Serializable refId) {
+        return logInfo( refTypeClass.getName(), refId, null, null );
+    }
 
     /**
      * 写日志信息
      *
      * @param opLog 日志信息
      */
-    public static MscActionLog log(String opLog) {
-        return log( (String) null, null, null, opLog );
-    }
-
-    /**
-     * 写日志信息
-     *
-     * @param refType 业务类型 用户代码自行定义,不应有冲突
-     * @param refId   业务主键
-     */
-    public static MscActionLog log(String refType, Serializable refId) {
-        return log( refType, refId, null, null );
-    }
-
-    /**
-     * 写日志信息
-     *
-     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
-     * @param refId        业务主键
-     */
-    public static MscActionLog log(Class refTypeClass, Serializable refId) {
-        return log( refTypeClass.getName(), refId, null, null );
+    public static MscActionLog logInfo(String opLog) {
+        return logInfo( (String) null, null, null, opLog );
     }
 
     /**
@@ -521,8 +538,8 @@ public class AuthServiceHelper {
      * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
      * @param opLog        日志信息
      */
-    public static MscActionLog log(Class refTypeClass, String opLog) {
-        return log( refTypeClass.getName(), null, null, opLog );
+    public static MscActionLog logInfo(Class refTypeClass, String opLog) {
+        return logInfo( refTypeClass.getName(), null, null, opLog );
     }
 
     /**
@@ -531,8 +548,8 @@ public class AuthServiceHelper {
      * @param refType 业务类 用户代码自行定义,不应有冲突
      * @param opLog   日志信息
      */
-    public static MscActionLog log(String refType, String opLog) {
-        return log( refType, null, null, opLog );
+    public static MscActionLog logInfo(String refType, String opLog) {
+        return logInfo( refType, null, null, opLog );
     }
 
     /**
@@ -542,8 +559,8 @@ public class AuthServiceHelper {
      * @param refId   业务主键
      * @param opLog   日志信息
      */
-    public static MscActionLog log(String refType, Serializable refId, String opLog) {
-        return log( refType, refId, null, opLog );
+    public static MscActionLog logInfo(String refType, Serializable refId, String opLog) {
+        return logInfo( refType, refId, null, opLog );
     }
 
     /**
@@ -553,8 +570,8 @@ public class AuthServiceHelper {
      * @param refId        业务主键
      * @param opLog        日志信息
      */
-    public static MscActionLog log(Class refTypeClass, Serializable refId, String opLog) {
-        return log( refTypeClass.getName(), refId, null, opLog );
+    public static MscActionLog logInfo(Class refTypeClass, Serializable refId, String opLog) {
+        return logInfo( refTypeClass.getName(), refId, null, opLog );
     }
 
     /**
@@ -564,8 +581,8 @@ public class AuthServiceHelper {
      * @param refId        业务主键
      * @param opLog        日志信息
      */
-    public static MscActionLog log(Class refTypeClass, Serializable refId, String opState, String opLog) {
-        return log( refTypeClass.getName(), refId, opState, opLog );
+    public static MscActionLog logInfo(Class refTypeClass, Serializable refId, String opState, String opLog) {
+        return logInfo( refTypeClass.getName(), refId, opState, opLog );
     }
 
     /**
@@ -575,7 +592,7 @@ public class AuthServiceHelper {
      * @param refId   业务主键
      * @param opLog   日志信息
      */
-    public static MscActionLog log(String refType, Serializable refId, String opState, String opLog) {
+    public static MscActionLog logInfo(String refType, Serializable refId, String opState, String opLog) {
         MscActionLog mscActionLog = contextLogHolder.get();
         if (mscActionLog == null) {
             logger.warn( "未设置日志属性, 请检查代码: refType={}, refId={}, opState={}, opLog={}", refType, refId, opState, opLog );
@@ -584,7 +601,7 @@ public class AuthServiceHelper {
             if (refType != null) {
                 mscActionLog.setRefType( refType );
             }
-            if(refId != null) {
+            if (refId != null) {
                 mscActionLog.setRefId( refId );
             }
             if (opState != null) {
@@ -604,26 +621,6 @@ public class AuthServiceHelper {
      */
     public static MscActionLog logWarn(String opLog) {
         return logWarn( (String) null, null, opLog );
-    }
-
-    /**
-     * 写日志信息
-     *
-     * @param refType 业务类型 用户代码自行定义,不应有冲突
-     * @param refId   业务主键
-     */
-    public static MscActionLog logWarn(String refType, Serializable refId) {
-        return logWarn( refType, refId, null );
-    }
-
-    /**
-     * 写日志信息
-     *
-     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
-     * @param refId        业务主键
-     */
-    public static MscActionLog logWarn(Class refTypeClass, Serializable refId) {
-        return logWarn( refTypeClass.getName(), refId, null );
     }
 
     /**
@@ -665,7 +662,7 @@ public class AuthServiceHelper {
      * @param opLog   日志信息
      */
     public static MscActionLog logWarn(String refType, Serializable refId, String opLog) {
-        return log( refType, refId, ResponseData.STATE_WARN, opLog );
+        return logInfo( refType, refId, ResponseData.STATE_WARN, opLog );
     }
 
     /**
@@ -675,26 +672,6 @@ public class AuthServiceHelper {
      */
     public static MscActionLog logError(String opLog) {
         return logError( (String) null, null, opLog );
-    }
-
-    /**
-     * 写日志信息
-     *
-     * @param refType 业务类型 用户代码自行定义,不应有冲突
-     * @param refId   业务主键
-     */
-    public static MscActionLog logError(String refType, Serializable refId) {
-        return logError( refType, refId, null );
-    }
-
-    /**
-     * 写日志信息
-     *
-     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
-     * @param refId        业务主键
-     */
-    public static MscActionLog logError(Class refTypeClass, Serializable refId) {
-        return logError( refTypeClass.getName(), refId, null );
     }
 
     /**
@@ -736,7 +713,7 @@ public class AuthServiceHelper {
      * @param opLog   日志信息
      */
     public static MscActionLog logError(String refType, Serializable refId, String opLog) {
-        return log( refType, refId, ResponseData.STATE_ERROR, opLog );
+        return logInfo( refType, refId, ResponseData.STATE_ERROR, opLog );
     }
 
     /**

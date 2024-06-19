@@ -15,7 +15,6 @@ import uw.auth.service.conf.AuthServiceProperties;
 import uw.auth.service.constant.AuthConstants;
 import uw.auth.service.constant.InvalidTokenType;
 import uw.auth.service.constant.UserType;
-import uw.common.dto.ResponseData;
 import uw.auth.service.exception.TokenExpiredException;
 import uw.auth.service.exception.TokenInvalidateException;
 import uw.auth.service.rpc.AuthServiceRpc;
@@ -24,6 +23,7 @@ import uw.auth.service.token.AuthTokenData;
 import uw.auth.service.token.InvalidTokenData;
 import uw.auth.service.util.IPAddressUtils;
 import uw.auth.service.vo.MscActionLog;
+import uw.common.dto.ResponseData;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -485,87 +485,258 @@ public class AuthServiceHelper {
         contextLogHolder.remove();
     }
 
-    /**
-     * 写日志信息
-     *
-     * @param logInfo 日志信息
-     */
-    public static void logInfo(String logInfo) {
-        MscActionLog mscActionLog = contextLogHolder.get();
-        if (mscActionLog == null) {
-            logger.warn( "未设置日志属性, 请改善你的程序: {}", logInfo );
-        } else {
-            mscActionLog.setLog( logInfo );
-        }
-    }
-
 
     /**
      * 写日志信息
      *
-     * @param objectCls 业务类 用户代码自行定义,不应有冲突
-     * @param objectId  业务主键
+     * @param opLog 日志信息
      */
-    public static void logInfo(Class objectCls, Serializable objectId) {
-        MscActionLog mscActionLog = contextLogHolder.get();
-        if (mscActionLog == null) {
-            logger.warn( "未设置日志属性, 请改善你的程序: objectType = {}, objectId = {} ", objectCls.getSimpleName(), objectId );
-        } else {
-            mscActionLog.setRefId( objectId );
-            mscActionLog.setRefType( objectCls.getSimpleName() );
-        }
+    public static MscActionLog log(String opLog) {
+        return log( (String) null, null, null, opLog );
     }
 
     /**
      * 写日志信息
      *
-     * @param objectType 业务类型 用户代码自行定义,不应有冲突
-     * @param objectId   业务主键
+     * @param refType 业务类型 用户代码自行定义,不应有冲突
+     * @param refId   业务主键
      */
-    public static void logInfo(String objectType, Serializable objectId) {
-        MscActionLog mscActionLog = contextLogHolder.get();
-        if (mscActionLog == null) {
-            logger.warn( "未设置日志属性, 请改善你的程序: objectType = {}, objectId = {}", objectType, objectId );
-        } else {
-            mscActionLog.setRefId( objectId );
-            mscActionLog.setRefType( objectType );
-        }
+    public static MscActionLog log(String refType, Serializable refId) {
+        return log( refType, refId, null, null );
     }
 
     /**
      * 写日志信息
      *
-     * @param objectCls 业务类 用户代码自行定义,不应有冲突
-     * @param objectId  业务主键
-     * @param logInfo   日志信息
+     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
+     * @param refId        业务主键
      */
-    public static void logInfo(Class objectCls, Serializable objectId, String logInfo) {
-        MscActionLog mscActionLog = contextLogHolder.get();
-        if (mscActionLog == null) {
-            logger.warn( "未设置日志属性, 请改善你的程序: objectType = {}, objectId = {}, logInfo = {}", objectCls.getSimpleName(), objectId, logInfo );
-        } else {
-            mscActionLog.setRefId( objectId );
-            mscActionLog.setRefType( objectCls.getSimpleName() );
-            mscActionLog.setLog( logInfo );
-        }
+    public static MscActionLog log(Class refTypeClass, Serializable refId) {
+        return log( refTypeClass.getName(), refId, null, null );
     }
 
     /**
      * 写日志信息
      *
-     * @param objectType 业务类型 用户代码自行定义,不应有冲突
-     * @param objectId   业务主键
-     * @param logInfo    日志信息
+     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
+     * @param opLog        日志信息
      */
-    public static void logInfo(String objectType, Serializable objectId, String logInfo) {
+    public static MscActionLog log(Class refTypeClass, String opLog) {
+        return log( refTypeClass.getName(), null, null, opLog );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param refType 业务类 用户代码自行定义,不应有冲突
+     * @param opLog   日志信息
+     */
+    public static MscActionLog log(String refType, String opLog) {
+        return log( refType, null, null, opLog );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param refType 业务类 用户代码自行定义,不应有冲突
+     * @param refId   业务主键
+     * @param opLog   日志信息
+     */
+    public static MscActionLog log(String refType, Serializable refId, String opLog) {
+        return log( refType, refId, null, opLog );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
+     * @param refId        业务主键
+     * @param opLog        日志信息
+     */
+    public static MscActionLog log(Class refTypeClass, Serializable refId, String opLog) {
+        return log( refTypeClass.getName(), refId, null, opLog );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
+     * @param refId        业务主键
+     * @param opLog        日志信息
+     */
+    public static MscActionLog log(Class refTypeClass, Serializable refId, String opState, String opLog) {
+        return log( refTypeClass.getName(), refId, opState, opLog );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param refType 业务类型 用户代码自行定义,不应有冲突
+     * @param refId   业务主键
+     * @param opLog   日志信息
+     */
+    public static MscActionLog log(String refType, Serializable refId, String opState, String opLog) {
         MscActionLog mscActionLog = contextLogHolder.get();
         if (mscActionLog == null) {
-            logger.warn( "未设置日志属性, 请改善你的程序: objectType = {}, objectId = {}, logInfo = {}", objectType, objectId, logInfo );
+            logger.warn( "未设置日志属性, 请检查代码: refType={}, refId={}, opState={}, opLog={}", refType, refId, opState, opLog );
         } else {
-            mscActionLog.setRefId( objectId );
-            mscActionLog.setRefType( objectType );
-            mscActionLog.setLog( logInfo );
+            //允许多次设置日志信息。
+            if (refType != null) {
+                mscActionLog.setRefType( refType );
+            }
+            if(refId != null) {
+                mscActionLog.setRefId( refId );
+            }
+            if (opState != null) {
+                mscActionLog.setOpState( opState );
+            }
+            if (opLog != null) {
+                mscActionLog.setOpLog( mscActionLog.getOpLog() + "\n" + opLog );
+            }
         }
+        return mscActionLog;
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param opLog 日志信息
+     */
+    public static MscActionLog logWarn(String opLog) {
+        return logWarn( (String) null, null, opLog );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param refType 业务类型 用户代码自行定义,不应有冲突
+     * @param refId   业务主键
+     */
+    public static MscActionLog logWarn(String refType, Serializable refId) {
+        return logWarn( refType, refId, null );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
+     * @param refId        业务主键
+     */
+    public static MscActionLog logWarn(Class refTypeClass, Serializable refId) {
+        return logWarn( refTypeClass.getName(), refId, null );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
+     * @param opLog        日志信息
+     */
+    public static MscActionLog logWarn(Class refTypeClass, String opLog) {
+        return logWarn( refTypeClass.getName(), null, opLog );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param refType 业务类 用户代码自行定义,不应有冲突
+     * @param opLog   日志信息
+     */
+    public static MscActionLog logWarn(String refType, String opLog) {
+        return logWarn( refType, null, opLog );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
+     * @param refId        业务主键
+     * @param opLog        日志信息
+     */
+    public static MscActionLog logWarn(Class refTypeClass, Serializable refId, String opLog) {
+        return logWarn( refTypeClass.getName(), refId, opLog );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param refType 业务类 用户代码自行定义,不应有冲突
+     * @param refId   业务主键
+     * @param opLog   日志信息
+     */
+    public static MscActionLog logWarn(String refType, Serializable refId, String opLog) {
+        return log( refType, refId, ResponseData.STATE_WARN, opLog );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param opLog 日志信息
+     */
+    public static MscActionLog logError(String opLog) {
+        return logError( (String) null, null, opLog );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param refType 业务类型 用户代码自行定义,不应有冲突
+     * @param refId   业务主键
+     */
+    public static MscActionLog logError(String refType, Serializable refId) {
+        return logError( refType, refId, null );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
+     * @param refId        业务主键
+     */
+    public static MscActionLog logError(Class refTypeClass, Serializable refId) {
+        return logError( refTypeClass.getName(), refId, null );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
+     * @param opLog        日志信息
+     */
+    public static MscActionLog logError(Class refTypeClass, String opLog) {
+        return logError( refTypeClass.getName(), null, opLog );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param refType 业务类 用户代码自行定义,不应有冲突
+     * @param opLog   日志信息
+     */
+    public static MscActionLog logError(String refType, String opLog) {
+        return logError( refType, null, opLog );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
+     * @param refId        业务主键
+     * @param opLog        日志信息
+     */
+    public static MscActionLog logError(Class refTypeClass, Serializable refId, String opLog) {
+        return logError( refTypeClass.getName(), refId, opLog );
+    }
+
+    /**
+     * 写日志信息
+     *
+     * @param refType 业务类 用户代码自行定义,不应有冲突
+     * @param refId   业务主键
+     * @param opLog   日志信息
+     */
+    public static MscActionLog logError(String refType, Serializable refId, String opLog) {
+        return log( refType, refId, ResponseData.STATE_ERROR, opLog );
     }
 
     /**

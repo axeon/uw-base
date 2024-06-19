@@ -188,8 +188,8 @@ public class TokenFilter implements Filter {
                     mscActionLog.setMchId( authToken.getMchId() );
                     mscActionLog.setGroupId( authToken.getGroupId() );
                     mscActionLog.setUserType( authToken.getUserType() );
-                    mscActionLog.setUri( permCode );
-                    mscActionLog.setInfo( opInfo );
+                    mscActionLog.setApiUri( permCode );
+                    mscActionLog.setApiName( opInfo );
                     mscActionLog.setUserIp( remoteIp );
                     mscActionLog.setRequestDate( new Date() );
                     if (logType == ActionLog.REQUEST || logType == ActionLog.ALL || logType == ActionLog.CRIT) {

@@ -18,19 +18,19 @@ public final class ResponseData<T> {
     /**
      * 成功状态值。
      */
-    private static final String STATE_SUCCESS = "success";
+    public static final String STATE_SUCCESS = "success";
     /**
      * 报警状态值。
      */
-    private static final String STATE_WARN = "warn";
+    public static final String STATE_WARN = "warn";
     /**
      * 错误状态值。
      */
-    private static final String STATE_ERROR = "error";
+    public static final String STATE_ERROR = "error";
     /**
      * 位置状态值。
      */
-    private static final String STATE_UNKNOWN = "unknown";
+    public static final String STATE_UNKNOWN = "unknown";
 
     /**
      * 成功常量，不带时间戳。

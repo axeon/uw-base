@@ -12,13 +12,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import uw.auth.service.AuthServiceHelper;
-import uw.common.dto.ResponseData;
 import uw.auth.service.util.MscUtils;
 import uw.auth.service.vo.MscActionLog;
+import uw.common.dto.ResponseData;
 
 /**
  * 全局异常处理，通过此类捕获全局异常。
- *
  */
 @RestControllerAdvice
 public class GlobalExceptionAdvice {
@@ -55,6 +54,7 @@ public class GlobalExceptionAdvice {
             detailData = ex.getMessage();
         }
         if (mscActionLog != null) {
+            mscActionLog.setOpState( ResponseData.STATE_ERROR );
             mscActionLog.setException( detailData );
         }
         return ResponseData.error( detailData, String.valueOf( response.getStatus() ), ex.getMessage() );

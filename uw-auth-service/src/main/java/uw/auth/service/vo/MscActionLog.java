@@ -46,19 +46,29 @@ public class MscActionLog extends LogBaseVo implements Serializable {
     private long groupId;
 
     /**
-     * 用户类型 ==> msc_user_type.type_code
+     * 用户类型
      */
     private int userType;
 
     /**
      * 请求uri
      */
-    private String uri;
+    private String apiUri;
 
     /**
      * 方法操作描述
      */
-    private String info;
+    private String apiName;
+
+    /**
+     * 操作日志
+     */
+    private String opLog;
+
+    /**
+     * 操作状态。
+     */
+    private String opState;
 
     /**
      * 请求Ip
@@ -74,11 +84,6 @@ public class MscActionLog extends LogBaseVo implements Serializable {
      * 业务Id,用于查询
      */
     private Serializable refId;
-
-    /**
-     * 日志内容 (需要客户代码写的)
-     */
-    private String log;
 
     /**
      * 请求参数
@@ -174,20 +179,20 @@ public class MscActionLog extends LogBaseVo implements Serializable {
         this.userType = userType;
     }
 
-    public String getUri() {
-        return uri;
+    public String getApiUri() {
+        return apiUri;
     }
 
-    public void setUri(String uri) {
-        this.uri = uri;
+    public void setApiUri(String apiUri) {
+        this.apiUri = apiUri;
     }
 
-    public String getInfo() {
-        return info;
+    public String getApiName() {
+        return apiName;
     }
 
-    public void setInfo(String info) {
-        this.info = info;
+    public void setApiName(String apiName) {
+        this.apiName = apiName;
     }
 
     public String getUserIp() {
@@ -214,12 +219,20 @@ public class MscActionLog extends LogBaseVo implements Serializable {
         this.refType = refType;
     }
 
-    public String getLog() {
-        return log;
+    public String getOpLog() {
+        return opLog;
     }
 
-    public void setLog(String log) {
-        this.log = log;
+    public void setOpLog(String opLog) {
+        this.opLog = opLog;
+    }
+
+    public String getOpState() {
+        return opState;
+    }
+
+    public void setOpState(String opState) {
+        this.opState = opState;
     }
 
     public String getRequestBody() {

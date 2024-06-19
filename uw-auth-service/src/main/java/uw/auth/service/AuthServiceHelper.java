@@ -608,7 +608,10 @@ public class AuthServiceHelper {
                 mscActionLog.setOpState( opState );
             }
             if (opLog != null) {
-                mscActionLog.setOpLog( mscActionLog.getOpLog() + "\n" + opLog );
+                if (mscActionLog.getOpLog() != null) {
+                    opLog = mscActionLog.getOpLog() + "\n" + opLog;
+                }
+                mscActionLog.setOpLog( opLog );
             }
         }
         return mscActionLog;

@@ -71,7 +71,7 @@ public class AuthServiceFilter implements Filter {
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        logger.info( "Init AuthService filter." );
+        logger.info( "Init AuthServiceFilter." );
     }
 
     @Override
@@ -259,6 +259,6 @@ public class AuthServiceFilter implements Filter {
 
     @Override
     public void destroy() {
-        logger.info( "Destroy AuthService filter." );
+        logger.info( "Destroy AuthServiceFilter." );
     }
 }

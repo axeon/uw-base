@@ -24,7 +24,7 @@ public class GlobalExceptionAdvice {
     private static final Logger log = LoggerFactory.getLogger( GlobalExceptionAdvice.class );
 
     public GlobalExceptionAdvice() {
-        log.info( "Initializing GlobalExceptionAdvice..." );
+        log.info( "Init GlobalExceptionAdvice." );
     }
 
     @ExceptionHandler({Throwable.class})

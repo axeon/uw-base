@@ -32,7 +32,7 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
     private static final String HTTP_OK = "200";
 
     public GlobalResponseAdvice() {
-        log.info( "Initializing GlobalResponseAdvice..." );
+        log.info( "Init GlobalResponseAdvice." );
     }
 
     /**

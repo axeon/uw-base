@@ -40,14 +40,14 @@ import java.util.Date;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
- * Token filter组件。
+ * AuthServiceFilter组件。
  *
  * @author axeon
  * @since 2018/2/6
  */
-public class TokenFilter implements Filter {
+public class AuthServiceFilter implements Filter {
 
-    private static final Logger logger = LoggerFactory.getLogger( TokenFilter.class );
+    private static final Logger logger = LoggerFactory.getLogger( AuthServiceFilter.class );
     public static LongAdder invokeCounter = new LongAdder();
     private final AuthServiceProperties authServerProperties;
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
@@ -57,9 +57,9 @@ public class TokenFilter implements Filter {
     private final MscRateLimiter mscRateLimiter;
     private final AuthCriticalLogStorage authCriticalLogStorage;
 
-    public TokenFilter(final AuthServiceProperties authServerProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthPermService authPermService,
-                       final MscRateLimiter mscRateLimiter, final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage,
-                       final AuthServiceHelper authServiceHelper) {
+    public AuthServiceFilter(final AuthServiceProperties authServerProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthPermService authPermService,
+                             final MscRateLimiter mscRateLimiter, final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage,
+                             final AuthServiceHelper authServiceHelper) {
         this.authServerProperties = authServerProperties;
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.authPermService = authPermService;
@@ -71,7 +71,7 @@ public class TokenFilter implements Filter {
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        logger.info( "Init TokenFilter filter." );
+        logger.info( "Init AuthService filter." );
     }
 
     @Override
@@ -259,6 +259,6 @@ public class TokenFilter implements Filter {
 
     @Override
     public void destroy() {
-        logger.info( "Destroy TokenFilter filter." );
+        logger.info( "Destroy AuthService filter." );
     }
 }

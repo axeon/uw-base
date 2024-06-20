@@ -6,10 +6,10 @@ import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import uw.auth.service.conf.AuthServiceProperties;
-import uw.common.dto.ResponseData;
 import uw.auth.service.rpc.AuthServiceRpc;
 import uw.auth.service.token.AuthTokenData;
 import uw.auth.service.vo.*;
+import uw.common.dto.ResponseData;
 
 import java.net.URI;
 import java.util.List;
@@ -109,23 +109,10 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
      * @return
      */
     @Override
-    public TokenResponse genGuestToken(long saasId, long mchId, long userId, String userName) {
+    public TokenResponse genGuestToken(long saasId, long mchId, long userId, String userName, String userIp, boolean checkDoubleLogin) {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServerProperties.getAuthCenterHost() ).path( "/rpc/auth/genGuestToken" ).queryParam( "saasId", saasId ).queryParam( "mchId"
-                        , mchId ).queryParam( "userId", userId ).queryParam( "username", userName ).build().encode().toUri();
-        return restTemplate.getForObject( targetUrl, TokenResponse.class );
-    }
-
-    /**
-     * 生成guest的token。
-     *
-     * @return
-     */
-    @Override
-    public TokenResponse genGuestToken(long saasId, long mchId, long userId, String userName,boolean checkDoubleLogin,String userIp) {
-        URI targetUrl =
-                UriComponentsBuilder.fromHttpUrl( authServerProperties.getAuthCenterHost() ).path( "/rpc/auth/genGuestToken" ).queryParam( "saasId", saasId ).queryParam( "mchId"
-                        , mchId ).queryParam( "userId", userId ).queryParam( "username", userName ).queryParam( "checkDoubleLogin", checkDoubleLogin ).queryParam( "userIp", userIp ).build().encode().toUri();
+                        , mchId ).queryParam( "userId", userId ).queryParam( "username", userName ).queryParam( "userIp", userIp ).queryParam( "checkDoubleLogin", checkDoubleLogin ).build().encode().toUri();
         return restTemplate.getForObject( targetUrl, TokenResponse.class );
     }
 
@@ -141,7 +128,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     public ResponseData initSaasPerm(long saasId, String saasName, String[] initAppNames, String adminPasswd, String adminMobile, String adminEmail) {
         URI targetUrl = UriComponentsBuilder.fromHttpUrl( authServerProperties.getAuthCenterHost() ).path( "/rpc/auth/initSaasPerm" ).queryParam( "saasId", saasId ).queryParam(
                 "saasName", saasName ).queryParam( "initAppNames", initAppNames ).queryParam( "adminPasswd", adminPasswd ).queryParam( "adminMobile", adminMobile ).queryParam(
-                "adminEmail", adminEmail ).build().encode().toUri();
+                        "adminEmail", adminEmail ).build().encode().toUri();
         return restTemplate.exchange( targetUrl, HttpMethod.POST, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 
@@ -165,7 +152,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     public ResponseData grantSaasPerm(long saasId, String permIds, String remark) {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServerProperties.getAuthCenterHost() ).path( "/rpc/auth/grantSaasPerm" ).queryParam( "saasId", saasId ).queryParam(
-                        "permIds", permIds ).queryParam( "remark",remark ).build().encode().toUri();
+                        "permIds", permIds ).queryParam( "remark", remark ).build().encode().toUri();
         return restTemplate.exchange( targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 
@@ -178,7 +165,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     public ResponseData revokeSaasPerm(long saasId, String permIds, String remark) {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServerProperties.getAuthCenterHost() ).path( "/rpc/auth/revokeSaasPerm" ).queryParam( "saasId", saasId ).queryParam(
-                        "permIds", permIds ).queryParam( "remark",remark ).build().encode().toUri();
+                        "permIds", permIds ).queryParam( "remark", remark ).build().encode().toUri();
         return restTemplate.exchange( targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 
@@ -192,7 +179,8 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     @Override
     public ResponseData enableSaasPerm(long saasId, String remark) {
         URI targetUrl =
-                UriComponentsBuilder.fromHttpUrl( authServerProperties.getAuthCenterHost() ).path( "/rpc/auth/enableSaasPerm" ).queryParam( "saasId", saasId ).queryParam( "remark",remark ).build().encode().toUri();
+                UriComponentsBuilder.fromHttpUrl( authServerProperties.getAuthCenterHost() ).path( "/rpc/auth/enableSaasPerm" ).queryParam( "saasId", saasId ).queryParam(
+                        "remark", remark ).build().encode().toUri();
         return restTemplate.exchange( targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 
@@ -206,7 +194,8 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     @Override
     public ResponseData disableSaasPerm(long saasId, String remark) {
         URI targetUrl =
-                UriComponentsBuilder.fromHttpUrl( authServerProperties.getAuthCenterHost() ).path( "/rpc/auth/disableSaasPerm" ).queryParam( "saasId", saasId ).queryParam( "remark",remark ).build().encode().toUri();
+                UriComponentsBuilder.fromHttpUrl( authServerProperties.getAuthCenterHost() ).path( "/rpc/auth/disableSaasPerm" ).queryParam( "saasId", saasId ).queryParam(
+                        "remark", remark ).build().encode().toUri();
         return restTemplate.exchange( targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 
@@ -221,7 +210,8 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     @Override
     public ResponseData<Integer> updateSaasRateLimit(long saasId, String rateLimit, String remark) {
         URI targetUrl =
-                UriComponentsBuilder.fromHttpUrl( authServerProperties.getAuthCenterHost() ).path( "/rpc/auth/updateSaasRateLimit" ).queryParam( "saasId", saasId ).queryParam( "remark",remark ).queryParam( rateLimit, rateLimit ).build().encode().toUri();
+                UriComponentsBuilder.fromHttpUrl( authServerProperties.getAuthCenterHost() ).path( "/rpc/auth/updateSaasRateLimit" ).queryParam( "saasId", saasId ).queryParam(
+                        "remark", remark ).queryParam( rateLimit, rateLimit ).build().encode().toUri();
         return restTemplate.exchange( targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 
@@ -236,8 +226,8 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     @Override
     public ResponseData<Integer> updateSaasUserLimit(long saasId, int userLimit, String remark) {
         URI targetUrl =
-                UriComponentsBuilder.fromHttpUrl( authServerProperties.getAuthCenterHost() ).path( "/rpc/auth/updateSaasUserLimit" ).queryParam( "saasId", saasId ).queryParam( "remark",remark ).queryParam(
-                        "userLimit", userLimit ).build().encode().toUri();
+                UriComponentsBuilder.fromHttpUrl( authServerProperties.getAuthCenterHost() ).path( "/rpc/auth/updateSaasUserLimit" ).queryParam( "saasId", saasId ).queryParam(
+                        "remark", remark ).queryParam( "userLimit", userLimit ).build().encode().toUri();
         return restTemplate.exchange( targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 

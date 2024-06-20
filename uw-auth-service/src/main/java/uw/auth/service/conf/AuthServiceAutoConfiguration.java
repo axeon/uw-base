@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
@@ -21,7 +20,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.event.EventListener;
-import org.springframework.core.Ordered;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -39,7 +37,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import uw.auth.service.AuthServiceHelper;
 import uw.auth.service.advice.GlobalExceptionAdvice;
 import uw.auth.service.advice.GlobalResponseAdvice;
-import uw.auth.service.filter.TokenFilter;
+import uw.auth.service.filter.AuthServiceFilter;
 import uw.auth.service.ipblock.IpMatchHelper;
 import uw.auth.service.log.AuthCriticalLogStorage;
 import uw.auth.service.log.impl.AuthCriticalLogNoneStorage;
@@ -126,7 +124,7 @@ public class AuthServiceAutoConfiguration {
     }
 
     /**
-     * tokenFilter
+     * AuthServiceFilter
      *
      * @param authServerProperties
      * @param requestMappingHandlerMapping
@@ -136,15 +134,15 @@ public class AuthServiceAutoConfiguration {
      * @return
      */
     @Bean
-    public FilterRegistrationBean<TokenFilter> tokenFilter(final AuthServiceProperties authServerProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping,
-                                                           final AuthPermService authPermService, final IpMatchHelper ipMatchHelper, final MscRateLimiter mscRateLimiter,
-                                                           final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage,
-                                                           final AuthServiceHelper authServiceHelper) {
-        FilterRegistrationBean<TokenFilter> registrationBean = new FilterRegistrationBean<TokenFilter>();
-        TokenFilter tokenFilter = new TokenFilter( authServerProperties, requestMappingHandlerMapping, authPermService, mscRateLimiter, logClient, authCriticalLogStorage,
-                authServiceHelper );
-        registrationBean.setFilter( tokenFilter );
-        registrationBean.setName( "TokenFilter" );
+    public FilterRegistrationBean<AuthServiceFilter> authServiceFilter(final AuthServiceProperties authServerProperties,
+                                                                 final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthPermService authPermService,
+                                                                 final IpMatchHelper ipMatchHelper, final MscRateLimiter mscRateLimiter, final LogClient logClient,
+                                                                 final AuthCriticalLogStorage authCriticalLogStorage, final AuthServiceHelper authServiceHelper) {
+        FilterRegistrationBean<AuthServiceFilter> registrationBean = new FilterRegistrationBean<AuthServiceFilter>();
+        AuthServiceFilter authServiceFilter = new AuthServiceFilter( authServerProperties, requestMappingHandlerMapping, authPermService, mscRateLimiter, logClient,
+                authCriticalLogStorage, authServiceHelper );
+        registrationBean.setFilter( authServiceFilter );
+        registrationBean.setName( "AuthServiceFilter" );
         registrationBean.setOrder( TOKEN_FILTER_ORDER );
         if (StringUtils.isNotBlank( authServerProperties.getAuthEntryPoint() )) {
             registrationBean.setUrlPatterns( Splitter.on( "," ).trimResults().omitEmptyStrings().splitToList( authServerProperties.getAuthEntryPoint() ) );

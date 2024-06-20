@@ -56,24 +56,12 @@ public interface AuthServiceRpc {
      * @param mchId
      * @param userId
      * @param userName
-     * @return
-     * @throws Exception
-     */
-    TokenResponse genGuestToken(long saasId, long mchId, long userId, String userName);
-
-    /**
-     * 生成guest的token。
-     *
-     * @param saasId
-     * @param mchId
-     * @param userId
-     * @param userName
      * @param checkDoubleLogin 是否检查双登。
-     * @param userIp 登录用户Ip。
+     * @param userIp           登录用户Ip。
      * @return
      * @throws Exception
      */
-    TokenResponse genGuestToken(long saasId, long mchId, long userId, String userName,boolean checkDoubleLogin,String userIp);
+    TokenResponse genGuestToken(long saasId, long mchId, long userId, String userName, String userIp, boolean checkDoubleLogin);
 
     /**
      * 初始化Saas权限。

@@ -10,8 +10,6 @@ import jakarta.annotation.PreDestroy;
 import org.apache.commons.lang3.StringUtils;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
-import org.reflections.scanners.SubTypesScanner;
-import org.reflections.scanners.TypeAnnotationsScanner;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
@@ -27,7 +25,7 @@ import uw.auth.service.annotation.MscPermDeclare;
 import uw.auth.service.conf.AuthServiceProperties;
 import uw.auth.service.constant.AuthType;
 import uw.auth.service.constant.UserType;
-import uw.auth.service.filter.TokenFilter;
+import uw.auth.service.filter.AuthServiceFilter;
 import uw.auth.service.rpc.AuthServiceRpc;
 import uw.auth.service.token.InvalidTokenData;
 import uw.auth.service.util.MscUtils;
@@ -333,7 +331,7 @@ public class AppUpdateService {
             request.setAppVersion( authServiceProperties.getAppVersion() );
             request.setAppHost( authServiceProperties.getAppHost() );
             request.setAppPort( authServiceProperties.getAppPort() );
-            request.setAccessCount( TokenFilter.invokeCounter.longValue() );
+            request.setAccessCount( AuthServiceFilter.invokeCounter.longValue() );
             //设置内存和线程信息。
             Runtime runtime = Runtime.getRuntime();
             request.setJvmMemMax( runtime.maxMemory() );

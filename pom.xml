@@ -9,7 +9,7 @@
     <description>uw-base</description>
     <version>${revision}</version>
     <properties>
-        <revision>2024.0618.2135</revision>
+        <revision>2024.0618.2136</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
@@ -30,7 +30,7 @@
         <uw-notify-client.version>1.0.5</uw-notify-client.version>
         <uw-task.version>5.0.90</uw-task.version>
         <uw-tinyurl-client.version>1.0.5</uw-tinyurl-client.version>
-        <uw-mydb-client.version>1.0.2</uw-mydb-client.version>
+        <uw-mydb-client.version>1.0.3</uw-mydb-client.version>
     </properties>
     <parent>
         <groupId>org.springframework.boot</groupId>

@@ -104,26 +104,26 @@ public class FusionCache {
     /**
      * 向缓存中存入数据。
      *
-     * @param entityName 缓存对象类(主要用于构造cacheName)
+     * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key        缓存主键
      * @param value      数值
      * @return
      */
-    public static void put(Class entityName, Object key, Object value) {
-        put( entityName.getSimpleName(), key, value, false );
+    public static void put(Class entityClass, Object key, Object value) {
+        put( entityClass.getSimpleName(), key, value, false );
     }
 
     /**
      * 向缓存中存入数据。
      *
-     * @param entityName 缓存对象类(主要用于构造cacheName)
+     * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key        缓存主键
      * @param value      数值
      * @param onlyLocal  只更新到本地缓存
      * @return
      */
-    public static void put(Class entityName, Object key, Object value, boolean onlyLocal) {
-        put( entityName.getSimpleName(), key, value, onlyLocal );
+    public static void put(Class entityClass, Object key, Object value, boolean onlyLocal) {
+        put( entityClass.getSimpleName(), key, value, onlyLocal );
     }
 
     /**
@@ -161,22 +161,22 @@ public class FusionCache {
     /**
      * 向缓存中批量存入数据。
      *
-     * @param entityName 缓存对象类(主要用于构造cacheName)
+     * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param map        要存入的批量数据
      */
-    public static void putAll(Class entityName, Map<Object, Object> map) {
-        putAll( entityName.getSimpleName(), map, false );
+    public static void putAll(Class entityClass, Map<Object, Object> map) {
+        putAll( entityClass.getSimpleName(), map, false );
     }
 
     /**
      * 向缓存中批量存入数据。
      *
-     * @param entityName 缓存对象类(主要用于构造cacheName)
+     * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param map        要存入的批量数据
      * @param onlyLocal  只更新到本地缓存
      */
-    public static void putAll(Class entityName, Map<Object, Object> map, boolean onlyLocal) {
-        putAll( entityName.getSimpleName(), map, onlyLocal );
+    public static void putAll(Class entityClass, Map<Object, Object> map, boolean onlyLocal) {
+        putAll( entityClass.getSimpleName(), map, onlyLocal );
     }
 
     /**
@@ -212,13 +212,13 @@ public class FusionCache {
     /**
      * 从缓存中加载数据。
      *
-     * @param entityName 缓存对象类(主要用于构造cacheName)
+     * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key        缓存主键
      * @param <T>
      * @return
      */
-    public static <T> T get(Class entityName, Object key) {
-        return get( entityName.getSimpleName(), key );
+    public static <T> T get(Class entityClass, Object key) {
+        return get( entityClass.getSimpleName(), key );
     }
 
     /**
@@ -248,12 +248,12 @@ public class FusionCache {
     /**
      * 缓存中是否存在指定Key。
      *
-     * @param entityName 缓存对象类(主要用于构造cacheName)
+     * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key        缓存主键
      * @return
      */
-    public static boolean containsKey(Class entityName, Object key) {
-        return containsKey( entityName.getSimpleName(), key );
+    public static boolean containsKey(Class entityClass, Object key) {
+        return containsKey( entityClass.getSimpleName(), key );
     }
 
     /**
@@ -270,11 +270,11 @@ public class FusionCache {
     /**
      * 获得指定缓存大小。
      *
-     * @param entityName 缓存对象类(主要用于构造cacheName)
+     * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @return
      */
-    public static long size(Class entityName) {
-        return size( entityName.getSimpleName() );
+    public static long size(Class entityClass) {
+        return size( entityClass.getSimpleName() );
     }
 
     /**
@@ -291,11 +291,11 @@ public class FusionCache {
     /**
      * 以Map形式返回指定缓存内容。
      *
-     * @param entityName 缓存对象类(主要用于构造cacheName)
+     * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @return
      */
-    public static ConcurrentMap asMap(Class entityName) {
-        return asMap( entityName.getSimpleName() );
+    public static ConcurrentMap asMap(Class entityClass) {
+        return asMap( entityClass.getSimpleName() );
     }
 
     /**
@@ -327,21 +327,21 @@ public class FusionCache {
     /**
      * 获得缓存。
      *
-     * @param entityName
+     * @param entityClass
      * @return
      */
-    public static LoadingCache getLocalCache(Class entityName) {
-        return getLocalCache( entityName.getSimpleName() );
+    public static LoadingCache getLocalCache(Class entityClass) {
+        return getLocalCache( entityClass.getSimpleName() );
     }
 
     /**
      * 获得指定缓存统计信息。
      *
-     * @param entityName 缓存对象类(主要用于构造cacheName)
+     * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @return
      */
-    public static CacheStats stats(Class entityName) {
-        return stats( entityName.getSimpleName() );
+    public static CacheStats stats(Class entityClass) {
+        return stats( entityClass.getSimpleName() );
     }
 
     /**
@@ -358,11 +358,11 @@ public class FusionCache {
     /**
      * 是否包含某个cache。
      *
-     * @param entityName
+     * @param entityClass
      * @return
      */
-    public static boolean existsCache(Class entityName) {
-        return cacheMap.containsKey( entityName.getSimpleName() );
+    public static boolean existsCache(Class entityClass) {
+        return cacheMap.containsKey( entityClass.getSimpleName() );
     }
 
     /**
@@ -379,11 +379,11 @@ public class FusionCache {
      * 从缓存中删除一个对象。
      * 默认通知集群内其他主机。
      *
-     * @param entityName 缓存对象类(主要用于构造cacheName)
+     * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key        缓存主键
      */
-    public static boolean invalidate(Class entityName, Object key) {
-        return invalidate( entityName.getSimpleName(), key, true );
+    public static boolean invalidate(Class entityClass, Object key) {
+        return invalidate( entityClass.getSimpleName(), key, true );
     }
 
     /**
@@ -400,12 +400,12 @@ public class FusionCache {
     /**
      * 从缓存中删除一个对象。
      *
-     * @param entityName 缓存对象类(主要用于构造cacheName)
+     * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key        缓存主键
      * @param notify     是否通知集群内其他主机。
      */
-    public static boolean invalidate(Class entityName, Object key, boolean notify) {
-        return invalidate( entityName.getSimpleName(), key, notify );
+    public static boolean invalidate(Class entityClass, Object key, boolean notify) {
+        return invalidate( entityClass.getSimpleName(), key, notify );
     }
 
     /**
@@ -456,11 +456,11 @@ public class FusionCache {
      * 刷新一个对象。
      * 默认通知集群内其他主机。
      *
-     * @param entityName 缓存对象类(主要用于构造cacheName)
+     * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key        缓存主键
      */
-    public static boolean refresh(Class entityName, Object key) {
-        return refresh( entityName.getSimpleName(), key, true );
+    public static boolean refresh(Class entityClass, Object key) {
+        return refresh( entityClass.getSimpleName(), key, true );
     }
 
     /**
@@ -477,12 +477,12 @@ public class FusionCache {
     /**
      * 刷新一个对象。
      *
-     * @param entityName 缓存对象类(主要用于构造cacheName)
+     * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key        缓存主键
      * @param notify     是否通知集群内其他主机。
      */
-    public static boolean refresh(Class entityName, Object key, boolean notify) {
-        return refresh( entityName.getSimpleName(), key, notify );
+    public static boolean refresh(Class entityClass, Object key, boolean notify) {
+        return refresh( entityClass.getSimpleName(), key, notify );
     }
 
     /**
@@ -583,12 +583,12 @@ public class FusionCache {
         /**
          * 常用构造器。
          *
-         * @param entityName
+         * @param entityClass
          * @param localCacheMaxNum
          * @param globalCacheExpireMillis
          */
-        public Config(Class entityName, int localCacheMaxNum, long globalCacheExpireMillis) {
-            this.cacheName = entityName.getSimpleName();
+        public Config(Class entityClass, int localCacheMaxNum, long globalCacheExpireMillis) {
+            this.cacheName = entityClass.getSimpleName();
             this.localCacheMaxNum = localCacheMaxNum;
             this.globalCacheExpireMillis = globalCacheExpireMillis;
         }
@@ -623,12 +623,12 @@ public class FusionCache {
         /**
          * 常用构造器。
          *
-         * @param entityName
+         * @param entityClass
          * @param localCacheMaxNum
          * @param globalCacheExpireMillis
          */
-        public Config(Class entityName, int localCacheMaxNum, long globalCacheExpireMillis, long failProtectMillis) {
-            this.cacheName = entityName.getSimpleName();
+        public Config(Class entityClass, int localCacheMaxNum, long globalCacheExpireMillis, long failProtectMillis) {
+            this.cacheName = entityClass.getSimpleName();
             this.localCacheMaxNum = localCacheMaxNum;
             this.globalCacheExpireMillis = globalCacheExpireMillis;
             this.failProtectMillis = failProtectMillis;
@@ -660,8 +660,8 @@ public class FusionCache {
             return builder;
         }
 
-        public void setEntityName(Class entityName) {
-            this.cacheName = entityName.getSimpleName();
+        public void setEntityClass(Class entityClass) {
+            this.cacheName = entityClass.getSimpleName();
         }
 
         public String getCacheName() {
@@ -768,11 +768,10 @@ public class FusionCache {
             private Builder() {
             }
 
-            public Builder entityName(Class entityName) {
-                this.cacheName = entityName.getSimpleName();
+            public Builder entityClass(Class entityClass) {
+                this.cacheName = entityClass.getSimpleName();
                 return this;
             }
-
 
             public Builder cacheName(String cacheName) {
                 this.cacheName = cacheName;

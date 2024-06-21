@@ -125,7 +125,7 @@ FusionCache的缓存使用有get,containsKey,size,invalidate方法。每个方�
 
 1. cacheName+key参数对，其中cacheName为config方法中配置的缓存名称。
 
-2. entityName+key参数对。考虑到大部分缓存为实体类缓存，所以更建议使用entity.class参数的传值方式，语义明确，且编译器校验。
+2. entityClass+key参数对。考虑到大部分缓存为实体类缓存，所以更建议使用entity.class参数的传值方式，语义明确，且编译器校验。
 
    
 
@@ -133,33 +133,33 @@ FusionCache的缓存使用有get,containsKey,size,invalidate方法。每个方�
 /**
  * 从缓存中加载数据。
  *
- * @param entityName 缓存对象类(主要用于构造cacheName)
+ * @param entityClass 缓存对象类(主要用于构造cacheName)
  * @param key       缓存主键
  * @param <T>
  * @return
  */
-public static <T> T get(Class entityName, Object key);
+public static <T> T get(Class entityClass, Object key);
 ```
 
 ```java
 /**
  * 缓存中是否存在指定Key。
  *
- * @param entityName 缓存对象类(主要用于构造cacheName)
+ * @param entityClass 缓存对象类(主要用于构造cacheName)
  * @param key        缓存主键
  * @return
  */
-public static boolean containsKey(Class entityName, Object key) ;
+public static boolean containsKey(Class entityClass, Object key) ;
 ```
 
 ```java
 /**
  * 获得指定缓存大小。
  *
- * @param entityName 缓存对象类(主要用于构造cacheName)
+ * @param entityClass 缓存对象类(主要用于构造cacheName)
  * @return
  */
-public static long size(Class entityName);
+public static long size(Class entityClass);
 ```
 
 ```java
@@ -167,10 +167,10 @@ public static long size(Class entityName);
  * 从缓存中删除一个对象。
  * 默认通知集群内其他主机。
  *
- * @param entityName 缓存对象类(主要用于构造cacheName)
+ * @param entityClass 缓存对象类(主要用于构造cacheName)
  * @param key        缓存主键
  */
-public static boolean invalidate(Class entityName, Object key);
+public static boolean invalidate(Class entityClass, Object key);
 ```
 
 ## 缓存作废
@@ -230,7 +230,7 @@ GlobalCache主要方法有get, lockGet。
 除此之外，也使用了类似FusionCache的两种风格的参数。
 
 1. cacheName+key参数对，其中cacheName为config方法中配置的缓存名称。
-2. entityName+key参数对。考虑到大部分缓存为实体类缓存，所以更建议使用entity.class参数的传值方式，语义明确，且编译器校验。
+2. entityClass+key参数对。考虑到大部分缓存为实体类缓存，所以更建议使用entity.class参数的传值方式，语义明确，且编译器校验。
 
 在此基础上，还支持以下参数。
 

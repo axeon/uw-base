@@ -70,13 +70,13 @@ public class GlobalCache {
     /**
      * 向redis中存入缓存值。
      *
-     * @param entityName   缓存对象类(主要用于构造cacheName)
+     * @param entityClass   缓存对象类(主要用于构造cacheName)
      * @param key          主键
      * @param value        数据
      * @param expireMillis 有效期毫秒数。
      */
-    public static <K, V> void put(Class entityName, K key, V value, long expireMillis) {
-        put( entityName.getSimpleName(), key, value, expireMillis );
+    public static <K, V> void put(Class entityClass, K key, V value, long expireMillis) {
+        put( entityClass.getSimpleName(), key, value, expireMillis );
     }
 
     /**
@@ -103,15 +103,15 @@ public class GlobalCache {
      * 加jvm锁从redis中获取缓存值。
      * 获取不到时加jvm锁去执行函数获取。
      *
-     * @param entityName      缓存对象类(主要用于构造cacheName)
+     * @param entityClass      缓存对象类(主要用于构造cacheName)
      * @param key             主键
      * @param cacheDataLoader 加载数据的函数
      * @param expireMillis    有效期毫秒数。
      * @param <V>
      * @return
      */
-    public static <K, V> V get(Class entityName, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis) {
-        return get( entityName.getSimpleName(), key, cacheDataLoader, expireMillis );
+    public static <K, V> V get(Class entityClass, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis) {
+        return get( entityClass.getSimpleName(), key, cacheDataLoader, expireMillis );
     }
 
     /**
@@ -133,7 +133,7 @@ public class GlobalCache {
      * 加jvm锁从redis中获取缓存值。
      * 获取不到时加jvm锁去执行函数获取。
      *
-     * @param entityName           缓存对象类(主要用于构造cacheName)
+     * @param entityClass           缓存对象类(主要用于构造cacheName)
      * @param key                  主键
      * @param cacheDataLoader      加载数据的函数
      * @param expireMillis         有效期毫秒数。
@@ -142,9 +142,9 @@ public class GlobalCache {
      * @param reloadMaxTimes       重载次数
      * @return
      */
-    public static <K, V> V get(Class entityName, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long failProtectMillis, long reloadIntervalMillis,
+    public static <K, V> V get(Class entityClass, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long failProtectMillis, long reloadIntervalMillis,
                                int reloadMaxTimes) {
-        return get( entityName.getSimpleName(), key, cacheDataLoader, expireMillis, failProtectMillis, reloadIntervalMillis, reloadMaxTimes );
+        return get( entityClass.getSimpleName(), key, cacheDataLoader, expireMillis, failProtectMillis, reloadIntervalMillis, reloadMaxTimes );
     }
 
     /**
@@ -216,12 +216,12 @@ public class GlobalCache {
     /**
      * 删除缓存中的数据。
      *
-     * @param entityName 缓存对象类(主要用于构造cacheName)
+     * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key
      * @return
      */
-    public static boolean invalidate(Class entityName, Object key) {
-        return invalidate( entityName.getSimpleName(), key );
+    public static boolean invalidate(Class entityClass, Object key) {
+        return invalidate( entityClass.getSimpleName(), key );
     }
 
     /**
@@ -250,7 +250,7 @@ public class GlobalCache {
      * 加jvm锁从redis中获取缓存值。
      * 获取不到时加jvm锁去执行函数获取。
      *
-     * @param entityName        缓存对象类(主要用于构造cacheName)
+     * @param entityClass        缓存对象类(主要用于构造cacheName)
      * @param key               主键
      * @param cacheDataLoader   加载数据的函数
      * @param expireMillis      有效期毫秒数。
@@ -258,8 +258,8 @@ public class GlobalCache {
      * @param <V>
      * @return
      */
-    public static <K, V> V get(Class entityName, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long failProtectMillis) {
-        return get( entityName.getSimpleName(), key, cacheDataLoader, expireMillis, failProtectMillis );
+    public static <K, V> V get(Class entityClass, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long failProtectMillis) {
+        return get( entityClass.getSimpleName(), key, cacheDataLoader, expireMillis, failProtectMillis );
     }
 
     /**
@@ -282,14 +282,14 @@ public class GlobalCache {
      * 从redis中获取缓存值。
      * 获取不到时加redis锁去执行函数获取。
      *
-     * @param entityName      缓存对象类(主要用于构造cacheName)
+     * @param entityClass      缓存对象类(主要用于构造cacheName)
      * @param key             缓存主键
      * @param cacheDataLoader 加载数据函数
      * @param expireMillis    有效期毫秒数。
      * @return
      */
-    public static <V> V lockGet(Class entityName, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis) {
-        return lockGet( entityName.getSimpleName(), key, cacheDataLoader, expireMillis );
+    public static <V> V lockGet(Class entityClass, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis) {
+        return lockGet( entityClass.getSimpleName(), key, cacheDataLoader, expireMillis );
     }
 
     /**
@@ -311,7 +311,7 @@ public class GlobalCache {
      * 从redis中获取缓存值。
      * 获取不到时加redis锁去执行函数获取。
      *
-     * @param entityName             缓存对象类(主要用于构造cacheName)
+     * @param entityClass             缓存对象类(主要用于构造cacheName)
      * @param key                    缓存主键
      * @param cacheDataLoader        加载数据函数
      * @param expireMillis           有效期毫秒数。
@@ -322,9 +322,9 @@ public class GlobalCache {
      * @param lockWaitMaxTimes
      * @return
      */
-    public static <V> V lockGet(Class entityName, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long failProtectMillis, long reloadIntervalMillis,
+    public static <V> V lockGet(Class entityClass, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long failProtectMillis, long reloadIntervalMillis,
                                 int reloadMaxTimes, long lockWaitIntervalMillis, int lockWaitMaxTimes) {
-        return lockGet( entityName.getSimpleName(), key, cacheDataLoader, expireMillis, failProtectMillis, reloadIntervalMillis, reloadMaxTimes, lockWaitIntervalMillis,
+        return lockGet( entityClass.getSimpleName(), key, cacheDataLoader, expireMillis, failProtectMillis, reloadIntervalMillis, reloadMaxTimes, lockWaitIntervalMillis,
                 lockWaitMaxTimes );
     }
 
@@ -413,15 +413,15 @@ public class GlobalCache {
      * 从redis中获取缓存值。
      * 获取不到时加redis锁去执行函数获取。
      *
-     * @param entityName        缓存对象类(主要用于构造cacheName)
+     * @param entityClass        缓存对象类(主要用于构造cacheName)
      * @param key               缓存主键
      * @param cacheDataLoader   加载数据函数
      * @param expireMillis      有效期毫秒数。
      * @param failProtectMillis
      * @return
      */
-    public static <V> V lockGet(Class entityName, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long failProtectMillis) {
-        return lockGet( entityName.getSimpleName(), key, cacheDataLoader, expireMillis, failProtectMillis );
+    public static <V> V lockGet(Class entityClass, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long failProtectMillis) {
+        return lockGet( entityClass.getSimpleName(), key, cacheDataLoader, expireMillis, failProtectMillis );
     }
 
     /**

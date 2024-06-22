@@ -5,14 +5,14 @@ package uw.cache.vo;
  * 原本可以在expiry中设置null类型的保护时间，caffeine开expiry检测后性能下降200倍。
  * 遂使用特定FailProtectValue设置expired方式来规避此性能问题。
  */
-public class FailProtectValue {
+public class CacheProtectedValue {
 
     /**
      * 过期时间。
      */
     private long expiredMillis;
 
-    public FailProtectValue(long ttl) {
+    public CacheProtectedValue(long ttl) {
         expiredMillis = System.currentTimeMillis() + ttl;
     }
 

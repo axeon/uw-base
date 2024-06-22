@@ -10,7 +10,7 @@ import uw.cache.constant.CacheNotifyType;
 import uw.cache.loader.GlobalFusionCacheLoader;
 import uw.cache.loader.LocalRetryCacheLoader;
 import uw.cache.loader.NoneCacheLoader;
-import uw.cache.vo.FailProtectValue;
+import uw.cache.vo.CacheProtectedValue;
 import uw.cache.vo.FusionCacheNotifyMessage;
 
 import java.util.Map;
@@ -232,7 +232,7 @@ public class FusionCache {
     public static <T> T get(String cacheName, Object key) {
         LoadingCache cache = getLocalCache( cacheName );
         Object value = cache.get( key );
-        if (value instanceof FailProtectValue failProtectValue) {
+        if (value instanceof CacheProtectedValue failProtectValue) {
             if (failProtectValue.isExpired()) {
                 cache.invalidate( key );
                 return get( cacheName, key );
@@ -557,8 +557,13 @@ public class FusionCache {
          */
         private long globalCacheExpireMillis = -1;
         /**
+         * 空值保护毫秒数，默认为60秒。
+         * 当reload方法获得null的时候，将会保护一段时间，防穿透。
+         */
+        private long nullProtectMillis = 60_000L;
+        /**
          * 失败保护毫秒数，默认为60秒。
-         * 当reload方法没有获得数据的时候，将会保护一段时间，防穿透。
+         * 当reload方法异常的时候，将会保护一段时间，防穿透。
          */
         private long failProtectMillis = 60_000L;
         /**
@@ -609,36 +614,40 @@ public class FusionCache {
         /**
          * 常用构造器。
          *
-         * @param cacheName
+         * @param entityClass
          * @param localCacheMaxNum
          * @param globalCacheExpireMillis
          */
-        public Config(String cacheName, int localCacheMaxNum, long globalCacheExpireMillis, long failProtectMillis) {
-            this.cacheName = cacheName;
+        public Config(Class entityClass, int localCacheMaxNum, long globalCacheExpireMillis, long nullProtectMillis, long failProtectMillis) {
+            this.cacheName = entityClass.getSimpleName();
             this.localCacheMaxNum = localCacheMaxNum;
             this.globalCacheExpireMillis = globalCacheExpireMillis;
+            this.nullProtectMillis = nullProtectMillis;
             this.failProtectMillis = failProtectMillis;
         }
 
         /**
          * 常用构造器。
          *
-         * @param entityClass
+         * @param cacheName
          * @param localCacheMaxNum
          * @param globalCacheExpireMillis
          */
-        public Config(Class entityClass, int localCacheMaxNum, long globalCacheExpireMillis, long failProtectMillis) {
-            this.cacheName = entityClass.getSimpleName();
+        public Config(String cacheName, int localCacheMaxNum, long globalCacheExpireMillis, long nullProtectMillis, long failProtectMillis) {
+            this.cacheName = cacheName;
             this.localCacheMaxNum = localCacheMaxNum;
             this.globalCacheExpireMillis = globalCacheExpireMillis;
+            this.nullProtectMillis = nullProtectMillis;
             this.failProtectMillis = failProtectMillis;
         }
+
 
         private Config(Builder builder) {
             setCacheName( builder.cacheName );
             setLocalCacheMaxNum( builder.localCacheMaxNum );
             setLocalCacheExpireMillis( builder.localCacheExpireMillis );
             setGlobalCacheExpireMillis( builder.globalCacheExpireMillis );
+            setNullProtectMillis( builder.nullProtectMillis );
             setFailProtectMillis( builder.failProtectMillis );
             setReloadIntervalMillis( builder.reloadIntervalMillis );
             setReloadMaxTimes( builder.reloadMaxTimes );
@@ -654,11 +663,13 @@ public class FusionCache {
             builder.localCacheMaxNum = copy.getLocalCacheMaxNum();
             builder.localCacheExpireMillis = copy.getLocalCacheExpireMillis();
             builder.globalCacheExpireMillis = copy.getGlobalCacheExpireMillis();
+            builder.nullProtectMillis = copy.getNullProtectMillis();
             builder.failProtectMillis = copy.getFailProtectMillis();
             builder.reloadIntervalMillis = copy.getReloadIntervalMillis();
             builder.reloadMaxTimes = copy.getReloadMaxTimes();
             return builder;
         }
+
 
         public void setEntityClass(Class entityClass) {
             this.cacheName = entityClass.getSimpleName();
@@ -694,6 +705,14 @@ public class FusionCache {
 
         public void setGlobalCacheExpireMillis(long globalCacheExpireMillis) {
             this.globalCacheExpireMillis = globalCacheExpireMillis;
+        }
+
+        public long getNullProtectMillis() {
+            return nullProtectMillis;
+        }
+
+        public void setNullProtectMillis(long nullProtectMillis) {
+            this.nullProtectMillis = nullProtectMillis;
         }
 
         public long getFailProtectMillis() {
@@ -746,6 +765,11 @@ public class FusionCache {
              * 鉴于redis的特性，一般建议设置一个有效期，防止redis爆库。
              */
             private long globalCacheExpireMillis = -1;
+            /**
+             * 空值保护毫秒数，默认为60秒。
+             * 当reload方法获得null的时候，将会保护一段时间，防穿透。
+             */
+            private long nullProtectMillis= 60_000L;
 
             /**
              * 失败保护毫秒数，默认为60秒。
@@ -766,6 +790,10 @@ public class FusionCache {
             private int reloadMaxTimes = 10;
 
             private Builder() {
+            }
+
+            public static Builder builder() {
+                return new Builder();
             }
 
             public Builder entityClass(Class entityClass) {
@@ -793,6 +821,11 @@ public class FusionCache {
                 return this;
             }
 
+            public Builder nullProtectMillis(long nullProtectMillis) {
+                this.nullProtectMillis = nullProtectMillis;
+                return this;
+            }
+
             public Builder failProtectMillis(long failProtectMillis) {
                 this.failProtectMillis = failProtectMillis;
                 return this;
@@ -807,7 +840,6 @@ public class FusionCache {
                 this.reloadMaxTimes = reloadMaxTimes;
                 return this;
             }
-
 
             public Config build() {
                 return new Config( this );

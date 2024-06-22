@@ -1,12 +1,12 @@
 package uw.cache;
 
-import org.checkerframework.checker.units.qual.K;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import uw.cache.util.KryoUtils;
 import uw.cache.util.RedisKeyUtils;
+import uw.cache.vo.CacheProtectedValue;
 
 import java.lang.reflect.*;
 import java.util.Set;
@@ -36,6 +36,11 @@ public class GlobalCache {
      * 等待锁的重试等待间隔。
      */
     public static final long DEFAULT_LOCK_WAIT_INTERVAL_MILLIS = 200L;
+
+    /**
+     * 返回空值的保护时间。
+     */
+    public static final long DEFAULT_NULL_PROTECT_MILLIS = 60_000L;
 
     /**
      * 加载失败的保护时间。
@@ -70,7 +75,7 @@ public class GlobalCache {
     /**
      * 向redis中存入缓存值。
      *
-     * @param entityClass   缓存对象类(主要用于构造cacheName)
+     * @param entityClass  缓存对象类(主要用于构造cacheName)
      * @param key          主键
      * @param value        数据
      * @param expireMillis 有效期毫秒数。
@@ -103,7 +108,7 @@ public class GlobalCache {
      * 加jvm锁从redis中获取缓存值。
      * 获取不到时加jvm锁去执行函数获取。
      *
-     * @param entityClass      缓存对象类(主要用于构造cacheName)
+     * @param entityClass     缓存对象类(主要用于构造cacheName)
      * @param key             主键
      * @param cacheDataLoader 加载数据的函数
      * @param expireMillis    有效期毫秒数。
@@ -126,14 +131,15 @@ public class GlobalCache {
      * @return
      */
     public static <K, V> V get(String cacheName, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis) {
-        return get( cacheName, key, cacheDataLoader, expireMillis, DEFAULT_FAIL_PROTECT_MILLIS, DEFAULT_RELOAD_INTERVAL_MILLIS, DEFAULT_RELOAD_MAX_TIMES );
+        return get( cacheName, key, cacheDataLoader, expireMillis, DEFAULT_NULL_PROTECT_MILLIS, DEFAULT_FAIL_PROTECT_MILLIS, DEFAULT_RELOAD_INTERVAL_MILLIS,
+                DEFAULT_RELOAD_MAX_TIMES );
     }
 
     /**
      * 加jvm锁从redis中获取缓存值。
      * 获取不到时加jvm锁去执行函数获取。
      *
-     * @param entityClass           缓存对象类(主要用于构造cacheName)
+     * @param entityClass          缓存对象类(主要用于构造cacheName)
      * @param key                  主键
      * @param cacheDataLoader      加载数据的函数
      * @param expireMillis         有效期毫秒数。
@@ -142,26 +148,54 @@ public class GlobalCache {
      * @param reloadMaxTimes       重载次数
      * @return
      */
-    public static <K, V> V get(Class entityClass, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long failProtectMillis, long reloadIntervalMillis,
-                               int reloadMaxTimes) {
-        return get( entityClass.getSimpleName(), key, cacheDataLoader, expireMillis, failProtectMillis, reloadIntervalMillis, reloadMaxTimes );
+    public static <K, V> V get(Class entityClass, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long nullProtectMillis, long failProtectMillis,
+                               long reloadIntervalMillis, int reloadMaxTimes) {
+        return get( entityClass.getSimpleName(), key, cacheDataLoader, expireMillis, nullProtectMillis, failProtectMillis, reloadIntervalMillis, reloadMaxTimes );
     }
 
     /**
      * 加jvm锁从redis中获取缓存值。
      * 获取不到时加jvm锁去执行函数获取。
+     * <p>
+     * 对于失败保护，则返回CacheProtectedValue。
      *
      * @param cacheName            缓存名
      * @param key                  主键
      * @param cacheDataLoader      加载数据的函数
      * @param expireMillis         有效期毫秒数。
+     * @param nullProtectMillis    空值保护毫秒数
      * @param failProtectMillis    失败保护毫秒数
      * @param reloadIntervalMillis 重载间隔毫秒数
      * @param reloadMaxTimes       重载次数
      * @return
      */
-    public static <K, V> V get(String cacheName, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long failProtectMillis, long reloadIntervalMillis,
-                               int reloadMaxTimes) {
+    public static <K, V> V get(String cacheName, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long nullProtectMillis, long failProtectMillis,
+                               long reloadIntervalMillis, int reloadMaxTimes) {
+        V value = loadWithProtectedValue( cacheName, key, cacheDataLoader, expireMillis, nullProtectMillis, failProtectMillis, reloadIntervalMillis, reloadMaxTimes );
+        if (value instanceof CacheProtectedValue protectValue) {
+            return null;
+        }
+        return value;
+    }
+
+    /**
+     * 加jvm锁从redis中获取缓存值。
+     * 获取不到时加jvm锁去执行函数获取。
+     * <p>
+     * 对于失败保护，则返回CacheProtectedValue。
+     *
+     * @param cacheName            缓存名
+     * @param key                  主键
+     * @param cacheDataLoader      加载数据的函数
+     * @param expireMillis         有效期毫秒数。
+     * @param nullProtectMillis    空值保护毫秒数
+     * @param failProtectMillis    失败保护毫秒数
+     * @param reloadIntervalMillis 重载间隔毫秒数
+     * @param reloadMaxTimes       重载次数
+     * @return
+     */
+    public static <K, V> V loadWithProtectedValue(String cacheName, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long nullProtectMillis, long failProtectMillis,
+                                                  long reloadIntervalMillis, int reloadMaxTimes) {
         //组成真正的RedisKey
         String redisKey = RedisKeyUtils.buildTypeId( REDIS_PREFIX, cacheName, key );
         // 从redis中获取value.
@@ -173,9 +207,13 @@ public class GlobalCache {
                 //直接返回。
                 return null;
             } else {
-                //正常数据
-                value = (V) KryoUtils.deserialize( redisData, type2Class( cacheDataLoader.getValueType() ) );
-                if (value != null) {
+                try {
+                    //正常数据
+                    value = (V) KryoUtils.deserialize( redisData, type2Class( cacheDataLoader.getValueType() ) );
+                    return value;
+                } catch (Throwable e) {
+                    //正常数据
+                    value = (V) KryoUtils.deserialize( redisData, CacheProtectedValue.class );
                     return value;
                 }
             }
@@ -190,27 +228,49 @@ public class GlobalCache {
                     return null;
                 } else {
                     //正常数据
-                    value = (V) KryoUtils.deserialize( redisData, type2Class( cacheDataLoader.getValueType() ) );
-                    if (value != null) {
+                    try {
+                        //正常数据
+                        value = (V) KryoUtils.deserialize( redisData, type2Class( cacheDataLoader.getValueType() ) );
+                        return value;
+                    } catch (Throwable e) {
+                        //正常数据
+                        value = (V) KryoUtils.deserialize( redisData, CacheProtectedValue.class );
                         return value;
                     }
                 }
             }
             // 假如还是没有get到值 则就是apply方法执行报错了 可以尝试继续执行 再放入redis
-            value = tryLoadData( cacheName, key, cacheDataLoader, reloadIntervalMillis, reloadMaxTimes );
-            if (value == null) {
-                //设置失败保护，防止重复请求。
-                opsForValue.set( redisKey, FAIL_MAGIC_DATA, failProtectMillis, TimeUnit.MILLISECONDS );
-            } else {
-                redisData = KryoUtils.serialize( value );
-                if (expireMillis == 0) {
-                    opsForValue.set( redisKey, redisData );
-                } else {
-                    opsForValue.set( redisKey, redisData, expireMillis, TimeUnit.MILLISECONDS );
+            for (int retryTimes = 0; retryTimes < reloadMaxTimes; retryTimes++) {
+                try {
+                    value = cacheDataLoader.load( key );
+                    if (value == null) {
+                        value = (V) new CacheProtectedValue( nullProtectMillis );
+                        expireMillis = nullProtectMillis;
+                    }
+                    //正常执行就退出吧。
+                    break;
+                } catch (Throwable e) {
+                    logger.error( "Global数据加载失败! cacheName:{}, key:{}, retryTimes:{}, msg:{}", cacheName, key, retryTimes, e.getMessage(), e );
+                }
+                try {
+                    Thread.sleep( reloadIntervalMillis );
+                } catch (InterruptedException e) {
                 }
             }
-            return value;
+            // 如果此时还没有得到数值，说明加载彻底失败。
+            if (value == null) {
+                value = (V) new CacheProtectedValue( failProtectMillis );
+                expireMillis = failProtectMillis;
+            }
+            //序列化写库。
+            redisData = KryoUtils.serialize( value );
+            if (expireMillis == 0) {
+                opsForValue.set( redisKey, redisData );
+            } else {
+                opsForValue.set( redisKey, redisData, expireMillis, TimeUnit.MILLISECONDS );
+            }
         }
+        return value;
     }
 
     /**
@@ -250,7 +310,7 @@ public class GlobalCache {
      * 加jvm锁从redis中获取缓存值。
      * 获取不到时加jvm锁去执行函数获取。
      *
-     * @param entityClass        缓存对象类(主要用于构造cacheName)
+     * @param entityClass       缓存对象类(主要用于构造cacheName)
      * @param key               主键
      * @param cacheDataLoader   加载数据的函数
      * @param expireMillis      有效期毫秒数。
@@ -275,169 +335,7 @@ public class GlobalCache {
      * @return
      */
     public static <K, V> V get(String cacheName, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long failProtectMillis) {
-        return get( cacheName, key, cacheDataLoader, expireMillis, failProtectMillis, DEFAULT_RELOAD_INTERVAL_MILLIS, DEFAULT_RELOAD_MAX_TIMES );
-    }
-
-    /**
-     * 从redis中获取缓存值。
-     * 获取不到时加redis锁去执行函数获取。
-     *
-     * @param entityClass      缓存对象类(主要用于构造cacheName)
-     * @param key             缓存主键
-     * @param cacheDataLoader 加载数据函数
-     * @param expireMillis    有效期毫秒数。
-     * @return
-     */
-    public static <V> V lockGet(Class entityClass, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis) {
-        return lockGet( entityClass.getSimpleName(), key, cacheDataLoader, expireMillis );
-    }
-
-    /**
-     * 从redis中获取缓存值。
-     * 获取不到时加redis锁去执行函数获取。
-     *
-     * @param cacheName       缓存名
-     * @param key             缓存主键
-     * @param cacheDataLoader 加载数据函数
-     * @param expireMillis    有效期毫秒数。
-     * @return
-     */
-    public static <V> V lockGet(String cacheName, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis) {
-        return lockGet( cacheName, key, cacheDataLoader, expireMillis, DEFAULT_FAIL_PROTECT_MILLIS, DEFAULT_RELOAD_INTERVAL_MILLIS, DEFAULT_RELOAD_MAX_TIMES,
-                DEFAULT_LOCK_WAIT_INTERVAL_MILLIS, DEFAULT_LOCK_WAIT_MAX_TIMES );
-    }
-
-    /**
-     * 从redis中获取缓存值。
-     * 获取不到时加redis锁去执行函数获取。
-     *
-     * @param entityClass             缓存对象类(主要用于构造cacheName)
-     * @param key                    缓存主键
-     * @param cacheDataLoader        加载数据函数
-     * @param expireMillis           有效期毫秒数。
-     * @param failProtectMillis
-     * @param reloadIntervalMillis
-     * @param reloadMaxTimes
-     * @param lockWaitIntervalMillis
-     * @param lockWaitMaxTimes
-     * @return
-     */
-    public static <V> V lockGet(Class entityClass, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long failProtectMillis, long reloadIntervalMillis,
-                                int reloadMaxTimes, long lockWaitIntervalMillis, int lockWaitMaxTimes) {
-        return lockGet( entityClass.getSimpleName(), key, cacheDataLoader, expireMillis, failProtectMillis, reloadIntervalMillis, reloadMaxTimes, lockWaitIntervalMillis,
-                lockWaitMaxTimes );
-    }
-
-    /**
-     * 从redis中获取缓存值。
-     * 获取不到时加redis锁去执行函数获取。
-     *
-     * @param cacheName              缓存名
-     * @param key                    缓存主键
-     * @param cacheDataLoader        加载数据函数
-     * @param expireMillis           有效期毫秒数。
-     * @param failProtectMillis
-     * @param reloadIntervalMillis
-     * @param reloadMaxTimes
-     * @param lockWaitIntervalMillis
-     * @param lockWaitMaxTimes
-     * @return
-     */
-    public static <V> V lockGet(String cacheName, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long failProtectMillis, long reloadIntervalMillis,
-                                int reloadMaxTimes, long lockWaitIntervalMillis, int lockWaitMaxTimes) {
-        //组成真正的RedisKey
-        String redisKey = RedisKeyUtils.buildTypeId( REDIS_PREFIX, cacheName, key );
-        // 从redis中获取value.
-        byte[] redisData = opsForValue.get( redisKey );
-        //对象数值。
-        V value = null;
-        if (redisData != null) {
-            if (redisData.length == 0) {
-                //直接返回。
-                return null;
-            } else {
-                //正常数据
-                value = (V) KryoUtils.deserialize( redisData, type2Class( cacheDataLoader.getValueType() ) );
-                if (value != null) {
-                    return value;
-                }
-            }
-        }
-        //尝试加锁。
-        long lockerStamp = GlobalLocker.tryLock( cacheName, key, lockWaitIntervalMillis );
-        if (lockerStamp > 0) {
-            // 假如还是没有get到值 则就是apply方法执行报错了 可以尝试继续执行 再放入redis
-            value = tryLoadData( cacheName, key, cacheDataLoader, reloadIntervalMillis, reloadMaxTimes );
-            if (value == null) {
-                //设置失败保护，防止重复请求。
-                opsForValue.set( redisKey, FAIL_MAGIC_DATA, failProtectMillis, TimeUnit.MILLISECONDS );
-            } else {
-                redisData = KryoUtils.serialize( value );
-                if (expireMillis == 0) {
-                    opsForValue.set( redisKey, redisData );
-                } else {
-                    opsForValue.set( redisKey, redisData, expireMillis, TimeUnit.MILLISECONDS );
-                }
-            }
-            GlobalLocker.unlock( cacheName, key, lockerStamp );
-            return value;
-        } else {
-            //自旋重试。
-            for (int retryTimes = 0; retryTimes < lockWaitMaxTimes; retryTimes++) {
-                redisData = opsForValue.get( redisKey );
-                if (redisData != null) {
-                    if (redisData.length == 0) {
-                        //直接返回。
-                        return null;
-                    } else {
-                        //正常数据
-                        value = (V) KryoUtils.deserialize( redisData, type2Class( cacheDataLoader.getValueType() ) );
-                        if (value != null) {
-                            return value;
-                        }
-                    }
-                }
-                try {
-                    Thread.sleep( lockWaitIntervalMillis );
-                } catch (InterruptedException e) {
-                }
-
-            }
-            //超过自旋重试次数，直接返回null。
-            return null;
-        }
-
-    }
-
-    /**
-     * 从redis中获取缓存值。
-     * 获取不到时加redis锁去执行函数获取。
-     *
-     * @param entityClass        缓存对象类(主要用于构造cacheName)
-     * @param key               缓存主键
-     * @param cacheDataLoader   加载数据函数
-     * @param expireMillis      有效期毫秒数。
-     * @param failProtectMillis
-     * @return
-     */
-    public static <V> V lockGet(Class entityClass, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long failProtectMillis) {
-        return lockGet( entityClass.getSimpleName(), key, cacheDataLoader, expireMillis, failProtectMillis );
-    }
-
-    /**
-     * 从redis中获取缓存值。
-     * 获取不到时加redis锁去执行函数获取。
-     *
-     * @param cacheName         缓存名
-     * @param key               缓存主键
-     * @param cacheDataLoader   加载函数
-     * @param expireMillis      有效期毫秒数。
-     * @param failProtectMillis
-     * @return
-     */
-    public static <V> V lockGet(String cacheName, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long failProtectMillis) {
-        return lockGet( cacheName, key, cacheDataLoader, expireMillis, failProtectMillis, DEFAULT_RELOAD_INTERVAL_MILLIS, DEFAULT_RELOAD_MAX_TIMES,
-                DEFAULT_LOCK_WAIT_INTERVAL_MILLIS, DEFAULT_LOCK_WAIT_MAX_TIMES );
+        return get( cacheName, key, cacheDataLoader, expireMillis, failProtectMillis, DEFAULT_NULL_PROTECT_MILLIS, DEFAULT_RELOAD_INTERVAL_MILLIS, DEFAULT_RELOAD_MAX_TIMES );
     }
 
     /**
@@ -448,32 +346,6 @@ public class GlobalCache {
      */
     public static void notifyMsg(String channel, Object message) {
         cacheRedisTemplate.convertAndSend( channel, KryoUtils.serialize( message ) );
-    }
-
-    /**
-     * 重试加载。
-     * 如果function返回null，或者多次重试失败，将会写入保护数值，防止穿透。
-     *
-     * @param <V>
-     * @param key
-     * @param dataLoader
-     * @param reloadIntervalMillis 重试间隔毫秒数
-     * @param reloadMaxTimes       最大重试次数
-     * @return
-     */
-    private static <K, V> V tryLoadData(String cacheName, K key, CacheDataLoader<K, V> dataLoader, long reloadIntervalMillis, int reloadMaxTimes) {
-        for (int retryTimes = 0; retryTimes < reloadMaxTimes; retryTimes++) {
-            try {
-                return dataLoader.load( key );
-            } catch (Throwable e) {
-                logger.error( "Global数据加载失败! cacheName:{}, key:{}, retryTimes:{}, msg:{}", cacheName, key, retryTimes, e.getMessage(), e );
-            }
-            try {
-                Thread.sleep( reloadIntervalMillis );
-            } catch (InterruptedException e) {
-            }
-        }
-        return null;
     }
 
     /**

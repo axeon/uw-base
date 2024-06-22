@@ -102,8 +102,13 @@ private long localCacheExpireMillis = 0L;
  */
 private long globalCacheExpireMillis = -1;
 /**
+ * 空值保护毫秒数，默认为60秒。
+ * 当reload方法获得null的时候，将会保护一段时间，防穿透。
+ */
+private long nullProtectMillis = 60_000L;
+/**
  * 失败保护毫秒数，默认为60秒。
- * 当reload方法没有获得数据的时候，将会保护一段时间，防穿透。
+ * 当reload方法异常的时候，将会保护一段时间，防穿透。
  */
 private long failProtectMillis = 60_000L;
 /**
@@ -126,8 +131,6 @@ FusionCache的缓存使用有get,containsKey,size,invalidate方法。每个方�
 1. cacheName+key参数对，其中cacheName为config方法中配置的缓存名称。
 
 2. entityClass+key参数对。考虑到大部分缓存为实体类缓存，所以更建议使用entity.class参数的传值方式，语义明确，且编译器校验。
-
-   
 
 ```java
 /**
@@ -219,11 +222,9 @@ GlobalCache是完全基于redis的缓存，如果数据访问量不大，那么�
 
 ## 主要方法
 
-GlobalCache主要方法有get, lockGet。
+GlobalCache主要方法有get。
 
 - get方法：使用jvm级别的锁，一般此方法已经足够用。
-
-- lockGet方法，使用redis setnx锁，确定性更好，但性能更差。
 
 ## 参数风格
 
@@ -241,8 +242,13 @@ GlobalCache主要方法有get, lockGet。
  */
 private long expireMillis = -1;
 /**
+ * 空值保护毫秒数，默认为60秒。
+ * 当reload方法获得null的时候，将会保护一段时间，防穿透。
+ */
+private long nullProtectMillis = 60_000L;
+/**
  * 失败保护毫秒数，默认为60秒。
- * 当reload方法没有获得数据的时候，将会保护一段时间，防穿透。
+ * 当reload方法异常的时候，将会保护一段时间，防穿透。
  */
 private long failProtectMillis = 60_000L;
 /**

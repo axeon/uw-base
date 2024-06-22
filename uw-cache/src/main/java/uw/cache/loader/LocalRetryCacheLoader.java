@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.cache.CacheDataLoader;
 import uw.cache.FusionCache;
-import uw.cache.vo.FailProtectValue;
+import uw.cache.vo.CacheProtectedValue;
 
 /**
  * 重试缓存Loader
@@ -43,7 +43,7 @@ public class LocalRetryCacheLoader<K, V> implements CacheLoader<K, V> {
             try {
                 V value = cacheDataLoader.load( key );
                 if (value == null) {
-                    value = (V) new FailProtectValue( cacheConfig.getFailProtectMillis() );
+                    value = (V) new CacheProtectedValue( cacheConfig.getNullProtectMillis() );
                 }
                 return value;
             } catch (Throwable e) {
@@ -55,6 +55,6 @@ public class LocalRetryCacheLoader<K, V> implements CacheLoader<K, V> {
             }
             retryTimes++;
         } while (retryTimes < cacheConfig.getReloadMaxTimes());
-        return (V) new FailProtectValue( cacheConfig.getFailProtectMillis() );
+        return (V) new CacheProtectedValue( cacheConfig.getFailProtectMillis() );
     }
 }

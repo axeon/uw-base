@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestTemplate;
-import uw.notify.client.NotifyClient;
+import uw.notify.client.WebNotifyClient;
 
 /**
  * 启动自动配置。
@@ -19,7 +19,7 @@ public class UwNotifyAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public NotifyClient uwNotifyHelper(UwNotifyProperties uwNotifyProperties, RestTemplate tokenRestTemplate) {
-        return new NotifyClient( uwNotifyProperties, tokenRestTemplate );
+    public WebNotifyClient uwNotifyHelper(UwNotifyProperties uwNotifyProperties, RestTemplate tokenRestTemplate) {
+        return new WebNotifyClient( uwNotifyProperties, tokenRestTemplate );
     }
 }

@@ -22,7 +22,7 @@ public class AppCommonAutoConfiguration {
 
     @Bean
     @Primary
-    public AuthCriticalLogStorage authCriticalLogStorage(AppCommonProperties uwAppBaseProperties) {
+    public AuthCriticalLogStorage SysCritLogStorageService(AppCommonProperties uwAppBaseProperties) {
         log.info( "init SysCritLogStorageService!" );
         return new SysCritLogStorageService(uwAppBaseProperties);
     }

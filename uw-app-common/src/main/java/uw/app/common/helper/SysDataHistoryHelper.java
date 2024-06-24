@@ -28,15 +28,6 @@ public class SysDataHistoryHelper {
     private static final ObjectMapper mapper = JsonInterfaceHelper.JSON_CONVERTER;
 
     /**
-     * 获得历史记录列表。
-     *
-     * @return
-     */
-    public static DataList<SysDataHistory> listHistory(SysDataHistoryQueryParam queryParam) throws TransactionException {
-        return dao.list( SysDataHistory.class, queryParam );
-    }
-
-    /**
      * 保存历史记录。
      * @param entityId 实体ID
      * @param entityData 实体数据

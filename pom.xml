@@ -9,7 +9,7 @@
     <description>uw-base</description>
     <version>${revision}</version>
     <properties>
-        <revision>2024.0623.2016</revision>
+        <revision>2024.0623.2018</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
@@ -17,7 +17,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <spring-cloud.version>2023.0.1</spring-cloud.version>
         <spring-cloud.alibaba.version>2023.0.1.0</spring-cloud.alibaba.version>
-        <uw-app-common.version>1.0.6</uw-app-common.version>
+        <uw-app-common.version>1.0.7</uw-app-common.version>
         <uw-common.version>1.0.9</uw-common.version>
         <uw-auth-client.version>6.0.18</uw-auth-client.version>
         <uw-auth-service.version>6.0.96</uw-auth-service.version>

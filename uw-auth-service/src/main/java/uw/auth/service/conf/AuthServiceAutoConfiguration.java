@@ -156,7 +156,7 @@ public class AuthServiceAutoConfiguration {
      * @return
      */
     @Bean
-    public AuthCriticalLogStorage getNoneStorage() {
+    public AuthCriticalLogStorage authCriticalLogStorage() {
         return new AuthCriticalLogNoneStorage();
     }
 

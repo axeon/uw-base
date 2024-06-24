@@ -8,18 +8,20 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import uw.app.common.service.SysCritLogStorageService;
 import uw.auth.service.conf.AuthServiceAutoConfiguration;
+import uw.auth.service.log.AuthCriticalLogStorage;
 
 /**
  * 启动配置。
  */
 @Configuration
 @AutoConfigureAfter(AuthServiceAutoConfiguration.class)
-@EnableConfigurationProperties({UwAppCommonProperties.class})
-public class UwAppCommonConfiguration {
-    private static final Logger log = LoggerFactory.getLogger( UwAppCommonConfiguration.class );
+@EnableConfigurationProperties({AppCommonProperties.class})
+public class AppCommonAutoConfiguration {
+    private static final Logger log = LoggerFactory.getLogger( AppCommonAutoConfiguration.class );
 
     @Bean
-    SysCritLogStorageService sysCritLogStorageService(UwAppCommonProperties uwAppBaseProperties) {
+    public AuthCriticalLogStorage sysCritLogStorageService(AppCommonProperties uwAppBaseProperties) {
+        log.info( "init SysCritLogStorageService!" );
         return new SysCritLogStorageService(uwAppBaseProperties);
     }
 

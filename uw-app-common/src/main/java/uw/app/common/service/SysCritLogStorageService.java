@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
-import uw.app.common.conf.UwAppCommonProperties;
+import uw.app.common.conf.AppCommonProperties;
 import uw.app.common.entity.SysCritLog;
 import uw.auth.service.log.AuthCriticalLogStorage;
 import uw.auth.service.vo.MscActionLog;
@@ -30,9 +30,12 @@ public class SysCritLogStorageService implements AuthCriticalLogStorage {
      */
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
-    private boolean enableCritLog = true;
+    /**
+     * 是否记录CritLog。
+     */
+    private boolean enableCritLog;
 
-    public SysCritLogStorageService(UwAppCommonProperties uwAppBaseProperties) {
+    public SysCritLogStorageService(AppCommonProperties uwAppBaseProperties) {
         enableCritLog = uwAppBaseProperties.isEnableCritLog();
     }
 

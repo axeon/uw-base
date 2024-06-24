@@ -20,7 +20,7 @@ public class AppCommonAutoConfiguration {
     private static final Logger log = LoggerFactory.getLogger( AppCommonAutoConfiguration.class );
 
     @Bean
-    public AuthCriticalLogStorage sysCritLogStorageService(AppCommonProperties uwAppBaseProperties) {
+    public AuthCriticalLogStorage authCriticalLogStorage(AppCommonProperties uwAppBaseProperties) {
         log.info( "init SysCritLogStorageService!" );
         return new SysCritLogStorageService(uwAppBaseProperties);
     }

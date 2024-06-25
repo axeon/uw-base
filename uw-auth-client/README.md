@@ -19,11 +19,9 @@ uw:
   auth:
     client:
       # 如果是Spring Cloud应用，则开启Spring Cloud支持，可以获得添加@LoadBalanced注解后的restTemplate：
-      enable-spring-cloud: false
       auth-center-host: http://localhost:9999
       username: username
       password: password
-      exit-on-auth-failed: false
       http-pool:
         max-total: 1000
         default-max-per-route: 1000

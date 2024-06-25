@@ -32,7 +32,7 @@ public class LogClient {
      *
      * @param logService
      */
-    protected LogClient(final LogService logService) {
+    public LogClient(final LogService logService) {
         this.logService = logService;
         logClient = this;
     }

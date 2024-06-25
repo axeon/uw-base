@@ -516,7 +516,7 @@ public class LogService {
      */
     public String translateSqlToDsl(String sql, int startIndex, int resultNum, boolean isTrueCount) throws Exception {
         if (StringUtils.isBlank( server )) {
-            return null;
+            throw new IllegalArgumentException( "es server is blank!" );
         }
         if (StringUtils.isBlank( sql )) {
             throw new IllegalArgumentException( "sql is blank!" );
@@ -555,8 +555,9 @@ public class LogService {
         // 删除无用的fields相关字段。
         int fStart = dsl.indexOf( "\"fields\":[" );
         int fEnd = dsl.indexOf( "],", fStart ) + 2;
-        dsl = dsl.substring( 0, fStart ) + dsl.substring( fEnd );
-
+        if (fStart > 0 && fEnd > 0 && fEnd > fStart) {
+            dsl = dsl.substring( 0, fStart ) + dsl.substring( fEnd );
+        }
         return dsl;
     }
 

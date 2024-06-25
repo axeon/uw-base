@@ -9,7 +9,7 @@ import java.util.Arrays;
  */
 public class DaoValueUtils {
 
-    private static final FastDateFormat dateFormat = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");
+    private static final FastDateFormat dateFormat = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
 
     /**

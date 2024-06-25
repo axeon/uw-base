@@ -12,12 +12,16 @@ public class CacheProtectedValue {
      */
     private long expiredMillis;
 
+    public CacheProtectedValue() {
+    }
+
     public CacheProtectedValue(long ttl) {
         expiredMillis = System.currentTimeMillis() + ttl;
     }
 
     /**
      * 是否已过期。
+     *
      * @return
      */
     public boolean isExpired() {

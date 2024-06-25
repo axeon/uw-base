@@ -6,10 +6,6 @@ import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.util.Pool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.cache.FusionCache;
-import uw.cache.vo.FusionCacheNotifyMessage;
-
-import java.util.ArrayList;
 
 /**
  * kryo序列化工具类。
@@ -33,6 +29,7 @@ public class KryoUtils {
             return kryo;
         }
     };
+
     /**
      * 输出池。没有搞input pull的原因是已经拿到了完整数组，没有重用价值。
      */
@@ -57,8 +54,6 @@ public class KryoUtils {
             output.flush();
             //此时复制出数据
             data = output.toBytes();
-        } catch (Throwable e) {
-            log.error( "kryo deserialize error! {}", e.getMessage(), e );
         } finally {
             output.reset();
             outputPool.free( output );
@@ -79,8 +74,6 @@ public class KryoUtils {
         final Input input = new Input( data );
         try {
             value = kryo.readObject( input, cls );
-        } catch (Throwable e) {
-            log.error( "kryo deserialize error! {}", e.getMessage(), e );
         } finally {
             kryoPool.free( kryo );
         }
@@ -92,7 +85,7 @@ public class KryoUtils {
 //        byte[] data = serialize( config );
 //        System.out.println( data.length );
 //        System.out.println( new String( data ) );
-//        System.out.println( deserialize( data , FusionCache.Config.class) );
+//        System.out.println( deserialize( data , CacheProtectedValue.class) );
 //        ArrayList<FusionCache.Config> list = new ArrayList<>();
 //        for (int i = 0; i < 10; i++) {
 //            list.add( FusionCache.Config.builder().cacheName( "test" + i ).build());

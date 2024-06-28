@@ -38,7 +38,7 @@ public class GlobalFusionCacheLoader<K, V> implements CacheLoader<K, V> {
      */
     @Override
     public V load(K key) {
-        V value = GlobalCache.get( cacheConfig.getCacheName(), key, cacheDataLoader, cacheConfig.getGlobalCacheExpireMillis(), cacheConfig.getNullProtectMillis(), cacheConfig.getFailProtectMillis(),
+        V value = GlobalCache.loadWithProtectedValue( cacheConfig.getCacheName(), key, cacheDataLoader, cacheConfig.getGlobalCacheExpireMillis(), cacheConfig.getNullProtectMillis(), cacheConfig.getFailProtectMillis(),
                 cacheConfig.getReloadIntervalMillis(), cacheConfig.getReloadMaxTimes() );
         return value;
     }

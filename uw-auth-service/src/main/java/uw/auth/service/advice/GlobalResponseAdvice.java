@@ -47,7 +47,7 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
     public boolean supports(MethodParameter methodParameter, Class<? extends HttpMessageConverter<?>> aClass) {
         Class<?> declaringClass = methodParameter.getDeclaringClass();
         // 检查注解是否存在
-        if (methodParameter.getDeclaringClass().isAnnotationPresent( ResponseAdviceIgnore.class )) {
+        if (declaringClass.isAnnotationPresent( ResponseAdviceIgnore.class )) {
             return false;
         }
         if (methodParameter.getMethod().isAnnotationPresent( ResponseAdviceIgnore.class )) {

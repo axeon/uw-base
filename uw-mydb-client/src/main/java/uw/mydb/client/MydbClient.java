@@ -48,6 +48,10 @@ public class MydbClient {
 
     /**
      * 分配saas节点。
+     * 返回值含义。
+     * success: 正常创建节点。
+     * warn: 系统已存在节点。
+     * error: 创建失败。
      * @param configKey
      * @param saasId
      * @return

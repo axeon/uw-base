@@ -36,6 +36,7 @@ import uw.auth.service.vo.MscAppReportResponse;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -144,16 +145,15 @@ public class AppUpdateService {
         appRegRequest.setAppName( authServiceProperties.getAppName() );
         appRegRequest.setAppLabel( authServiceProperties.getAppLabel() );
         appRegRequest.setAppVersion( authServiceProperties.getAppVersion() );
-        appRegRequest.setRedirectUrl( authServiceProperties.getRedirectUrl() );
         AppRegResponse appRegResponse = authServiceRpc.regApp( appRegRequest );
         if (appRegResponse.getState() == AppRegResponse.STATE_INIT) {
             //此时需要补充上传权限注册信息。
             logger.info( "AuthService scaning@RequestMapping annotations in @Controller HandlerMethod " );
-            List<AppRegRequest.PermVo> perms = Lists.newArrayList();
+            List<AppRegRequest.PermVo> permVoList = new ArrayList<>(200);
             // 先扫Package,Class注解
             if (StringUtils.isNotBlank( authServiceProperties.getAuthBasePackage() )) {
                 Reflections reflections =
-                        new Reflections( new ConfigurationBuilder().setUrls( ClasspathHelper.forPackage( authServiceProperties.getAuthBasePackage() ) ).setScanners( Scanners.TypesAnnotated, Scanners.SubTypes) );
+                        new Reflections( new ConfigurationBuilder().setUrls( ClasspathHelper.forPackage( authServiceProperties.getAuthBasePackage() ) ).setScanners( Scanners.TypesAnnotated, Scanners.SubTypes ) );
                 Set<Class<?>> mscPermDeclareSet = reflections.getTypesAnnotatedWith( MscPermDeclare.class );
                 for (Class<?> aClass : mscPermDeclareSet) {
                     MscPermDeclare mscPermDeclare = aClass.getAnnotation( MscPermDeclare.class );
@@ -188,7 +188,7 @@ public class AppUpdateService {
                         permUri = requestMapping.value()[0];
                     }
                     if (StringUtils.isBlank( permName ) || StringUtils.isBlank( permUri )) {
-                        logger.warn( "AuthService scan warn: package/class annotation name or uri is blank!!!" );
+                        logger.warn( "AuthService scan warn: package/class [{}] annotation name or uri is blank!!!", aClass.getName() );
                     }
                     AppRegRequest.PermVo permVo = new AppRegRequest.PermVo();
                     permVo.setName( permName );
@@ -196,7 +196,7 @@ public class AppUpdateService {
                     permVo.setType( mscPermDeclare.type().getValue() );
                     permVo.setUri( permUri );
                     permVo.setLevel( countLevel( permUri ) );
-                    perms.add( permVo );
+                    permVoList.add( permVo );
                 }
             }
             // 扫描方法注解
@@ -237,7 +237,6 @@ public class AppUpdateService {
                             logger.warn( "http method: {} no explicit @RequestMapping Method mapping ", method.getMethod().toString() );
                         } else {
                             // 映射多个方法或者多个URI
-                            List<AppRegRequest.PermVo> permVoList = Lists.newArrayList();
                             Set<PathPattern> patterns = info.getPathPatternsCondition().getPatterns();
                             for (PathPattern pattern : patterns) {
                                 for (RequestMethod requestMethod : requestMethods) {
@@ -250,26 +249,19 @@ public class AppUpdateService {
                                     } else {
                                         permVo.setUri( permPath + ":" + requestMethodToString( requestMethod ) );
                                     }
+                                    permVo.setName( permName );
+                                    permVo.setDesc( permDesc );
+                                    permVo.setType( userType );
                                     permVoList.add( permVo );
                                 }
-                                regSortAPIMap.put( pattern.getPatternString(), permVoList );
-                            }
-
-                            for (AppRegRequest.PermVo permVo : permVoList) {
-                                permVo.setName( permName );
-                                permVo.setDesc( permDesc );
-                                permVo.setType( userType );
                             }
                         }
                     }
                 }
-                for (Map.Entry<String, List<AppRegRequest.PermVo>> permsEntry : regSortAPIMap.entrySet()) {
-                    perms.addAll( permsEntry.getValue() );
-                }
             }
             Set<String> uriFilterSet = Sets.newHashSet();
             List<AppRegRequest.PermVo> uniqueUriMscPermList = Lists.newArrayList();
-            for (AppRegRequest.PermVo permVo : perms) {
+            for (AppRegRequest.PermVo permVo : permVoList) {
                 String uri = permVo.getUri();
                 // 用 uri 来标识是否重复
                 if (StringUtils.isNotBlank( uri )) {
@@ -277,8 +269,6 @@ public class AppUpdateService {
                         uriFilterSet.add( uri );
                         uniqueUriMscPermList.add( permVo );
                     }
-                } else {
-                    uniqueUriMscPermList.add( permVo );
                 }
             }
             appRegRequest.setPerms( uniqueUriMscPermList );

@@ -26,16 +26,6 @@ public class AppRegRequest implements Serializable {
     private String appVersion;
 
     /**
-     * 用户成功登录重定向地址
-     */
-    private String redirectUrl;
-
-    /**
-     * 回调地址
-     */
-    private String callbackUrl;
-
-    /**
      * 应用权限声明
      */
     private List<PermVo> perms;
@@ -132,22 +122,6 @@ public class AppRegRequest implements Serializable {
 
     public void setAppVersion(String appVersion) {
         this.appVersion = appVersion;
-    }
-
-    public String getRedirectUrl() {
-        return redirectUrl;
-    }
-
-    public void setRedirectUrl(String redirectUrl) {
-        this.redirectUrl = redirectUrl;
-    }
-
-    public String getCallbackUrl() {
-        return callbackUrl;
-    }
-
-    public void setCallbackUrl(String callbackUrl) {
-        this.callbackUrl = callbackUrl;
     }
 
     public List<PermVo> getPerms() {

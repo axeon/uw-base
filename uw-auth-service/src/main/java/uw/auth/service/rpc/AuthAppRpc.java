@@ -27,11 +27,6 @@ public interface AuthAppRpc {
     MscAppReportResponse reportStatus(MscAppReportRequest mscAppReportRequest);
 
     /**
-     * 获得应用的权限ID列表。
-     */
-    ResponseData<String> getAppSaasPerm(String[] appNames);
-
-    /**
      * 更新mscPerm授权状态。
      *
      * @return

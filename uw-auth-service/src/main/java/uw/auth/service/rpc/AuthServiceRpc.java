@@ -52,14 +52,6 @@ public interface AuthServiceRpc {
      */
     ResponseData initSaasPerm(long saasId, String saasName, String[] initAppNames, String adminPasswd, String adminMobile, String adminEmail);
 
-    /**
-     * 注册Saas用户。
-     *
-     * @param mscUserRegister
-     * @return userId
-     * @throws Exception
-     */
-    ResponseData createSaasUser(MscUserRegister mscUserRegister);
 
     /**
      * 添加saas权限。
@@ -109,11 +101,20 @@ public interface AuthServiceRpc {
     ResponseData<Integer> getSaasUserLimit(long saasId);
 
     /**
+     * 注册Saas用户。
+     *
+     * @param mscUserRegister
+     * @return userId
+     * @throws Exception
+     */
+    ResponseData createUser(MscUserRegister mscUserRegister);
+
+    /**
      * 获得用户信息。
      *
      * @param userId
      */
-    ResponseData<MscUserVo> getMscUserByUserId(long userId);
+    ResponseData<MscUserVo> getUser(long userId);
 
     /**
      * 获得saas用户列表。
@@ -129,8 +130,8 @@ public interface AuthServiceRpc {
      * @param email
      * @param wxId
      */
-    ResponseData<List<MscUserVo>> getSaasUserList(long saasId, int userType, long mchId, long groupId, long userId, String userName, String nickName, String realName,
-                                                  String mobile, String email, String wxId);
+    ResponseData<List<MscUserVo>> getUserList(long saasId, int userType, long mchId, long groupId, long userId, String userName, String nickName, String realName,
+                                              String mobile, String email, String wxId);
 
     /**
      * 获得saas用户组列表。
@@ -140,7 +141,7 @@ public interface AuthServiceRpc {
      * @param groupId
      * @param groupName
      */
-    ResponseData<List<MscUserGroupVo>> getSaasUserGroupList(long saasId, int userType, long mchId, long groupId, String groupName);
+    ResponseData<List<MscUserGroupVo>> getUserGroupList(long saasId, int userType, long mchId, long groupId, String groupName);
 
     /**
      * 更新saas名称。
@@ -150,5 +151,10 @@ public interface AuthServiceRpc {
      */
     ResponseData updateSaasName(long saasId, String saasName);
 
+
+    /**
+     * 获得应用的权限ID列表。
+     */
+    ResponseData<String> getAppSaasPerm(String[] appNames);
 
 }

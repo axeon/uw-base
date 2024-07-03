@@ -61,20 +61,6 @@ public class AuthAppRpcImpl implements AuthAppRpc {
     }
 
     /**
-     * 获得应用的权限ID列表
-     *
-     * @param appNames
-     * @return
-     */
-    @Override
-    public ResponseData<String> getAppSaasPerm(String[] appNames) {
-        URI targetUrl =
-                UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/app/getAppPermIdList" ).queryParam( "appNames", appNames ).build().encode().toUri();
-        return restTemplate.exchange( targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<String>>() {
-        } ).getBody();
-    }
-
-    /**
      * 更新mscPerm授权状态。
      *
      * @return

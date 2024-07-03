@@ -103,7 +103,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
      * @return
      */
     @Override
-    public ResponseData createSaasUser(MscUserRegister mscUserRegister) {
+    public ResponseData createUser(MscUserRegister mscUserRegister) {
         return restTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/service/createSaasUser", mscUserRegister, ResponseData.class );
     }
 
@@ -215,7 +215,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
      * @return
      */
     @Override
-    public ResponseData<MscUserVo> getMscUserByUserId(long userId) {
+    public ResponseData<MscUserVo> getUser(long userId) {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/getMscUserByUserId" ).queryParam( "userId", userId ).build().encode().toUri();
         return restTemplate.exchange( targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<MscUserVo>>() {
@@ -237,8 +237,8 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
      * @param wxId
      */
     @Override
-    public ResponseData<List<MscUserVo>> getSaasUserList(long saasId, int userType, long mchId, long groupId, long userId, String userName, String nickName, String realName,
-                                                         String mobile, String email, String wxId) {
+    public ResponseData<List<MscUserVo>> getUserList(long saasId, int userType, long mchId, long groupId, long userId, String userName, String nickName, String realName,
+                                                     String mobile, String email, String wxId) {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/getSaasUserList" ).queryParam( "saasId", saasId ).queryParam(
                         "userType", userType ).queryParam( "mchId", mchId ).queryParam( "groupId", groupId ).queryParam( "userId", userId ).queryParam( "username", userName ).queryParam( "nickName", nickName ).queryParam( "realName", realName ).queryParam( "mobile", mobile ).queryParam( "email", email ).queryParam( "wxId", wxId ).build().encode().toUri();
@@ -255,7 +255,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
      * @param groupName
      */
     @Override
-    public ResponseData<List<MscUserGroupVo>> getSaasUserGroupList(long saasId, int userType, long mchId, long groupId, String groupName) {
+    public ResponseData<List<MscUserGroupVo>> getUserGroupList(long saasId, int userType, long mchId, long groupId, String groupName) {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/getSaasUserGroupList" ).queryParam( "saasId", saasId ).queryParam(
                         "userType", userType ).queryParam( "mchId", mchId ).queryParam( "groupId", groupId ).queryParam( "groupName", groupName ).build().encode().toUri();
@@ -275,6 +275,20 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
                 UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/updateSaasName" ).queryParam( "saasId", saasId ).queryParam(
                         "saasName", saasName ).build().encode().toUri();
         return restTemplate.exchange( targetUrl, HttpMethod.PATCH, HttpEntity.EMPTY, ResponseData.class ).getBody();
+    }
+
+    /**
+     * 获得应用的权限ID列表
+     *
+     * @param appNames
+     * @return
+     */
+    @Override
+    public ResponseData<String> getAppSaasPerm(String[] appNames) {
+        URI targetUrl =
+                UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/app/getAppPermIdList" ).queryParam( "appNames", appNames ).build().encode().toUri();
+        return restTemplate.exchange( targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<String>>() {
+        } ).getBody();
     }
 
 }

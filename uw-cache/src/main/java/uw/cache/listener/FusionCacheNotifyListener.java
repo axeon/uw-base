@@ -23,14 +23,16 @@ public class FusionCacheNotifyListener implements MessageListener {
         FusionCacheNotifyMessage notifyMessage = KryoUtils.deserialize( message.getBody(), FusionCacheNotifyMessage.class );
         if (FusionCache.existsCache( notifyMessage.getCacheName() )) {
             if (logger.isDebugEnabled()) {
-                logger.debug( "receive fusion cache notify message, clear local cache, the cacheName is {}, the key is {}", notifyMessage.getCacheName(), notifyMessage.getKey() );
+                logger.debug( "receive fusion cache notify message! type: {}, Name: {}, key: {}", notifyMessage.getNotifyType(), notifyMessage.getCacheName(),
+                        notifyMessage.getCacheKey() );
             }
             if (notifyMessage.getNotifyType() == CacheNotifyType.INVALIDATE.getValue()) {
-                FusionCache.invalidate( notifyMessage.getCacheName(), notifyMessage.getKey(), false );
-            } else if (notifyMessage.getNotifyType() == CacheNotifyType.INVALIDATE.getValue()) {
-                FusionCache.refresh( notifyMessage.getCacheName(), notifyMessage.getKey(), false );
+                FusionCache.invalidate( notifyMessage.getCacheName(), notifyMessage.getCacheKey(), false );
+            } else if (notifyMessage.getNotifyType() == CacheNotifyType.REFRESH.getValue()) {
+                FusionCache.refresh( notifyMessage.getCacheName(), notifyMessage.getCacheKey(), false );
             } else {
-                logger.warn( "receive unknown type[{}] fusion cache notify message!" );
+                logger.warn( "receive unknown fusion cache notify message! type: {}, Name: {}, key: {}", notifyMessage.getNotifyType(), notifyMessage.getCacheName(),
+                        notifyMessage.getCacheKey() );
             }
         }
     }

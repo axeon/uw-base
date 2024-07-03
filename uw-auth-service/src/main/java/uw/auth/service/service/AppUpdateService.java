@@ -26,7 +26,7 @@ import uw.auth.service.conf.AuthServiceProperties;
 import uw.auth.service.constant.AuthType;
 import uw.auth.service.constant.UserType;
 import uw.auth.service.filter.AuthServiceFilter;
-import uw.auth.service.rpc.AuthServiceRpc;
+import uw.auth.service.rpc.AuthAppRpc;
 import uw.auth.service.token.InvalidTokenData;
 import uw.auth.service.util.MscUtils;
 import uw.auth.service.vo.AppRegRequest;
@@ -55,11 +55,6 @@ public class AppUpdateService {
     private static final Logger logger = LoggerFactory.getLogger( AppUpdateService.class );
 
     /**
-     * PERM—API级别
-     */
-    private static final int PERM_LEVEL_API = 3;
-
-    /**
      * 相关配置
      */
     private AuthServiceProperties authServiceProperties;
@@ -67,7 +62,7 @@ public class AppUpdateService {
     /**
      * 注册Rpc 接口
      */
-    private AuthServiceRpc authServiceRpc;
+    private AuthAppRpc authAppRpc;
 
     /**
      * 用户权限接口服务
@@ -93,14 +88,14 @@ public class AppUpdateService {
      * ctor
      *
      * @param authServiceProperties
-     * @param authServiceRpc
+     * @param authAppRpc
      * @param authPermService
      * @param requestMappingHandlerMapping
      */
-    public AppUpdateService(final AuthServiceProperties authServiceProperties, final AuthServiceRpc authServiceRpc, final AuthPermService authPermService,
+    public AppUpdateService(final AuthServiceProperties authServiceProperties, final AuthAppRpc authAppRpc, final AuthPermService authPermService,
                             final RequestMappingHandlerMapping requestMappingHandlerMapping) {
         this.authServiceProperties = authServiceProperties;
-        this.authServiceRpc = authServiceRpc;
+        this.authAppRpc = authAppRpc;
         this.authPermService = authPermService;
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
     }
@@ -145,7 +140,7 @@ public class AppUpdateService {
         appRegRequest.setAppName( authServiceProperties.getAppName() );
         appRegRequest.setAppLabel( authServiceProperties.getAppLabel() );
         appRegRequest.setAppVersion( authServiceProperties.getAppVersion() );
-        AppRegResponse appRegResponse = authServiceRpc.regApp( appRegRequest );
+        AppRegResponse appRegResponse = authAppRpc.regApp( appRegRequest );
         if (appRegResponse.getState() == AppRegResponse.STATE_INIT) {
             //此时需要补充上传权限注册信息。
             logger.info( "AuthService scaning@RequestMapping annotations in @Controller HandlerMethod " );
@@ -163,7 +158,7 @@ public class AppUpdateService {
                     String permDesc = mscPermDeclare.description();
                     String permUri = mscPermDeclare.uri();
 
-                    int userType = mscPermDeclare.type().getValue();
+                    int userType = mscPermDeclare.user().getValue();
                     AuthType authType = mscPermDeclare.auth();
 
                     //必须是authType=perm的，才给过，否则不用加入权限了。
@@ -193,9 +188,8 @@ public class AppUpdateService {
                     AppRegRequest.PermVo permVo = new AppRegRequest.PermVo();
                     permVo.setName( permName );
                     permVo.setDesc( permDesc );
-                    permVo.setType( mscPermDeclare.type().getValue() );
-                    permVo.setUri( permUri );
-                    permVo.setLevel( countLevel( permUri ) );
+                    permVo.setUser( mscPermDeclare.user().getValue() );
+                    permVo.setCode( permUri );
                     permVoList.add( permVo );
                 }
             }
@@ -212,7 +206,7 @@ public class AppUpdateService {
                         String permName = mscPermDeclare.name();
                         String permDesc = mscPermDeclare.description();
 
-                        int userType = mscPermDeclare.type().getValue();
+                        int userType = mscPermDeclare.user().getValue();
                         AuthType authType = mscPermDeclare.auth();
 
                         //必须是authType=perm的，才给过，否则不用加入权限了。
@@ -242,16 +236,15 @@ public class AppUpdateService {
                                 for (RequestMethod requestMethod : requestMethods) {
                                     AppRegRequest.PermVo permVo = new AppRegRequest.PermVo();
                                     String permPath = MscUtils.sanitizeUrl( pattern.getPatternString() );
-                                    permVo.setLevel( countLevel( permPath ) );
                                     //解决$PackageInfo$的问题。
-                                    if (permVo.getLevel() < 3) {
-                                        permVo.setUri( permPath );
+                                    if (countLevel( permPath ) < 3) {
+                                        permVo.setCode( permPath );
                                     } else {
-                                        permVo.setUri( permPath + ":" + requestMethodToString( requestMethod ) );
+                                        permVo.setCode( permPath + ":" + requestMethodToString( requestMethod ) );
                                     }
                                     permVo.setName( permName );
                                     permVo.setDesc( permDesc );
-                                    permVo.setType( userType );
+                                    permVo.setUser( userType );
                                     permVoList.add( permVo );
                                 }
                             }
@@ -262,7 +255,7 @@ public class AppUpdateService {
             Set<String> uriFilterSet = Sets.newHashSet();
             List<AppRegRequest.PermVo> uniqueUriMscPermList = Lists.newArrayList();
             for (AppRegRequest.PermVo permVo : permVoList) {
-                String uri = permVo.getUri();
+                String uri = permVo.getCode();
                 // 用 uri 来标识是否重复
                 if (StringUtils.isNotBlank( uri )) {
                     if (!uriFilterSet.contains( uri )) {
@@ -272,7 +265,7 @@ public class AppUpdateService {
                 }
             }
             appRegRequest.setPerms( uniqueUriMscPermList );
-            appRegResponse = authServiceRpc.regApp( appRegRequest );
+            appRegResponse = authAppRpc.regApp( appRegRequest );
         }
         logger.info( "AuthService RegApp: {}, version: {}, auth-center response state: {}, msg: {}", authServiceProperties.getAppName(), authServiceProperties.getAppVersion(),
                 appRegResponse.getState(), appRegResponse.getMsg() );
@@ -293,18 +286,15 @@ public class AppUpdateService {
     /**
      * 匹配 / 在API URI出现的次数。
      *
-     * @param apiURI
+     * @param apiUri
      * @return
      */
-    private static int countLevel(String apiURI) {
+    private static int countLevel(String apiUri) {
         int count = 0;
         int index = 1;
-        while ((index = apiURI.indexOf( '/', index )) > -1) {
+        while ((index = apiUri.indexOf( '/', index )) > -1) {
             index = index + 1;
             count++;
-        }
-        if (count > PERM_LEVEL_API) {
-            count = PERM_LEVEL_API;
         }
         return count;
     }
@@ -338,7 +328,7 @@ public class AppUpdateService {
             request.setUserAdminNum( AuthServiceHelper.getActiveUserNum( UserType.ADMIN.getValue() ) );
             request.setUserSaasNum( AuthServiceHelper.getActiveUserNum( UserType.SAAS.getValue() ) );
             request.setUserGuestNum( AuthServiceHelper.getActiveUserNum( UserType.GUEST.getValue() ) );
-            MscAppReportResponse response = authServiceRpc.reportStatus( request );
+            MscAppReportResponse response = authAppRpc.reportStatus( request );
             //处理返回结果。
             if (response != null) {
                 appHostId = response.getId();

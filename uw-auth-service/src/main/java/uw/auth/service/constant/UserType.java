@@ -53,11 +53,6 @@ public enum UserType {
     SAAS( 300, "SAAS运营商", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) ),
 
     /**
-     * SAAS商户共享权限，不作为用户类型使用。
-     */
-    SAAS_SHARE( 310, "SAAS共享权限", TimeUnit.MINUTES.toMillis( 0 ), TimeUnit.DAYS.toMillis( 0 ) ),
-
-    /**
      * SAAS供应商。
      */
     SAAS_SUPPLIER( 311, "SAAS供应商", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) ),

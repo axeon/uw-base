@@ -55,6 +55,7 @@ public class AuthPermService {
 
     /**
      * 获得appId。
+     *
      * @return
      */
     public long getAppId() {
@@ -63,6 +64,7 @@ public class AuthPermService {
 
     /**
      * 获得注册状态。
+     *
      * @return
      */
     public int getRegState() {
@@ -91,7 +93,7 @@ public class AuthPermService {
             return true;
         }
         long currentUserType = authToken.getUserType();
-        UserType declareType = mscPermDeclare.type();
+        UserType declareType = mscPermDeclare.user();
         // RPC用户 调用RPC权限，放在第一位是因为rpc操作高频，减少不必要的判定直通。
         if (currentUserType == UserType.RPC.getValue() && declareType == UserType.RPC) {
             return true;
@@ -109,26 +111,12 @@ public class AuthPermService {
         if (declareType == UserType.ROOT && currentUserType == UserType.ROOT.getValue() && authToken.getIsMaster() == 1) {
             return true;
         }
-
         //处理验证类型，如果不判定验证类型，那就直接过。
         if (mscPermDeclare.auth() == AuthType.NONE) {
             //不验证类型
             return true;
         } else if (mscPermDeclare.auth() == AuthType.USER) {
-            if (currentUserType == UserType.SAAS.getValue()) {
-                if (declareType == UserType.SAAS || declareType == UserType.SAAS_SHARE) {
-                    return true;
-                }
-            } else if (currentUserType == UserType.SAAS_SUPPLIER.getValue()) {
-                if (declareType == UserType.SAAS_SUPPLIER || declareType == UserType.SAAS_SHARE) {
-                    return true;
-                }
-            } else if (currentUserType == UserType.SAAS_DISTRIBUTOR.getValue()) {
-                if (declareType == UserType.SAAS_DISTRIBUTOR || declareType == UserType.SAAS_SHARE) {
-                    return true;
-                }
-            } else if (currentUserType == declareType.getValue()) {
-                // 其他相等的情况，都可以直接过了。
+            if (currentUserType == declareType.getValue()) {
                 return true;
             }
         }

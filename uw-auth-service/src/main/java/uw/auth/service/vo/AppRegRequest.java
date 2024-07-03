@@ -30,76 +30,6 @@ public class AppRegRequest implements Serializable {
      */
     private List<PermVo> perms;
 
-    /**
-     * PermsVo
-     */
-    public static class PermVo {
-        /**
-         * @see MscPermDeclare
-         */
-        private String name;
-
-        /**
-         * @see MscPermDeclare
-         */
-        private String desc;
-
-        /**
-         * @see MscPermDeclare
-         */
-        private int type;
-
-        /**
-         * @see MscPermDeclare
-         */
-        private int level;
-
-        /**
-         * @see org.springframework.web.bind.annotation.RequestMapping
-         */
-        private String uri;
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getDesc() {
-            return desc;
-        }
-
-        public void setDesc(String desc) {
-            this.desc = desc;
-        }
-
-        public int getType() {
-            return type;
-        }
-
-        public void setType(int type) {
-            this.type = type;
-        }
-
-        public int getLevel() {
-            return level;
-        }
-
-        public void setLevel(int level) {
-            this.level = level;
-        }
-
-        public String getUri() {
-            return uri;
-        }
-
-        public void setUri(String uri) {
-            this.uri = uri;
-        }
-    }
-
     public String getAppName() {
         return appName;
     }
@@ -130,5 +60,66 @@ public class AppRegRequest implements Serializable {
 
     public void setPerms(List<PermVo> perms) {
         this.perms = perms;
+    }
+
+    /**
+     * PermsVo
+     */
+    public static class PermVo {
+        /**
+         * 权限名称。
+         * @see MscPermDeclare
+         */
+        private String name;
+
+        /**
+         * 权限描述。
+         * @see MscPermDeclare
+         */
+        private String desc;
+
+        /**
+         * 用户类型
+         * @see MscPermDeclare
+         */
+        private int user;
+
+        /**
+         * 权限代码。
+         * @see
+         */
+        private String code;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getDesc() {
+            return desc;
+        }
+
+        public void setDesc(String desc) {
+            this.desc = desc;
+        }
+
+        public int getUser() {
+            return user;
+        }
+
+        public void setUser(int user) {
+            this.user = user;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public void setCode(String code) {
+            this.code = code;
+        }
     }
 }

@@ -39,7 +39,7 @@ public @interface MscPermDeclare {
      *
      * @return
      */
-    UserType type() default UserType.ANONYMOUS;
+    UserType user() default UserType.ANONYMOUS;
 
     /**
      * 验证类型
@@ -54,12 +54,5 @@ public @interface MscPermDeclare {
      * @return
      */
     ActionLog log() default ActionLog.REQUEST;
-
-    /**
-     * 排序
-     *
-     * @return
-     */
-    int rank() default 0;
 
 }

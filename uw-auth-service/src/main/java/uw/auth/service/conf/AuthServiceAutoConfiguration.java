@@ -47,7 +47,9 @@ import uw.auth.service.ratelimit.RateLimitUtils;
 import uw.auth.service.ratelimit.impl.GlobalRateLimiter;
 import uw.auth.service.ratelimit.impl.LocalRateLimiter;
 import uw.auth.service.ratelimit.impl.NoneRateLimiter;
+import uw.auth.service.rpc.AuthAppRpc;
 import uw.auth.service.rpc.AuthServiceRpc;
+import uw.auth.service.rpc.impl.AuthAppRpcImpl;
 import uw.auth.service.rpc.impl.AuthServiceRpcImpl;
 import uw.auth.service.service.AppUpdateService;
 import uw.auth.service.service.AuthPermService;
@@ -79,22 +81,22 @@ public class AuthServiceAutoConfiguration {
     /**
      * AuthServer的入口类。
      *
-     * @param authServerProperties
+     * @param authServiceProperties
      * @return
      */
     @Bean
-    public AuthServiceHelper authServerHelper(final AuthServiceProperties authServerProperties, final AuthPermService authPermService, final AuthServiceRpc authServiceRpc) {
-        return new AuthServiceHelper( authServerProperties, authPermService, authServiceRpc );
+    public AuthServiceHelper authServerHelper(final AuthServiceProperties authServiceProperties, final AuthPermService authPermService, final AuthServiceRpc authServiceRpc) {
+        return new AuthServiceHelper( authServiceProperties, authPermService, authServiceRpc );
     }
 
     /**
      * AuthServer的入口类。
      *
-     * @param authServerProperties
+     * @param authServiceProperties
      * @return
      */
     @Bean
-    public IpMatchHelper ipBlockHelper(final AuthServiceProperties authServerProperties) {
+    public IpMatchHelper ipBlockHelper(final AuthServiceProperties authServiceProperties) {
         return new IpMatchHelper( 500 );
     }
 
@@ -102,21 +104,21 @@ public class AuthServiceAutoConfiguration {
      * 限速器。
      *
      * @param rateLimitRedisTemplate
-     * @param authServerProperties
+     * @param authServiceProperties
      * @return
      */
     @Bean
     public MscRateLimiter mscRateLimiter(@Autowired(required = false) @Qualifier("rateLimitRedisTemplate") final RedisTemplate<String, String> rateLimitRedisTemplate,
-                                         final AuthServiceProperties authServerProperties) {
+                                         final AuthServiceProperties authServiceProperties) {
         //解析出来默认限速信息。
-        RateLimitConfig defaultRateLimit = authServerProperties.getRateLimit().getDefaultConfig();
+        RateLimitConfig defaultRateLimit = authServiceProperties.getRateLimit().getDefaultConfig();
         RateLimitUtils.setDefaultConfig( defaultRateLimit );
         //限速类型。
-        AuthServiceProperties.RateLimitType type = authServerProperties.getRateLimit().getType();
+        AuthServiceProperties.RateLimitType type = authServiceProperties.getRateLimit().getType();
         if (type.equals( AuthServiceProperties.RateLimitType.GLOBAL )) {
             return new GlobalRateLimiter( rateLimitRedisTemplate );
         } else if (type.equals( AuthServiceProperties.RateLimitType.LOCAL )) {
-            return new LocalRateLimiter( authServerProperties.getRateLimit().getCacheNum() );
+            return new LocalRateLimiter( authServiceProperties.getRateLimit().getCacheNum() );
         } else {
             return new NoneRateLimiter();
         }
@@ -126,7 +128,7 @@ public class AuthServiceAutoConfiguration {
     /**
      * AuthServiceFilter
      *
-     * @param authServerProperties
+     * @param authServiceProperties
      * @param requestMappingHandlerMapping
      * @param authPermService
      * @param logClient
@@ -134,18 +136,18 @@ public class AuthServiceAutoConfiguration {
      * @return
      */
     @Bean
-    public FilterRegistrationBean<AuthServiceFilter> authServiceFilter(final AuthServiceProperties authServerProperties,
+    public FilterRegistrationBean<AuthServiceFilter> authServiceFilter(final AuthServiceProperties authServiceProperties,
                                                                  final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthPermService authPermService,
                                                                  final IpMatchHelper ipMatchHelper, final MscRateLimiter mscRateLimiter, final LogClient logClient,
                                                                  final AuthCriticalLogStorage authCriticalLogStorage, final AuthServiceHelper authServiceHelper) {
         FilterRegistrationBean<AuthServiceFilter> registrationBean = new FilterRegistrationBean<AuthServiceFilter>();
-        AuthServiceFilter authServiceFilter = new AuthServiceFilter( authServerProperties, requestMappingHandlerMapping, authPermService, mscRateLimiter, logClient,
+        AuthServiceFilter authServiceFilter = new AuthServiceFilter( authServiceProperties, requestMappingHandlerMapping, authPermService, mscRateLimiter, logClient,
                 authCriticalLogStorage, authServiceHelper );
         registrationBean.setFilter( authServiceFilter );
         registrationBean.setName( "AuthServiceFilter" );
         registrationBean.setOrder( TOKEN_FILTER_ORDER );
-        if (StringUtils.isNotBlank( authServerProperties.getAuthEntryPoint() )) {
-            registrationBean.setUrlPatterns( Splitter.on( "," ).trimResults().omitEmptyStrings().splitToList( authServerProperties.getAuthEntryPoint() ) );
+        if (StringUtils.isNotBlank( authServiceProperties.getAuthEntryPoint() )) {
+            registrationBean.setUrlPatterns( Splitter.on( "," ).trimResults().omitEmptyStrings().splitToList( authServiceProperties.getAuthEntryPoint() ) );
         }
         return registrationBean;
     }
@@ -164,21 +166,21 @@ public class AuthServiceAutoConfiguration {
      * 引入gateway网关、auth服务不需要配置cors、保留代码
      * corsFilter
      *
-     * @param authServerProperties
+     * @param authServiceProperties
      * @return
      */
 //    @Bean 网关已做统一跨域处理 不用在各个服务做跨域处理 此处放开会导致双跨域问题
-    public FilterRegistrationBean<CorsFilter> corsFilter(final AuthServiceProperties authServerProperties) {
+    public FilterRegistrationBean<CorsFilter> corsFilter(final AuthServiceProperties authServiceProperties) {
         FilterRegistrationBean<CorsFilter> registrationBean = new FilterRegistrationBean<CorsFilter>();
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins( Arrays.asList( authServerProperties.getCors().getAllowedOrigins().split( "\\s*,\\s*" ) ) );
-        configuration.setAllowedMethods( Arrays.asList( authServerProperties.getCors().getAllowedMethods().split( "\\s*,\\s*" ) ) );
-        configuration.setAllowedHeaders( Arrays.asList( authServerProperties.getCors().getAllowedHeaders().split( "\\s*,\\s*" ) ) );
-        configuration.setAllowedOriginPatterns( Arrays.asList( authServerProperties.getCors().getAllowedOriginPattern().split( "\\s*,\\s*" ) ) );
-        configuration.setAllowCredentials( authServerProperties.getCors().getAllowCredentials() );
-        configuration.setMaxAge( authServerProperties.getCors().getMaxAge() );
-        source.registerCorsConfiguration( authServerProperties.getCors().getMapping(), configuration );
+        configuration.setAllowedOrigins( Arrays.asList( authServiceProperties.getCors().getAllowedOrigins().split( "\\s*,\\s*" ) ) );
+        configuration.setAllowedMethods( Arrays.asList( authServiceProperties.getCors().getAllowedMethods().split( "\\s*,\\s*" ) ) );
+        configuration.setAllowedHeaders( Arrays.asList( authServiceProperties.getCors().getAllowedHeaders().split( "\\s*,\\s*" ) ) );
+        configuration.setAllowedOriginPatterns( Arrays.asList( authServiceProperties.getCors().getAllowedOriginPattern().split( "\\s*,\\s*" ) ) );
+        configuration.setAllowCredentials( authServiceProperties.getCors().getAllowCredentials() );
+        configuration.setMaxAge( authServiceProperties.getCors().getMaxAge() );
+        source.registerCorsConfiguration( authServiceProperties.getCors().getMapping(), configuration );
         CorsFilter corsFilter = new CorsFilter( source );
         registrationBean.setFilter( corsFilter );
         registrationBean.setName( "CorsFilter" );
@@ -191,46 +193,58 @@ public class AuthServiceAutoConfiguration {
     /**
      * App更新服务
      *
-     * @param authServerProperties
-     * @param authServiceRpc
+     * @param authServiceProperties
+     * @param authAppRpc
      * @param authPermService
      * @param requestMappingHandlerMapping
      * @return
      */
     @Bean
-    public AppUpdateService appUpdateService(final AuthServiceProperties authServerProperties, final AuthServiceRpc authServiceRpc, final AuthPermService authPermService,
+    public AppUpdateService appUpdateService(final AuthServiceProperties authServiceProperties, final AuthAppRpc authAppRpc, final AuthPermService authPermService,
                                              final RequestMappingHandlerMapping requestMappingHandlerMapping) {
-        appUpdateService = new AppUpdateService( authServerProperties, authServiceRpc, authPermService, requestMappingHandlerMapping );
+        appUpdateService = new AppUpdateService( authServiceProperties, authAppRpc, authPermService, requestMappingHandlerMapping );
         return appUpdateService;
     }
 
-
     /**
-     * auth-server向auth-center PULL RPC 接口
+     * AuthAppRpc 接口
      *
-     * @param authServerProperties
+     * @param authServiceProperties
      * @param restTemplate
      * @return
      */
     @Bean
-    public AuthServiceRpc authServiceRpc(final AuthServiceProperties authServerProperties, @Qualifier("tokenRestTemplate") final RestTemplate restTemplate) {
-        return new AuthServiceRpcImpl( authServerProperties, restTemplate );
+    public AuthAppRpc authAppRpc(final AuthServiceProperties authServiceProperties, @Qualifier("tokenRestTemplate") final RestTemplate restTemplate) {
+        return new AuthAppRpcImpl( authServiceProperties, restTemplate );
+    }
+
+
+    /**
+     * AuthServiceRpc 接口
+     *
+     * @param authServiceProperties
+     * @param restTemplate
+     * @return
+     */
+    @Bean
+    public AuthServiceRpc authServiceRpc(final AuthServiceProperties authServiceProperties, @Qualifier("tokenRestTemplate") final RestTemplate restTemplate) {
+        return new AuthServiceRpcImpl( authServiceProperties, restTemplate );
     }
 
     /**
      * 用于存储验证信息的RedisTemplate。
      *
-     * @param authServerProperties
+     * @param authServiceProperties
      * @param clientResources
      * @return
      */
     @Bean
     @ConditionalOnProperty(prefix = "uw.auth.service", name = "rate-limit.type", havingValue = "GLOBAL")
-    public RedisTemplate<String, String> rateLimitRedisTemplate(final AuthServiceProperties authServerProperties, final ClientResources clientResources) {
+    public RedisTemplate<String, String> rateLimitRedisTemplate(final AuthServiceProperties authServiceProperties, final ClientResources clientResources) {
         RedisTemplate<String, String> redisTemplate = new RedisTemplate<String, String>();
         redisTemplate.setKeySerializer( new StringRedisSerializer() );
         redisTemplate.setValueSerializer( new GenericToStringSerializer<String>( String.class ) );
-        redisTemplate.setConnectionFactory( redisConnectionFactory( authServerProperties.getRateLimit().getRedis(), clientResources ) );
+        redisTemplate.setConnectionFactory( redisConnectionFactory( authServiceProperties.getRateLimit().getRedis(), clientResources ) );
         redisTemplate.afterPropertiesSet();
         return redisTemplate;
     }
@@ -241,7 +255,7 @@ public class AuthServiceAutoConfiguration {
      * @return
      */
     @Bean
-    public AuthPermService authPermService(final AuthServiceProperties authServerProperties) {
+    public AuthPermService authPermService(final AuthServiceProperties authServiceProperties) {
         return new AuthPermService();
     }
 

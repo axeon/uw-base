@@ -167,7 +167,7 @@ public class AuthServiceFilter implements Filter {
                 }
                 //准备操作日志内容，关键日志必须记录，并记录操作人员日志。
                 logType = mscPermDeclare.log();
-                if (logType.getValue() == ActionLog.CRIT.getValue() || (logType.getValue() > ActionLog.NONE.getValue() && mscPermDeclare.type().getValue() > UserType.RPC.getValue())) {
+                if (logType.getValue() == ActionLog.CRIT.getValue() || (logType.getValue() > ActionLog.NONE.getValue() && mscPermDeclare.user().getValue() > UserType.RPC.getValue())) {
                     //设定操作名称，mscPermDeclare有优先级
                     String apiName = mscPermDeclare.name();
                     if (StringUtils.isBlank( apiName )) {

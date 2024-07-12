@@ -121,14 +121,14 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
         return new StringBuilder( 100 ).append( " order by " ).append( this.SORT_NAME ).append( " " ).append( SORT_TYPE == SORT_ASC ? "asc" : "desc" ).toString();
     }
 
-    public int GET_PAGE() {
+    public int PAGE() {
         if (PAGE < 1) {
             PAGE = 1;
         }
         return PAGE;
     }
 
-    public QueryParam SET_PAGE(int PAGE) {
+    public PageQueryParam PAGE(int PAGE) {
         if (PAGE < 1) {
             PAGE = 1;
         }
@@ -138,10 +138,10 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
     }
 
     public void set$pg(int page) {
-        SET_PAGE( page );
+        PAGE( page );
     }
 
-    public int GET_RESULT_NUM() {
+    public int RESULT_NUM() {
         if (RESULT_NUM > 10000) {
             RESULT_NUM = 10000;
         } else if (RESULT_NUM < 1) {
@@ -150,7 +150,7 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
         return RESULT_NUM;
     }
 
-    public QueryParam SET_RESULT_NUM(int RESULT_NUM) {
+    public PageQueryParam RESULT_NUM(int RESULT_NUM) {
         if (RESULT_NUM > 10000) {
             RESULT_NUM = 10000;
         } else if (RESULT_NUM < 1) {
@@ -161,10 +161,10 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
     }
 
     public void set$rn(int resultNum) {
-        SET_RESULT_NUM( resultNum );
+        RESULT_NUM( resultNum );
     }
 
-    public int GET_START_INDEX() {
+    public int START_INDEX() {
         if (START_INDEX < 0) {
             START_INDEX = 0;
         }
@@ -175,7 +175,7 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
         return START_INDEX;
     }
 
-    public QueryParam SET_START_INDEX(int START_INDEX) {
+    public PageQueryParam START_INDEX(int START_INDEX) {
         if (START_INDEX < 0) {
             START_INDEX = 0;
         }
@@ -188,14 +188,14 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
     }
 
     public void set$si(int startIndex) {
-        SET_START_INDEX( startIndex );
+        START_INDEX( startIndex );
     }
 
-    public int GET_REQUEST_TYPE() {
+    public int REQUEST_TYPE() {
         return REQUEST_TYPE;
     }
 
-    public QueryParam SET_REQUEST_TYPE(int REQUEST_TYPE) {
+    public PageQueryParam REQUEST_TYPE(int REQUEST_TYPE) {
         this.REQUEST_TYPE = REQUEST_TYPE;
         return this;
 
@@ -206,11 +206,11 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
     }
 
 
-    public String GET_SORT_NAME() {
+    public String SORT_NAME() {
         return SORT_NAME;
     }
 
-    public QueryParam SET_SORT_NAME(String SORT_NAME) {
+    public PageQueryParam SORT_NAME(String SORT_NAME) {
         this.SORT_NAME = SORT_NAME;
         return this;
 
@@ -220,11 +220,11 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
         this.SORT_NAME = sortName;
     }
 
-    public int GET_SORT_TYPE() {
+    public int SORT_TYPE() {
         return SORT_TYPE;
     }
 
-    public QueryParam SET_SORT_TYPE(int SORT_TYPE) {
+    public PageQueryParam SORT_TYPE(int SORT_TYPE) {
         this.SORT_TYPE = SORT_TYPE;
         return this;
 

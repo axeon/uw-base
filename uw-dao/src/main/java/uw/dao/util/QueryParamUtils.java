@@ -40,7 +40,7 @@ public class QueryParamUtils {
         ArrayList paramValueList = new ArrayList<>();
         try {
             //先判定是否指定SELECT_SQL.
-            if (StringUtils.isBlank(queryParam.GET_SELECT_SQL())) {
+            if (StringUtils.isBlank(queryParam.SELECT_SQL())) {
                 if (cls != null) {
                     //拼出查询sql前半部分
                     TableMetaInfo emi = EntityMetaUtils.loadEntityMetaInfo(cls);
@@ -56,7 +56,7 @@ public class QueryParamUtils {
                     }
                 }
             } else {
-                sqlBuilder.append(queryParam.GET_SELECT_SQL());
+                sqlBuilder.append(queryParam.SELECT_SQL());
             }
 
             //参数map。key=sql, value=数值
@@ -73,8 +73,8 @@ public class QueryParamUtils {
                 }
             }
             //合并附加参数
-            if (queryParam.GET_EXT_PARAM_MAP() != null) {
-                paramMap.putAll(queryParam.GET_EXT_PARAM_MAP());
+            if (queryParam.EXT_PARAM_MAP() != null) {
+                paramMap.putAll(queryParam.EXT_PARAM_MAP());
             }
             //开始生成sql.
             for (Map.Entry<String, Object> kv : paramMap.entrySet()) {
@@ -117,13 +117,13 @@ public class QueryParamUtils {
                         } else {
                             //处理like查询问题。
                             if (StringUtils.contains(paramCond, " like ")) {
-                                boolean enableLikeQuery = queryParam.GET_LIKE_QUERY_ENABLE();
+                                boolean enableLikeQuery = queryParam.LIKE_QUERY_ENABLE();
                                 //检查参数长度有无问题。
                                 if (enableLikeQuery) {
                                     for (int i = paramValueList.size() - paramValueSize; i < paramValueList.size(); i++) {
                                         if (paramValueList.get(i) instanceof String value) {
                                             //小于最小数值的，直接移除通配符。
-                                            if (value.length() < queryParam.GET_LIKE_QUERY_PARAM_MIN_LEN()) {
+                                            if (value.length() < queryParam.LIKE_QUERY_PARAM_MIN_LEN()) {
                                                 enableLikeQuery = false;
                                                 break;
                                             }
@@ -205,8 +205,8 @@ public class QueryParamUtils {
             }
 
             //最后附加where sql。
-            if (StringUtils.isNotBlank(queryParam.GET_EXT_WHERE_SQL())) {
-                sqlBuilder.append(" ").append(queryParam.GET_EXT_WHERE_SQL());
+            if (StringUtils.isNotBlank(queryParam.EXT_WHERE_SQL())) {
+                sqlBuilder.append(" ").append(queryParam.EXT_WHERE_SQL());
             }
 
         } catch (Throwable e) {

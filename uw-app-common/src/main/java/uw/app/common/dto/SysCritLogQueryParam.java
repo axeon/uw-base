@@ -142,8 +142,8 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
         super();
     }
 
-    public SysCritLogQueryParam(boolean ignoreException) {
-        super( ignoreException );
+    public SysCritLogQueryParam(Long saasId) {
+        super( saasId );
     }
 
     /**

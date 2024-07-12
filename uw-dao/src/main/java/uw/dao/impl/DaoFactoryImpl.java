@@ -3,7 +3,6 @@ package uw.dao.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.dao.*;
-import uw.dao.sequence.DaoSequenceFactory;
 import uw.dao.service.DaoService;
 import uw.dao.util.QueryParamUtils;
 import uw.dao.vo.QueryParamResult;
@@ -556,10 +555,10 @@ public class DaoFactoryImpl extends DaoFactory {
         if (pageQueryParam.CHECK_ONLY_COUNT()) {
             String countSql = "select count(1) from (" + queryParamResult.getSql().toString() + ") must_alias";
             int allSize = SQLCommandImpl.selectForSingleValue(this, connName, Integer.class, countSql, queryParamResult.getParamList());
-            return new DataList<>(null, pageQueryParam.GET_START_INDEX(), pageQueryParam.GET_RESULT_NUM(), allSize);
+            return new DataList<>(null, pageQueryParam.START_INDEX(), pageQueryParam.RESULT_NUM(), allSize);
         } else {
-            return EntityCommandImpl.list(this, connName, entityCls, queryParamResult.getSql().toString(), queryParamResult.getParamList(), pageQueryParam.GET_START_INDEX(),
-                    pageQueryParam.GET_RESULT_NUM(), pageQueryParam.CHECK_AUTO_COUNT());
+            return EntityCommandImpl.list(this, connName, entityCls, queryParamResult.getSql().toString(), queryParamResult.getParamList(), pageQueryParam.START_INDEX(),
+                    pageQueryParam.RESULT_NUM(), pageQueryParam.CHECK_AUTO_COUNT());
         }
     }
 
@@ -638,8 +637,8 @@ public class DaoFactoryImpl extends DaoFactory {
         int resultNum = 0;
         boolean autoCount = false;
         if (queryParam instanceof PageQueryParam param) {
-            startIndex = param.GET_START_INDEX();
-            resultNum = param.GET_RESULT_NUM();
+            startIndex = param.START_INDEX();
+            resultNum = param.RESULT_NUM();
             autoCount = param.CHECK_AUTO_COUNT();
         }
         return SQLCommandImpl.selectForDataSet(this, connName, queryParamResult.getSql().toString(), queryParamResult.getParamList(), startIndex, resultNum, autoCount);

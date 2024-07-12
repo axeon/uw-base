@@ -3,70 +3,117 @@ package uw.app.common.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import uw.auth.service.AuthServiceHelper;
 import uw.auth.service.constant.UserType;
+import uw.auth.service.token.AuthTokenData;
 import uw.dao.QueryParam;
 import uw.dao.annotation.QueryMeta;
 
 /**
- * 带验证信息的查询参数类，带Id和Sate信息。
+ * 自带验证信息的查询参数类。
  * 自带了saasId, mchId, userId, userType属性。
- * 使用assign方法来对以上参数进行赋值。
  */
 public class AuthIdStateQueryParam extends QueryParam {
 
+    /**
+     * id匹配。
+     */
     @QueryMeta(expr = "id=?")
     private Long id;
 
+    /**
+     * 单一状态匹配。
+     */
     @QueryMeta(expr = "state=?")
     private Integer state;
 
+    /**
+     * 多状态匹配。
+     */
+    @QueryMeta(expr = "state in (?)")
+    @Schema(title = "状态", description = "状态，可同时匹配多个状态。")
+    private Integer[] states;
+
+    /**
+     * saasId。
+     */
     @QueryMeta(expr = "saas_id=?")
     @Schema(title = "saasId", description = "saasId", hidden = true)
     private Long saasId;
 
+    /**
+     * 商户id。
+     */
     @QueryMeta(expr = "mch_id=?")
     @Schema(title = "mchId", description = "mchId", hidden = true)
     private Long mchId;
 
+    /**
+     * 用户id。
+     */
     @QueryMeta(expr = "user_id=?")
     @Schema(title = "userId", description = "userId", hidden = true)
     private Long userId;
 
+    /**
+     * 用户类型。
+     */
     @QueryMeta(expr = "user_type=?")
     @Schema(title = "userType", description = "userType", hidden = true)
     private Integer userType;
 
-    public AuthIdStateQueryParam(Long id) {
-        this( id, null, false );
-    }
-
-    public AuthIdStateQueryParam(Long id, boolean ignoreException) {
-        this( id, null, ignoreException );
-    }
-
-    public AuthIdStateQueryParam(Long id, Integer state) {
-        this( id, state, true );
-    }
-
-    public AuthIdStateQueryParam(Long id, Integer state, boolean ignoreException) {
+    /**
+     * 指定saasId,id,state的构造器。
+     * @param saasId
+     * @param id
+     * @param state
+     */
+    public AuthIdStateQueryParam(Long saasId, Long id, Integer state) {
+        this.saasId = saasId;
         this.id = id;
         this.state = state;
-        if (ignoreException) {
-            try {
-                bindSaasId();
-            } catch (Exception e) {
-                // 捕获不处理
-            }
-        } else {
-            bindSaasId();
-        }
+    }
+
+    /**
+     * 指定saasId,id,states的构造器。
+     * @param saasId
+     * @param id
+     * @param states
+     */
+    public AuthIdStateQueryParam(Long saasId, Long id, Integer... states) {
+        this.saasId = saasId;
+        this.id = id;
+        this.states = states;
+    }
+
+    /**
+     * 指定id,state的构造器。
+     * 如果不在web环境下运行，将会抛错。
+     * @param id
+     * @param state
+     */
+    public AuthIdStateQueryParam(Long id, Integer state) {
+        this.id = id;
+        this.state = state;
+        bindSaasId();
+    }
+
+    /**
+     * 指定id,states的构造器。
+     * 如果不在web环境下运行，将会抛错。
+     * @param id
+     * @param states
+     */
+    public AuthIdStateQueryParam(Long id, Integer... states) {
+        this.id = id;
+        this.states = states;
+        bindSaasId();
     }
 
     /**
      * 当前QueryParam填入当前用户的userId。
      */
     public AuthIdStateQueryParam bindUserId() {
-        setSaasId( AuthServiceHelper.getSaasId() );
-        setUserId( AuthServiceHelper.getUserId() );
+        AuthTokenData tokenData = getAuthToken();
+        setUserId( tokenData.getUserId() );
         return this;
     }
 
@@ -74,8 +121,8 @@ public class AuthIdStateQueryParam extends QueryParam {
      * 当前QueryParam填入当前用户的mchId。
      */
     public AuthIdStateQueryParam bindMchId() {
-        setSaasId( AuthServiceHelper.getSaasId() );
-        setMchId( AuthServiceHelper.getMchId() );
+        AuthTokenData tokenData = getAuthToken();
+        setMchId( tokenData.getMchId() );
         return this;
     }
 
@@ -83,44 +130,11 @@ public class AuthIdStateQueryParam extends QueryParam {
      * 当前QueryParam填入当前用户的userType。
      */
     public AuthIdStateQueryParam bindUserType() {
-        setUserType( AuthServiceHelper.getUserType() );
+        AuthTokenData tokenData = getAuthToken();
+        setUserType( tokenData.getUserType() );
         return this;
     }
 
-    /**
-     * 当前QueryParam填入当前用户的saasId、userId、mchId、userType
-     */
-    public AuthIdStateQueryParam bindAuthInfo() {
-        setSaasId( AuthServiceHelper.getSaasId() );
-        setMchId( AuthServiceHelper.getMchId() );
-        setUserId( AuthServiceHelper.getUserId() );
-        setUserType( AuthServiceHelper.getUserType() );
-        return this;
-    }
-
-    /**
-     * 当前QueryParam根据参数控制填入当前用户的saasId、userId、mchId、userType
-     *
-     * @param bindSaasId   是否填入saasId
-     * @param bindUserId   是否填入userId
-     * @param bindMchId    是否填入mchId
-     * @param bindUserType 是否填入userType
-     */
-    public AuthIdStateQueryParam bindAuthInfo(boolean bindSaasId, boolean bindUserId, boolean bindMchId, boolean bindUserType) {
-        if (bindSaasId) {
-            setSaasId( AuthServiceHelper.getSaasId() );
-        }
-        if (bindMchId) {
-            setMchId( AuthServiceHelper.getMchId() );
-        }
-        if (bindUserId) {
-            setUserId( AuthServiceHelper.getUserId() );
-        }
-        if (bindUserType) {
-            setUserType( AuthServiceHelper.getUserType() );
-        }
-        return this;
-    }
 
     public Long getId() {
         return id;
@@ -128,6 +142,22 @@ public class AuthIdStateQueryParam extends QueryParam {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Integer getState() {
+        return state;
+    }
+
+    public void setState(Integer state) {
+        this.state = state;
+    }
+
+    public Integer[] getStates() {
+        return states;
+    }
+
+    public void setStates(Integer[] states) {
+        this.states = states;
     }
 
     public Long getSaasId() {
@@ -138,12 +168,22 @@ public class AuthIdStateQueryParam extends QueryParam {
         this.saasId = saasId;
     }
 
+    public AuthIdStateQueryParam saasId(Long saasId) {
+        this.saasId = saasId;
+        return this;
+    }
+
     public Long getMchId() {
         return mchId;
     }
 
     public void setMchId(Long mchId) {
         this.mchId = mchId;
+    }
+
+    public AuthIdStateQueryParam mchId(Long mchId) {
+        this.mchId = mchId;
+        return this;
     }
 
     public Long getUserId() {
@@ -154,6 +194,11 @@ public class AuthIdStateQueryParam extends QueryParam {
         this.userId = userId;
     }
 
+    public AuthIdStateQueryParam userId(Long userId) {
+        this.userId = userId;
+        return this;
+    }
+
     public Integer getUserType() {
         return userType;
     }
@@ -162,15 +207,34 @@ public class AuthIdStateQueryParam extends QueryParam {
         this.userType = userType;
     }
 
+    public AuthIdStateQueryParam userType(Integer userType) {
+        this.userType = userType;
+        return this;
+    }
+
     /**
      * 当前QueryParam填入当前用户的saasId
      */
     private AuthIdStateQueryParam bindSaasId() {
-        int userType = AuthServiceHelper.getUserType();
+        AuthTokenData tokenData = getAuthToken();
         if (userType < UserType.RPC.getValue() || userType > UserType.ADMIN.getValue()) {
-            setSaasId( AuthServiceHelper.getSaasId() );
+            setSaasId( tokenData.getSaasId() );
         }
         return this;
     }
+
+    /**
+     * 获得AuthToken。
+     *
+     * @return
+     */
+    private AuthTokenData getAuthToken() {
+        AuthTokenData authToken = AuthServiceHelper.getContextToken();
+        if (authToken == null) {
+            throw new UnsupportedOperationException( "AuthServiceHelper must be run in web environment!" );
+        }
+        return authToken;
+    }
+
 
 }

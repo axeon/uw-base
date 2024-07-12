@@ -94,8 +94,8 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
         super();
     }
 
-    public SysDataHistoryQueryParam(boolean ignoreException) {
-        super( ignoreException );
+    public SysDataHistoryQueryParam(Long saasId) {
+        super( saasId );
     }
 
     /**

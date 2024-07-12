@@ -19,7 +19,7 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * 少于最小参数的，将转化为=查询。
      */
     @JsonIgnore
-    private int LIKE_QUERY_PARAM_MIN_LEN = 5;
+    private int LIKE_QUERY_PARAM_MIN_LEN = 4;
 
     /**
      * 是否开启LIKE查询。默认为true。
@@ -64,24 +64,45 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
     }
 
     @JsonIgnore
-    public int GET_LIKE_QUERY_PARAM_MIN_LEN() {
+    public int LIKE_QUERY_PARAM_MIN_LEN() {
         return LIKE_QUERY_PARAM_MIN_LEN;
     }
 
     @JsonIgnore
-    public P SET_LIKE_QUERY_PARAM_MIN_LEN(int LIKE_QUERY_PARAM_MIN_LEN) {
+    public P LIKE_QUERY_PARAM_MIN_LEN(int LIKE_QUERY_PARAM_MIN_LEN) {
         this.LIKE_QUERY_PARAM_MIN_LEN = LIKE_QUERY_PARAM_MIN_LEN;
         return (P) this;
     }
 
     @JsonIgnore
-    public boolean GET_LIKE_QUERY_ENABLE() {
+    public boolean LIKE_QUERY_ENABLE() {
         return LIKE_QUERY_ENABLE;
     }
 
     @JsonIgnore
-    public P SET_LIKE_QUERY_ENABLE(boolean LIKE_QUERY_ENABLE) {
+    public P LIKE_QUERY_ENABLE(boolean LIKE_QUERY_ENABLE) {
         this.LIKE_QUERY_ENABLE = LIKE_QUERY_ENABLE;
+        return (P) this;
+    }
+
+    /**
+     * 获取select * from tableName sql.
+     *
+     * @return
+     */
+    @JsonIgnore
+    public String SELECT_SQL() {
+        return SELECT_SQL;
+    }
+
+    /**
+     * 设置 select * from tableName sql.
+     *
+     * @param SELECT_SQL
+     */
+    @JsonIgnore
+    public P SELECT_SQL(String SELECT_SQL) {
+        this.SELECT_SQL = SELECT_SQL;
         return (P) this;
     }
 
@@ -91,7 +112,7 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * @return
      */
     @JsonIgnore
-    public String GET_EXT_WHERE_SQL() {
+    public String EXT_WHERE_SQL() {
         if (EXT_WHERE_SQL != null) {
             return EXT_WHERE_SQL.toString();
         } else {
@@ -122,26 +143,6 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
         return (P) this;
     }
 
-    /**
-     * 获取select * from tableName sql.
-     *
-     * @return
-     */
-    @JsonIgnore
-    public String GET_SELECT_SQL() {
-        return SELECT_SQL;
-    }
-
-    /**
-     * 设置 select * from tableName sql.
-     *
-     * @param SELECT_SQL
-     */
-    @JsonIgnore
-    public P SET_SELECT_SQL(String SELECT_SQL) {
-        this.SELECT_SQL = SELECT_SQL;
-        return (P) this;
-    }
 
     /**
      * 设置额外的参数对。
@@ -149,7 +150,7 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * @return
      */
     @JsonIgnore
-    public Map<String, Object> GET_EXT_PARAM_MAP() {
+    public Map<String, Object> EXT_PARAM_MAP() {
         return EXT_PARAM_MAP;
     }
 

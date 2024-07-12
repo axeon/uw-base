@@ -144,7 +144,7 @@ public class AuthQueryParam extends QueryParam {
      */
     private AuthQueryParam bindSaasId() {
         AuthTokenData tokenData = getAuthToken();
-        if (userType < UserType.RPC.getValue() || userType > UserType.ADMIN.getValue()) {
+        if (tokenData.getUserType() < UserType.RPC.getValue() || tokenData.getUserType() > UserType.ADMIN.getValue()) {
             setSaasId( tokenData.getSaasId() );
         }
         return this;

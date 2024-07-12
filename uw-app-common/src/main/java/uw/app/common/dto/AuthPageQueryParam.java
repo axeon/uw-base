@@ -145,7 +145,7 @@ public class AuthPageQueryParam extends PageQueryParam {
      */
     private AuthPageQueryParam bindSaasId() {
         AuthTokenData tokenData = getAuthToken();
-        if (userType < UserType.RPC.getValue() || userType > UserType.ADMIN.getValue()) {
+        if (tokenData.getUserType() < UserType.RPC.getValue() || tokenData.getUserType() > UserType.ADMIN.getValue()) {
             setSaasId( tokenData.getSaasId() );
         }
         return this;

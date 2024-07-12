@@ -213,11 +213,11 @@ public class AuthIdStateQueryParam extends QueryParam {
     }
 
     /**
-     * 当前QueryParam填入当前用户的saasId
+     * 当前QueryParam填入当前用户的saasId。
      */
     private AuthIdStateQueryParam bindSaasId() {
         AuthTokenData tokenData = getAuthToken();
-        if (userType < UserType.RPC.getValue() || userType > UserType.ADMIN.getValue()) {
+        if (tokenData.getUserType() < UserType.RPC.getValue() || tokenData.getUserType() > UserType.ADMIN.getValue()) {
             setSaasId( tokenData.getSaasId() );
         }
         return this;

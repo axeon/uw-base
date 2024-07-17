@@ -55,12 +55,12 @@ public enum UserType {
     /**
      * SAAS供应商。
      */
-    SAAS_SUP( 310, "SAAS供应商", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) ),
+    SAAS_SUPPLIER( 310, "SAAS供应商", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) ),
 
     /**
      * SAAS分销商。
      */
-    SAAS_DST( 320, "SAAS分销商", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) );
+    SAAS_DISTRIBUTOR( 320, "SAAS分销商", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) );
 
     private int value;
 
@@ -122,7 +122,7 @@ public enum UserType {
      * @return
      */
     public static UserType[] getMscMenuUserTypes() {
-        return new UserType[]{UserType.ROOT, UserType.OPS, UserType.ADMIN, UserType.SAAS, UserType.SAAS_SUP, UserType.SAAS_DST};
+        return new UserType[]{UserType.ROOT, UserType.OPS, UserType.ADMIN, UserType.SAAS, UserType.SAAS_SUPPLIER, UserType.SAAS_DISTRIBUTOR};
     }
 
     /**
@@ -149,7 +149,7 @@ public enum UserType {
      * @return
      */
     public static UserType[] getSaasManageTypes() {
-        return new UserType[]{UserType.SAAS, UserType.SAAS_DST, UserType.SAAS_SUP};
+        return new UserType[]{UserType.SAAS, UserType.SAAS_DISTRIBUTOR, UserType.SAAS_SUPPLIER};
     }
 
     /**
@@ -204,7 +204,7 @@ public enum UserType {
      * @return
      */
     public static boolean isMchType(int value) {
-        if (value == UserType.SAAS_DST.getValue() || value == UserType.SAAS_SUP.getValue()) {
+        if (value == UserType.SAAS_DISTRIBUTOR.getValue() || value == UserType.SAAS_SUPPLIER.getValue()) {
             return true;
         }
         return false;

@@ -9,6 +9,22 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 @Schema(title = "登录类型", description = "登录类型")
 public enum LoginType {
+
+    /**
+     * 重复登录
+     */
+    LOGIN_DOUBLE( -2, "重复登录" ),
+
+    /**
+     * 踢出用户
+     */
+    KICK_OUT( -4, "踢出用户" ),
+
+    /**
+     * 退出登录。
+     */
+    LOGOUT( -1, "退出登录" ),
+
     /**
      * TOKEN刷新。
      */
@@ -96,7 +112,7 @@ public enum LoginType {
      * @return
      */
     public static boolean isScanLoginType(int value) {
-        if (value >= WECHAT_QR.getValue() ) {
+        if (value >= WECHAT_QR.getValue()) {
             return true;
         } else {
             return false;

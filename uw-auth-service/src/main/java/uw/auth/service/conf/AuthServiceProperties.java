@@ -18,7 +18,7 @@ public class AuthServiceProperties {
     /**
      * Token认证入口 即受保护的资源，多个请用英文逗号分隔
      */
-    private String authEntryPoint = "/rpc/*,/root/*,/ops/*,/admin/*,/saas/*,/saas_supplier/*,/saas_distributor/*,/user/*,/guest/*";
+    private String authEntryPoint = "/rpc/*,/root/*,/ops/*,/admin/*,/saas/*,/saasSup/*,/saasDst/*,/user/*,/guest/*";
 
     /**
      * 权限中心服务地址

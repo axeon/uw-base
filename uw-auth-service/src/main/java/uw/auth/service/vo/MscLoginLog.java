@@ -28,7 +28,7 @@ public class MscLoginLog extends LogBaseVo implements Serializable {
     /**
      * 用户类型 ==> msc_user_type.type_code
      */
-    private long userType;
+    private int userType;
 
     /**
      * 运营商Id
@@ -128,11 +128,11 @@ public class MscLoginLog extends LogBaseVo implements Serializable {
         this.userId = userId;
     }
 
-    public long getUserType() {
+    public int getUserType() {
         return userType;
     }
 
-    public void setUserType(long userType) {
+    public void setUserType(int userType) {
         this.userType = userType;
     }
 

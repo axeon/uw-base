@@ -45,6 +45,7 @@ public class AuthConstants {
             try {
                 saasId = Long.parseLong(loginId.substring(pos+1));
             } catch (Exception e) {
+                user = loginId;
             }
         }else{
             user = loginId;

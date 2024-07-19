@@ -16,7 +16,6 @@ public interface HttpDataProcessor<D extends HttpData, T> {
      * 在实际发送之间，对数据进行处理。
      *
      * @param requestBody
-     * @return
      * @throws DataMapperException
      */
     void requestProcess(String requestBody, Map<String, String> formData, Map<String, String> headers) throws DataMapperException;
@@ -34,7 +33,8 @@ public interface HttpDataProcessor<D extends HttpData, T> {
      * 在请求完成后，对数据进行处理。
      * 一般用于处理日志数据，发送到远端。
      *
-     * @param httpData
+     * @param httpData HttpData
+     * @param t 序列化信息
      */
     void postProcess(D httpData,T t);
 

@@ -234,7 +234,7 @@ public class LogClient {
      * @return
      */
     public <T> ESDataList<T> mapQueryResponseToEDataList(SearchResponse<T> response, int startIndex, int pageSize) {
-        List<T> dataList = new ArrayList<>();
+        ArrayList<T> dataList = new ArrayList<>();
         if (response != null) {
             SearchResponse.HitsResponse<T> hitsResponse = response.getHitsResponse();
             List<SearchResponse.Hits<T>> hitsList = hitsResponse.getHits();

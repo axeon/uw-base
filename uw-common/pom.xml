@@ -19,7 +19,7 @@
     <dependencies>
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-annotations-jakarta</artifactId>
+            <artifactId>swagger-annotations</artifactId>
             <version>2.2.21</version>
         </dependency>
         <dependency>

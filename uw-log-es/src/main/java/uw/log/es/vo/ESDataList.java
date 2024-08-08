@@ -1,8 +1,10 @@
 package uw.log.es.vo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -12,53 +14,50 @@ import java.util.List;
  * @param <T> 映射的类型
  * @author axeon
  */
-public class ESDataList<T> implements Iterator<T>, Iterable<T>, Serializable {
-
-    /**
-     * 序列号id.
-     */
-    private static final long serialVersionUID = 1L;
+@Schema(title = "DataList数据集", description = "组合了互联网应用常见列表所需数据的集合接口")
+public class ESDataList<T> implements Iterable<T>, Serializable {
 
     /**
      * 开始的索引.
      */
     @JsonProperty
+    @Schema(title = "请求的起始索引", description = "请求的起始索引")
     private int startIndex = 0;
 
     /**
      * 返回的结果集大小.
      */
     @JsonProperty
+    @Schema(title = "请求的结果集大小", description = "请求的结果集大小")
     private int resultNum = 0;
 
     /**
      * List大小（实际返回的结果集大小）.
      */
     @JsonProperty
+    @Schema(title = "结果集大小", description = "结果集大小")
     private int size = 0;
 
     /**
      * 整个表数据量大小.
      */
     @JsonProperty
+    @Schema(title = "总数据集大小", description = "总数据集大小")
     private int sizeAll = 0;
 
     /**
      * 当前页.
      */
     @JsonProperty
+    @Schema(title = "当前页", description = "当前页")
     private int page = 0;
 
     /**
      * 总页数.
      */
     @JsonProperty
+    @Schema(title = "总页数", description = "总页数")
     private int pageCount = 0;
-
-    /**
-     * 当前索引.
-     */
-    private transient int currentIndex = -1;
 
     /**
      * 返回的value object数组.
@@ -67,7 +66,9 @@ public class ESDataList<T> implements Iterator<T>, Iterable<T>, Serializable {
      * 映射的类型
      */
     @JsonProperty
-    private List<T> results = null;
+    @Schema(title = "结果集", description = "结果集")
+    private ArrayList<T> results = null;
+
 
     /**
      * 构造函数.
@@ -82,15 +83,31 @@ public class ESDataList<T> implements Iterator<T>, Iterable<T>, Serializable {
      * @param results    结果集
      * @param startIndex 开始位置
      * @param resultNum  每页大小
-     * @param allSize    所有的数量
+     * @param sizeAll    所有的数量
      */
-    public ESDataList(List<T> results, int startIndex, int resultNum, int allSize) {
+    public ESDataList(ArrayList<T> results, int startIndex, int resultNum, int sizeAll) {
         this.startIndex = startIndex;
         this.results = results;
         this.resultNum = resultNum;
         this.size = this.results.size();
-        this.sizeAll = allSize;
+        this.sizeAll = sizeAll;
 
+        if (this.results != null) {
+            this.size = this.results.size();
+        }
+        if (this.sizeAll > 0 && this.resultNum > 0) {
+            // 计算当前页
+            this.page = (int) Math.ceil((double) startIndex / (double) resultNum);
+            // 计算总页数
+            this.pageCount = (int) Math.ceil((double) this.sizeAll / (double) resultNum);
+        }
+    }
+
+    /**
+     * 计算页面参数信息。
+     */
+    public void calcPages(int sizeAll) {
+        this.sizeAll = sizeAll;
         if (this.sizeAll > 0 && this.resultNum > 0) {
             // 计算当前页
             this.page = (int) Math.ceil((double) startIndex / (double) resultNum);
@@ -100,74 +117,17 @@ public class ESDataList<T> implements Iterator<T>, Iterable<T>, Serializable {
     }
 
     /**
-     * 定位到某条位置.
-     *
-     * @param index 位置
-     */
-    public void absolute(int index) {
-        this.currentIndex = index - 1;
-    }
-
-    /**
      * 获得指定处的对象.
      *
      * @param index 位置
      * @return value object数组指定的对象
      */
     public T get(int index) {
-        return results.get(index);
-    }
-
-    /**
-     * 是否有下一条记录.
-     *
-     * @return 是否有下一条记录
-     */
-    @Override
-    public boolean hasNext() {
-        return (currentIndex + 1 < this.size);
-    }
-
-    /**
-     * 获取下一条记录.
-     *
-     * @return 下一条记录
-     */
-    @Override
-    public T next() {
-        if (currentIndex < this.size) {
-            currentIndex++;
+        if (results != null) {
+            return results.get(index);
+        } else {
+            return null;
         }
-        return results.get(currentIndex);
-    }
-
-    /**
-     * 是否有上一条记录.
-     *
-     * @return 是否有上一条记录
-     */
-    public boolean hasPrevious() {
-        return (currentIndex > 0);
-    }
-
-    /**
-     * 获取上一条记录.
-     *
-     * @return 上一条记录
-     */
-    public T previous() {
-        if (currentIndex > -1) {
-            currentIndex--;
-        }
-        return results.get(currentIndex);
-    }
-
-    /**
-     * 为了兼容List接口，不实现，不起作用。 抛出异常.
-     */
-    @Override
-    public void remove() {
-        throw new UnsupportedOperationException();
     }
 
     /**
@@ -183,7 +143,6 @@ public class ESDataList<T> implements Iterator<T>, Iterable<T>, Serializable {
      * 获取该表/视图所有的数据大小.
      *
      * @return 该表/视图所有的数据大小
-     * @throws TransactionException 事务异常
      */
     public int sizeAll() {
         return this.sizeAll;
@@ -206,6 +165,7 @@ public class ESDataList<T> implements Iterator<T>, Iterable<T>, Serializable {
     public int page() {
         return this.page;
     }
+
 
     /**
      * 在整个数据集中的开始索引位置.
@@ -230,7 +190,7 @@ public class ESDataList<T> implements Iterator<T>, Iterable<T>, Serializable {
      *
      * @return 结果集
      */
-    public List<T> results() {
+    public ArrayList<T> results() {
         return this.results;
     }
 
@@ -239,9 +199,8 @@ public class ESDataList<T> implements Iterator<T>, Iterable<T>, Serializable {
      *
      * @param objects objects集合
      */
-    public void reset(List<T> objects) {
+    public void reset(ArrayList<T> objects) {
         this.results = objects;
-        this.currentIndex = -1;
         if (this.size != objects.size()) {
             this.size = objects.size();
         }
@@ -254,7 +213,8 @@ public class ESDataList<T> implements Iterator<T>, Iterable<T>, Serializable {
      */
     @Override
     public Iterator<T> iterator() {
-        return this;
+        return this.results.iterator();
     }
+
 
 }

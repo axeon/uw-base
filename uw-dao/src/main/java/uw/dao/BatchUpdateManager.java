@@ -13,21 +13,21 @@ public interface BatchUpdateManager {
      *
      * @param size 批量更新的数量
      */
-    public void setBatchSize(int size);
+    void setBatchSize(int size);
 
     /**
      * 获得批量更新的数量.
      *
      * @return 获得批量更新的数量
      */
-    public int getBatchSize();
+    int getBatchSize();
 
     /**
      * 获得Batch的sql列表.
      *
      * @return Batch的sql列表
      */
-    public List<String> getBatchList();
+    List<String> getBatchList();
 
     /**
      * 提交该事务.
@@ -35,6 +35,6 @@ public interface BatchUpdateManager {
      * @return 执行结果
      * @throws TransactionException 事务异常
      */
-    public Map<String, List<Integer>> submit() throws TransactionException;
+    Map<String, List<Integer>> submit() throws TransactionException;
 
 }

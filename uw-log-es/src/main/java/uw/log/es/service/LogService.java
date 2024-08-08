@@ -53,94 +53,114 @@ public class LogService {
      * 时间序列格式化
      */
     private static final FastDateFormat DATE_FORMAT = FastDateFormat.getInstance( "yyyy-MM-dd'T'HH:mm:ss.SSSZZ", (TimeZone) null );
+
     /**
      * scroll api
      */
     private static final String SCROLL = "scroll";
+
     /**
      * 读写锁
      */
     private final Lock batchLock = new ReentrantLock();
+
     /**
      * 注册Mapping,<Class<?>,String>
      */
     private final Map<Class<?>, IndexConfigVo> regMap = new HashMap<>();
+
     /**
      * httpInterface
      */
     private HttpInterface httpInterface;
+
     /**
      * es集群地址
      */
     private String server;
+
     /**
      * 用户名
      */
     private String username;
+
     /**
      * 用户密码
      */
     private String password;
+
     /**
      * 是否需要记录日志
      */
     private boolean logState;
+
     /**
      * 是否需要Http Basic验证头
      */
     private boolean needBasicAuth;
+
     /**
      * Elasticsearch bulk api 地址
      */
     private String esBulk;
+
     /**
      * 模式
      */
     private LogClientProperties.LogMode mode;
+
     /**
      * 刷新Bucket时间毫秒数
      */
     private long maxFlushInMilliseconds;
+
     /**
      * 允许最大Bucket字节数
      */
     private long maxBytesOfBatch;
+
     /**
      * 最大批量线程数
      */
     private int maxBatchThreads;
+
     /**
      * 最大批量线程队列数
      */
     private int maxBatchQueueSize;
+
     /**
      * buffer
      */
     private okio.Buffer buffer = new okio.Buffer();
+
     /**
      * 后台线程
      */
     private ElasticsearchDaemonExporter daemonExporter;
+
     /**
      * 后台批量线程池。
      */
     private ThreadPoolExecutor batchExecutor;
+
     /**
      * 应用名称
      */
     private String appName;
+
     /**
      * 应用主机信息
      */
     private String appHost;
+
     /**
      * 是否添加执行应用信息
      */
     private boolean appInfoOverwrite;
 
-
     /**
-     * Ctor
+     * LogService.
      *
      * @param logClientProperties 配置器
      * @param appName             应用名称
@@ -169,7 +189,6 @@ public class LogService {
         this.maxBatchQueueSize = logClientProperties.getEs().getMaxBatchQueueSize();
         this.mode = logClientProperties.getEs().getMode();
 
-
         // 如果
         if (mode == LogClientProperties.LogMode.READ_WRITE) {
             this.logState = true;
@@ -177,7 +196,7 @@ public class LogService {
                     new ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "log-es-batch-%d" ).build(), new RejectedExecutionHandler() {
                 @Override
                 public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                    log.error( "Log ES Batch Task " + r.toString() + " rejected from " + executor.toString() );
+                    log.error( "Log ES Batch Task {} rejected from {}", r.toString(), executor.toString() );
                 }
             } );
             daemonExporter = new ElasticsearchDaemonExporter();
@@ -508,9 +527,9 @@ public class LogService {
     }
 
     /**
-     * 转换Sql 成 DSL
+     * 转换Sql为DSL。
      *
-     * @param sql         sql 注意index要进行转义
+     * @param sql
      * @param isTrueCount
      * @return
      */

@@ -11,23 +11,23 @@ public interface TransactionManager {
     /**
      * 事务级别 0.
      */
-    public static int TRANSACTION_NONE = Connection.TRANSACTION_NONE;
+    int TRANSACTION_NONE = Connection.TRANSACTION_NONE;
     /**
      * 事务级别 2.
      */
-    public static int TRANSACTION_READ_COMMITTED = Connection.TRANSACTION_READ_COMMITTED;
+    int TRANSACTION_READ_COMMITTED = Connection.TRANSACTION_READ_COMMITTED;
     /**
      * 事务级别 1.
      */
-    public static int TRANSACTION_READ_UNCOMMITTED = Connection.TRANSACTION_READ_UNCOMMITTED;
+    int TRANSACTION_READ_UNCOMMITTED = Connection.TRANSACTION_READ_UNCOMMITTED;
     /**
      * 事务级别 4.
      */
-    public static int TRANSACTION_REPEATABLE_READ = Connection.TRANSACTION_REPEATABLE_READ;
+    int TRANSACTION_REPEATABLE_READ = Connection.TRANSACTION_REPEATABLE_READ;
     /**
      * 事务级别 8.
      */
-    public static int TRANSACTION_SERIALIZABLE = Connection.TRANSACTION_SERIALIZABLE;
+    int TRANSACTION_SERIALIZABLE = Connection.TRANSACTION_SERIALIZABLE;
 
     /**
      * 是否自动提交事务.

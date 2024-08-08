@@ -17,11 +17,6 @@ import java.util.Iterator;
 public class DataList<T> implements Iterable<T>, Serializable {
 
     /**
-     * 序列号id.
-     */
-    private static final long serialVersionUID = 1L;
-
-    /**
      * 开始的索引.
      */
     @JsonProperty
@@ -46,7 +41,7 @@ public class DataList<T> implements Iterable<T>, Serializable {
      * 整个表数据量大小.
      */
     @JsonProperty
-    @Schema(title = "总数据量", description = "总数据量")
+    @Schema(title = "总数据集大小", description = "总数据集大小")
     private int sizeAll = 0;
 
     /**
@@ -70,7 +65,7 @@ public class DataList<T> implements Iterable<T>, Serializable {
      * 映射的类型
      */
     @JsonProperty
-    @Schema(title = "数据集", description = "数据集")
+    @Schema(title = "结果集", description = "结果集")
     private ArrayList<T> results = null;
 
     /**
@@ -86,14 +81,14 @@ public class DataList<T> implements Iterable<T>, Serializable {
      * @param results    结果集
      * @param startIndex 开始位置
      * @param resultNum  每页大小
-     * @param allSize    所有的数量
+     * @param sizeAll    所有的数量
      */
-    public DataList(ArrayList<T> results, int startIndex, int resultNum, int allSize) {
+    public DataList(ArrayList<T> results, int startIndex, int resultNum, int sizeAll) {
         this.results = results;
 
         this.startIndex = startIndex;
         this.resultNum = resultNum;
-        this.sizeAll = allSize;
+        this.sizeAll = sizeAll;
         if (this.results != null) {
             this.size = this.results.size();
         }
@@ -101,7 +96,7 @@ public class DataList<T> implements Iterable<T>, Serializable {
             // 计算当前页
             this.page = (int) Math.ceil((double) startIndex / (double) resultNum);
             // 计算总页数
-            this.pageCount = (int) Math.ceil((double) sizeAll / (double) resultNum);
+            this.pageCount = (int) Math.ceil((double) this.sizeAll / (double) resultNum);
         }
     }
 
@@ -145,7 +140,6 @@ public class DataList<T> implements Iterable<T>, Serializable {
      * 获取该表/视图所有的数据大小.
      *
      * @return 该表/视图所有的数据大小
-     * @throws TransactionException 事务异常
      */
     public int sizeAll() {
         return this.sizeAll;

@@ -19,8 +19,6 @@ import java.util.ArrayList;
 @Schema(title = "DataSet结果集", description = "DataSet结果集")
 public class DataSet implements Serializable, Cloneable {
 
-    private static final long serialVersionUID = -6406519883263593614L;
-
     /**
      * 当前索引位置.
      */
@@ -116,10 +114,10 @@ public class DataSet implements Serializable, Cloneable {
         ResultSetMetaData rsm = rs.getMetaData();
         int colsCount = rsm.getColumnCount();
         cols = new String[colsCount];
-        int[] coltypes = new int[colsCount];
+        int[] colTypes = new int[colsCount];
         for (int i = 0; i < colsCount; i++) {
             cols[i] = rsm.getColumnLabel(i + 1).toLowerCase();
-            coltypes[i] = rsm.getColumnType(i + 1);
+            colTypes[i] = rsm.getColumnType(i + 1);
         }
         // 开始赋值
         if (resultNum > 0) {
@@ -132,7 +130,7 @@ public class DataSet implements Serializable, Cloneable {
             Object[] result = new Object[cols.length];
             for (int x = 0; x < cols.length; x++) {
                 // 将对应列名的值放入二维数组中
-                switch (coltypes[x]) {
+                switch (colTypes[x]) {
                     case Types.NUMERIC:
                         result[x] = rs.getBigDecimal(x + 1);
                         break;

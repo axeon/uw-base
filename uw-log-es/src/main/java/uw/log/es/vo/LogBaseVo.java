@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @since 2018-07-28
  */
 public abstract class LogBaseVo {
+
     /**
      * 记录时间,方便kibana分析
      */

@@ -226,7 +226,7 @@ public class ShardingDateUtils {
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTime().getTime()-1);
+        return new Date(cal.getTimeInMillis()-1);
     }
 
     /**
@@ -245,7 +245,7 @@ public class ShardingDateUtils {
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTime().getTime()-1);
+        return new Date(cal.getTimeInMillis()-1);
     }
 
 
@@ -265,7 +265,7 @@ public class ShardingDateUtils {
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTime().getTime()-1);
+        return new Date(cal.getTimeInMillis()-1);
     }
 
 
@@ -285,7 +285,7 @@ public class ShardingDateUtils {
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTime().getTime()-1);
+        return new Date(cal.getTimeInMillis()-1);
     }
 
     /**
@@ -304,7 +304,7 @@ public class ShardingDateUtils {
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTime().getTime()-1);
+        return new Date(cal.getTimeInMillis()-1);
     }
 
 
@@ -324,7 +324,7 @@ public class ShardingDateUtils {
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTime().getTime()-1);
+        return new Date(cal.getTimeInMillis()-1);
     }
 
     /**
@@ -343,7 +343,7 @@ public class ShardingDateUtils {
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTime().getTime()-1);
+        return new Date(cal.getTimeInMillis()-1);
     }
 
     /**
@@ -362,7 +362,7 @@ public class ShardingDateUtils {
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTime().getTime()-1);
+        return new Date(cal.getTimeInMillis()-1);
     }
 
 
@@ -382,7 +382,7 @@ public class ShardingDateUtils {
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTime().getTime()-1);
+        return new Date(cal.getTimeInMillis()-1);
     }
 
 

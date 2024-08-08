@@ -31,7 +31,7 @@ public enum UserType {
     RPC( 1, "RPC用户", TimeUnit.DAYS.toMillis( 30 ), TimeUnit.DAYS.toMillis( 365 ) ),
 
     /**
-     * 超级管理员
+     * 超级管理员。
      */
     ROOT( 100, "超级管理员", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) ),
 
@@ -42,25 +42,21 @@ public enum UserType {
     OPS( 110, "开发运维", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) ),
 
     /**
-     * 管理员
+     * 平台管理员。
      * 用于登录业务管理后台。
      */
     ADMIN( 200, "平台管理员", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) ),
 
     /**
-     * SAAS用户类型。
+     * SAAS用户。
      */
     SAAS( 300, "SAAS运营商", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) ),
 
     /**
-     * SAAS供应商。
+     * SAAS商户。
      */
-    SAAS_SUPPLIER( 310, "SAAS供应商", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) ),
+    MCH( 310, "SAAS商户", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) );
 
-    /**
-     * SAAS分销商。
-     */
-    SAAS_DISTRIBUTOR( 320, "SAAS分销商", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) );
 
     private int value;
 
@@ -122,7 +118,7 @@ public enum UserType {
      * @return
      */
     public static UserType[] getMscMenuUserTypes() {
-        return new UserType[]{UserType.ROOT, UserType.OPS, UserType.ADMIN, UserType.SAAS, UserType.SAAS_SUPPLIER, UserType.SAAS_DISTRIBUTOR};
+        return new UserType[]{UserType.ROOT, UserType.OPS, UserType.ADMIN, UserType.SAAS, UserType.MCH};
     }
 
     /**
@@ -149,7 +145,7 @@ public enum UserType {
      * @return
      */
     public static UserType[] getSaasManageTypes() {
-        return new UserType[]{UserType.SAAS, UserType.SAAS_DISTRIBUTOR, UserType.SAAS_SUPPLIER};
+        return new UserType[]{UserType.SAAS, UserType.MCH};
     }
 
     /**
@@ -204,7 +200,7 @@ public enum UserType {
      * @return
      */
     public static boolean isMchType(int value) {
-        if (value == UserType.SAAS_DISTRIBUTOR.getValue() || value == UserType.SAAS_SUPPLIER.getValue()) {
+        if ( value == UserType.MCH.getValue()) {
             return true;
         }
         return false;

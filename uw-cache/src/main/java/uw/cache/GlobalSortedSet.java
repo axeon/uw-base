@@ -93,7 +93,7 @@ public class GlobalSortedSet {
         if (setName == null || itemDatas == null) {
             return -1L;
         }
-        byte[][] dataArray = new byte[itemDatas.length][];
+        Object[] dataArray = new Object[itemDatas.length];
         for (int i = 0; i < itemDatas.length; i++) {
             dataArray[i] = KryoUtils.serialize( itemDatas[i] );
         }

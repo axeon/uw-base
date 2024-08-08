@@ -13,7 +13,7 @@ import java.util.Date;
  *
  * @author axeon
  */
-public class TableShardingUtils {
+public class ShardingTableUtils {
 
     /**
      * DateTimeFormatter对象（包含年月日）.

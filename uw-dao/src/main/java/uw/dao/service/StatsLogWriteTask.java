@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.dao.DaoFactory;
 import uw.dao.util.DaoValueUtils;
-import uw.dao.util.TableShardingUtils;
+import uw.dao.util.ShardingTableUtils;
 import uw.dao.vo.SqlExecuteStats;
 
 import java.sql.Connection;
@@ -48,7 +48,7 @@ public class StatsLogWriteTask implements Runnable {
      */
     private void writeStatsList(List<SqlExecuteStats> list) {
 
-        String tableName = TableShardingUtils.getTableNameByDate(DaoService.STATS_BASE_TABLE,
+        String tableName = ShardingTableUtils.getTableNameByDate(DaoService.STATS_BASE_TABLE,
                 list.get(0).getActionDate());
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -64,7 +64,7 @@ public class StatsLogWriteTask implements Runnable {
                 SqlExecuteStats ss = list.get(pos);
                 // 发现已经跨时间分片了，此时要退出
                 if (pos > 0 && !tableName.equals(
-                        TableShardingUtils.getTableNameByDate(DaoService.STATS_BASE_TABLE, ss.getActionDate()))) {
+                        ShardingTableUtils.getTableNameByDate(DaoService.STATS_BASE_TABLE, ss.getActionDate()))) {
                     break;
                 }
                 if (ss.getConnName() != null && ss.getConnName().length() > 100) {

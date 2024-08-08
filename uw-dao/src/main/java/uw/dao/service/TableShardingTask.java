@@ -10,7 +10,7 @@ import uw.dao.conf.DaoConfig;
 import uw.dao.conf.DaoConfig.TableShardConfig;
 import uw.dao.conf.DaoConfigManager;
 import uw.dao.util.DaoStringUtils;
-import uw.dao.util.TableShardingUtils;
+import uw.dao.util.ShardingTableUtils;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -63,16 +63,16 @@ public class TableShardingTask implements Runnable {
                     // 计算当前表和下一个表
                     switch (tc.getShardRule()) {
                         case "month":
-                            currentTable = now.format( TableShardingUtils.FORMATTER_MONTH );
-                            nextTable = now.plusMonths( 1 ).format( TableShardingUtils.FORMATTER_MONTH );
+                            currentTable = now.format( ShardingTableUtils.FORMATTER_MONTH );
+                            nextTable = now.plusMonths( 1 ).format( ShardingTableUtils.FORMATTER_MONTH );
                             break;
                         case "year":
-                            currentTable = now.format( TableShardingUtils.FORMATTER_YEAR );
-                            nextTable = now.plusYears( 1 ).format( TableShardingUtils.FORMATTER_YEAR );
+                            currentTable = now.format( ShardingTableUtils.FORMATTER_YEAR );
+                            nextTable = now.plusYears( 1 ).format( ShardingTableUtils.FORMATTER_YEAR );
                             break;
                         default:
-                            currentTable = now.format( TableShardingUtils.FORMATTER_DAY );
-                            nextTable = now.plusDays( 1 ).format( TableShardingUtils.FORMATTER_DAY );
+                            currentTable = now.format( ShardingTableUtils.FORMATTER_DAY );
+                            nextTable = now.plusDays( 1 ).format( ShardingTableUtils.FORMATTER_DAY );
                             break;
                     }
                     currentTable = baseTableName + "_" + currentTable;

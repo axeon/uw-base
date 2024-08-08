@@ -91,7 +91,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     @Override
     public ResponseData initSaasPerm(long saasId, String saasName, String[] initAppNames, String adminPasswd, String adminMobile, String adminEmail) {
         URI targetUrl = UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/initSaasPerm" ).queryParam( "saasId", saasId ).queryParam(
-                "saasName", saasName ).queryParam( "initAppNames", initAppNames ).queryParam( "adminPasswd", adminPasswd ).queryParam( "adminMobile", adminMobile ).queryParam(
+                "saasName", saasName ).queryParam( "initAppNames", (Object[])initAppNames ).queryParam( "adminPasswd", adminPasswd ).queryParam( "adminMobile", adminMobile ).queryParam(
                         "adminEmail", adminEmail ).build().encode().toUri();
         return restTemplate.exchange( targetUrl, HttpMethod.POST, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
@@ -286,7 +286,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     @Override
     public ResponseData<String> getAppSaasPerm(String[] appNames) {
         URI targetUrl =
-                UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/getAppSaasPerm" ).queryParam( "appNames", appNames ).build().encode().toUri();
+                UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/getAppSaasPerm" ).queryParam( "appNames", (Object[])appNames ).build().encode().toUri();
         return restTemplate.exchange( targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<String>>() {
         } ).getBody();
     }

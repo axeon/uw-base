@@ -53,19 +53,16 @@ public class AuthServiceFilter implements Filter {
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
     private final AuthPermService authPermService;
     private final LogClient logClient;
-    private final AuthServiceHelper authServiceHelper;
     private final MscRateLimiter mscRateLimiter;
     private final AuthCriticalLogStorage authCriticalLogStorage;
 
     public AuthServiceFilter(final AuthServiceProperties authServerProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthPermService authPermService,
-                             final MscRateLimiter mscRateLimiter, final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage,
-                             final AuthServiceHelper authServiceHelper) {
+                             final MscRateLimiter mscRateLimiter, final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage) {
         this.authServerProperties = authServerProperties;
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.authPermService = authPermService;
         this.mscRateLimiter = mscRateLimiter;
         this.logClient = logClient;
-        this.authServiceHelper = authServiceHelper;
         this.authCriticalLogStorage = authCriticalLogStorage;
     }
 
@@ -92,7 +89,7 @@ public class AuthServiceFilter implements Filter {
         try {
             // 取得上下文用户对象
             String rawToken = httpServletRequest.getHeader( AuthConstants.TOKEN_HEADER_PARAM );
-            AuthTokenData authToken = authServiceHelper.parseRawToken( remoteIp, rawToken );
+            AuthTokenData authToken = AuthServiceHelper.parseRawToken( remoteIp, rawToken );
             invokeCounter.increment();
             HandlerExecutionChain handlerExecutionChain = null;
             try {

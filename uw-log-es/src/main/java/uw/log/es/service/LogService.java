@@ -280,6 +280,7 @@ public class LogService {
         }
         String index = getIndex( source.getClass() );
         if (StringUtils.isBlank( index )) {
+            log.warn( "LogClass[{}] not registry!!!", source.getClass().getName() );
             return;
         }
         // 写上时间戳
@@ -325,9 +326,10 @@ public class LogService {
         if (sourceList == null || sourceList.isEmpty()) {
             return;
         }
-
-        String index = getIndex( sourceList.get( 0 ).getClass() );
+        Class logClass = sourceList.get( 0 ).getClass();
+        String index = getIndex( logClass );
         if (StringUtils.isBlank( index )) {
+            log.warn( "LogClass[{}] not registry!!!", logClass.getName() );
             return;
         }
         okio.Buffer okb = new okio.Buffer();

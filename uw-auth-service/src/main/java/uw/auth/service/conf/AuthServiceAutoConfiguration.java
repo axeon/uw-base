@@ -132,17 +132,16 @@ public class AuthServiceAutoConfiguration {
      * @param requestMappingHandlerMapping
      * @param authPermService
      * @param logClient
-     * @param authServiceHelper
      * @return
      */
     @Bean
     public FilterRegistrationBean<AuthServiceFilter> authServiceFilter(final AuthServiceProperties authServiceProperties,
-                                                                 final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthPermService authPermService,
-                                                                 final IpMatchHelper ipMatchHelper, final MscRateLimiter mscRateLimiter, final LogClient logClient,
-                                                                 final AuthCriticalLogStorage authCriticalLogStorage, final AuthServiceHelper authServiceHelper) {
+                                                                       final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthPermService authPermService,
+                                                                       final MscRateLimiter mscRateLimiter, final LogClient logClient,
+                                                                       final AuthCriticalLogStorage authCriticalLogStorage) {
         FilterRegistrationBean<AuthServiceFilter> registrationBean = new FilterRegistrationBean<AuthServiceFilter>();
         AuthServiceFilter authServiceFilter = new AuthServiceFilter( authServiceProperties, requestMappingHandlerMapping, authPermService, mscRateLimiter, logClient,
-                authCriticalLogStorage, authServiceHelper );
+                authCriticalLogStorage );
         registrationBean.setFilter( authServiceFilter );
         registrationBean.setName( "AuthServiceFilter" );
         registrationBean.setOrder( TOKEN_FILTER_ORDER );

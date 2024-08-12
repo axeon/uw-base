@@ -1053,7 +1053,7 @@ public class AuthServiceHelper {
      * @param bearerToken
      * @return
      */
-    public AuthTokenData parseRawToken(String ip, String bearerToken) {
+    public static AuthTokenData parseRawToken(String ip, String bearerToken) {
         if (bearerToken == null) {
             throw new TokenInvalidateException( "!!!Server Token header null. " );
         }

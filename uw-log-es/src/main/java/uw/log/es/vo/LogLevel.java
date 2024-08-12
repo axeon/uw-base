@@ -13,22 +13,22 @@ public enum LogLevel {
     /**
      * 记录日志
      */
-    RECORD(0, "记录"),
+    BASE(0, "记录基本信息"),
 
     /**
      * 记录日志,含请求参数
      */
-    RECORD_REQUEST(1, "记录请求"),
+    REQUEST(1, "记录请求信息"),
 
     /**
      * 记录日志,含返回参数
      */
-    RECORD_RESPONSE(2, "记录返回结果"),
+    RESPONSE(2, "记录返回结果"),
 
     /**
      * 记录全部信息。
      */
-    RECORD_ALL(3, "记录全部信息");
+    ALL(3, "记录全部信息");
 
     /**
      * 数值。

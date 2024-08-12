@@ -53,6 +53,6 @@ public @interface MscPermDeclare {
      *
      * @return
      */
-    ActionLog log() default ActionLog.REQUEST;
+    ActionLog log() default ActionLog.BASE;
 
 }

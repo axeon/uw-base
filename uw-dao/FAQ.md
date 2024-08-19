@@ -117,7 +117,7 @@ List<String> name;
 
 ```java
         //获取dao实例
-        DaoFactory dao = DaoFactory.getInstance();
+        private final DaoFactory dao = DaoFactory.getInstance();
         //开启事务
         TransactionManager transactionManager = dao.beginTransaction();
         //开启批量写入

@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static uw.dao.conf.DaoConfigManager.ROOT_CONN_NAME;
@@ -190,6 +191,10 @@ public final class ConnectionManager {
             } else {
                 hikariConfig.setMaxLifetime( connMaxAge * 1000L );
             }
+            //对于oracle，需要特殊处理。
+            if (driver.contains( "OracleDriver" )) {
+                hikariConfig.setDataSourceProperties( oracleProperties() );
+            }
             // 数据库方言
             HikariDataSource hikariDataSource = new HikariDataSource( hikariConfig );
             // 注册成功,初始化方言
@@ -201,6 +206,20 @@ public final class ConnectionManager {
             DATA_SOURCE_MAP.put( aliasName, dataSource );
         }
         return dataSource;
+    }
+
+    /**
+     * oracle特殊设定。
+     * @return
+     */
+    private static Properties oracleProperties() {
+        Properties properties = new Properties();
+
+        properties.put("oracle.net.CONNECT_TIMEOUT", 10000);
+        properties.put("oracle.net.READ_TIMEOUT", 10000);
+        properties.put("oracle.jdbc.ReadTimeout", 10000);
+
+        return properties;
     }
 
     /**

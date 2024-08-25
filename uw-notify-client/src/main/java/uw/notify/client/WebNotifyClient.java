@@ -17,9 +17,9 @@ public class WebNotifyClient {
     /**
      * Rest模板类
      */
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
 
-    private UwNotifyProperties uwNotifyProperties;
+    private final UwNotifyProperties uwNotifyProperties;
 
     public WebNotifyClient(UwNotifyProperties uwNotifyProperties, RestTemplate restTemplate) {
         this.restTemplate = restTemplate;

@@ -19,31 +19,47 @@ import java.net.URI;
 public class MydbClient {
 
     private static final Logger log = LoggerFactory.getLogger( MydbClient.class );
-
     /**
      * 默认配置。
      */
-    public static final String DEFAULT_CONFIG = "default";
+    private static final String DEFAULT_CONFIG = "default";
 
     /**
      * Rest模板类
      */
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
 
-    private UwMydbClientProperties uwNotifyProperties;
+    private final UwMydbClientProperties uwMydbClientProperties;
 
-    public MydbClient(UwMydbClientProperties uwNotifyProperties, RestTemplate restTemplate) {
+    public MydbClient(UwMydbClientProperties uwMydbClientProperties, RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
-        this.uwNotifyProperties = uwNotifyProperties;
+        this.uwMydbClientProperties = uwMydbClientProperties;
     }
 
     /**
      * 分配saas节点。
+     *
      * @param saasId
      * @return
      */
     public ResponseData assignSaasNode(Serializable saasId) {
-        return assignSaasNode( DEFAULT_CONFIG,saasId );
+        return assignSaasNode( DEFAULT_CONFIG, saasId, null );
+    }
+
+
+    /**
+     * 分配saas节点。
+     * 返回值含义。
+     * success: 正常创建节点。
+     * warn: 系统已存在节点。
+     * error: 创建失败。
+     *
+     * @param saasId
+     * @param preferNode 预设节点名。
+     * @return
+     */
+    public ResponseData assignSaasNode(Serializable saasId, String preferNode) {
+        return assignSaasNode( DEFAULT_CONFIG, saasId, preferNode );
     }
 
     /**
@@ -52,13 +68,16 @@ public class MydbClient {
      * success: 正常创建节点。
      * warn: 系统已存在节点。
      * error: 创建失败。
+     *
      * @param configKey
      * @param saasId
+     * @param preferNode 预设节点名。
      * @return
      */
-    public ResponseData assignSaasNode(String configKey, Serializable saasId) {
-        URI targetUrl = UriComponentsBuilder.fromHttpUrl( uwNotifyProperties.getMydbCenterHost() ).path( "/rpc/app/assignSaasNode" )
-                .queryParam( "configKey", configKey ).queryParam( "saasId", saasId ).build().encode().toUri();
+    public ResponseData assignSaasNode(String configKey, Serializable saasId, String preferNode) {
+        URI targetUrl =
+                UriComponentsBuilder.fromHttpUrl( uwMydbClientProperties.getMydbCenterHost() ).path( "/rpc/app/assignSaasNode" ).queryParam( "configKey", configKey ).queryParam(
+                        "saasId", saasId ).queryParam( "preferNode", preferNode ).build().encode().toUri();
         return restTemplate.exchange( targetUrl, HttpMethod.POST, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 

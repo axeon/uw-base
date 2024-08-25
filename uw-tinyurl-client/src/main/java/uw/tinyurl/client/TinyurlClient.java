@@ -18,9 +18,9 @@ public class TinyurlClient {
     /**
      * Rest模板类
      */
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
 
-    private UwTinyurlProperties uwTinyurlProperties;
+    private final UwTinyurlProperties uwTinyurlProperties;
 
     public TinyurlClient(UwTinyurlProperties uwTinyurlProperties, RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -34,8 +34,7 @@ public class TinyurlClient {
      * @return
      */
     public ResponseData generate(TinyurlParam tinyurlParam) {
-        ResponseData responseData = restTemplate.postForObject( uwTinyurlProperties.getTinyurlCenterHost() + "/rpc/tinyurl/generate", tinyurlParam, ResponseData.class );
-        return responseData;
+        return restTemplate.postForObject( uwTinyurlProperties.getTinyurlCenterHost() + "/rpc/tinyurl/generate", tinyurlParam, ResponseData.class );
     }
 
 }

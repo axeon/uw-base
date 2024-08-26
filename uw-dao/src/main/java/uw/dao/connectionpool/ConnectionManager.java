@@ -195,6 +195,10 @@ public final class ConnectionManager {
             if (driver.contains( "OracleDriver" )) {
                 hikariConfig.setDataSourceProperties( oracleProperties() );
             }
+            //补充设置，防止出现数据库宕机卡死的问题。
+            hikariConfig.setConnectionTimeout( 10_000L );
+            hikariConfig.setValidationTimeout( 10_000L );
+            hikariConfig.setInitializationFailTimeout( 10_000L );
             // 数据库方言
             HikariDataSource hikariDataSource = new HikariDataSource( hikariConfig );
             // 注册成功,初始化方言

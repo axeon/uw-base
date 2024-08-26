@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestTemplate;
-import uw.tinyurl.client.TinyurlClient;
+import uw.tinyurl.client.TinyurlClientHelper;
 
 /**
  * 启动自动配置。
@@ -19,7 +19,7 @@ public class UwTinyurlAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public TinyurlClient uwTinyurlHelper(UwTinyurlProperties uwTinyurlProperties, RestTemplate tokenRestTemplate) {
-        return new TinyurlClient( uwTinyurlProperties, tokenRestTemplate );
+    public TinyurlClientHelper tinyurlClientHelper(UwTinyurlProperties uwTinyurlProperties, RestTemplate tokenRestTemplate) {
+        return new TinyurlClientHelper( uwTinyurlProperties, tokenRestTemplate );
     }
 }

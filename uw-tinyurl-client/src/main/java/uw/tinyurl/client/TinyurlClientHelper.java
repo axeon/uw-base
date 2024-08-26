@@ -12,19 +12,19 @@ import uw.tinyurl.client.vo.TinyurlParam;
 /**
  * 短链帮助类。
  */
-public class TinyurlClient {
+public class TinyurlClientHelper {
 
-    private static final Logger log = LoggerFactory.getLogger( TinyurlClient.class );
+    private static final Logger log = LoggerFactory.getLogger( TinyurlClientHelper.class );
     /**
      * Rest模板类
      */
-    private final RestTemplate restTemplate;
+    private static RestTemplate restTemplate;
 
-    private final UwTinyurlProperties uwTinyurlProperties;
+    private static UwTinyurlProperties uwTinyurlProperties;
 
-    public TinyurlClient(UwTinyurlProperties uwTinyurlProperties, RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-        this.uwTinyurlProperties = uwTinyurlProperties;
+    public TinyurlClientHelper(UwTinyurlProperties uwTinyurlProperties, RestTemplate restTemplate) {
+        TinyurlClientHelper.restTemplate = restTemplate;
+        TinyurlClientHelper.uwTinyurlProperties = uwTinyurlProperties;
     }
 
     /**
@@ -33,7 +33,7 @@ public class TinyurlClient {
      * @param tinyurlParam
      * @return
      */
-    public ResponseData generate(TinyurlParam tinyurlParam) {
+    public static ResponseData generate(TinyurlParam tinyurlParam) {
         return restTemplate.postForObject( uwTinyurlProperties.getTinyurlCenterHost() + "/rpc/tinyurl/generate", tinyurlParam, ResponseData.class );
     }
 

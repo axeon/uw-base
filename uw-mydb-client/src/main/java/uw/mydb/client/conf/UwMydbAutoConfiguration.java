@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestTemplate;
-import uw.mydb.client.MydbClient;
+import uw.mydb.client.MydbClientHelper;
 
 /**
  * 启动自动配置。
@@ -19,7 +19,7 @@ public class UwMydbAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public MydbClient mydbClient(UwMydbClientProperties uwNotifyProperties, RestTemplate tokenRestTemplate) {
-        return new MydbClient( uwNotifyProperties, tokenRestTemplate );
+    public MydbClientHelper mydbClientHelper(UwMydbClientProperties uwNotifyProperties, RestTemplate tokenRestTemplate) {
+        return new MydbClientHelper( uwNotifyProperties, tokenRestTemplate );
     }
 }

@@ -16,9 +16,9 @@ import java.net.URI;
 /**
  * MydbHelper。
  */
-public class MydbClient {
+public class MydbClientHelper {
 
-    private static final Logger log = LoggerFactory.getLogger( MydbClient.class );
+    private static final Logger log = LoggerFactory.getLogger( MydbClientHelper.class );
     /**
      * 默认配置。
      */
@@ -27,13 +27,13 @@ public class MydbClient {
     /**
      * Rest模板类
      */
-    private final RestTemplate restTemplate;
+    private static RestTemplate restTemplate;
 
-    private final UwMydbClientProperties uwMydbClientProperties;
+    private static UwMydbClientProperties uwMydbClientProperties;
 
-    public MydbClient(UwMydbClientProperties uwMydbClientProperties, RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-        this.uwMydbClientProperties = uwMydbClientProperties;
+    public MydbClientHelper(UwMydbClientProperties uwMydbClientProperties, RestTemplate restTemplate) {
+        MydbClientHelper.uwMydbClientProperties = uwMydbClientProperties;
+        MydbClientHelper.restTemplate = restTemplate;
     }
 
     /**
@@ -42,7 +42,7 @@ public class MydbClient {
      * @param saasId
      * @return
      */
-    public ResponseData assignSaasNode(Serializable saasId) {
+    public static ResponseData assignSaasNode(Serializable saasId) {
         return assignSaasNode( DEFAULT_CONFIG, saasId, null );
     }
 
@@ -58,7 +58,7 @@ public class MydbClient {
      * @param preferNode 预设节点名。
      * @return
      */
-    public ResponseData assignSaasNode(Serializable saasId, String preferNode) {
+    public static ResponseData assignSaasNode(Serializable saasId, String preferNode) {
         return assignSaasNode( DEFAULT_CONFIG, saasId, preferNode );
     }
 
@@ -74,7 +74,7 @@ public class MydbClient {
      * @param preferNode 预设节点名。
      * @return
      */
-    public ResponseData assignSaasNode(String configKey, Serializable saasId, String preferNode) {
+    public static ResponseData assignSaasNode(String configKey, Serializable saasId, String preferNode) {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( uwMydbClientProperties.getMydbCenterHost() ).path( "/rpc/app/assignSaasNode" ).queryParam( "configKey", configKey ).queryParam(
                         "saasId", saasId ).queryParam( "preferNode", preferNode ).build().encode().toUri();

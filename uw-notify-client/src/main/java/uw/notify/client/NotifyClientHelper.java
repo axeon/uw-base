@@ -11,19 +11,19 @@ import uw.notify.client.vo.WebNotifyMsg;
 /**
  * Web通知Helper。
  */
-public class WebNotifyClient {
+public class NotifyClientHelper {
 
-    private static final Logger log = LoggerFactory.getLogger( WebNotifyClient.class );
+    private static final Logger log = LoggerFactory.getLogger( NotifyClientHelper.class );
     /**
      * Rest模板类
      */
-    private final RestTemplate restTemplate;
+    private static RestTemplate restTemplate;
 
-    private final UwNotifyProperties uwNotifyProperties;
+    private static UwNotifyProperties uwNotifyProperties;
 
-    public WebNotifyClient(UwNotifyProperties uwNotifyProperties, RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-        this.uwNotifyProperties = uwNotifyProperties;
+    public NotifyClientHelper(UwNotifyProperties uwNotifyProperties, RestTemplate restTemplate) {
+        NotifyClientHelper.restTemplate = restTemplate;
+        NotifyClientHelper.uwNotifyProperties = uwNotifyProperties;
     }
 
     /**
@@ -32,7 +32,7 @@ public class WebNotifyClient {
      * @param webNotifyMsg
      * @return
      */
-    public ResponseData pushNotify(WebNotifyMsg webNotifyMsg) {
+    public static ResponseData pushNotify(WebNotifyMsg webNotifyMsg) {
         ResponseData responseData = null;
         try {
             responseData = restTemplate.postForObject( uwNotifyProperties.getNotifyCenterHost() + "/rpc/webNotify/pushMsg", webNotifyMsg, ResponseData.class );

@@ -131,8 +131,7 @@ public final class ConnectionManager {
      * @param poolName 连接池名字
      */
     public static HikariDataSource getConnectionPool(String poolName) {
-        HikariDataSource dataSource = DATA_SOURCE_MAP.get( poolName );
-        return dataSource;
+        return DATA_SOURCE_MAP.get( poolName );
     }
 
     /**

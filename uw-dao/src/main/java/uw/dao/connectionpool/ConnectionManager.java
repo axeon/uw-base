@@ -201,7 +201,8 @@ public final class ConnectionManager {
             //补充设置，防止出现数据库宕机卡死的问题。
             hikariConfig.setConnectionTimeout( 10_000L );
             hikariConfig.setValidationTimeout( 10_000L );
-            hikariConfig.setInitializationFailTimeout( 10_000L );
+            //禁止启动连接数据
+            hikariConfig.setInitializationFailTimeout( 0L );
             // 数据库方言
             HikariDataSource hikariDataSource = new HikariDataSource( hikariConfig );
             // 注册成功,初始化方言
@@ -234,11 +235,9 @@ public final class ConnectionManager {
      */
     private static Properties oracleProperties() {
         Properties properties = new Properties();
-
         properties.put( "oracle.net.CONNECT_TIMEOUT", 10000 );
         properties.put( "oracle.net.READ_TIMEOUT", 10000 );
         properties.put( "oracle.jdbc.ReadTimeout", 10000 );
-
         return properties;
     }
 

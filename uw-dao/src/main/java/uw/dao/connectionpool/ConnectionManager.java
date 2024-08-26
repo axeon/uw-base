@@ -141,6 +141,10 @@ public final class ConnectionManager {
      */
     public static synchronized HikariDataSource initConnectionPool(String poolName, String aliasName, String driver, String url, String username, String password, String testSql
             , int connMin, int connMax, int connIdleTimeout, int connBusyTimeout, int connMaxAge) {
+        HikariDataSource source = DATA_SOURCE_MAP.get( poolName );
+        if (source != null) {
+            return source;
+        }
         HikariDataSource dataSource = DATA_SOURCE_MAP.computeIfAbsent( poolName, (key) -> {
 
             // HikariConfig
@@ -212,20 +216,6 @@ public final class ConnectionManager {
     }
 
     /**
-     * oracle特殊设定。
-     * @return
-     */
-    private static Properties oracleProperties() {
-        Properties properties = new Properties();
-
-        properties.put("oracle.net.CONNECT_TIMEOUT", 10000);
-        properties.put("oracle.net.READ_TIMEOUT", 10000);
-        properties.put("oracle.jdbc.ReadTimeout", 10000);
-
-        return properties;
-    }
-
-    /**
      * 销毁一个连接池.
      *
      * @param poolName 连接池名字
@@ -235,6 +225,21 @@ public final class ConnectionManager {
         if (cp != null && cp.isRunning()) {
             cp.close();
         }
+    }
+
+    /**
+     * oracle特殊设定。
+     *
+     * @return
+     */
+    private static Properties oracleProperties() {
+        Properties properties = new Properties();
+
+        properties.put( "oracle.net.CONNECT_TIMEOUT", 10000 );
+        properties.put( "oracle.net.READ_TIMEOUT", 10000 );
+        properties.put( "oracle.jdbc.ReadTimeout", 10000 );
+
+        return properties;
     }
 
     /**

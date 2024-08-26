@@ -3,8 +3,11 @@ package uw.tinyurl.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cloud.client.loadbalancer.ResponseData;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestTemplate;
+import uw.common.dto.ResponseData;
 import uw.tinyurl.client.conf.UwTinyurlProperties;
 import uw.tinyurl.client.vo.TinyurlParam;
 
@@ -33,8 +36,10 @@ public class TinyurlClientHelper {
      * @param tinyurlParam
      * @return
      */
-    public static ResponseData generate(TinyurlParam tinyurlParam) {
-        return restTemplate.postForObject( uwTinyurlProperties.getTinyurlCenterHost() + "/rpc/tinyurl/generate", tinyurlParam, ResponseData.class );
+    public static ResponseData<String> generate(TinyurlParam tinyurlParam) {
+        return restTemplate.exchange( uwTinyurlProperties.getTinyurlCenterHost() + "/rpc/tinyurl/generate", HttpMethod.POST, new HttpEntity<>( tinyurlParam ),
+                new ParameterizedTypeReference<ResponseData<String>>() {
+        } ).getBody();
     }
 
 }

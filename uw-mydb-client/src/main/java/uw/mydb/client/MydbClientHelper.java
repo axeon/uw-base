@@ -3,12 +3,14 @@ package uw.mydb.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cloud.client.loadbalancer.ResponseData;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+import uw.common.dto.ResponseData;
 import uw.mydb.client.conf.UwMydbClientProperties;
+import uw.mydb.client.vo.DataNode;
 
 import java.io.Serializable;
 import java.net.URI;
@@ -42,7 +44,7 @@ public class MydbClientHelper {
      * @param saasId
      * @return
      */
-    public static ResponseData assignSaasNode(Serializable saasId) {
+    public static ResponseData<DataNode> assignSaasNode(Serializable saasId) {
         return assignSaasNode( DEFAULT_CONFIG, saasId, null );
     }
 
@@ -58,7 +60,7 @@ public class MydbClientHelper {
      * @param preferNode 预设节点名。
      * @return
      */
-    public static ResponseData assignSaasNode(Serializable saasId, String preferNode) {
+    public static ResponseData<DataNode> assignSaasNode(Serializable saasId, String preferNode) {
         return assignSaasNode( DEFAULT_CONFIG, saasId, preferNode );
     }
 
@@ -74,11 +76,12 @@ public class MydbClientHelper {
      * @param preferNode 预设节点名。
      * @return
      */
-    public static ResponseData assignSaasNode(String configKey, Serializable saasId, String preferNode) {
+    public static ResponseData<DataNode> assignSaasNode(String configKey, Serializable saasId, String preferNode) {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( uwMydbClientProperties.getMydbCenterHost() ).path( "/rpc/app/assignSaasNode" ).queryParam( "configKey", configKey ).queryParam(
                         "saasId", saasId ).queryParam( "preferNode", preferNode ).build().encode().toUri();
-        return restTemplate.exchange( targetUrl, HttpMethod.POST, HttpEntity.EMPTY, ResponseData.class ).getBody();
+        return restTemplate.exchange( targetUrl, HttpMethod.POST, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<DataNode>>() {
+        } ).getBody();
     }
 
 }

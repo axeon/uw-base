@@ -105,8 +105,8 @@ public class FusionCache {
      * 向缓存中存入数据。
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
-     * @param key        缓存主键
-     * @param value      数值
+     * @param key         缓存主键
+     * @param value       数值
      * @return
      */
     public static void put(Class entityClass, Object key, Object value) {
@@ -117,9 +117,9 @@ public class FusionCache {
      * 向缓存中存入数据。
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
-     * @param key        缓存主键
-     * @param value      数值
-     * @param onlyLocal  只更新到本地缓存
+     * @param key         缓存主键
+     * @param value       数值
+     * @param onlyLocal   只更新到本地缓存
      * @return
      */
     public static void put(Class entityClass, Object key, Object value, boolean onlyLocal) {
@@ -162,7 +162,7 @@ public class FusionCache {
      * 向缓存中批量存入数据。
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
-     * @param map        要存入的批量数据
+     * @param map         要存入的批量数据
      */
     public static void putAll(Class entityClass, Map<Object, Object> map) {
         putAll( entityClass.getSimpleName(), map, false );
@@ -172,8 +172,8 @@ public class FusionCache {
      * 向缓存中批量存入数据。
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
-     * @param map        要存入的批量数据
-     * @param onlyLocal  只更新到本地缓存
+     * @param map         要存入的批量数据
+     * @param onlyLocal   只更新到本地缓存
      */
     public static void putAll(Class entityClass, Map<Object, Object> map, boolean onlyLocal) {
         putAll( entityClass.getSimpleName(), map, onlyLocal );
@@ -213,7 +213,7 @@ public class FusionCache {
      * 从缓存中加载数据。
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
-     * @param key        缓存主键
+     * @param key         缓存主键
      * @param <T>
      * @return
      */
@@ -235,7 +235,7 @@ public class FusionCache {
         if (value instanceof CacheProtectedValue failProtectValue) {
             if (failProtectValue.isExpired()) {
                 cache.invalidate( key );
-                return get( cacheName, key );
+                return get(cacheName, key );
             } else {
                 return null;
             }
@@ -249,7 +249,7 @@ public class FusionCache {
      * 缓存中是否存在指定Key。
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
-     * @param key        缓存主键
+     * @param key         缓存主键
      * @return
      */
     public static boolean containsKey(Class entityClass, Object key) {
@@ -380,7 +380,7 @@ public class FusionCache {
      * 默认通知集群内其他主机。
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
-     * @param key        缓存主键
+     * @param key         缓存主键
      */
     public static boolean invalidate(Class entityClass, Object key) {
         return invalidate( entityClass.getSimpleName(), key, true );
@@ -401,8 +401,8 @@ public class FusionCache {
      * 从缓存中删除一个对象。
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
-     * @param key        缓存主键
-     * @param notify     是否通知集群内其他主机。
+     * @param key         缓存主键
+     * @param notify      是否通知集群内其他主机。
      */
     public static boolean invalidate(Class entityClass, Object key, boolean notify) {
         return invalidate( entityClass.getSimpleName(), key, notify );
@@ -457,7 +457,7 @@ public class FusionCache {
      * 默认通知集群内其他主机。
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
-     * @param key        缓存主键
+     * @param key         缓存主键
      */
     public static boolean refresh(Class entityClass, Object key) {
         return refresh( entityClass.getSimpleName(), key, true );
@@ -478,8 +478,8 @@ public class FusionCache {
      * 刷新一个对象。
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
-     * @param key        缓存主键
-     * @param notify     是否通知集群内其他主机。
+     * @param key         缓存主键
+     * @param notify      是否通知集群内其他主机。
      */
     public static boolean refresh(Class entityClass, Object key, boolean notify) {
         return refresh( entityClass.getSimpleName(), key, notify );
@@ -769,7 +769,7 @@ public class FusionCache {
              * 空值保护毫秒数，默认为60秒。
              * 当reload方法获得null的时候，将会保护一段时间，防穿透。
              */
-            private long nullProtectMillis= 60_000L;
+            private long nullProtectMillis = 60_000L;
 
             /**
              * 失败保护毫秒数，默认为60秒。

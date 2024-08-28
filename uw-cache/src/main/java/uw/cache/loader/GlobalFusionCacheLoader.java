@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import uw.cache.CacheDataLoader;
 import uw.cache.FusionCache;
 import uw.cache.GlobalCache;
+import uw.cache.vo.CacheProtectedValue;
 
 /**
  * 全局融合缓存加载器。
@@ -17,12 +18,12 @@ public class GlobalFusionCacheLoader<K, V> implements CacheLoader<K, V> {
     /**
      * 缓存配置。
      */
-    private FusionCache.Config cacheConfig;
+    private final FusionCache.Config cacheConfig;
 
     /**
      * 加载数据的函数。
      */
-    private CacheDataLoader<K, V> cacheDataLoader;
+    private final CacheDataLoader<K, V> cacheDataLoader;
 
     public GlobalFusionCacheLoader(FusionCache.Config cacheConfig, CacheDataLoader<K, V> cacheDataLoader) {
         this.cacheConfig = cacheConfig;
@@ -38,9 +39,13 @@ public class GlobalFusionCacheLoader<K, V> implements CacheLoader<K, V> {
      */
     @Override
     public V load(K key) {
-        V value = GlobalCache.loadWithProtectedValue( cacheConfig.getCacheName(), key, cacheDataLoader, cacheConfig.getGlobalCacheExpireMillis(), cacheConfig.getNullProtectMillis(), cacheConfig.getFailProtectMillis(),
-                cacheConfig.getReloadIntervalMillis(), cacheConfig.getReloadMaxTimes() );
-        return value;
+        try {
+            return GlobalCache.loadWithProtectedValue( cacheConfig.getCacheName(), key, cacheDataLoader, cacheConfig.getGlobalCacheExpireMillis(),
+                    cacheConfig.getNullProtectMillis(), cacheConfig.getFailProtectMillis(), cacheConfig.getReloadIntervalMillis(), cacheConfig.getReloadMaxTimes() );
+        } catch (Exception e) {
+            logger.error( e.getMessage(), e );
+        }
+        return (V) new CacheProtectedValue( cacheConfig.getFailProtectMillis() );
     }
 
 

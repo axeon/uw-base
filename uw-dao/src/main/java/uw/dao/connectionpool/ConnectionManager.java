@@ -141,11 +141,11 @@ public final class ConnectionManager {
      */
     public static synchronized HikariDataSource initConnectionPool(String poolName, String aliasName, String driver, String url, String username, String password, String testSql
             , int connMin, int connMax, int connIdleTimeout, int connBusyTimeout, int connMaxAge) {
-        HikariDataSource source = DATA_SOURCE_MAP.get( poolName );
-        if (source != null) {
-            return source;
+        HikariDataSource dataSource = DATA_SOURCE_MAP.get( poolName );
+        if (dataSource != null) {
+            return dataSource;
         }
-        HikariDataSource dataSource = DATA_SOURCE_MAP.computeIfAbsent( poolName, (key) -> {
+        return DATA_SOURCE_MAP.computeIfAbsent( poolName, (key) -> {
 
             // HikariConfig
             HikariConfig hikariConfig = new HikariConfig();
@@ -207,13 +207,12 @@ public final class ConnectionManager {
             HikariDataSource hikariDataSource = new HikariDataSource( hikariConfig );
             // 注册成功,初始化方言
             SOURCE_DIALECT_MAP.put( key, DialectManager.getDialectByDriverClassName( hikariConfig.getDriverClassName() ) );
+            if (StringUtils.isNotBlank( aliasName )) {
+                DATA_SOURCE_MAP.put( aliasName, hikariDataSource );
+            }
             // 启动连接池
             return hikariDataSource;
         } );
-        if (StringUtils.isNotBlank( aliasName ) && dataSource != null) {
-            DATA_SOURCE_MAP.put( aliasName, dataSource );
-        }
-        return dataSource;
     }
 
     /**
@@ -236,8 +235,8 @@ public final class ConnectionManager {
     private static Properties oracleProperties() {
         Properties properties = new Properties();
         properties.put( "oracle.net.CONNECT_TIMEOUT", 10000 );
-        properties.put( "oracle.net.READ_TIMEOUT", 10000 );
-        properties.put( "oracle.jdbc.ReadTimeout", 10000 );
+        properties.put( "oracle.net.READ_TIMEOUT", 60000 );
+        properties.put( "oracle.jdbc.ReadTimeout", 60000 );
         return properties;
     }
 

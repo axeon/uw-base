@@ -55,11 +55,6 @@ public class GlobalCache {
     private static final Logger logger = LoggerFactory.getLogger( GlobalCache.class );
 
     /**
-     * 加载失败的MAGIC数据，防止重复请求。
-     */
-    private static final byte[] FAIL_MAGIC_DATA = new byte[0];
-
-    /**
      * 这里使用ValueOperations<String, String>是有原因的 虽然<K, V>可以泛型 但是泛型也存在问题 使用时必须实例化 也就是说每个使用的地方得ValueOperations<类, 类>实例化RedisTemplate
      * 所以这里选择统一转换String去序列化、反序列化 再转为对应类型的对象
      */
@@ -194,12 +189,17 @@ public class GlobalCache {
      * @param reloadMaxTimes       重载次数
      * @return
      */
-    public static <K, V> V loadWithProtectedValue(String cacheName, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long nullProtectMillis, long failProtectMillis,
-                                                  long reloadIntervalMillis, int reloadMaxTimes) {
+    public static <K, V> V loadWithProtectedValue(String cacheName, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long nullProtectMillis,
+                                                  long failProtectMillis, long reloadIntervalMillis, int reloadMaxTimes) {
         //组成真正的RedisKey
         String redisKey = RedisKeyUtils.buildTypeId( REDIS_PREFIX, cacheName, key );
         // 从redis中获取value.
-        byte[] redisData = opsForValue.get( redisKey );
+        byte[] redisData = null;
+        try {
+            redisData = opsForValue.get( redisKey );
+        } catch (Exception e) {
+            logger.error( e.getMessage(), e );
+        }
         //对象数值。
         V value = null;
         if (redisData != null) {
@@ -221,7 +221,12 @@ public class GlobalCache {
         // 没有则去执行获取方法
         synchronized (redisKey.intern()) {
             // 同一jvm中执行这个会被其他线程加锁阻塞 等待那个线程释放锁后 此线程进来 尝试再去get一下值 apply方法执行正常这里就会可以get到
-            redisData = opsForValue.get( redisKey );
+            try {
+                redisData = opsForValue.get( redisKey );
+            } catch (Exception e) {
+                logger.error( e.getMessage(), e );
+            }
+
             if (redisData != null) {
                 if (redisData.length == 0) {
                     //直接返回。
@@ -254,7 +259,7 @@ public class GlobalCache {
                 }
                 try {
                     Thread.sleep( reloadIntervalMillis );
-                } catch (InterruptedException e) {
+                } catch (InterruptedException ignored) {
                 }
             }
             // 如果此时还没有得到数值，说明加载彻底失败。
@@ -264,10 +269,14 @@ public class GlobalCache {
             }
             //序列化写库。
             redisData = KryoUtils.serialize( value );
-            if (expireMillis == 0) {
-                opsForValue.set( redisKey, redisData );
-            } else {
-                opsForValue.set( redisKey, redisData, expireMillis, TimeUnit.MILLISECONDS );
+            try {
+                if (expireMillis == 0) {
+                    opsForValue.set( redisKey, redisData );
+                } else {
+                    opsForValue.set( redisKey, redisData, expireMillis, TimeUnit.MILLISECONDS );
+                }
+            } catch (Exception e) {
+                logger.error( e.getMessage(), e );
             }
         }
         return value;

@@ -234,8 +234,9 @@ public class FusionCache {
         Object value = cache.get( key );
         if (value instanceof CacheProtectedValue failProtectValue) {
             if (failProtectValue.isExpired()) {
-                cache.invalidate( key );
-                return get(cacheName, key );
+                //此处必须全局通知。
+                invalidate( cacheName, key, true );
+                return get( cacheName, key );
             } else {
                 return null;
             }
@@ -435,7 +436,16 @@ public class FusionCache {
             cache.invalidateAll();
             if (config.cacheChangeNotifyListener != null) {
                 for (Map.Entry kv : kvSet) {
-                    config.cacheChangeNotifyListener.onMessage( kv.getKey(), kv.getValue(), null );
+                    Object oldValue = kv.getValue();
+                    if (oldValue instanceof CacheProtectedValue) {
+                        oldValue = null;
+                    }
+                    try {
+                        config.cacheChangeNotifyListener.onMessage( kv.getKey(), oldValue, null );
+                    } catch (Exception e) {
+                        log.error( e.getMessage(), e );
+                    }
+
                 }
             }
         } else {
@@ -444,7 +454,15 @@ public class FusionCache {
             if (oldValue != null) {
                 cache.invalidate( key );
                 if (config.cacheChangeNotifyListener != null) {
-                    config.cacheChangeNotifyListener.onMessage( key, oldValue, null );
+                    if (oldValue instanceof CacheProtectedValue) {
+                        oldValue = null;
+                    }
+                    try {
+                        config.cacheChangeNotifyListener.onMessage( key, oldValue, null );
+                    } catch (Exception e) {
+                        log.error( e.getMessage(), e );
+                    }
+
                 }
             }
         }
@@ -512,9 +530,21 @@ public class FusionCache {
             Set<Map.Entry> kvSet = cache.asMap().entrySet();
             for (Map.Entry kv : kvSet) {
                 cache.invalidate( kv.getKey() );
+                Object oldValue = kv.getValue();
                 Object newValue = cache.get( kv.getKey() );
                 if (config.cacheChangeNotifyListener != null) {
-                    config.cacheChangeNotifyListener.onMessage( kv.getKey(), kv.getValue(), newValue );
+                    if (oldValue instanceof CacheProtectedValue) {
+                        oldValue = null;
+                    }
+                    if (newValue instanceof CacheProtectedValue) {
+                        newValue = null;
+                    }
+                    try {
+                        config.cacheChangeNotifyListener.onMessage( kv.getKey(), oldValue, newValue );
+                    } catch (Exception e) {
+                        log.error( e.getMessage(), e );
+                    }
+
                 }
             }
         } else {
@@ -524,7 +554,17 @@ public class FusionCache {
             }
             Object newValue = cache.get( key );
             if (config.cacheChangeNotifyListener != null) {
-                config.cacheChangeNotifyListener.onMessage( key, oldValue, newValue );
+                if (oldValue instanceof CacheProtectedValue) {
+                    oldValue = null;
+                }
+                if (newValue instanceof CacheProtectedValue) {
+                    newValue = null;
+                }
+                try {
+                    config.cacheChangeNotifyListener.onMessage( key, oldValue, newValue );
+                } catch (Exception e) {
+                    log.error( e.getMessage(), e );
+                }
             }
         }
         return true;

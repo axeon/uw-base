@@ -18,16 +18,20 @@ public class UwCacheTest1Application {
             }
             return new AnnotationBeanNameGenerator().generateBeanName( beanDefinition, beanDefinitionRegistry );
         } ).run( args );
-        FusionCache.Config fusionConfig = FusionCache.Config.builder().cacheName( "fusion" ).localCacheMaxNum( 1000 ).globalCacheExpireMillis( 1000000 ).build();
-        FusionCache.config( fusionConfig, new CacheDataLoader<Integer, String>() {
+        FusionCache.Config fusionConfig =
+                FusionCache.Config.builder().cacheName( "fusion" ).localCacheMaxNum( 10000 ).globalCacheExpireMillis( 86400_000L ).nullProtectMillis( 86400_000L ).build();
+        FusionCache.config( fusionConfig, new CacheDataLoader<Long, String>() {
             @Override
-            public String load(Integer key) {
+            public String load(Long key) {
+//                throw new RuntimeException();
                 return "hello " + key;
             }
         } );
-        System.out.println((String)FusionCache.get( "fusion", 123));
-        System.out.println((String)FusionCache.get( "fusion", 123));
-        System.out.println((String)FusionCache.get( "fusion", 123));
+//        for (int i = 0; i < 1000; i++) {
+        System.out.println( (String) FusionCache.get( "fusion", System.currentTimeMillis() ) );
+        System.out.println( (String) FusionCache.get( "fusion", System.currentTimeMillis() ) );
+
+//        }
         Thread.sleep( System.currentTimeMillis() );
     }
 }

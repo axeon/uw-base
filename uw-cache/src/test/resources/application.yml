@@ -3,7 +3,7 @@ uw:
     redis:
       database: 9
       host: 192.168.88.21
-      port: 6381
+      port: 6380
       password: redispasswd
       lettuce:
         pool:

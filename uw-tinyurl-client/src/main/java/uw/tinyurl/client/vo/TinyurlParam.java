@@ -56,6 +56,9 @@ public class TinyurlParam implements Serializable{
 	@Schema(title = "过期时间", description = "过期时间")
 	private Date expireDate;
 
+	public TinyurlParam() {
+	}
+
 	private TinyurlParam(Builder builder) {
 		setSaasId( builder.saasId );
 		setObjectType( builder.objectType );

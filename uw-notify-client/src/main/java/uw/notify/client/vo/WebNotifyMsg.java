@@ -60,6 +60,9 @@ public class WebNotifyMsg implements Serializable{
 	@Schema(title = "消息数据", description = "消息数据")
 	private Object notifyData;
 
+	public WebNotifyMsg() {
+	}
+
 	private WebNotifyMsg(Builder builder) {
 		setUserId( builder.userId );
 		setSaasId( builder.saasId );

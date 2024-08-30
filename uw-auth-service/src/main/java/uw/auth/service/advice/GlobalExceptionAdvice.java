@@ -10,6 +10,7 @@ import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import uw.auth.service.AuthServiceHelper;
 import uw.auth.service.util.MscUtils;
@@ -42,6 +43,8 @@ public class GlobalExceptionAdvice {
             //找不到页面
             response.setStatus( HttpStatus.NOT_FOUND.value() );
             log.warn( ex.getMessage() );
+        }else if (exceptionClass.equals( AsyncRequestTimeoutException.class )) {
+            return null;
         } else {
             response.setStatus( HttpStatus.INTERNAL_SERVER_ERROR.value() );
             //500类异常，要打印到日志里。

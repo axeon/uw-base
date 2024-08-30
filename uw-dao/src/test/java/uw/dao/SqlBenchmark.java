@@ -30,7 +30,7 @@ public class SqlBenchmark {
         new Runner(opt).run();
     }
 
-    static DaoFactory dao = DaoFactory.getInstance();
+    static final DaoFactory dao = DaoFactory.getInstance();
 
     @Setup
     public static void setup() {

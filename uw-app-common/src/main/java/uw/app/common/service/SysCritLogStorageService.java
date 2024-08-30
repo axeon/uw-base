@@ -23,7 +23,7 @@ public class SysCritLogStorageService implements AuthCriticalLogStorage {
 
     private static final Logger log = LoggerFactory.getLogger( SysCritLogStorageService.class );
 
-    private final static DaoFactory dao = DaoFactory.getInstance();
+    private static final DaoFactory dao = DaoFactory.getInstance();
 
     /**
      * 虚拟线程执行器。

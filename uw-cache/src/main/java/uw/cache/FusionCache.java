@@ -34,12 +34,12 @@ public class FusionCache {
     /**
      * key是缓存名，value是Cache实例。
      */
-    private static ConcurrentMap<String, LoadingCache> cacheMap = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, LoadingCache> cacheMap = new ConcurrentHashMap<>();
 
     /**
      * key是缓存名，value是Config。
      */
-    private static ConcurrentMap<String, Config> configMap = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, Config> configMap = new ConcurrentHashMap<>();
 
     /**
      * 配置缓存。

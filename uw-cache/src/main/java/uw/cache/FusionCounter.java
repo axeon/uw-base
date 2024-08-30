@@ -26,17 +26,17 @@ public class FusionCounter {
     /**
      * key是缓存名，value是config实例。
      */
-    private static ConcurrentMap<String, LocalCounter.Config> configMap = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, LocalCounter.Config> configMap = new ConcurrentHashMap<>();
 
     /**
      * key是缓存名，value是Cache实例。
      */
-    private static ConcurrentMap<String, LocalCounter> counterMap = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, LocalCounter> counterMap = new ConcurrentHashMap<>();
 
     /**
      * 虚拟线程执行器。
      */
-    private static ExecutorService executorService = Executors.newThreadPerTaskExecutor( Thread.ofVirtual().name( "uw-counter" ).factory() );
+    private static final ExecutorService executorService = Executors.newThreadPerTaskExecutor( Thread.ofVirtual().name( "uw-counter" ).factory() );
 
     /**
      * 配置计数器。

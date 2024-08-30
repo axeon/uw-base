@@ -71,6 +71,10 @@ public class WebNotifyMsg implements Serializable{
 		setNotifyData( builder.notifyData );
 	}
 
+	public static Builder builder() {
+		return new Builder();
+	}
+
 	public static Builder builder(WebNotifyMsg copy) {
 		Builder builder = new Builder();
 		builder.userId = copy.getUserId();
@@ -159,10 +163,6 @@ public class WebNotifyMsg implements Serializable{
 		private Object notifyData;
 
 		private Builder() {
-		}
-
-		public static Builder builder() {
-			return new Builder();
 		}
 
 		public Builder userId(long userId) {

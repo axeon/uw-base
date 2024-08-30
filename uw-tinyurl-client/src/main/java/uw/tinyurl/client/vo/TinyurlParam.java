@@ -66,6 +66,10 @@ public class TinyurlParam implements Serializable{
 		setExpireDate( builder.expireDate );
 	}
 
+	public static Builder builder() {
+		return new Builder();
+	}
+
 	public static Builder builder(TinyurlParam copy) {
 		Builder builder = new Builder();
 		builder.saasId = copy.getSaasId();
@@ -134,7 +138,6 @@ public class TinyurlParam implements Serializable{
 		this.expireDate = expireDate;
 	}
 
-
 	public static final class Builder {
 		private long saasId;
 		private String objectType;
@@ -147,42 +150,38 @@ public class TinyurlParam implements Serializable{
 		private Builder() {
 		}
 
-		public static Builder builder() {
-			return new Builder();
-		}
-
-		public Builder saasId(long val) {
-			saasId = val;
+		public Builder saasId(long saasId) {
+			this.saasId = saasId;
 			return this;
 		}
 
-		public Builder objectType(String val) {
-			objectType = val;
+		public Builder objectType(String objectType) {
+			this.objectType = objectType;
 			return this;
 		}
 
-		public Builder objectId(long val) {
-			objectId = val;
+		public Builder objectId(long objectId) {
+			this.objectId = objectId;
 			return this;
 		}
 
-		public Builder url(String val) {
-			url = val;
+		public Builder url(String url) {
+			this.url = url;
 			return this;
 		}
 
-		public Builder secretTips(String val) {
-			secretTips = val;
+		public Builder secretTips(String secretTips) {
+			this.secretTips = secretTips;
 			return this;
 		}
 
-		public Builder secretData(String val) {
-			secretData = val;
+		public Builder secretData(String secretData) {
+			this.secretData = secretData;
 			return this;
 		}
 
-		public Builder expireDate(Date val) {
-			expireDate = val;
+		public Builder expireDate(Date expireDate) {
+			this.expireDate = expireDate;
 			return this;
 		}
 

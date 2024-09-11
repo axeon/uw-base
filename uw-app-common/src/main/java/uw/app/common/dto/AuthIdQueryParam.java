@@ -176,7 +176,7 @@ public class AuthIdQueryParam extends QueryParam {
     private AuthTokenData getAuthToken() {
         AuthTokenData authToken = AuthServiceHelper.getContextToken();
         if (authToken == null) {
-            throw new UnsupportedOperationException( "AuthServiceHelper must be run in web environment!" );
+            throw new UnsupportedOperationException( "AuthServiceHelper must be run in auth-service web environment!" );
         }
         return authToken;
     }

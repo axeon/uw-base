@@ -21,9 +21,14 @@ public enum RateLimitTarget {
     IP(0, "IP限速"),
 
     /**
+     * SAAS限速。
+     */
+    SAAS(1, "SAAS限速"),
+
+    /**
      * 用户ID限速
      */
-    USER(1, "用户限速"),
+    USER(3, "用户限速"),
 
     /**
      * MCH ID限速。
@@ -31,34 +36,30 @@ public enum RateLimitTarget {
     MCH(2, "商户限速"),
 
     /**
-     * SAAS限速。
+     * SAAS 和资源限速。
      */
-    SAAS(5, "SAAS限速"),
+    SAAS_URI(11, "SAAS资源限速"),
 
     /**
      * 用户和资源限速。
      */
-    USER_URI(11, "用户资源限速"),
+    USER_URI(12, "用户资源限速"),
 
     /**
      * MCH 和资源限速。
      */
-    MCH_URI(12, "商户资源限速"),
+    MCH_URI(13, "商户资源限速");
 
-    /**
-     * SAAS 和资源限速。
-     */
-    SAAS_URI(15, "SAAS资源限速");
 
     /**
      * 数值。
      */
-    private int value;
+    private final int value;
 
     /**
      * 标签。
      */
-    private String label;
+    private final String label;
 
     RateLimitTarget(int value, String label) {
         this.value = value;

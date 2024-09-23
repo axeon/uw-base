@@ -42,12 +42,12 @@ public enum ActionLog {
     /**
      * 参数值
      */
-    private int value;
+    private final int value;
 
     /**
      * 参数信息。
      */
-    private String label;
+    private final String label;
 
     ActionLog(int value, String label) {
         this.value = value;

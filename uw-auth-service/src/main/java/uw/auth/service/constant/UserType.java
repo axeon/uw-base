@@ -58,21 +58,26 @@ public enum UserType {
     MCH( 310, "SAAS商户", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) );
 
 
-    private int value;
+    /**
+     * 参数值
+     */
+    private final int value;
 
-    private String label;
-
+    /**
+     * 参数信息。
+     */
+    private final String label;
     /**
      * token有效期(ms)
      */
     @JsonIgnore
-    private long tokenExpireMillis;
+    private final long tokenExpireMillis;
 
     /**
      * token刷新有效期(ms)
      */
     @JsonIgnore
-    private long tokenRefreshExpireMillis;
+    private final long tokenRefreshExpireMillis;
 
     UserType(int value, String label, long tokenExpireMillis, long tokenRefreshExpireMillis) {
         this.value = value;

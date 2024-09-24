@@ -8,7 +8,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 import uw.auth.service.conf.AuthServiceProperties;
 import uw.auth.service.rpc.AuthServiceRpc;
 import uw.auth.service.token.AuthTokenData;
-import uw.auth.service.vo.*;
+import uw.auth.service.vo.MscUserGroupVo;
+import uw.auth.service.vo.MscUserRegister;
+import uw.auth.service.vo.MscUserVo;
+import uw.auth.service.vo.TokenResponse;
 import uw.common.dto.ResponseData;
 
 import java.net.URI;
@@ -75,8 +78,10 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     @Override
     public TokenResponse genGuestToken(long saasId, long mchId, long userId, String userName, String userIp, boolean checkDoubleLogin) {
         URI targetUrl =
-                UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/genGuestToken" ).queryParam( "saasId", saasId ).queryParam( "mchId"
-                        , mchId ).queryParam( "userId", userId ).queryParam( "username", userName ).queryParam( "userIp", userIp ).queryParam( "checkDoubleLogin", checkDoubleLogin ).build().encode().toUri();
+                UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/genGuestToken" ).queryParam( "saasId", saasId ).queryParam(
+                        "mchId"
+                        , mchId ).queryParam( "userId", userId ).queryParam( "username", userName ).queryParam( "userIp", userIp ).queryParam( "checkDoubleLogin",
+                        checkDoubleLogin ).build().encode().toUri();
         return restTemplate.getForObject( targetUrl, TokenResponse.class );
     }
 
@@ -91,8 +96,8 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     @Override
     public ResponseData initSaasPerm(long saasId, String saasName, String[] initAppNames, String adminPasswd, String adminMobile, String adminEmail) {
         URI targetUrl = UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/initSaasPerm" ).queryParam( "saasId", saasId ).queryParam(
-                "saasName", saasName ).queryParam( "initAppNames", (Object[])initAppNames ).queryParam( "adminPasswd", adminPasswd ).queryParam( "adminMobile", adminMobile ).queryParam(
-                        "adminEmail", adminEmail ).build().encode().toUri();
+                "saasName", saasName ).queryParam( "initAppNames", (Object[]) initAppNames ).queryParam( "adminPasswd", adminPasswd ).queryParam( "adminMobile", adminMobile ).queryParam(
+                "adminEmail", adminEmail ).build().encode().toUri();
         return restTemplate.exchange( targetUrl, HttpMethod.POST, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 
@@ -153,20 +158,38 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     }
 
     /**
-     * 运营商限速设置
+     * 运营商限速设置。
      *
      * @param saasId
-     * @param rateLimit
+     * @param limitSeconds
+     * @param limitRequests
+     * @param limitBytes
      * @param remark
      * @return
      */
     @Override
-    public ResponseData<Integer> updateSaasRateLimit(long saasId, String rateLimit, String remark) {
+    public ResponseData updateSaasRateLimit(long saasId, int limitSeconds, int limitRequests, int limitBytes, String remark) {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/updateSaasRateLimit" ).queryParam( "saasId", saasId ).queryParam(
-                        "remark", remark ).queryParam( rateLimit, rateLimit ).build().encode().toUri();
+                        "remark", remark ).queryParam( "limitSeconds", limitSeconds ).queryParam( "limitRequests", limitRequests ).queryParam( "limitBytes", limitBytes ).build().encode().toUri();
         return restTemplate.exchange( targetUrl, HttpMethod.PATCH, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
+
+    /**
+     * 清除运营商限速设置。
+     *
+     * @param saasId
+     * @param remark
+     * @return
+     */
+    @Override
+    public ResponseData clearSaasRateLimit(long saasId, String remark) {
+        URI targetUrl =
+                UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/clearSaasRateLimit" ).queryParam( "saasId", saasId ).queryParam(
+                        "remark", remark ).build().encode().toUri();
+        return restTemplate.exchange( targetUrl, HttpMethod.PATCH, HttpEntity.EMPTY, ResponseData.class ).getBody();
+    }
+
 
     /**
      * 修改SAAS用户数限制。
@@ -286,7 +309,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     @Override
     public ResponseData<String> getAppSaasPerm(String[] appNames) {
         URI targetUrl =
-                UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/getAppSaasPerm" ).queryParam( "appNames", (Object[])appNames ).build().encode().toUri();
+                UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/getAppSaasPerm" ).queryParam( "appNames", (Object[]) appNames ).build().encode().toUri();
         return restTemplate.exchange( targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<String>>() {
         } ).getBody();
     }

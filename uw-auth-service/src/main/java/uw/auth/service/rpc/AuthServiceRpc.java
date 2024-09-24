@@ -1,7 +1,10 @@
 package uw.auth.service.rpc;
 
 import uw.auth.service.token.AuthTokenData;
-import uw.auth.service.vo.*;
+import uw.auth.service.vo.MscUserGroupVo;
+import uw.auth.service.vo.MscUserRegister;
+import uw.auth.service.vo.MscUserVo;
+import uw.auth.service.vo.TokenResponse;
 import uw.common.dto.ResponseData;
 
 import java.util.List;
@@ -84,7 +87,16 @@ public interface AuthServiceRpc {
      * @param remark
      * @return
      */
-    ResponseData<Integer> updateSaasRateLimit(long saasId, String rateLimit, String remark);
+    ResponseData updateSaasRateLimit(long saasId, int limitSeconds, int limitRequests, int limitBytes, String remark);
+
+    /**
+     * 清除运营商限速设置。
+     *
+     * @param saasId
+     * @param remark
+     * @return
+     */
+    ResponseData clearSaasRateLimit(long saasId, String remark);
 
     /**
      * 修改SAAS用户数限制。

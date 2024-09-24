@@ -16,7 +16,7 @@ public class EnumUtils {
     /**
      * enum数据缓存。
      */
-    private static LoadingCache<String, Map<String, Object>> enumCache = Caffeine.newBuilder().build( basePackage -> {
+    private static final LoadingCache<String, Map<String, Object>> enumCache = Caffeine.newBuilder().build( basePackage -> {
         Map<String, Object> enumMap = new HashMap<>();
         Reflections reflections = new Reflections(basePackage);
         Set<Class<? extends Enum>> enumCls = reflections.getSubTypesOf(Enum.class);

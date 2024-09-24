@@ -1,18 +1,13 @@
 package uw.auth.service.conf;
 
 import com.google.common.base.Splitter;
-import io.lettuce.core.resource.ClientResources;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -20,15 +15,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.event.EventListener;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.RedisPassword;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
-import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericToStringSerializer;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -41,12 +27,6 @@ import uw.auth.service.filter.AuthServiceFilter;
 import uw.auth.service.ipblock.IpMatchHelper;
 import uw.auth.service.log.AuthCriticalLogStorage;
 import uw.auth.service.log.impl.AuthCriticalLogNoneStorage;
-import uw.auth.service.ratelimit.MscRateLimiter;
-import uw.auth.service.ratelimit.RateLimitConfig;
-import uw.auth.service.ratelimit.RateLimitUtils;
-import uw.auth.service.ratelimit.impl.GlobalRateLimiter;
-import uw.auth.service.ratelimit.impl.LocalRateLimiter;
-import uw.auth.service.ratelimit.impl.NoneRateLimiter;
 import uw.auth.service.rpc.AuthAppRpc;
 import uw.auth.service.rpc.AuthServiceRpc;
 import uw.auth.service.rpc.impl.AuthAppRpcImpl;
@@ -101,31 +81,6 @@ public class AuthServiceAutoConfiguration {
     }
 
     /**
-     * 限速器。
-     *
-     * @param rateLimitRedisTemplate
-     * @param authServiceProperties
-     * @return
-     */
-    @Bean
-    public MscRateLimiter mscRateLimiter(@Autowired(required = false) @Qualifier("rateLimitRedisTemplate") final RedisTemplate<String, String> rateLimitRedisTemplate,
-                                         final AuthServiceProperties authServiceProperties) {
-        //解析出来默认限速信息。
-        RateLimitConfig defaultRateLimit = authServiceProperties.getRateLimit().getDefaultConfig();
-        RateLimitUtils.setDefaultConfig( defaultRateLimit );
-        //限速类型。
-        AuthServiceProperties.RateLimitType type = authServiceProperties.getRateLimit().getType();
-        if (type.equals( AuthServiceProperties.RateLimitType.GLOBAL )) {
-            return new GlobalRateLimiter( rateLimitRedisTemplate );
-        } else if (type.equals( AuthServiceProperties.RateLimitType.LOCAL )) {
-            return new LocalRateLimiter( authServiceProperties.getRateLimit().getCacheNum() );
-        } else {
-            return new NoneRateLimiter();
-        }
-
-    }
-
-    /**
      * AuthServiceFilter
      *
      * @param authServiceProperties
@@ -137,10 +92,9 @@ public class AuthServiceAutoConfiguration {
     @Bean
     public FilterRegistrationBean<AuthServiceFilter> authServiceFilter(final AuthServiceProperties authServiceProperties,
                                                                        final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthPermService authPermService,
-                                                                       final MscRateLimiter mscRateLimiter, final LogClient logClient,
-                                                                       final AuthCriticalLogStorage authCriticalLogStorage) {
+                                                                       final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage) {
         FilterRegistrationBean<AuthServiceFilter> registrationBean = new FilterRegistrationBean<AuthServiceFilter>();
-        AuthServiceFilter authServiceFilter = new AuthServiceFilter( authServiceProperties, requestMappingHandlerMapping, authPermService, mscRateLimiter, logClient,
+        AuthServiceFilter authServiceFilter = new AuthServiceFilter( authServiceProperties, requestMappingHandlerMapping, authPermService, logClient,
                 authCriticalLogStorage );
         registrationBean.setFilter( authServiceFilter );
         registrationBean.setName( "AuthServiceFilter" );
@@ -231,24 +185,6 @@ public class AuthServiceAutoConfiguration {
     }
 
     /**
-     * 用于存储验证信息的RedisTemplate。
-     *
-     * @param authServiceProperties
-     * @param clientResources
-     * @return
-     */
-    @Bean
-    @ConditionalOnProperty(prefix = "uw.auth.service", name = "rate-limit.type", havingValue = "GLOBAL")
-    public RedisTemplate<String, String> rateLimitRedisTemplate(final AuthServiceProperties authServiceProperties, final ClientResources clientResources) {
-        RedisTemplate<String, String> redisTemplate = new RedisTemplate<String, String>();
-        redisTemplate.setKeySerializer( new StringRedisSerializer() );
-        redisTemplate.setValueSerializer( new GenericToStringSerializer<String>( String.class ) );
-        redisTemplate.setConnectionFactory( redisConnectionFactory( authServiceProperties.getRateLimit().getRedis(), clientResources ) );
-        redisTemplate.afterPropertiesSet();
-        return redisTemplate;
-    }
-
-    /**
      * 用户权限服务接口
      *
      * @return
@@ -282,49 +218,4 @@ public class AuthServiceAutoConfiguration {
         };
     }
 
-    /**
-     * Redis连接工厂
-     *
-     * @param redisProperties
-     * @param clientResources
-     * @return
-     */
-    private RedisConnectionFactory redisConnectionFactory(AuthServiceProperties.RedisProperties redisProperties, ClientResources clientResources) {
-        RedisProperties.Pool pool = redisProperties.getLettuce().getPool();
-        LettuceClientConfiguration.LettuceClientConfigurationBuilder builder;
-        if (pool == null) {
-            builder = LettuceClientConfiguration.builder();
-        } else {
-            GenericObjectPoolConfig config = new GenericObjectPoolConfig();
-            config.setMaxTotal( pool.getMaxActive() );
-            config.setMaxIdle( pool.getMaxIdle() );
-            config.setMinIdle( pool.getMinIdle() );
-            if (pool.getMaxWait() != null) {
-                config.setMaxWait( pool.getMaxWait() );
-            }
-            builder = LettucePoolingClientConfiguration.builder().poolConfig( config );
-        }
-
-        if (redisProperties.getTimeout() != null) {
-            builder.commandTimeout( redisProperties.getTimeout() );
-        }
-        if (redisProperties.getLettuce() != null) {
-            RedisProperties.Lettuce lettuce = redisProperties.getLettuce();
-            if (lettuce.getShutdownTimeout() != null && !lettuce.getShutdownTimeout().isZero()) {
-                builder.shutdownTimeout( redisProperties.getLettuce().getShutdownTimeout() );
-            }
-        }
-        builder.clientResources( clientResources );
-        LettuceClientConfiguration config = builder.build();
-
-        RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration();
-        standaloneConfig.setHostName( redisProperties.getHost() );
-        standaloneConfig.setPort( redisProperties.getPort() );
-        standaloneConfig.setPassword( RedisPassword.of( redisProperties.getPassword() ) );
-        standaloneConfig.setDatabase( redisProperties.getDatabase() );
-
-        LettuceConnectionFactory factory = new LettuceConnectionFactory( standaloneConfig, config );
-        factory.afterPropertiesSet();
-        return factory;
-    }
 }

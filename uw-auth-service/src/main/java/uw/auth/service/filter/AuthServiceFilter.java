@@ -13,21 +13,16 @@ import org.springframework.web.servlet.HandlerExecutionChain;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import uw.auth.service.AuthServiceHelper;
 import uw.auth.service.annotation.MscPermDeclare;
-import uw.auth.service.annotation.RateLimitDeclare;
 import uw.auth.service.conf.AuthServiceProperties;
 import uw.auth.service.constant.ActionLog;
 import uw.auth.service.constant.AuthConstants;
 import uw.auth.service.constant.UserType;
 import uw.auth.service.exception.TokenExpiredException;
 import uw.auth.service.exception.TokenInvalidateException;
-import uw.auth.service.ipblock.IpMatchUtils;
 import uw.auth.service.log.AuthCriticalLogStorage;
-import uw.auth.service.ratelimit.MscRateLimiter;
-import uw.auth.service.ratelimit.RateLimitInfo;
-import uw.auth.service.ratelimit.RateLimitUtils;
 import uw.auth.service.service.AuthPermService;
 import uw.auth.service.token.AuthTokenData;
-import uw.auth.service.util.IPAddressUtils;
+import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.util.logging.LoggingHttpServletRequestWrapper;
 import uw.auth.service.util.logging.LoggingHttpServletResponseWrapper;
 import uw.auth.service.vo.MscActionLog;
@@ -53,15 +48,13 @@ public class AuthServiceFilter implements Filter {
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
     private final AuthPermService authPermService;
     private final LogClient logClient;
-    private final MscRateLimiter mscRateLimiter;
     private final AuthCriticalLogStorage authCriticalLogStorage;
 
-    public AuthServiceFilter(final AuthServiceProperties authServerProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthPermService authPermService,
-                             final MscRateLimiter mscRateLimiter, final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage) {
+    public AuthServiceFilter(final AuthServiceProperties authServerProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping,
+                             final AuthPermService authPermService, final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage) {
         this.authServerProperties = authServerProperties;
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.authPermService = authPermService;
-        this.mscRateLimiter = mscRateLimiter;
         this.logClient = logClient;
         this.authCriticalLogStorage = authCriticalLogStorage;
     }
@@ -80,7 +73,7 @@ public class AuthServiceFilter implements Filter {
         //请求方法
         String method = httpServletRequest.getMethod();
         //远端IP
-        String remoteIp = IPAddressUtils.getTrueIp( httpServletRequest );
+        String remoteIp = IpWebUtils.getTrueIp( httpServletRequest );
 
         MscActionLog mscActionLog = null;
 
@@ -109,59 +102,10 @@ public class AuthServiceFilter implements Filter {
             HandlerMethod handler = (HandlerMethod) handlerExecutionChain.getHandler();
             Method javaMethod = handler.getMethod();
             MscPermDeclare mscPermDeclare = javaMethod.getAnnotation( MscPermDeclare.class );
-            RateLimitDeclare rateLimitDeclare = javaMethod.getAnnotation( RateLimitDeclare.class );
 
             // 鉴权开始
             String permCode = uri + ":" + method;
             if (authPermService.hasPerm( authToken, mscPermDeclare, permCode )) {
-                //rpc不检查ip和限速
-                if (authToken.getUserType() > UserType.RPC.getValue()) {
-                    //此处开始检测ip block。
-                    int filterType = authToken.getTokenPerm().getIpFilterType();
-                    if (filterType != 0) {
-                        boolean flag = IpMatchUtils.matches( authToken.getTokenPerm().getIpRanges(), remoteIp );
-                        if (filterType == -1) {
-                            //黑名单模式取反
-                            flag = !flag;
-                        }
-                        //如果无法匹配，则输出相关信息。
-                        if (!flag) {
-                            httpServletResponse.sendError( HttpStatus.NETWORK_AUTHENTICATION_REQUIRED.value(), "!!!IP BLOCK!!!" );
-                            return;
-                        }
-                    }
-                    //检查限速
-                    RateLimitInfo rateLimitInfo = RateLimitUtils.match( authToken, rateLimitDeclare, remoteIp, authServerProperties.getAppName() + uri );
-                    //执行限速。
-                    if (rateLimitInfo != null) {
-                        //检测是否满足用户总限定。
-                        int[] limitResult = mscRateLimiter.tryAcquire( rateLimitInfo );
-                        //输出限速信息
-                        httpServletResponse.addHeader( "X-RateLimit-Info", rateLimitInfo.toString() );
-                        if (limitResult != null && limitResult.length == 2) {
-                            if (limitResult[0] > 0) {
-                                //输出剩余许可
-                                httpServletResponse.addHeader( "X-RateLimit-RemainPermits", String.valueOf( limitResult[0] ) );
-                            }
-                            if (limitResult[1] > 0) {
-                                //输出等待毫秒数。
-                                httpServletResponse.addHeader( "X-RateLimit-WaitMillis", String.valueOf( limitResult[1] ) );
-                                httpServletResponse.addHeader( "Retry-After", String.valueOf( Math.floor( limitResult[1] / 1000 ) ) );
-                                //强制让其等待
-                                try {
-                                    Thread.sleep( limitResult[1] );
-                                } catch (InterruptedException e) {
-                                }
-                            }
-                        }
-
-                        if (limitResult[0] < 0) {
-                            //此处返回429 Too Many Requests
-                            httpServletResponse.sendError( HttpStatus.TOO_MANY_REQUESTS.value(), "!!!RATE LIMIT!!!" );
-                            return;
-                        }
-                    }
-                }
                 //准备操作日志内容，关键日志必须记录，并记录操作人员日志。
                 logType = mscPermDeclare.log();
                 if (logType.getValue() == ActionLog.CRIT.getValue() || (logType.getValue() > ActionLog.NONE.getValue() && mscPermDeclare.user().getValue() > UserType.RPC.getValue())) {

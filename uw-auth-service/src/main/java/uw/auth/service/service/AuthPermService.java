@@ -121,8 +121,7 @@ public class AuthPermService {
             }
         }
         //此时需要校验权限id。
-        AuthTokenData.TokenPerm tokenPerm = authToken.getTokenPerm();
-        if (tokenPerm == null || tokenPerm.getUserPerms() == null) {
+        if (authToken.getPermSet() == null) {
             return false;
         }
         if (appPermMap == null) {
@@ -130,6 +129,6 @@ public class AuthPermService {
             return false;
         }
         Integer permId = appPermMap.get( uri );
-        return permId != null && tokenPerm.getUserPerms().contains( permId );
+        return permId != null && authToken.getPermSet().contains( permId );
     }
 }

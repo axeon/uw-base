@@ -17,12 +17,12 @@ public class LocalRetryCacheLoader<K, V> implements CacheLoader<K, V> {
     /**
      * 缓存配置。
      */
-    private FusionCache.Config cacheConfig;
+    private final FusionCache.Config cacheConfig;
 
     /**
      * 加载数据的函数。
      */
-    private CacheDataLoader<K, V> cacheDataLoader;
+    private final CacheDataLoader<K, V> cacheDataLoader;
 
     public LocalRetryCacheLoader(FusionCache.Config cacheConfig, CacheDataLoader cacheDataLoader) {
         this.cacheConfig = cacheConfig;

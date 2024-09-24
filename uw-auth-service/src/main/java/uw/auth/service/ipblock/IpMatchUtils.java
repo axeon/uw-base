@@ -17,7 +17,7 @@ public class IpMatchUtils {
      */
     public static List<IpRange> sortList(String[] requiredIpList) {
         List<IpRange> sortedIpList = new ArrayList<>( requiredIpList.length );
-        if (requiredIpList == null || requiredIpList.length == 0) {
+        if (requiredIpList.length == 0) {
             return sortedIpList;
         }
 
@@ -32,7 +32,7 @@ public class IpMatchUtils {
             }
         }
         //先排序
-        Collections.sort( tempIpList, (o1, o2) -> {
+        tempIpList.sort( (o1, o2) -> {
             if (o1.getFrom() != o2.getFrom()) {
                 return o1.getFrom() > o2.getFrom() ? 1 : -1;
             }

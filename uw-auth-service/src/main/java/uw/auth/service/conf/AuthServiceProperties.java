@@ -2,7 +2,6 @@ package uw.auth.service.conf;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import uw.auth.service.ratelimit.RateLimitConfig;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -73,11 +72,6 @@ public class AuthServiceProperties {
      * 跨域配置
      */
     private CORSProperties cors = new CORSProperties();
-
-    /**
-     * 限速配置。
-     */
-    private RateLimitProperties rateLimit = new RateLimitProperties();
 
     /**
      * 用户缓存大小配置
@@ -180,75 +174,6 @@ public class AuthServiceProperties {
         this.userCache = userCache;
     }
 
-    public RateLimitProperties getRateLimit() {
-        return rateLimit;
-    }
-
-    public void setRateLimit(RateLimitProperties rateLimit) {
-        this.rateLimit = rateLimit;
-    }
-
-    /**
-     * 限速配置。
-     */
-    public static class RateLimitProperties {
-
-        /**
-         * 限速类型
-         */
-        private RateLimitType type = RateLimitType.NONE;
-
-        /**
-         * 默认限速，一分钟访问20次。
-         */
-        private RateLimitConfig defaultConfig = new RateLimitConfig();
-
-        /**
-         * 限速器数量
-         */
-        private int cacheNum = 1000;
-
-        /**
-         * 限速Redis
-         */
-        private RedisProperties redis = new RedisProperties();
-
-        public RateLimitConfig getDefaultConfig() {
-            return defaultConfig;
-        }
-
-        public void setDefaultConfig(RateLimitConfig defaultConfig) {
-            this.defaultConfig = defaultConfig;
-        }
-
-        public RateLimitType getType() {
-            return type;
-        }
-
-        public void setType(RateLimitType type) {
-            this.type = type;
-        }
-
-        public int getCacheNum() {
-            return cacheNum;
-        }
-
-        public void setCacheNum(int cacheNum) {
-            this.cacheNum = cacheNum;
-        }
-
-        public RedisProperties getRedis() {
-            return redis;
-        }
-
-        public void setRedis(RedisProperties redis) {
-            this.redis = redis;
-        }
-    }
-
-    public static enum RateLimitType {
-        NONE, LOCAL, GLOBAL;
-    }
 
     public static class CORSProperties {
         /**
@@ -275,7 +200,8 @@ public class AuthServiceProperties {
         /**
          * 允许的头信息
          */
-        private String allowedHeaders = "Origin, No-Cache, X-Requested-With, If-Modified-Since, Pragma, Last-Modified, Cache-Control, Expires, Content-Type, X-E4M-With, Language, Authorization, Accept";
+        private String allowedHeaders = "Origin, No-Cache, X-Requested-With, If-Modified-Since, Pragma, Last-Modified, Cache-Control, Expires, Content-Type, X-E4M-With, " +
+                "Language, Authorization, Accept";
 
         /**
          * 允许的源
@@ -339,6 +265,4 @@ public class AuthServiceProperties {
         }
     }
 
-    public static class RedisProperties extends org.springframework.boot.autoconfigure.data.redis.RedisProperties {
-    }
 }

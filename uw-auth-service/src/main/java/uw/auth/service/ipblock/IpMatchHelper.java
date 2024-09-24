@@ -14,7 +14,7 @@ public class IpMatchHelper {
     /**
      * 通用Ip匹配缓存。
      */
-    private LoadingCache<String, List<IpRange>> commonIpMatcherCache;
+    private final LoadingCache<String, List<IpRange>> commonIpMatcherCache;
 
     /**
      * 构造器，cacheNum指定缓存数量。

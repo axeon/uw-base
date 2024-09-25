@@ -122,24 +122,6 @@ public class MscUserRegister {
     @Schema(title = "用户资源权限json", description = "用户资源权限json")
     private String userConfig;
 
-    /**
-     * IP过滤类型 -1 黑名单模式 0 不过滤 1 白名单模式
-     */
-    @Schema(title = "IP过滤类型 -1 黑名单模式 0 不过滤 1 白名单模式", description = "IP过滤类型 -1 黑名单模式 0 不过滤 1 白名单模式")
-    private int ipFilterType = 0;
-
-    /**
-     * ip过滤内容
-     */
-    @Schema(title = "ip过滤内容", description = "ip过滤内容")
-    private String ipFilterValue;
-
-    /**
-     * 限速设定
-     */
-    @Schema(title = "限速设定", description = "限速设定")
-    private String rateLimit;
-
     public long getId() {
         return id;
     }
@@ -290,29 +272,5 @@ public class MscUserRegister {
 
     public void setUserConfig(String userConfig) {
         this.userConfig = userConfig;
-    }
-
-    public int getIpFilterType() {
-        return ipFilterType;
-    }
-
-    public void setIpFilterType(int ipFilterType) {
-        this.ipFilterType = ipFilterType;
-    }
-
-    public String getIpFilterValue() {
-        return ipFilterValue;
-    }
-
-    public void setIpFilterValue(String ipFilterValue) {
-        this.ipFilterValue = ipFilterValue;
-    }
-
-    public String getRateLimit() {
-        return rateLimit;
-    }
-
-    public void setRateLimit(String rateLimit) {
-        this.rateLimit = rateLimit;
     }
 }

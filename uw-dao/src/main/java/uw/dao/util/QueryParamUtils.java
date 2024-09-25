@@ -37,7 +37,7 @@ public class QueryParamUtils {
      */
     public static QueryParamResult parseQueryParam(Class cls, String tableName, QueryParam queryParam) {
         StringBuilder sqlBuilder = new StringBuilder(256);
-        ArrayList paramValueList = new ArrayList<>();
+        ArrayList<Object> paramValueList = new ArrayList<>();
         try {
             //先判定是否指定SELECT_SQL.
             if (StringUtils.isBlank(queryParam.SELECT_SQL())) {
@@ -192,7 +192,7 @@ public class QueryParamUtils {
                                             //替换原来参数，尽量造型正确。
                                             try {
                                                 paramValueList.set(i, Long.parseLong(value.trim()));
-                                            } catch (Exception e) {
+                                            } catch (Exception ignored) {
                                             }
                                         }
                                     }

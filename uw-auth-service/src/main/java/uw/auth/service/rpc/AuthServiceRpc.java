@@ -7,6 +7,7 @@ import uw.auth.service.vo.MscUserVo;
 import uw.auth.service.vo.TokenResponse;
 import uw.common.dto.ResponseData;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -87,7 +88,7 @@ public interface AuthServiceRpc {
      * @param remark
      * @return
      */
-    ResponseData updateSaasRateLimit(long saasId, int limitSeconds, int limitRequests, int limitBytes, String remark);
+    ResponseData updateSaasRateLimit(long saasId, int limitSeconds, int limitRequests, int limitBytes, Date expireDate, String remark);
 
     /**
      * 清除运营商限速设置。

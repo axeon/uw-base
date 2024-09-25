@@ -22,12 +22,12 @@ public class AuthAppRpcImpl implements AuthAppRpc {
     /**
      * 属性配置器
      */
-    private AuthServiceProperties authServiceProperties;
+    private final AuthServiceProperties authServiceProperties;
 
     /**
      * RPC Client
      */
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
 
     /**
      * @param authServiceProperties

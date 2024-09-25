@@ -57,22 +57,22 @@ public class AppUpdateService {
     /**
      * 相关配置
      */
-    private AuthServiceProperties authServiceProperties;
+    private final AuthServiceProperties authServiceProperties;
 
     /**
      * 注册Rpc 接口
      */
-    private AuthAppRpc authAppRpc;
+    private final AuthAppRpc authAppRpc;
 
     /**
      * 用户权限接口服务
      */
-    private AuthPermService authPermService;
+    private final AuthPermService authPermService;
 
     /**
      * spring-mvc HandleMapping
      */
-    private RequestMappingHandlerMapping requestMappingHandlerMapping;
+    private final RequestMappingHandlerMapping requestMappingHandlerMapping;
 
     /**
      * 内部自持任务。

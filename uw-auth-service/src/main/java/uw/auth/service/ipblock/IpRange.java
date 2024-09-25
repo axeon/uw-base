@@ -13,9 +13,9 @@ public class IpRange {
 
     private static final int IPV4_BIT_COUNT = 32;
 
-    private long from;
+    private long start;
 
-    private long to;
+    private long end;
 
     public IpRange() {
     }
@@ -24,31 +24,30 @@ public class IpRange {
         convert( ipPattern );
     }
 
-    public IpRange(long from, long to) {
-        this.from = from;
-        this.to = to;
+    public IpRange(long start, long end) {
+        this.start = start;
+        this.end = end;
     }
 
-    public long getFrom() {
-        return from;
+    public long getStart() {
+        return start;
     }
 
-    public void setFrom(long from) {
-        this.from = from;
+    public void setStart(long start) {
+        this.start = start;
     }
 
-    public long getTo() {
-        return to;
+    public long getEnd() {
+        return end;
     }
 
-    public void setTo(long to) {
-        this.to = to;
+    public void setEnd(long end) {
+        this.end = end;
     }
 
     /**
      * ipPattern转换
      *
-     * @param ipPattern
      */
     private void convert(String ipPattern) {
         try {
@@ -59,21 +58,21 @@ public class IpRange {
                 ip = addressAndMask[0];
                 maskBitCount = Long.parseLong( addressAndMask[1] );
             } else if (ipPattern.indexOf( '*' ) > 0) {
-                maskBitCount = IPV4_BIT_COUNT - (StringUtils.countMatches( ipPattern, "*" ) * 8);
+                maskBitCount = IPV4_BIT_COUNT - (StringUtils.countMatches( ipPattern, "*" ) * 8L);
                 ip = ipPattern.replaceAll( "\\*", "255" );
             }
 
             String[] splitIps = ip.split( "\\." );
             for (String splitIp : splitIps) {
-                from = from << 8;
-                from |= Long.parseLong( splitIp );
+                start = start << 8;
+                start |= Long.parseLong( splitIp );
             }
 
-            to = from;
+            end = start;
             long mask = 0xFFFFFFFFL >>> maskBitCount;
 
-            to = to | mask;
-            from = from & (~mask);
+            end = end | mask;
+            start = start & (~mask);
         } catch (Exception e) {
             log.warn( "非法的ip格式: {}", ipPattern );
         }

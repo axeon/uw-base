@@ -22,17 +22,17 @@ public class TaskApiClient {
     /**
      * Task配置文件
      */
-    private TaskProperties taskProperties;
+    private final TaskProperties taskProperties;
 
     /**
      * Rest模板类
      */
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
 
     /**
      * 日志客户端。
      */
-    private LogClient logClient;
+    private final LogClient logClient;
 
     public TaskApiClient(final TaskProperties taskProperties, final RestTemplate restTemplate, final LogClient logClient) {
         this.taskProperties = taskProperties;

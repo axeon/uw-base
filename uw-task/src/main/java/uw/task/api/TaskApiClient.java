@@ -27,16 +27,16 @@ public class TaskApiClient {
     /**
      * Rest模板类
      */
-    private final RestTemplate restTemplate;
+    private final RestTemplate tokenRestTemplate;
 
     /**
      * 日志客户端。
      */
     private final LogClient logClient;
 
-    public TaskApiClient(final TaskProperties taskProperties, final RestTemplate restTemplate, final LogClient logClient) {
+    public TaskApiClient(final TaskProperties taskProperties, final RestTemplate tokenRestTemplate, final LogClient logClient) {
         this.taskProperties = taskProperties;
-        this.restTemplate = restTemplate;
+        this.tokenRestTemplate = tokenRestTemplate;
         this.logClient = logClient;
     }
 
@@ -49,7 +49,7 @@ public class TaskApiClient {
     public HostReportResponse reportHostInfo(TaskHostStats taskHostStats) {
         HostReportResponse reportResponse = null;
         try {
-            reportResponse = restTemplate.postForObject( taskProperties.getTaskCenterHost() + "/rpc/task/host/report", taskHostStats, HostReportResponse.class );
+            reportResponse = tokenRestTemplate.postForObject( taskProperties.getTaskCenterHost() + "/rpc/task/host/report", taskHostStats, HostReportResponse.class );
         } catch (Exception e) {
             log.error( "TaskApiClient.updateHostStatus()服务端主机状态报告异常: {}", e.getMessage() );
         }
@@ -63,7 +63,7 @@ public class TaskApiClient {
      */
     public TaskCronerConfig initTaskCronerConfig(TaskCronerConfig config) {
         try {
-            config = restTemplate.postForObject( taskProperties.getTaskCenterHost() + "/rpc/task/croner/update", config, TaskCronerConfig.class );
+            config = tokenRestTemplate.postForObject( taskProperties.getTaskCenterHost() + "/rpc/task/croner/update", config, TaskCronerConfig.class );
         } catch (Exception e) {
             log.error( "TaskApiClient.initTaskCronerConfig()上传定时任务配置到服务端异常: {}", e.getMessage() );
         }
@@ -77,7 +77,7 @@ public class TaskApiClient {
      */
     public TaskRunnerConfig initTaskRunnerConfig(TaskRunnerConfig config) {
         try {
-            config = restTemplate.postForObject( taskProperties.getTaskCenterHost() + "/rpc/task/runner/update", config, TaskRunnerConfig.class );
+            config = tokenRestTemplate.postForObject( taskProperties.getTaskCenterHost() + "/rpc/task/runner/update", config, TaskRunnerConfig.class );
         } catch (Exception e) {
             log.error( "TaskApiClient.initTaskRunnerConfig()上传队列任务配置到服务端异常: {}", e.getMessage() );
         }
@@ -92,7 +92,7 @@ public class TaskApiClient {
      */
     public void initTaskContact(TaskContact contact) {
         try {
-            restTemplate.postForLocation( taskProperties.getTaskCenterHost() + "/rpc/task/contact/update", contact );
+            tokenRestTemplate.postForLocation( taskProperties.getTaskCenterHost() + "/rpc/task/contact/update", contact );
         } catch (Exception e) {
             log.error( "TaskApiClient.initTaskContact()上传联系人信息到服务端异常: {}", e.getMessage() );
         }
@@ -107,7 +107,7 @@ public class TaskApiClient {
     public List<TaskRunnerConfig> getTaskRunnerConfigList(String runTarget, String taskProject, long lastUpdateTime) {
         List<TaskRunnerConfig> list = null;
         try {
-            TaskRunnerConfig[] data = restTemplate.getForObject( taskProperties.getTaskCenterHost() + "/rpc/task/runner/list?runTarget={runTarget}&taskProject={taskProject" +
+            TaskRunnerConfig[] data = tokenRestTemplate.getForObject( taskProperties.getTaskCenterHost() + "/rpc/task/runner/list?runTarget={runTarget}&taskProject={taskProject" +
                     "}&lastUpdateTime={lastUpdateTime}", TaskRunnerConfig[].class, runTarget, taskProject, lastUpdateTime );
             list = Arrays.asList( data );
         } catch (Exception e) {
@@ -126,7 +126,7 @@ public class TaskApiClient {
     public List<TaskCronerConfig> getTaskCronerConfigList(String runTarget, String taskProject, long lastUpdateTime) {
         List<TaskCronerConfig> list = null;
         try {
-            TaskCronerConfig[] data = restTemplate.getForObject( taskProperties.getTaskCenterHost() + "/rpc/task/croner/list?runTarget={runTarget}&taskProject={taskProject" +
+            TaskCronerConfig[] data = tokenRestTemplate.getForObject( taskProperties.getTaskCenterHost() + "/rpc/task/croner/list?runTarget={runTarget}&taskProject={taskProject" +
                     "}&lastUpdateTime={lastUpdateTime}", TaskCronerConfig[].class, runTarget, taskProject, lastUpdateTime );
             list = Arrays.asList( data );
         } catch (Exception e) {
@@ -156,7 +156,7 @@ public class TaskApiClient {
         //更新下次执行时间。
         long nextDate = taskCronerLog.getNextDate().getTime();
         try {
-            restTemplate.put( taskProperties.getTaskCenterHost() + "/rpc/task/croner/tick?id={id}&nextDate={nextDate}", null, taskId, nextDate );
+            tokenRestTemplate.put( taskProperties.getTaskCenterHost() + "/rpc/task/croner/tick?id={id}&nextDate={nextDate}", null, taskId, nextDate );
         } catch (Throwable e) {
             log.error( "TaskApiClient.cornerTick()服务端主机状态更新异常: {}", e.getMessage() );
         }

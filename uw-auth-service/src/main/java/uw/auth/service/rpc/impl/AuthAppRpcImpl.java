@@ -1,16 +1,10 @@
 package uw.auth.service.rpc.impl;
 
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 import uw.auth.service.conf.AuthServiceProperties;
 import uw.auth.service.rpc.AuthAppRpc;
 import uw.auth.service.vo.*;
 import uw.common.dto.ResponseData;
-
-import java.net.URI;
 
 /**
  * auth-server向auth-center RPC实现
@@ -27,15 +21,15 @@ public class AuthAppRpcImpl implements AuthAppRpc {
     /**
      * RPC Client
      */
-    private final RestTemplate restTemplate;
+    private final RestTemplate tokenRestTemplate;
 
     /**
      * @param authServiceProperties
-     * @param restTemplate
+     * @param tokenRestTemplate
      */
-    public AuthAppRpcImpl(final AuthServiceProperties authServiceProperties, final RestTemplate restTemplate) {
+    public AuthAppRpcImpl(final AuthServiceProperties authServiceProperties, final RestTemplate tokenRestTemplate) {
         this.authServiceProperties = authServiceProperties;
-        this.restTemplate = restTemplate;
+        this.tokenRestTemplate = tokenRestTemplate;
     }
 
     /**
@@ -46,7 +40,7 @@ public class AuthAppRpcImpl implements AuthAppRpc {
      */
     @Override
     public AppRegResponse regApp(AppRegRequest appRegRequest) {
-        return restTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/app/regApp", appRegRequest, AppRegResponse.class );
+        return tokenRestTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/app/regApp", appRegRequest, AppRegResponse.class );
     }
 
     /**
@@ -57,7 +51,7 @@ public class AuthAppRpcImpl implements AuthAppRpc {
      */
     @Override
     public MscAppReportResponse reportStatus(MscAppReportRequest mscAppReportRequest) {
-        return restTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/app/reportStatus", mscAppReportRequest, MscAppReportResponse.class );
+        return tokenRestTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/app/reportStatus", mscAppReportRequest, MscAppReportResponse.class );
     }
 
     /**
@@ -67,7 +61,7 @@ public class AuthAppRpcImpl implements AuthAppRpc {
      */
     @Override
     public ResponseData updatePermLicense(MscPermLicenseRequest mscPermLicenseRequest) {
-        return restTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/app/updatePermLicense", mscPermLicenseRequest, ResponseData.class );
+        return tokenRestTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/app/updatePermLicense", mscPermLicenseRequest, ResponseData.class );
     }
 
 }

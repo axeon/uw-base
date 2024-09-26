@@ -106,7 +106,7 @@ public interface AuthServiceRpc {
      * @param remark
      * @return
      */
-    ResponseData<Integer> updateSaasUserLimit(long saasId, int userLimit, String remark);
+    ResponseData updateSaasUserLimit(long saasId, int userLimit, String remark);
 
     /**
      * 获得Saas用户数限制。

@@ -9,7 +9,7 @@
     <description>uw-base</description>
     <version>${revision}</version>
     <properties>
-        <revision>2024.0803.0953</revision>
+        <revision>2024.0803.0955</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
@@ -19,18 +19,18 @@
         <spring-cloud.alibaba.version>2023.0.1.2</spring-cloud.alibaba.version>
         <uw-app-common.version>1.0.16</uw-app-common.version>
         <uw-common.version>1.0.15</uw-common.version>
-        <uw-auth-client.version>6.0.18</uw-auth-client.version>
-        <uw-auth-service.version>6.0.116</uw-auth-service.version>
+        <uw-auth-client.version>6.0.19</uw-auth-client.version>
+        <uw-auth-service.version>6.0.117</uw-auth-service.version>
         <uw-dao.version>5.1.28</uw-dao.version>
         <uw-httpclient.version>2.1.111</uw-httpclient.version>
         <uw-logback-es.version>3.0.55</uw-logback-es.version>
         <uw-log-es.version>3.0.53</uw-log-es.version>
         <uw-cache.version>1.1.61</uw-cache.version>
         <uw-mfa.version>1.0.19</uw-mfa.version>
-        <uw-notify-client.version>1.0.16</uw-notify-client.version>
-        <uw-task.version>5.0.92</uw-task.version>
-        <uw-tinyurl-client.version>1.0.15</uw-tinyurl-client.version>
-        <uw-mydb-client.version>1.0.10</uw-mydb-client.version>
+        <uw-notify-client.version>1.0.17</uw-notify-client.version>
+        <uw-task.version>5.0.93</uw-task.version>
+        <uw-tinyurl-client.version>1.0.16</uw-tinyurl-client.version>
+        <uw-mydb-client.version>1.0.11</uw-mydb-client.version>
     </properties>
     <parent>
         <groupId>org.springframework.boot</groupId>

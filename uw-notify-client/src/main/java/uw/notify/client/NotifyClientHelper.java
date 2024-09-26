@@ -19,12 +19,12 @@ public class NotifyClientHelper {
     /**
      * Rest模板类
      */
-    private static RestTemplate restTemplate;
+    private static RestTemplate tokenRestTemplate;
 
     private static UwNotifyProperties uwNotifyProperties;
 
-    public NotifyClientHelper(UwNotifyProperties uwNotifyProperties, RestTemplate restTemplate) {
-        NotifyClientHelper.restTemplate = restTemplate;
+    public NotifyClientHelper(UwNotifyProperties uwNotifyProperties, RestTemplate tokenRestTemplate) {
+        NotifyClientHelper.tokenRestTemplate = tokenRestTemplate;
         NotifyClientHelper.uwNotifyProperties = uwNotifyProperties;
     }
 
@@ -37,7 +37,7 @@ public class NotifyClientHelper {
     public static ResponseData pushNotify(WebNotifyMsg webNotifyMsg) {
         ResponseData responseData = null;
         try {
-            responseData = restTemplate.exchange( uwNotifyProperties.getNotifyCenterHost() + "/rpc/notify/pushNotify", HttpMethod.POST, new HttpEntity<>( webNotifyMsg ),
+            responseData = tokenRestTemplate.exchange( uwNotifyProperties.getNotifyCenterHost() + "/rpc/notify/pushNotify", HttpMethod.POST, new HttpEntity<>( webNotifyMsg ),
                     ResponseData.class ).getBody();
         } catch (Exception e) {
             log.error( "WebNotifyHelper推送消息异常: {}", e.getMessage(), e );

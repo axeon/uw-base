@@ -21,12 +21,12 @@ public class TinyurlClientHelper {
     /**
      * Rest模板类
      */
-    private static RestTemplate restTemplate;
+    private static RestTemplate tokenRestTemplate;
 
     private static UwTinyurlProperties uwTinyurlProperties;
 
-    public TinyurlClientHelper(UwTinyurlProperties uwTinyurlProperties, RestTemplate restTemplate) {
-        TinyurlClientHelper.restTemplate = restTemplate;
+    public TinyurlClientHelper(UwTinyurlProperties uwTinyurlProperties, RestTemplate tokenRestTemplate) {
+        TinyurlClientHelper.tokenRestTemplate = tokenRestTemplate;
         TinyurlClientHelper.uwTinyurlProperties = uwTinyurlProperties;
     }
 
@@ -37,7 +37,7 @@ public class TinyurlClientHelper {
      * @return
      */
     public static ResponseData<String> generate(TinyurlParam tinyurlParam) {
-        return restTemplate.exchange( uwTinyurlProperties.getTinyurlCenterHost() + "/rpc/tinyurl/generate", HttpMethod.POST, new HttpEntity<>( tinyurlParam ),
+        return tokenRestTemplate.exchange( uwTinyurlProperties.getTinyurlCenterHost() + "/rpc/tinyurl/generate", HttpMethod.POST, new HttpEntity<>( tinyurlParam ),
                 new ParameterizedTypeReference<ResponseData<String>>() {
         } ).getBody();
     }

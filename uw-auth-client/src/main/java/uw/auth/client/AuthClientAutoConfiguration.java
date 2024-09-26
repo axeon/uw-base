@@ -94,20 +94,20 @@ public class AuthClientAutoConfiguration {
     @Primary
     @ConditionalOnProperty(prefix = "uw.auth.client", name = "enable-spring-cloud", havingValue = "true", matchIfMissing = true)
     public RestTemplate lbTokenRestTemplate(final ClientHttpRequestFactory clientHttpRequestFactory, final TokenHeaderInterceptor tokenHeaderInterceptor) {
-        RestTemplate restTemplate = new RestTemplate(clientHttpRequestFactory);
-        restTemplate.setInterceptors(Collections.singletonList(tokenHeaderInterceptor));
-        restTemplate.setMessageConverters(messageConverters);
-        return restTemplate;
+        RestTemplate tokenRestTemplate = new RestTemplate(clientHttpRequestFactory);
+        tokenRestTemplate.setInterceptors(Collections.singletonList(tokenHeaderInterceptor));
+        tokenRestTemplate.setMessageConverters(messageConverters);
+        return tokenRestTemplate;
     }
 
     @Bean("tokenRestTemplate")
     @Primary
     @ConditionalOnProperty(prefix = "uw.auth.client", name = "enable-spring-cloud", havingValue = "false")
     public RestTemplate tokenRestTemplate(final ClientHttpRequestFactory clientHttpRequestFactory, final TokenHeaderInterceptor tokenHeaderInterceptor) {
-        RestTemplate restTemplate = new RestTemplate(clientHttpRequestFactory);
-        restTemplate.setInterceptors(Collections.singletonList(tokenHeaderInterceptor));
-        restTemplate.setMessageConverters(messageConverters);
-        return restTemplate;
+        RestTemplate tokenRestTemplate = new RestTemplate(clientHttpRequestFactory);
+        tokenRestTemplate.setInterceptors(Collections.singletonList(tokenHeaderInterceptor));
+        tokenRestTemplate.setMessageConverters(messageConverters);
+        return tokenRestTemplate;
     }
 
     /**

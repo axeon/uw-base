@@ -40,7 +40,7 @@ uw:
 public class MyApp {
     @Autowired
     @Qualifier("tokenRestTemplate")
-    private RestTemplate restTemplate;
+    private RestTemplate tokenRestTemplate;
     
     User me = restTemplate.getForObject("http://localhost:8080/protected/profile", User.class);
 }

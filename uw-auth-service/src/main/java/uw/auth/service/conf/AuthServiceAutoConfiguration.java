@@ -151,12 +151,12 @@ public class AuthServiceAutoConfiguration {
      * AuthAppRpc 接口
      *
      * @param authServiceProperties
-     * @param restTemplate
+     * @param tokenRestTemplate
      * @return
      */
     @Bean
-    public AuthAppRpc authAppRpc(final AuthServiceProperties authServiceProperties, @Qualifier("tokenRestTemplate") final RestTemplate restTemplate) {
-        return new AuthAppRpcImpl( authServiceProperties, restTemplate );
+    public AuthAppRpc authAppRpc(final AuthServiceProperties authServiceProperties, @Qualifier("tokenRestTemplate") final RestTemplate tokenRestTemplate) {
+        return new AuthAppRpcImpl( authServiceProperties, tokenRestTemplate );
     }
 
 
@@ -164,12 +164,12 @@ public class AuthServiceAutoConfiguration {
      * AuthServiceRpc 接口
      *
      * @param authServiceProperties
-     * @param restTemplate
+     * @param tokenRestTemplate
      * @return
      */
     @Bean
-    public AuthServiceRpc authServiceRpc(final AuthServiceProperties authServiceProperties, @Qualifier("tokenRestTemplate") final RestTemplate restTemplate) {
-        return new AuthServiceRpcImpl( authServiceProperties, restTemplate );
+    public AuthServiceRpc authServiceRpc(final AuthServiceProperties authServiceProperties, @Qualifier("tokenRestTemplate") final RestTemplate tokenRestTemplate) {
+        return new AuthServiceRpcImpl( authServiceProperties, tokenRestTemplate );
     }
 
     /**
@@ -178,7 +178,7 @@ public class AuthServiceAutoConfiguration {
      * @return
      */
     @Bean
-    public AuthPermService authPermService(final AuthServiceProperties authServiceProperties) {
+    public AuthPermService authPermService() {
         return new AuthPermService();
     }
 

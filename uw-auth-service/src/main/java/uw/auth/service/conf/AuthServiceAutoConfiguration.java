@@ -24,7 +24,6 @@ import uw.auth.service.AuthServiceHelper;
 import uw.auth.service.advice.GlobalExceptionAdvice;
 import uw.auth.service.advice.GlobalResponseAdvice;
 import uw.auth.service.filter.AuthServiceFilter;
-import uw.auth.service.ipblock.IpMatchHelper;
 import uw.auth.service.log.AuthCriticalLogStorage;
 import uw.auth.service.log.impl.AuthCriticalLogNoneStorage;
 import uw.auth.service.rpc.AuthAppRpc;
@@ -67,17 +66,6 @@ public class AuthServiceAutoConfiguration {
     @Bean
     public AuthServiceHelper authServerHelper(final AuthServiceProperties authServiceProperties, final AuthPermService authPermService, final AuthServiceRpc authServiceRpc) {
         return new AuthServiceHelper( authServiceProperties, authPermService, authServiceRpc );
-    }
-
-    /**
-     * AuthServer的入口类。
-     *
-     * @param authServiceProperties
-     * @return
-     */
-    @Bean
-    public IpMatchHelper ipBlockHelper(final AuthServiceProperties authServiceProperties) {
-        return new IpMatchHelper( 500 );
     }
 
     /**

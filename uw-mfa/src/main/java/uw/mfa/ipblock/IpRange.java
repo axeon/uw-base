@@ -1,84 +1,83 @@
 package uw.mfa.ipblock;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * IP Range对象
- *
- * @author axeon
- * @since 2017/6/15
+ * IP Range对象。
  */
+@Schema(title = "IP范围对象", description = "IP范围对象")
 public class IpRange {
 
-    private static final Logger log = LoggerFactory.getLogger(IpRange.class);
+    private static final Logger log = LoggerFactory.getLogger( IpRange.class );
 
     private static final int IPV4_BIT_COUNT = 32;
 
-    private long from;
+    @Schema(title = "开始IP", description = "开始IP")
+    private long start;
 
-    private long to;
+    @Schema(title = "结束IP", description = "结束IP")
+    private long end;
 
     public IpRange() {
     }
 
     public IpRange(String ipPattern) {
-        convert(ipPattern);
+        convert( ipPattern );
     }
 
-    public IpRange(long from, long to) {
-        this.from = from;
-        this.to = to;
+    public IpRange(long start, long end) {
+        this.start = start;
+        this.end = end;
     }
 
-    public long getFrom() {
-        return from;
+    public long getStart() {
+        return start;
     }
 
-    public long getTo() {
-        return to;
+    public void setStart(long start) {
+        this.start = start;
     }
 
-    public void setFrom(long from) {
-        this.from = from;
+    public long getEnd() {
+        return end;
     }
 
-    public void setTo(long to) {
-        this.to = to;
+    public void setEnd(long end) {
+        this.end = end;
     }
 
     /**
      * ipPattern转换
-     *
-     * @param ipPattern
      */
     private void convert(String ipPattern) {
         try {
             String ip = ipPattern.trim();
             long maskBitCount = IPV4_BIT_COUNT;
-            if (ipPattern.indexOf("/") > 0) {
-                String[] addressAndMask = ipPattern.split("/");
+            if (ipPattern.indexOf( "/" ) > 0) {
+                String[] addressAndMask = ipPattern.split( "/" );
                 ip = addressAndMask[0];
-                maskBitCount = Long.parseLong(addressAndMask[1]);
-            } else if (ipPattern.indexOf('*') > 0) {
-                maskBitCount = IPV4_BIT_COUNT - (StringUtils.countMatches(ipPattern, "*") * 8);
-                ip = ipPattern.replaceAll("\\*", "255");
+                maskBitCount = Long.parseLong( addressAndMask[1] );
+            } else if (ipPattern.indexOf( '*' ) > 0) {
+                maskBitCount = IPV4_BIT_COUNT - (StringUtils.countMatches( ipPattern, "*" ) * 8L);
+                ip = ipPattern.replaceAll( "\\*", "255" );
             }
 
-            String[] splitIps = ip.split("\\.");
+            String[] splitIps = ip.split( "\\." );
             for (String splitIp : splitIps) {
-                from = from << 8;
-                from |= Long.parseLong(splitIp);
+                start = start << 8;
+                start |= Long.parseLong( splitIp );
             }
 
-            to = from;
+            end = start;
             long mask = 0xFFFFFFFFL >>> maskBitCount;
 
-            to = to | mask;
-            from = from & (~mask);
+            end = end | mask;
+            start = start & (~mask);
         } catch (Exception e) {
-            log.warn("非法的ip格式: {}", ipPattern);
+            log.warn( "非法的ip格式: {}", ipPattern );
         }
     }
 

@@ -19,21 +19,17 @@ public class IpUtils {
      * @return
      */
     public static long ipToLong(String strIp) {
-        String[] ips = strIp.split( "\\." );
-        long[] ip = new long[4];
-        if (ips.length != 4) {
+        int pos1 = strIp.indexOf( "." );
+        int pos2 = strIp.indexOf( ".", pos1 + 1 );
+        int pos3 = strIp.indexOf( ".", pos2 + 1 );
+        if (pos1 == -1 || pos2 == -1 || pos3 == -1 || pos1 > 15 || pos2 > 15 || pos3 > 15) {
             return -1;
         }
-        try {
-            ip[0] = Long.parseLong( ips[0] );
-            ip[1] = Long.parseLong( ips[1] );
-            ip[2] = Long.parseLong( ips[2] );
-            ip[3] = Long.parseLong( ips[3] );
-        } catch (Exception e) {
-            ip = new long[4];
-        }
-        // 将每个.之间的字符串转换成整型
-        return (ip[0] << 24) + (ip[1] << 16) + (ip[2] << 8) + ip[3];
+        long ip = Long.parseLong( strIp.substring( 0, pos1 ) ) << 24;
+        ip += Long.parseLong( strIp.substring( pos1 + 1, pos2 ) ) << 16;
+        ip += Long.parseLong( strIp.substring( pos2 + 1, pos3 ) ) << 8;
+        ip += Long.parseLong( strIp.substring( pos3 + 1 ) );
+        return ip;
     }
 
     /**

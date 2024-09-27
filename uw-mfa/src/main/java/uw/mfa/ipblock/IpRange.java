@@ -77,7 +77,7 @@ public class IpRange {
             end = end | mask;
             start = start & (~mask);
         } catch (Exception e) {
-            log.warn( "非法的ip格式: {}", ipPattern );
+            throw new IllegalArgumentException( "非法的ip格式: " + ipPattern );
         }
     }
 

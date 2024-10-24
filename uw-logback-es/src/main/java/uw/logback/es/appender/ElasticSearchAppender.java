@@ -107,7 +107,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
     /**
      * 批量提交最小字节数
      */
-    private long maxKiloBytesOfBatch = 2048;
+    private long maxKiloBytesOfBatch = 8192;
 
     /**
      * 最大批量线程数。
@@ -117,17 +117,17 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
     /**
      * 最大批量线程队列数
      */
-    private int maxBatchQueueSize = 10;
+    private int maxBatchQueueSize = 20;
 
     /**
      * 异常输出最大深度。
      */
-    private int maxDepthPerThrowable = 10;
+    private int maxDepthPerThrowable = 20;
 
     /**
      * 需要排除的异常关键字，多个关键字之间用','分割。
      */
-    private String excludeThrowableKeys = "org.spring,org.apache,java.base";
+    private String excludeThrowableKeys = "org.spring,org.apache,org.apache,java.base,jakarta,com.mysql";
 
     /**
      * 是否开启JMX
@@ -339,7 +339,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
         if (maxDepthPerThrowable < 10) {
             maxDepthPerThrowable = 10;
         }
-        ThrowableProxyUtils.MaxDepthPerThrowable = 10;
+        ThrowableProxyUtils.MaxDepthPerThrowable = maxDepthPerThrowable;
         if (StringUtils.isNotBlank( excludeThrowableKeys )) {
             ThrowableProxyUtils.ExcludeThrowableKeys = excludeThrowableKeys.split( "," );
         }

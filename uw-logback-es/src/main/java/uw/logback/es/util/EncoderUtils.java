@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.io.JsonStringEncoder;
 import org.apache.commons.lang3.time.FastDateFormat;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.TimeZone;
 
 /**
@@ -14,12 +15,12 @@ public class EncoderUtils {
     /**
      * 日志编码
      */
-    public static final Charset LOG_CHARSET = Charset.forName("UTF-8");
+    public static final Charset LOG_CHARSET = StandardCharsets.UTF_8;
 
     /**
      * 换行符
      */
-    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+    private static final String LINE_SEPARATOR = System.lineSeparator();
 
     /**
      * 换行符字节
@@ -37,7 +38,7 @@ public class EncoderUtils {
      * @param input
      * @return
      */
-    public static final String escapeJSON(String input) {
+    public static String escapeJSON(String input) {
         if (input == null) {
             return "null";
         } else {

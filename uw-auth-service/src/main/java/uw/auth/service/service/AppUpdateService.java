@@ -351,24 +351,15 @@ public class AppUpdateService {
      * @return
      */
     private String requestMethodToString(RequestMethod requestMethod) {
-        switch (requestMethod) {
-            case GET:
-                return "GET";
-            case PUT:
-                return "PUT";
-            case HEAD:
-                return "HEAD";
-            case POST:
-                return "POST";
-            case PATCH:
-                return "PATCH";
-            case TRACE:
-                return "TRACE";
-            case DELETE:
-                return "DELETE";
-            case OPTIONS:
-                return "OPTIONS";
-        }
-        return "";
+        return switch (requestMethod) {
+            case GET -> "GET";
+            case PUT -> "PUT";
+            case HEAD -> "HEAD";
+            case POST -> "POST";
+            case PATCH -> "PATCH";
+            case TRACE -> "TRACE";
+            case DELETE -> "DELETE";
+            case OPTIONS -> "OPTIONS";
+        };
     }
 }

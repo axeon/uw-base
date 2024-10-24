@@ -121,7 +121,7 @@ public class AuthServiceHelper {
         }
         // 过滤,只保存auth相关的属性
         Field[] authFields = new Field[4];
-        if (fields != null && fields.size() > 0) {
+        if (fields.size() > 0) {
             for (int j = 0; j < fields.size(); j++) {
                 Field field = fields.get( j );
                 switch (field.getName()) {

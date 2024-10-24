@@ -192,23 +192,13 @@ public class TaskMetaInfoManager {
             }
         }
         if (config != null) {
-            String queueName;
-            switch (config.getQueueType()) {
-                case TaskRunnerConfig.TYPE_QUEUE_TASK:
-                    queueName = fitName;
-                    break;
-                case TaskRunnerConfig.TYPE_QUEUE_GROUP_PRIORITY:
-                    queueName = getGroupQueueName( config.getTaskClass(), "priority", config.getRunTarget() );
-                    break;
-                case TaskRunnerConfig.TYPE_QUEUE_GROUP:
-                    queueName = getGroupQueueName( config.getTaskClass(), "default", config.getRunTarget() );
-                    break;
-                case TaskRunnerConfig.TYPE_QUEUE_PROJECT_PRIORITY:
-                    queueName = taskProperties.getTaskProject() + "@priority$" + config.getRunTarget();
-                    break;
-                default:
-                    queueName = taskProperties.getTaskProject() + "$" + config.getRunTarget();
-            }
+            String queueName = switch (config.getQueueType()) {
+                case TaskRunnerConfig.TYPE_QUEUE_TASK -> fitName;
+                case TaskRunnerConfig.TYPE_QUEUE_GROUP_PRIORITY -> getGroupQueueName( config.getTaskClass(), "priority", config.getRunTarget() );
+                case TaskRunnerConfig.TYPE_QUEUE_GROUP -> getGroupQueueName( config.getTaskClass(), "default", config.getRunTarget() );
+                case TaskRunnerConfig.TYPE_QUEUE_PROJECT_PRIORITY -> taskProperties.getTaskProject() + "@priority$" + config.getRunTarget();
+                default -> taskProperties.getTaskProject() + "$" + config.getRunTarget();
+            };
             // 只有开启了延时队列并且发送队列异步进行才会返回TTL队列名称
             return config.getDelayType() == TaskRunnerConfig.TYPE_DELAY_ON && data.getRunType() == TaskData.RUN_TYPE_GLOBAL ? getTTLQueueName( queueName ) : queueName;
         } else {
@@ -302,18 +292,13 @@ public class TaskMetaInfoManager {
      * @return
      */
     public String getQueueNameByConfig(TaskRunnerConfig config) {
-        switch (config.getQueueType()) {
-            case TaskRunnerConfig.TYPE_QUEUE_TASK:
-                return getRunnerConfigKey( config );
-            case TaskRunnerConfig.TYPE_QUEUE_GROUP_PRIORITY:
-                return getGroupQueueName( config.getTaskClass(), "priority", config.getRunTarget() );
-            case TaskRunnerConfig.TYPE_QUEUE_GROUP:
-                return getGroupQueueName( config.getTaskClass(), "default", config.getRunTarget() );
-            case TaskRunnerConfig.TYPE_QUEUE_PROJECT_PRIORITY:
-                return taskProperties.getTaskProject() + "@priority$" + config.getRunTarget();
-            default:
-                return taskProperties.getTaskProject() + "$" + config.getRunTarget();
-        }
+        return switch (config.getQueueType()) {
+            case TaskRunnerConfig.TYPE_QUEUE_TASK -> getRunnerConfigKey( config );
+            case TaskRunnerConfig.TYPE_QUEUE_GROUP_PRIORITY -> getGroupQueueName( config.getTaskClass(), "priority", config.getRunTarget() );
+            case TaskRunnerConfig.TYPE_QUEUE_GROUP -> getGroupQueueName( config.getTaskClass(), "default", config.getRunTarget() );
+            case TaskRunnerConfig.TYPE_QUEUE_PROJECT_PRIORITY -> taskProperties.getTaskProject() + "@priority$" + config.getRunTarget();
+            default -> taskProperties.getTaskProject() + "$" + config.getRunTarget();
+        };
     }
 
     /**

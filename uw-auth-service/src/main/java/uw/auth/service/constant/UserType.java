@@ -67,6 +67,7 @@ public enum UserType {
      * 参数信息。
      */
     private final String label;
+
     /**
      * token有效期(ms)
      */

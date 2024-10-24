@@ -119,28 +119,18 @@ public class ThrowableProxyUtils {
      * @return
      */
     private static String indentJsonTab(int indent) {
-        switch (indent) {
-            case 1:
-                return "\\t";
-            case 2:
-                return "\\t\\t";
-            case 3:
-                return "\\t\\t\\t";
-            case 4:
-                return "\\t\\t\\t\\t";
-            case 5:
-                return "\\t\\t\\t\\t\\t";
-            case 6:
-                return "\\t\\t\\t\\t\\t\\t";
-            case 7:
-                return "\\t\\t\\t\\t\\t\\t\\t";
-            case 8:
-                return "\\t\\t\\t\\t\\t\\t\\t\\t";
-            case 9:
-                return "\\t\\t\\t\\t\\t\\t\\t\\t\\t";
-            default:
-                return "";
-        }
+        return switch (indent) {
+            case 1 -> "\\t";
+            case 2 -> "\\t\\t";
+            case 3 -> "\\t\\t\\t";
+            case 4 -> "\\t\\t\\t\\t";
+            case 5 -> "\\t\\t\\t\\t\\t";
+            case 6 -> "\\t\\t\\t\\t\\t\\t";
+            case 7 -> "\\t\\t\\t\\t\\t\\t\\t";
+            case 8 -> "\\t\\t\\t\\t\\t\\t\\t\\t";
+            case 9 -> "\\t\\t\\t\\t\\t\\t\\t\\t\\t";
+            default -> "";
+        };
     }
 
 

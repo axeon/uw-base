@@ -61,20 +61,20 @@ public class TableShardingTask implements Runnable {
                 String currentTable = "", nextTable = "";
                 if ("date".equalsIgnoreCase( tc.getShardType() )) {
                     // 计算当前表和下一个表
-                    switch (tc.getShardRule()) {
-                        case "month":
+                    nextTable = switch (tc.getShardRule()) {
+                        case "month" -> {
                             currentTable = now.format( ShardingTableUtils.FORMATTER_MONTH );
-                            nextTable = now.plusMonths( 1 ).format( ShardingTableUtils.FORMATTER_MONTH );
-                            break;
-                        case "year":
+                            yield now.plusMonths( 1 ).format( ShardingTableUtils.FORMATTER_MONTH );
+                        }
+                        case "year" -> {
                             currentTable = now.format( ShardingTableUtils.FORMATTER_YEAR );
-                            nextTable = now.plusYears( 1 ).format( ShardingTableUtils.FORMATTER_YEAR );
-                            break;
-                        default:
+                            yield now.plusYears( 1 ).format( ShardingTableUtils.FORMATTER_YEAR );
+                        }
+                        default -> {
                             currentTable = now.format( ShardingTableUtils.FORMATTER_DAY );
-                            nextTable = now.plusDays( 1 ).format( ShardingTableUtils.FORMATTER_DAY );
-                            break;
-                    }
+                            yield now.plusDays( 1 ).format( ShardingTableUtils.FORMATTER_DAY );
+                        }
+                    };
                     currentTable = baseTableName + "_" + currentTable;
                     nextTable = baseTableName + "_" + nextTable;
 

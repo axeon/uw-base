@@ -8,6 +8,7 @@ import okhttp3.Credentials;
 import okhttp3.Request;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
+import uw.httpclient.http.HttpData;
 import uw.httpclient.http.HttpInterface;
 import uw.httpclient.json.JsonInterfaceHelper;
 import uw.httpclient.util.BufferRequestBody;
@@ -452,7 +453,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
             if (needBasicAuth) {
                 requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
             }
-            httpInterface.requestForData( requestBuilder.post( BufferRequestBody.create( bufferData, MediaTypes.JSON_UTF8 ) ).build() );
+            HttpData httpData = httpInterface.requestForData( requestBuilder.post( BufferRequestBody.create( bufferData, MediaTypes.JSON_UTF8 ) ).build() );
         } catch (Exception e) {
             //直接打印到控制台输出吧
             e.printStackTrace();

@@ -78,17 +78,17 @@ public class LogService {
     /**
      * es集群地址
      */
-    private final String server;
+    private final String esServer;
 
     /**
      * 用户名
      */
-    private String username;
+    private final String esUsername;
 
     /**
      * 用户密码
      */
-    private String password;
+    private final String esPassword;
 
     /**
      * 是否需要记录日志
@@ -166,16 +166,15 @@ public class LogService {
         this.appName = appName;
         this.appHost = appHost;
         this.appInfoOverwrite = logClientProperties.getEs().isAppInfoOverwrite();
-        this.server = logClientProperties.getEs().getServer();
-        if (StringUtils.isBlank( this.server )) {
+        this.esServer = logClientProperties.getEs().getServer();
+        this.esUsername = logClientProperties.getEs().getUsername();
+        this.esPassword = logClientProperties.getEs().getPassword();
+        if (StringUtils.isBlank( this.esServer )) {
             log.error( "ElasticSearch server config is null! LogClient can't log anything!!!" );
             this.logState = false;
             return;
         }
-
-        this.username = logClientProperties.getEs().getUsername();
-        this.password = logClientProperties.getEs().getPassword();
-        this.needBasicAuth = StringUtils.isNotBlank( username ) && StringUtils.isNotBlank( password );
+        this.needBasicAuth = StringUtils.isNotBlank( esUsername ) && StringUtils.isNotBlank( esPassword );
         this.httpInterface =
                 new JsonInterfaceHelper( HttpConfig.builder().retryOnConnectionFailure( true ).connectTimeout( logClientProperties.getEs().getConnectTimeout() ).readTimeout( logClientProperties.getEs().getReadTimeout() ).writeTimeout( logClientProperties.getEs().getWriteTimeout() ).build() );
         this.esBulk = logClientProperties.getEs().getEsBulk();
@@ -291,8 +290,6 @@ public class LogService {
         }
         okio.Buffer okb = new okio.Buffer();
         okb.writeUtf8( "{\"index\":{\"_index\":\"" ).writeUtf8( index )
-//                .writeUtf8("\",\"_type\":\"")
-//                .writeUtf8(INDEX_TYPE)
                 .writeUtf8( "\"}}" );
         okb.write( LINE_SEPARATOR_BYTES );
         try {
@@ -341,8 +338,6 @@ public class LogService {
                 source.setAppHost( appHost );
             }
             okb.writeUtf8( "{\"index\":{\"_index\":\"" ).writeUtf8( index )
-//                    .writeUtf8("\",\"_type\":\"")
-//                    .writeUtf8(INDEX_TYPE)
                     .writeUtf8( "\"}}" );
             okb.write( LINE_SEPARATOR_BYTES );
             try {
@@ -380,9 +375,9 @@ public class LogService {
             return;
         }
         try {
-            Request.Builder requestBuilder = new Request.Builder().url( server + esBulk );
+            Request.Builder requestBuilder = new Request.Builder().url( esServer + esBulk );
             if (needBasicAuth) {
-                requestBuilder.header( "Authorization", Credentials.basic( username, password ) );
+                requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
             }
             httpInterface.requestForData( requestBuilder.post( BufferRequestBody.create( bufferData, MediaTypes.JSON_UTF8 ) ).build() );
         } catch (Exception e) {
@@ -413,10 +408,10 @@ public class LogService {
      */
     @SuppressWarnings("unchecked")
     public <T> SearchResponse<T> dslQuery(Class<T> tClass, String index, String dslQuery) {
-        if (StringUtils.isBlank( server )) {
+        if (StringUtils.isBlank( esServer )) {
             return null;
         }
-        StringBuilder urlBuilder = new StringBuilder( server );
+        StringBuilder urlBuilder = new StringBuilder( esServer );
         urlBuilder.append( "/" ).append( index ).append( "/" ).append( "_search" );
         SearchResponse<T> resp = null;
         JavaType javaType = JsonInterfaceHelper.JSON_CONVERTER.constructParametricType( SearchResponse.class, tClass );
@@ -424,7 +419,7 @@ public class LogService {
         try {
             Request.Builder requestBuilder = new Request.Builder().url( urlBuilder.toString() );
             if (needBasicAuth) {
-                requestBuilder.header( "Authorization", Credentials.basic( username, password ) );
+                requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
             }
             resp = (SearchResponse<T>) httpInterface.requestForEntity( requestBuilder.post( RequestBody.create( dslQuery, MediaTypes.JSON_UTF8 ) ).build(), javaType ).getValue();
         } catch (Exception e) {
@@ -443,19 +438,19 @@ public class LogService {
      * @return
      */
     public <T> ScrollResponse<T> scrollQueryOpen(Class<T> tClass, String index, int scrollExpireSeconds, String dslQuery) {
-        if (StringUtils.isBlank( server )) {
+        if (StringUtils.isBlank( esServer )) {
             return null;
         }
         if (scrollExpireSeconds <= 0) {
             scrollExpireSeconds = 60;
         }
-        StringBuilder urlBuilder = new StringBuilder( server );
+        StringBuilder urlBuilder = new StringBuilder( esServer );
         urlBuilder.append( "/" ).append( index ).append( "/" ).append( "_search?" ).append( SCROLL ).append( "=" ).append( scrollExpireSeconds ).append( "s" );
         ScrollResponse<T> resp = null;
         try {
             Request.Builder requestBuilder = new Request.Builder().url( urlBuilder.toString() );
             if (needBasicAuth) {
-                requestBuilder.header( "Authorization", Credentials.basic( username, password ) );
+                requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
             }
             JavaType javaType = JsonInterfaceHelper.JSON_CONVERTER.constructParametricType( ScrollResponse.class, tClass );
             resp = (ScrollResponse<T>) httpInterface.requestForEntity( requestBuilder.post( RequestBody.create( dslQuery, MediaTypes.JSON_UTF8 ) ).build(), javaType ).getValue();
@@ -475,13 +470,13 @@ public class LogService {
      * @return
      */
     public <T> ScrollResponse<T> scrollQueryNext(Class<T> tClass, String scrollId, int scrollExpireSeconds) {
-        if (StringUtils.isBlank( server )) {
+        if (StringUtils.isBlank( esServer )) {
             return null;
         }
         if (scrollExpireSeconds <= 0) {
             scrollExpireSeconds = 60;
         }
-        StringBuilder urlBuilder = new StringBuilder( server );
+        StringBuilder urlBuilder = new StringBuilder( esServer );
         urlBuilder.append( "/_search/" ).append( SCROLL );
         String requestBody = String.format( "{\"scroll_id\" : \"%s\",\"scroll\": \"%s\"}", scrollId, scrollExpireSeconds + "s" );
         ScrollResponse<T> resp = null;
@@ -490,7 +485,7 @@ public class LogService {
         try {
             Request.Builder requestBuilder = new Request.Builder().url( urlBuilder.toString() );
             if (needBasicAuth) {
-                requestBuilder.header( "Authorization", Credentials.basic( username, password ) );
+                requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
             }
             resp = (ScrollResponse<T>) httpInterface.requestForEntity( requestBuilder.post( RequestBody.create( requestBody, MediaTypes.JSON_UTF8 ) ).build(), javaType ).getValue();
         } catch (Exception e) {
@@ -506,17 +501,17 @@ public class LogService {
      * @return
      */
     public DeleteScrollResponse scrollQueryClose(String scrollId) {
-        if (StringUtils.isBlank( server )) {
+        if (StringUtils.isBlank( esServer )) {
             return null;
         }
-        StringBuilder urlBuilder = new StringBuilder( server );
+        StringBuilder urlBuilder = new StringBuilder( esServer );
         urlBuilder.append( "/_search/" ).append( SCROLL );
         String requestBody = String.format( "{\"scroll_id\":\"%s\"}", scrollId );
         DeleteScrollResponse resp;
         try {
             Request.Builder requestBuilder = new Request.Builder().url( urlBuilder.toString() );
             if (needBasicAuth) {
-                requestBuilder.header( "Authorization", Credentials.basic( username, password ) );
+                requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
             }
             resp = httpInterface.requestForEntity( requestBuilder.delete( RequestBody.create( requestBody, MediaTypes.JSON_UTF8 ) ).build(), DeleteScrollResponse.class ).getValue();
         } catch (Exception e) {
@@ -535,7 +530,7 @@ public class LogService {
      * @return
      */
     public String translateSqlToDsl(String sql, int startIndex, int resultNum, boolean isTrueCount) throws Exception {
-        if (StringUtils.isBlank( server )) {
+        if (StringUtils.isBlank( esServer )) {
             throw new IllegalArgumentException( "es server is blank!" );
         }
         if (StringUtils.isBlank( sql )) {
@@ -546,7 +541,7 @@ public class LogService {
         }
         sql = sql.trim();
         String dsl = null;
-        StringBuilder urlBuilder = new StringBuilder( server );
+        StringBuilder urlBuilder = new StringBuilder( esServer );
         urlBuilder.append( "/" ).append( "_sql/translate" );
         // 这里支持count(*) 无需limit
         if (resultNum > 0) {
@@ -555,7 +550,7 @@ public class LogService {
         sql = String.format( "{\"query\": \"%s\"}", sql );
         Request.Builder requestBuilder = new Request.Builder().url( urlBuilder.toString() );
         if (needBasicAuth) {
-            requestBuilder.header( "Authorization", Credentials.basic( username, password ) );
+            requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
         }
         dsl = httpInterface.requestForEntity( requestBuilder.post( RequestBody.create( sql, MediaTypes.JSON_UTF8 ) ).build(), String.class ).getValue();
 
@@ -684,7 +679,7 @@ public class LogService {
         public void run() {
             while (isRunning) {
                 try {
-                    if (buffer.size() > maxBytesOfBatch || nextScanTime < System.currentTimeMillis()) {
+                    if (buffer.size() > maxBytesOfBatch || System.currentTimeMillis() > nextScanTime) {
                         nextScanTime = System.currentTimeMillis() + maxFlushInMilliseconds;
                         batchExecutor.submit( new Runnable() {
                             @Override

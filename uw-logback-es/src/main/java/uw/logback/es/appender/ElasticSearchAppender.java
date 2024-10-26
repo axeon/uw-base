@@ -105,9 +105,9 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
     private long maxFlushInSeconds = 10;
 
     /**
-     * 批量提交最小字节数
+     * 允许最大Bucket字节数。
      */
-    private long maxKiloBytesOfBatch = 8192;
+    private long maxKiloBytesOfBatch = 8 * 1024;
 
     /**
      * 最大批量线程数。

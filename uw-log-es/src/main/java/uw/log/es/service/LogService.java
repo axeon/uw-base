@@ -23,6 +23,7 @@ import uw.log.es.vo.ScrollResponse;
 import uw.log.es.vo.SearchResponse;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
@@ -42,12 +43,12 @@ public class LogService {
     /**
      * 日志编码
      */
-    private static final Charset LOG_CHARSET = Charset.forName( "UTF-8" );
+    private static final Charset LOG_CHARSET = StandardCharsets.UTF_8;
 
     /**
      * 换行符字节
      */
-    private static final byte[] LINE_SEPARATOR_BYTES = System.getProperty( "line.separator" ).getBytes( LOG_CHARSET );
+    private static final byte[] LINE_SEPARATOR_BYTES = System.lineSeparator().getBytes( LOG_CHARSET );
 
     /**
      * 时间序列格式化
@@ -77,7 +78,7 @@ public class LogService {
     /**
      * es集群地址
      */
-    private String server;
+    private final String server;
 
     /**
      * 用户名
@@ -103,11 +104,6 @@ public class LogService {
      * Elasticsearch bulk api 地址
      */
     private String esBulk;
-
-    /**
-     * 模式
-     */
-    private LogClientProperties.LogMode mode;
 
     /**
      * 刷新Bucket时间毫秒数
@@ -147,17 +143,17 @@ public class LogService {
     /**
      * 应用名称
      */
-    private String appName;
+    private final String appName;
 
     /**
      * 应用主机信息
      */
-    private String appHost;
+    private final String appHost;
 
     /**
      * 是否添加执行应用信息
      */
-    private boolean appInfoOverwrite;
+    private final boolean appInfoOverwrite;
 
     /**
      * LogService.
@@ -183,11 +179,14 @@ public class LogService {
         this.httpInterface =
                 new JsonInterfaceHelper( HttpConfig.builder().retryOnConnectionFailure( true ).connectTimeout( logClientProperties.getEs().getConnectTimeout() ).readTimeout( logClientProperties.getEs().getReadTimeout() ).writeTimeout( logClientProperties.getEs().getWriteTimeout() ).build() );
         this.esBulk = logClientProperties.getEs().getEsBulk();
-        this.maxFlushInMilliseconds = logClientProperties.getEs().getMaxFlushInMilliseconds();
-        this.maxBytesOfBatch = logClientProperties.getEs().getMaxBytesOfBatch();
+        this.maxFlushInMilliseconds = logClientProperties.getEs().getMaxFlushInSeconds()*1000L;
+        this.maxBytesOfBatch = logClientProperties.getEs().getMaxKiloBytesOfBatch()*1024L;
         this.maxBatchThreads = logClientProperties.getEs().getMaxBatchThreads();
         this.maxBatchQueueSize = logClientProperties.getEs().getMaxBatchQueueSize();
-        this.mode = logClientProperties.getEs().getMode();
+        /**
+         * 模式
+         */
+        LogClientProperties.LogMode mode = logClientProperties.getEs().getMode();
 
         // 如果
         if (mode == LogClientProperties.LogMode.READ_WRITE) {

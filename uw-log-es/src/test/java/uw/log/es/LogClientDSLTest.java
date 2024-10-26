@@ -24,8 +24,8 @@ public class LogClientDSLTest {
         esConfig.setServer("http://localhost:9200");
         esConfig.setMode(LogClientProperties.LogMode.READ_WRITE);
         esConfig.setAppInfoOverwrite(false);
-        esConfig.setMaxFlushInMilliseconds(1000);
-        esConfig.setMaxBytesOfBatch(5 * 1024 * 1024);
+        esConfig.setMaxFlushInSeconds(10);
+        esConfig.setMaxKiloBytesOfBatch(5 * 1024);
         esConfig.setMaxBatchThreads(5);
         logClientProperties.setEs(esConfig);
         logService = new LogService(logClientProperties, null, null);

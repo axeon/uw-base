@@ -21,8 +21,8 @@ public class LogClientWriteModeMain {
         esConfig.setServer("http://localhost:9200");
         esConfig.setMode(LogClientProperties.LogMode.READ_WRITE);
         esConfig.setAppInfoOverwrite(false);
-        esConfig.setMaxFlushInMilliseconds(10000);
-        esConfig.setMaxBytesOfBatch(5 * 1024 * 1024);
+        esConfig.setMaxFlushInSeconds(10);
+        esConfig.setMaxKiloBytesOfBatch(5 * 1024);
         esConfig.setMaxBatchThreads(3);
         esConfig.setMaxBatchQueueSize(10);
         logClientProperties.setEs(esConfig);

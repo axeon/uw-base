@@ -63,24 +63,24 @@ public class LogClientProperties {
         private LogMode mode = LogMode.READ_WRITE;
 
         /**
-         * 刷新Bucket时间毫秒数
+         * 刷新Bucket时间秒数.
          */
-        private long maxFlushInMilliseconds = 10000;
+        private long maxFlushInSeconds = 10L;
 
         /**
-         * 允许最大Bucket 字节数。
+         * 允许最大Bucket字节数。
          */
-        private long maxBytesOfBatch = 5 * 1024 * 1024;
+        private long maxKiloBytesOfBatch = 8 * 1024;
 
         /**
          * 最大批量线程数。
          */
-        private int maxBatchThreads = 3;
+        private int maxBatchThreads = 5;
 
         /**
          * 最大批量线程队列数
          */
-        private int maxBatchQueueSize = 10;
+        private int maxBatchQueueSize = 20;
 
         public long getConnectTimeout() {
             return connectTimeout;
@@ -154,20 +154,20 @@ public class LogClientProperties {
             this.mode = mode;
         }
 
-        public long getMaxFlushInMilliseconds() {
-            return maxFlushInMilliseconds;
+        public long getMaxFlushInSeconds() {
+            return maxFlushInSeconds;
         }
 
-        public void setMaxFlushInMilliseconds(long maxFlushInMilliseconds) {
-            this.maxFlushInMilliseconds = maxFlushInMilliseconds;
+        public void setMaxFlushInSeconds(long maxFlushInSeconds) {
+            this.maxFlushInSeconds = maxFlushInSeconds;
         }
 
-        public long getMaxBytesOfBatch() {
-            return maxBytesOfBatch;
+        public long getMaxKiloBytesOfBatch() {
+            return maxKiloBytesOfBatch;
         }
 
-        public void setMaxBytesOfBatch(long maxBytesOfBatch) {
-            this.maxBytesOfBatch = maxBytesOfBatch;
+        public void setMaxKiloBytesOfBatch(long maxKiloBytesOfBatch) {
+            this.maxKiloBytesOfBatch = maxKiloBytesOfBatch;
         }
 
         public int getMaxBatchThreads() {

@@ -18,9 +18,8 @@ public interface ElasticSearchAppenderMBean {
     /**
      * changeMaxFlushInMilliseconds
      *
-     * @param maxFlushInMilliseconds
      */
-    void changeMaxFlushInSeconds(long maxFlushInMilliseconds);
+    void changeMaxFlushInSeconds(long maxFlushInSeconds);
 
     /**
      * getMaxBytesOfBatch
@@ -30,7 +29,6 @@ public interface ElasticSearchAppenderMBean {
     /**
      * changeMaxBytesOfBatch
      *
-     * @param maxKiloBytesOfBatch
      */
     void changeMaxBytesOfBatch(long maxKiloBytesOfBatch);
 }

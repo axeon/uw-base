@@ -12,7 +12,7 @@
             <!-- Basic Authentication -->
             <esUsername>username</esUsername>
             <esPassword>password</esPassword>
-            <!-- 索引名称,默认使用appanme -->
+            <!-- 索引名称,默认使用appName -->
             <index>uw-auth-center</index>
             <!-- 索引Pattern,生成index-indexPattern的索引,目前只支持时间格式器,比如:yyyy-MM-dd -->
             <indexPattern>_yyyy-MM-dd</indexPattern>

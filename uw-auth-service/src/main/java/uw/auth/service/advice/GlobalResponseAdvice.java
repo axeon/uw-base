@@ -15,7 +15,6 @@ import uw.auth.service.AuthServiceHelper;
 import uw.auth.service.annotation.ResponseAdviceIgnore;
 import uw.auth.service.vo.MscActionLog;
 import uw.common.dto.ResponseData;
-import uw.httpclient.exception.DataMapperException;
 import uw.httpclient.json.JsonInterfaceHelper;
 
 import java.util.LinkedHashMap;
@@ -77,16 +76,13 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
     @SuppressWarnings("all")
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType, Class<? extends HttpMessageConverter<?>> selectedConverterType,
                                   ServerHttpRequest request, ServerHttpResponse response) {
-        // null or string 特殊处理
-        if (body == null || body instanceof String) {
-            try {
-                return JsonInterfaceHelper.JSON_CONVERTER.toString( ResponseData.success( body, HTTP_OK, "" ) );
-            } catch (DataMapperException e) {
-                return body;
-            }
+
+        // body is null 特殊处理。
+        if (body == null) {
+            body = ResponseData.warn();
         }
 
-        //已经封装过的返回信息直接返回
+        //单独提前处理responseData类型，减少不必要的判定。
         if (body instanceof ResponseData responseData) {
             //如果是不成功消息，则返回相关信息。
             if (responseData.isNotSuccess()) {
@@ -96,7 +92,12 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
                     mscActionLog.setOpLog( responseData.getMsg() );
                 }
             }
-            return body;
+            //是否字符串类型要单独处理一下，否则会抛错。
+            if (returnType.getParameterType().equals( String.class )) {
+                return JsonInterfaceHelper.JSON_CONVERTER.toString( body );
+            } else {
+                return responseData;
+            }
         }
 
         //需要处理额外未拦截到的系统报错信息。
@@ -111,9 +112,12 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
                 }
                 return ResponseData.error( body, status, msg );
             }
+        } else if (returnType.getParameterType().equals( String.class )) {
+            //字符串类型需要单独包裹。
+            return JsonInterfaceHelper.JSON_CONVERTER.toString( ResponseData.success( body ) );
         }
 
-        return ResponseData.success( body );
+        return body;
     }
 
 }

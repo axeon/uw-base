@@ -77,9 +77,13 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
     @SuppressWarnings("all")
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType, Class<? extends HttpMessageConverter<?>> selectedConverterType,
                                   ServerHttpRequest request, ServerHttpResponse response) {
-        // body is null -> return response
-        if (body == null) {
-            return ResponseData.success( null, HTTP_OK, "" );
+        // null or string 特殊处理
+        if (body == null || body instanceof String) {
+            try {
+                return JsonInterfaceHelper.JSON_CONVERTER.toString( ResponseData.success( body, HTTP_OK, "" ) );
+            } catch (DataMapperException e) {
+                return body;
+            }
         }
 
         //已经封装过的返回信息直接返回
@@ -106,15 +110,6 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
                     mscActionLog.setOpLog( msg );
                 }
                 return ResponseData.error( body, status, msg );
-            }
-        }
-
-        // string 特殊处理
-        if (body instanceof String) {
-            try {
-                return JsonInterfaceHelper.JSON_CONVERTER.toString( ResponseData.success( body, HTTP_OK, "" ) );
-            } catch (DataMapperException e) {
-                return body;
             }
         }
 

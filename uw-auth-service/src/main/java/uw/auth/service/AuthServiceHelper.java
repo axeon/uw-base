@@ -263,9 +263,7 @@ public class AuthServiceHelper {
      * @return
      */
     public static String genAnonymousToken(long saasId, long mchId) {
-        StringBuilder sb = new StringBuilder( 60 );
-        sb.append( UserType.ANONYMOUS.getValue() ).append( TOKEN_TYPE_SEPARATOR ).append( mchId ).append( "!0@" ).append( saasId );
-        return sb.toString();
+        return String.valueOf( UserType.ANONYMOUS.getValue() ) + TOKEN_TYPE_SEPARATOR + mchId + "!0@" + saasId;
     }
 
     /**

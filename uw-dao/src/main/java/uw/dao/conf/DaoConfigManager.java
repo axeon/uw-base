@@ -23,16 +23,14 @@ public final class DaoConfigManager {
      * 默认的root连接名
      */
     public static final String ROOT_CONN_NAME = "$ROOT_CONN$";
-
-    /**
-     * DAO配置表.
-     */
-    private static DaoConfig config;
-
     /**
      * 链接路由Map.
      */
     private static final Map<String, String> routeMap = new ConcurrentHashMap<>();
+    /**
+     * DAO配置表.
+     */
+    private static DaoConfig config;
 
     /**
      * @return the config
@@ -51,6 +49,7 @@ public final class DaoConfigManager {
 
     /**
      * 初始化一个测试用连接。
+     *
      * @param driver
      * @param url
      * @param username
@@ -60,12 +59,12 @@ public final class DaoConfigManager {
     public static void initTestConn(String driver, String url, String username, String password, int maxConn) {
         DaoConfigManager.config = new DaoConfig();
         ConnPoolConfig connPoolConfig = new ConnPoolConfig();
-        config.getConnPool().setRoot(connPoolConfig);
-        connPoolConfig.setDriver(driver);
-        connPoolConfig.setUrl(url);
-        connPoolConfig.setUsername(username);
-        connPoolConfig.setPassword(password);
-        connPoolConfig.setMaxConn(maxConn);
+        config.getConnPool().setRoot( connPoolConfig );
+        connPoolConfig.setDriver( driver );
+        connPoolConfig.setUrl( url );
+        connPoolConfig.setUsername( username );
+        connPoolConfig.setPassword( password );
+        connPoolConfig.setMaxConn( maxConn );
     }
 
 
@@ -77,10 +76,10 @@ public final class DaoConfigManager {
     public static List<String> getConnPoolNameList() {
         ArrayList<String> list = new ArrayList<>();
         if (config.getConnPool().getRoot() != null) {
-            list.add(ROOT_CONN_NAME);
+            list.add( ROOT_CONN_NAME );
         }
         if (config.getConnPool().getList() != null) {
-            list.addAll(config.getConnPool().getList().keySet());
+            list.addAll( config.getConnPool().getList().keySet() );
         }
         return list;
     }
@@ -102,7 +101,7 @@ public final class DaoConfigManager {
      * @return 表分片配置
      */
     public static TableShardConfig getTableShardingConfig(String tableName) {
-        return config.getTableShard().get(tableName);
+        return config.getTableShard().get( tableName );
     }
 
     /**
@@ -112,11 +111,11 @@ public final class DaoConfigManager {
      * @return 连接池配置
      */
     public static ConnPoolConfig getConnPoolConfig(String poolName) {
-        if (StringUtils.isBlank(poolName) || poolName.equals(ROOT_CONN_NAME)) {
+        if (StringUtils.isBlank( poolName ) || poolName.equals( ROOT_CONN_NAME )) {
             return config.getConnPool().getRoot();
         }
         if (config.getConnPool().getList() != null) {
-            return config.getConnPool().getList().get(poolName);
+            return config.getConnPool().getList().get( poolName );
         } else {
             return null;
         }
@@ -130,18 +129,23 @@ public final class DaoConfigManager {
      * @return 路由映射信息
      */
     public static String getRouteMapping(String table, String access) {
-        String key = table + "^" + access;
-        String poolName = routeMap.get(key);
-        if (poolName == null) {
+        String tableAccess = table + ":" + access;
+        String connPoolName = routeMap.get( tableAccess );
+        if (connPoolName != null) {
+            return connPoolName;
+        }
+        return routeMap.computeIfAbsent( tableAccess, (key) -> {
+            String poolName = null;
             ConnRoute connRoute = config.getConnRoute();
             if (connRoute != null) {
                 Map<String, ConnRouteConfig> map = connRoute.getList();
                 // 先尝试匹配列表.
                 if (map != null) {
                     for (Entry<String, ConnRouteConfig> kv : map.entrySet()) {
-                        if (table.startsWith(kv.getKey())) {
+                        if (table.startsWith( kv.getKey() )) {
                             ConnRouteConfig route = kv.getValue();
-                            poolName = getPoolNameByAccess(route, access);
+                            poolName = getPoolNameByAccess( route, access );
+                            break;
                         }
                     }
                 }
@@ -149,7 +153,7 @@ public final class DaoConfigManager {
                 if (poolName == null) {
                     ConnRouteConfig route = connRoute.getRoot();
                     if (route != null) {
-                        poolName = getPoolNameByAccess(route, access);
+                        poolName = getPoolNameByAccess( route, access );
                     }
                 }
             }
@@ -157,9 +161,8 @@ public final class DaoConfigManager {
             if (poolName == null) {
                 poolName = ROOT_CONN_NAME;
             }
-            routeMap.put(key, poolName);
-        }
-        return poolName;
+            return poolName;
+        } );
     }
 
     /**
@@ -171,14 +174,11 @@ public final class DaoConfigManager {
      */
     private static String getPoolNameByAccess(ConnRouteConfig route, String access) {
         String poolName = null;
-        if ("write".equalsIgnoreCase(access)) {
-            poolName = route.getWrite();
-        } else if ("read".equalsIgnoreCase(access)) {
-            poolName = route.getRead();
+        if ("read".equalsIgnoreCase( access )) {
+            poolName = route.getFitReadPool();
         }
-        // write read未配置则使用all的配置
-        if (poolName == null) {
-            poolName = route.getAll();
+        if (StringUtils.isBlank( poolName )) {
+            poolName = route.getFitWritePool();
         }
         return poolName;
     }

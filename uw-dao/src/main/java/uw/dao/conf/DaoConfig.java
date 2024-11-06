@@ -3,6 +3,7 @@ package uw.dao.conf;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -26,7 +27,7 @@ public class DaoConfig {
     /**
      * 表分片配置.
      */
-    private Map<String, TableShardConfig> tableShard = new HashMap<String, TableShardConfig>();
+    private LinkedHashMap<String, TableShardConfig> tableShard = new LinkedHashMap<String, TableShardConfig>();
 
     /**
      * sql统计配置.
@@ -54,11 +55,11 @@ public class DaoConfig {
         this.connRoute = connRoute;
     }
 
-    public Map<String, TableShardConfig> getTableShard() {
+    public LinkedHashMap<String, TableShardConfig> getTableShard() {
         return tableShard;
     }
 
-    public void setTableShard(Map<String, TableShardConfig> tableShard) {
+    public void setTableShard(LinkedHashMap<String, TableShardConfig> tableShard) {
         this.tableShard = tableShard;
     }
 
@@ -93,7 +94,7 @@ public class DaoConfig {
         /**
          * 连接路由表.
          */
-        private Map<String, ConnPoolConfig> list;
+        private LinkedHashMap<String, ConnPoolConfig> list;
 
         public ConnPoolConfig getRoot() {
             return root;
@@ -103,11 +104,11 @@ public class DaoConfig {
             this.root = root;
         }
 
-        public Map<String, ConnPoolConfig> getList() {
+        public LinkedHashMap<String, ConnPoolConfig> getList() {
             return list;
         }
 
-        public void setList(Map<String, ConnPoolConfig> list) {
+        public void setList(LinkedHashMap<String, ConnPoolConfig> list) {
             this.list = list;
         }
     }
@@ -124,7 +125,7 @@ public class DaoConfig {
         /**
          * 连接路由表.
          */
-        private Map<String, ConnRouteConfig> list;
+        private LinkedHashMap<String, ConnRouteConfig> list;
 
         public ConnRouteConfig getRoot() {
             return root;
@@ -134,11 +135,11 @@ public class DaoConfig {
             this.root = root;
         }
 
-        public Map<String, ConnRouteConfig> getList() {
+        public LinkedHashMap<String, ConnRouteConfig> getList() {
             return list;
         }
 
-        public void setList(Map<String, ConnRouteConfig> list) {
+        public void setList(LinkedHashMap<String, ConnRouteConfig> list) {
             this.list = list;
         }
     }
@@ -289,62 +290,58 @@ public class DaoConfig {
     public static class ConnRouteConfig {
 
         /**
-         * 全权限连接.
+         * 写入节点位置。
+         * 不需要配置，程序运行期使用。
          */
-        private String all;
+        private transient int writePos;
+
+        /**
+         * 读取节点位置。
+         * 不需要配置，程序运行期使用。
+         */
+        private transient int readPos;
 
         /**
          * 写连接.
          */
-        private String write;
+        private String[] writePools;
 
         /**
          * 读连接.
          */
-        private String read;
+        private String[] readPools;
 
         /**
-         * @return the all
+         * 获取合适的写入连接池。
+         * @return
          */
-        public String getAll() {
-            return all;
+        public String getFitWritePool() {
+            return writePools[writePos ++ % writePools.length];
         }
 
         /**
-         * @param all the all to set
+         *
+         * @return
          */
-        public void setAll(String all) {
-            this.all = all;
+        public String getFitReadPool() {
+            return readPools[readPos ++ % readPools.length];
         }
 
-        /**
-         * @return the write
-         */
-        public String getWrite() {
-            return write;
+        public String[] getWritePools() {
+            return writePools;
         }
 
-        /**
-         * @param write the write to set
-         */
-        public void setWrite(String write) {
-            this.write = write;
+        public void setWritePools(String[] writePools) {
+            this.writePools = writePools;
         }
 
-        /**
-         * @return the read
-         */
-        public String getRead() {
-            return read;
+        public String[] getReadPools() {
+            return readPools;
         }
 
-        /**
-         * @param read the read to set
-         */
-        public void setRead(String read) {
-            this.read = read;
+        public void setReadPools(String[] readPools) {
+            this.readPools = readPools;
         }
-
     }
 
     /**

@@ -117,7 +117,7 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
             return JsonInterfaceHelper.JSON_CONVERTER.toString( ResponseData.success( body ) );
         }
 
-        return body;
+        return ResponseData.success(body);
     }
 
 }

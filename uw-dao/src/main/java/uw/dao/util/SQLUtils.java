@@ -23,7 +23,7 @@ public class SQLUtils {
             return ROOT_CONN_NAME;
         }
         sql = sql.trim().toLowerCase();
-        String table = "", access = "all";
+        String table = "", access = "write";
         sql = sql.replaceAll("\\s+", " "); // 替换所有空格
         if (sql.startsWith("select")) {
             String[] data = sql.split(" ");

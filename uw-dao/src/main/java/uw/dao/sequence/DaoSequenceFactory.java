@@ -206,7 +206,7 @@ public class DaoSequenceFactory {
     private boolean getNextBlockImpl(long value) {
         boolean success = false;
         try {
-            String connName = DaoConfigManager.getRouteMapping( "sys_seq", "all" );
+            String connName = DaoConfigManager.getRouteMapping( "sys_seq", "write" );
             // 从数据库中获取当前值。
             DataSet ds = dao.queryForDataSet( connName, LOAD_SEQ, new Object[]{seqName} );
             if (ds.next()) {
@@ -238,7 +238,7 @@ public class DaoSequenceFactory {
      */
     private void initSequence() {
         try {
-            dao.executeCommand( DaoConfigManager.getRouteMapping( "sys_seq", "all" ), INIT_SEQ, new Object[]{seqName, currentId, seqName, incrementNum} );
+            dao.executeCommand( DaoConfigManager.getRouteMapping( "sys_seq", "write" ), INIT_SEQ, new Object[]{seqName, currentId, seqName, incrementNum} );
         } catch (Throwable e) {
             logger.error( "DaoSequenceFactory initSeq exception! " + e.getMessage(), e );
         }
@@ -254,7 +254,7 @@ public class DaoSequenceFactory {
     private boolean resetSequenceId(long initSeq, int incrementNum) {
         boolean success = false;
         try {
-            int effect = dao.executeCommand( DaoConfigManager.getRouteMapping( "sys_seq", "all" ), RESET_SEQ, new Object[]{initSeq, incrementNum, seqName} );
+            int effect = dao.executeCommand( DaoConfigManager.getRouteMapping( "sys_seq", "write" ), RESET_SEQ, new Object[]{initSeq, incrementNum, seqName} );
             success = (effect == 1);
             if (success) {
                 this.maxId = 0;

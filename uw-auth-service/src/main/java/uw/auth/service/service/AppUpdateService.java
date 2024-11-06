@@ -1,8 +1,6 @@
 package uw.auth.service.service;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,10 +34,7 @@ import uw.auth.service.vo.MscAppReportResponse;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -144,7 +139,7 @@ public class AppUpdateService {
         if (appRegResponse.getState() == AppRegResponse.STATE_INIT) {
             //此时需要补充上传权限注册信息。
             logger.info( "AuthService scaning@RequestMapping annotations in @Controller HandlerMethod " );
-            List<AppRegRequest.PermVo> permVoList = new ArrayList<>(200);
+            List<AppRegRequest.PermVo> permVoList = new ArrayList<>( 200 );
             // 先扫Package,Class注解
             if (StringUtils.isNotBlank( authServiceProperties.getAuthBasePackage() )) {
                 Reflections reflections =
@@ -197,7 +192,7 @@ public class AppUpdateService {
             Map<RequestMappingInfo, HandlerMethod> map = requestMappingHandlerMapping.getHandlerMethods();
             if (map != null && !map.isEmpty()) {
                 // 按照URI排序
-                Map<String, List<AppRegRequest.PermVo>> regSortAPIMap = Maps.newTreeMap();
+                Map<String, List<AppRegRequest.PermVo>> regSortAPIMap = new TreeMap<>();
                 for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : map.entrySet()) {
                     HandlerMethod method = entry.getValue();
                     MscPermDeclare mscPermDeclare = method.getMethodAnnotation( MscPermDeclare.class );
@@ -252,8 +247,8 @@ public class AppUpdateService {
                     }
                 }
             }
-            Set<String> uriFilterSet = Sets.newHashSet();
-            List<AppRegRequest.PermVo> uniqueUriMscPermList = Lists.newArrayList();
+            Set<String> uriFilterSet = new HashSet<>();
+            List<AppRegRequest.PermVo> uniqueUriMscPermList = new ArrayList<>();
             for (AppRegRequest.PermVo permVo : permVoList) {
                 String uri = permVo.getCode();
                 // 用 uri 来标识是否重复

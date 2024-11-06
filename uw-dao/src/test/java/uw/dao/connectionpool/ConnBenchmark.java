@@ -10,7 +10,7 @@ import uw.dao.conf.DaoConfigManager;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode({Mode.Throughput, Mode.AverageTime})//基准测试类型
@@ -24,10 +24,10 @@ public class ConnBenchmark {
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
-                .include(ConnBenchmark.class.getSimpleName())
-                .forks(0)
+                .include( ConnBenchmark.class.getSimpleName() )
+                .forks( 0 )
                 .build();
-        new Runner(opt).run();
+        new Runner( opt ).run();
     }
 
 
@@ -36,19 +36,19 @@ public class ConnBenchmark {
         DaoConfig daoConfig = new DaoConfig();
         DaoConfig.ConnPool pool = new DaoConfig.ConnPool();
         DaoConfig.ConnPoolConfig poolConfig = new DaoConfig.ConnPoolConfig();
-        poolConfig.setDriver("uw.dao.connectionpool.stubs.StubDriver");
-        poolConfig.setUrl("abc");
-        poolConfig.setUsername("test");
-        poolConfig.setPassword("test");
-        poolConfig.setMinConn(3);
-        poolConfig.setMaxConn(100);
-        poolConfig.setConnMaxAge(3600);
-        poolConfig.setConnBusyTimeout(120);
-        poolConfig.setConnIdleTimeout(120);
-        pool.setRoot(poolConfig);
-        pool.setList(new HashMap<>());
-        daoConfig.setConnPool(pool);
-        DaoConfigManager.setConfig(daoConfig);
+        poolConfig.setDriver( "uw.dao.connectionpool.stubs.StubDriver" );
+        poolConfig.setUrl( "abc" );
+        poolConfig.setUsername( "test" );
+        poolConfig.setPassword( "test" );
+        poolConfig.setMinConn( 3 );
+        poolConfig.setMaxConn( 100 );
+        poolConfig.setConnMaxAge( 3600 );
+        poolConfig.setConnBusyTimeout( 120 );
+        poolConfig.setConnIdleTimeout( 120 );
+        pool.setRoot( poolConfig );
+        pool.setList( new LinkedHashMap<>() );
+        daoConfig.setConnPool( pool );
+        DaoConfigManager.setConfig( daoConfig );
     }
 
     @Benchmark

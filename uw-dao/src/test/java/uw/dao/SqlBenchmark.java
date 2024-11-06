@@ -11,6 +11,7 @@ import uw.dao.conf.DaoConfigManager;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode({Mode.Throughput})//基准测试类型
@@ -47,7 +48,7 @@ public class SqlBenchmark {
         poolConfig.setConnBusyTimeout(120);
         poolConfig.setConnIdleTimeout(120);
         pool.setRoot(poolConfig);
-        pool.setList(new HashMap<>());
+        pool.setList(new LinkedHashMap<>());
         daoConfig.setConnPool(pool);
         DaoConfigManager.setConfig(daoConfig);
     }

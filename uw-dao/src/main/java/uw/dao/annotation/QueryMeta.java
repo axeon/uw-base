@@ -26,11 +26,4 @@ public @interface QueryMeta {
      */
     String expr() default "";
 
-    /**
-     * sql查询时的运算符，and ,or ,in
-     *
-     * @return
-     */
-    String op() default "and";
-
 }

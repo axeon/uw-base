@@ -11,6 +11,8 @@ import uw.dao.vo.TableMetaInfo;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,7 +26,7 @@ public class QueryParamUtils {
      * key：param类名。
      * value：字段数组。
      */
-    private static final Map<String, List<QueryMetaInfo>> queryMetaCache = new ConcurrentHashMap<>(1280);
+    private static final Map<String, List<QueryMetaInfo>> queryMetaCache = new ConcurrentHashMap<>( 1280 );
 
     /**
      * 解析queryParam。
@@ -36,45 +38,45 @@ public class QueryParamUtils {
      * @throws IllegalAccessException
      */
     public static QueryParamResult parseQueryParam(Class cls, String tableName, QueryParam queryParam) {
-        StringBuilder sqlBuilder = new StringBuilder(256);
+        StringBuilder sqlBuilder = new StringBuilder( 256 );
         ArrayList<Object> paramValueList = new ArrayList<>();
         try {
             //先判定是否指定SELECT_SQL.
-            if (StringUtils.isBlank(queryParam.SELECT_SQL())) {
+            if (StringUtils.isBlank( queryParam.SELECT_SQL() )) {
                 if (cls != null) {
                     //拼出查询sql前半部分
-                    TableMetaInfo emi = EntityMetaUtils.loadEntityMetaInfo(cls);
-                    if (StringUtils.isBlank(emi.getSql())) {
-                        sqlBuilder.append("select * from ");
-                        if (StringUtils.isBlank(tableName)) {
-                            sqlBuilder.append(emi.getTableName());
+                    TableMetaInfo emi = EntityMetaUtils.loadEntityMetaInfo( cls );
+                    if (StringUtils.isBlank( emi.getSql() )) {
+                        sqlBuilder.append( "select * from " );
+                        if (StringUtils.isBlank( tableName )) {
+                            sqlBuilder.append( emi.getTableName() );
                         } else {
-                            sqlBuilder.append(tableName);
+                            sqlBuilder.append( tableName );
                         }
                     } else {
-                        sqlBuilder.append(emi.getSql());
+                        sqlBuilder.append( emi.getSql() );
                     }
                 }
             } else {
-                sqlBuilder.append(queryParam.SELECT_SQL());
+                sqlBuilder.append( queryParam.SELECT_SQL() );
             }
 
             //参数map。key=sql, value=数值
             Map<String, Object> paramMap = new LinkedHashMap<>();
 
             //开始拼出数值。
-            sqlBuilder.append(" where 1=1");
-            List<QueryMetaInfo> queryMetaInfoList = loadQueryParamMetaInfo(queryParam.getClass());
+            sqlBuilder.append( " where 1=1" );
+            List<QueryMetaInfo> queryMetaInfoList = loadQueryParamMetaInfo( queryParam.getClass() );
             //先收集注解参数
             for (QueryMetaInfo metaInfo : queryMetaInfoList) {
-                Object ov = metaInfo.getField().get(queryParam);
+                Object ov = metaInfo.getField().get( queryParam );
                 if (ov != null) {
-                    paramMap.put(metaInfo.getQueryOp() + " " + metaInfo.getQueryExpr(), ov);
+                    paramMap.put( "and " + metaInfo.getQueryExpr(), ov );
                 }
             }
             //合并附加参数
             if (queryParam.EXT_PARAM_MAP() != null) {
-                paramMap.putAll(queryParam.EXT_PARAM_MAP());
+                paramMap.putAll( queryParam.EXT_PARAM_MAP() );
             }
             //开始生成sql.
             for (Map.Entry<String, Object> kv : paramMap.entrySet()) {
@@ -82,28 +84,28 @@ public class QueryParamUtils {
                 Object paramValue = kv.getValue();
                 if (paramValue != null) {
                     //占位符计数。
-                    int placeholdersCount = StringUtils.countMatches(paramCond, "?");
+                    int placeholdersCount = StringUtils.countMatches( paramCond, "?" );
                     //没有占位符的，不用处理参数。
                     if (placeholdersCount > 0) {
                         //参数数量初始为1
                         int paramValueSize = 1;
                         //需要单独处理多参数的数组对象。
                         if (paramValue.getClass().isArray()) {
-                            paramValueSize = Array.getLength(paramValue);
-                            Object[] temps = new Object[paramValueSize];
+                            paramValueSize = Array.getLength( paramValue );
                             for (int i = 0; i < paramValueSize; i++) {
-                                temps[i] = Array.get(paramValue, i);
+                                paramValueList.add( decodeUrlParam(Array.get( paramValue, i )) );
                             }
-                            paramValueList.addAll(Arrays.asList(temps));
                         } else if (paramValue instanceof List list) {
                             paramValueSize = list.size();
-                            paramValueList.addAll(list);
+                            for(Object value : list){
+                                paramValueList.add( decodeUrlParam(value) );
+                            }
                         } else {
-                            paramValueList.add(paramValue);
+                            paramValueList.add( decodeUrlParam(paramValue) );
                             //此处要对单一数值表达式中多个占位符的，进行数值展开匹配。
                             if (placeholdersCount > 1) {
                                 for (int i = 1; i < placeholdersCount; i++) {
-                                    paramValueList.add(paramValue);
+                                    paramValueList.add( paramValue );
                                     paramValueSize++;
                                 }
                             }
@@ -113,15 +115,15 @@ public class QueryParamUtils {
                         if (paramValueSize > placeholdersCount) {
                             int expandNum = paramValueSize - placeholdersCount + 1;
                             //此时需要做参数展开，一般情况认为是in展开。
-                            paramCond = paramCond.replace("?", "?,".repeat(expandNum).substring(0, expandNum * 2 - 1));
+                            paramCond = paramCond.replace( "?", "?,".repeat( expandNum ).substring( 0, expandNum * 2 - 1 ) );
                         } else {
                             //处理like查询问题。
-                            if (StringUtils.contains(paramCond, " like ")) {
+                            if (StringUtils.contains( paramCond, " like " )) {
                                 boolean enableLikeQuery = queryParam.LIKE_QUERY_ENABLE();
                                 //检查参数长度有无问题。
                                 if (enableLikeQuery) {
                                     for (int i = paramValueList.size() - paramValueSize; i < paramValueList.size(); i++) {
-                                        if (paramValueList.get(i) instanceof String value) {
+                                        if (paramValueList.get( i ) instanceof String value) {
                                             //小于最小数值的，直接移除通配符。
                                             if (value.length() < queryParam.LIKE_QUERY_PARAM_MIN_LEN()) {
                                                 enableLikeQuery = false;
@@ -129,69 +131,67 @@ public class QueryParamUtils {
                                             }
                                         }
                                     }
-                                }
-                                if (!enableLikeQuery) {
+                                } else {
                                     //like转成=匹配。
-//                                    paramCond = paramCond.replace(" like ", "=");
-                                    paramCond = StringUtils.replace(paramCond, " like ", "=");
+                                    paramCond = StringUtils.replace( paramCond, " like ", "=" );
                                     //移除通配符，防止出问题。
                                     for (int i = paramValueList.size() - paramValueSize; i < paramValueList.size(); i++) {
-                                        if (paramValueList.get(i) instanceof String value) {
+                                        if (paramValueList.get( i ) instanceof String value) {
                                             //直接移除通配符。
-                                            paramValueList.set(i, StringUtils.remove(value, '%'));
+                                            paramValueList.set( i, StringUtils.remove( value, '%' ) );
                                         }
                                     }
                                 }
                             } else {
                                 //此时进行运算符特定情况展开。
-                                if (!StringUtils.containsAny(paramCond, "=", "<", ">", " in ", " like ", " between ")) {
+                                if (!StringUtils.containsAny( paramCond, "=", "<", ">", " in ", " like ", " between " )) {
                                     //缺失预算符，可能需要展开运算符。
                                     for (int i = paramValueList.size() - paramValueSize; i < paramValueList.size(); i++) {
-                                        if (paramValueList.get(i) instanceof String value) {
+                                        if (paramValueList.get( i ) instanceof String value) {
                                             //占位符位置。
-                                            int placeholderPos = paramCond.indexOf(" ?");
-                                            switch (value.charAt(0)) {
+                                            int placeholderPos = paramCond.indexOf( " ?" );
+                                            switch (value.charAt( 0 )) {
                                                 case '>':
-                                                    if (value.charAt(1) == '=') {
-                                                        value = value.substring(2);
-                                                        paramCond = paramCond.substring(0, placeholderPos) + ">=" + paramCond.substring(placeholderPos + 1);
+                                                    if (value.charAt( 1 ) == '=') {
+                                                        value = value.substring( 2 );
+                                                        paramCond = paramCond.substring( 0, placeholderPos ) + ">=" + paramCond.substring( placeholderPos + 1 );
                                                     } else {
-                                                        value = value.substring(1);
-                                                        paramCond = paramCond.substring(0, placeholderPos) + ">" + paramCond.substring(placeholderPos + 1);
+                                                        value = value.substring( 1 );
+                                                        paramCond = paramCond.substring( 0, placeholderPos ) + ">" + paramCond.substring( placeholderPos + 1 );
                                                     }
                                                     break;
                                                 case '<':
-                                                    if (value.charAt(2) == '>' && value.charAt(1) == '=') {
-                                                        value = value.substring(3);
-                                                        paramCond = paramCond.substring(0, placeholderPos) + "<=>" + paramCond.substring(placeholderPos + 1);
-                                                    } else if (value.charAt(1) == '=') {
-                                                        value = value.substring(2);
-                                                        paramCond = paramCond.substring(0, placeholderPos) + "<=" + paramCond.substring(placeholderPos + 1);
-                                                    } else if (value.charAt(1) == '>') {
-                                                        value = value.substring(2);
-                                                        paramCond = paramCond.substring(0, placeholderPos) + "<>" + paramCond.substring(placeholderPos + 1);
+                                                    if (value.charAt( 2 ) == '>' && value.charAt( 1 ) == '=') {
+                                                        value = value.substring( 3 );
+                                                        paramCond = paramCond.substring( 0, placeholderPos ) + "<=>" + paramCond.substring( placeholderPos + 1 );
+                                                    } else if (value.charAt( 1 ) == '=') {
+                                                        value = value.substring( 2 );
+                                                        paramCond = paramCond.substring( 0, placeholderPos ) + "<=" + paramCond.substring( placeholderPos + 1 );
+                                                    } else if (value.charAt( 1 ) == '>') {
+                                                        value = value.substring( 2 );
+                                                        paramCond = paramCond.substring( 0, placeholderPos ) + "<>" + paramCond.substring( placeholderPos + 1 );
                                                     } else {
-                                                        value = value.substring(1);
-                                                        paramCond = paramCond.substring(0, placeholderPos) + "<" + paramCond.substring(placeholderPos + 1);
+                                                        value = value.substring( 1 );
+                                                        paramCond = paramCond.substring( 0, placeholderPos ) + "<" + paramCond.substring( placeholderPos + 1 );
                                                     }
                                                     break;
                                                 case '=':
-                                                    value = value.substring(1);
-                                                    paramCond = paramCond.substring(0, placeholderPos) + "=" + paramCond.substring(placeholderPos + 1);
+                                                    value = value.substring( 1 );
+                                                    paramCond = paramCond.substring( 0, placeholderPos ) + "=" + paramCond.substring( placeholderPos + 1 );
                                                     break;
                                                 case '!':
-                                                    if (value.charAt(1) == '=') {
-                                                        value = value.substring(2);
-                                                        paramCond = paramCond.substring(0, placeholderPos) + "!=" + paramCond.substring(placeholderPos + 1);
+                                                    if (value.charAt( 1 ) == '=') {
+                                                        value = value.substring( 2 );
+                                                        paramCond = paramCond.substring( 0, placeholderPos ) + "!=" + paramCond.substring( placeholderPos + 1 );
                                                     } else {
-                                                        value = value.substring(1);
-                                                        paramCond = paramCond.substring(0, placeholderPos) + "!=" + paramCond.substring(placeholderPos + 1);
+                                                        value = value.substring( 1 );
+                                                        paramCond = paramCond.substring( 0, placeholderPos ) + "!=" + paramCond.substring( placeholderPos + 1 );
                                                     }
                                                     break;
                                             }
                                             //替换原来参数，尽量造型正确。
                                             try {
-                                                paramValueList.set(i, Long.parseLong(value.trim()));
+                                                paramValueList.set( i, Long.parseLong( value.trim() ) );
                                             } catch (Exception ignored) {
                                             }
                                         }
@@ -200,23 +200,36 @@ public class QueryParamUtils {
                             }
                         }
                     }
-                    sqlBuilder.append(" ").append(paramCond);
+                    sqlBuilder.append( " " ).append( paramCond );
                 }
             }
 
             //最后附加where sql。
-            if (StringUtils.isNotBlank(queryParam.EXT_WHERE_SQL())) {
-                sqlBuilder.append(" ").append(queryParam.EXT_WHERE_SQL());
+            if (StringUtils.isNotBlank( queryParam.EXT_WHERE_SQL() )) {
+                sqlBuilder.append( " " ).append( queryParam.EXT_WHERE_SQL() );
             }
 
         } catch (Throwable e) {
-            throw new RuntimeException(e.getMessage(), e);
+            throw new RuntimeException( e.getMessage(), e );
         }
         //处理排序问题。
         if (queryParam instanceof PageQueryParam param) {
-            sqlBuilder.append(param.GEN_SORT_SQL());
+            sqlBuilder.append( param.GEN_SORT_SQL() );
         }
-        return new QueryParamResult(sqlBuilder, paramValueList.toArray());
+        return new QueryParamResult( sqlBuilder, paramValueList.toArray() );
+    }
+
+    /**
+     * 解码url参数。
+     * @param value
+     * @return
+     */
+    private static Object decodeUrlParam(Object value) {
+        if (value instanceof String str) {
+            return URLDecoder.decode( str, StandardCharsets.UTF_8 );
+        } else {
+            return value;
+        }
     }
 
     /**
@@ -226,29 +239,23 @@ public class QueryParamUtils {
      * @return
      */
     private static List<QueryMetaInfo> loadQueryParamMetaInfo(Class<?> paramCls) {
-        return queryMetaCache.computeIfAbsent(paramCls.getName(), (key) -> {
+        return queryMetaCache.computeIfAbsent( paramCls.getName(), (key) -> {
             List<QueryMetaInfo> list = new ArrayList<>();
             Class<?> clazz = paramCls;
             for (int i = 0; clazz != Object.class && i < EntityMetaUtils.MAX_ENTITY_CLASS_EXTEND_LEVEL; clazz = clazz.getSuperclass(), i++) {
                 Field[] fields = clazz.getDeclaredFields();
                 for (Field field : fields) {
-                    field.setAccessible(true);
-                    QueryMeta meta = field.getAnnotation(QueryMeta.class);
+                    field.setAccessible( true );
+                    QueryMeta meta = field.getAnnotation( QueryMeta.class );
                     if (meta != null) {
                         QueryMetaInfo info = new QueryMetaInfo();
-                        info.setField(field);
-                        //此处进行安全限定，只能传递and和in参数，防止恶意注入。
-                        if (meta.op().equalsIgnoreCase("and")) {
-                            info.setQueryOp("and");
-                        } else {
-                            info.setQueryOp("or");
-                        }
-                        info.setQueryExpr(meta.expr());
-                        list.add(info);
+                        info.setField( field );
+                        info.setQueryExpr( meta.expr() );
+                        list.add( info );
                     }
                 }
             }
             return list;
-        });
+        } );
     }
 }

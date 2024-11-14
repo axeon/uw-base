@@ -4,6 +4,7 @@ import uw.dao.annotation.QueryMeta;
 import uw.dao.annotation.TableMeta;
 import uw.dao.vo.QueryParamResult;
 
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Date;
 
@@ -15,7 +16,7 @@ public class QueryMetaTest {
     public static void main(String[] args) throws TransactionException {
         QueryParamA a = new QueryParamA();
         a.id = 1L;
-        a.name = "test";
+        a.name = URLEncoder.encode( "%[JTR]测试线路%" );
         a.date = new Date[]{new Date(1), new Date()};
         QueryParamResult queryParamResult = DaoFactory.getInstance().parseQueryParam(EntityA.class, a);
         System.out.println(queryParamResult.getSql().toString());

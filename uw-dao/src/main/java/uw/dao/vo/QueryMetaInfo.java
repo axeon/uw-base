@@ -19,12 +19,6 @@ public class QueryMetaInfo {
      */
     private String queryExpr;
 
-
-    /**
-     * 查询sql运算符.
-     */
-    private String queryOp;
-
     /**
      * 属性反射句柄.
      */
@@ -45,14 +39,6 @@ public class QueryMetaInfo {
 
     public void setQueryExpr(String queryExpr) {
         this.queryExpr = queryExpr;
-    }
-
-    public String getQueryOp() {
-        return queryOp;
-    }
-
-    public void setQueryOp(String queryOp) {
-        this.queryOp = queryOp;
     }
 
     public Field getField() {

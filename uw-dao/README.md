@@ -324,7 +324,7 @@ public abstract<T> List<T> queryForSingleList(String connName,Class<T> cls,Strin
  * 查询单个基本数值（单个字段）。
  * @param connName 连接名，如设置为null，则根据sql语句或表名动态路由确定
  * @param cls 要映射的基础类型，如int.class,long.class,String.class,Date.class
- * @param selectsql 查询的SQL
+ * @param sql 查询的SQL
  * @param paramList 查询SQL的参数
  * @return
  * @throws TransactionException
@@ -339,7 +339,7 @@ public abstract<T> Optional<T> queryForSingleValue(String connName,Class<T> cls,
     /**
  * 执行一条SQL语句。
  * @param connName 连接名，如设置为null，则根据sql语句或表名动态路由确定
- * @param selectsql 查询的SQL
+ * @param sql 查询的SQL
  * @param paramList 查询SQL的参数
  * @return 影响的行数
  * @throws TransactionException

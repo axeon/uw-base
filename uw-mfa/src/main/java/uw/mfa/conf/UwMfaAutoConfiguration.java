@@ -121,8 +121,12 @@ public class UwMfaAutoConfiguration {
         standaloneConfig.setHostName( redisProperties.getHost() );
         standaloneConfig.setPort( redisProperties.getPort() );
         standaloneConfig.setDatabase( redisProperties.getDatabase() );
-        standaloneConfig.setPassword( RedisPassword.of( redisProperties.getPassword() ) );
-        standaloneConfig.setUsername( redisProperties.getUsername() );
+        if (redisProperties.getUsername()!=null) {
+            standaloneConfig.setUsername( redisProperties.getUsername() );
+        }
+        if (redisProperties.getPassword()!=null) {
+            standaloneConfig.setPassword( RedisPassword.of( redisProperties.getPassword() ) );
+        }
         LettuceConnectionFactory factory = new LettuceConnectionFactory( standaloneConfig, clientConfig );
         factory.afterPropertiesSet();
         return factory;

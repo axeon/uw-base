@@ -87,10 +87,16 @@ public class MscUserRegister {
     private String wxId;
 
     /**
-     * 身份证号码
+     * 证件类型
      */
-    @Schema(title = "身份证号码", description = "身份证号码")
-    private String idCard;
+    @Schema(title = "证件类型", description = "证件类型")
+    private int idType;
+
+    /**
+     * 证件信息
+     */
+    @Schema(title = "证件信息", description = "证件信息")
+    private String idInfo;
 
     /**
      * 用户头像
@@ -226,12 +232,20 @@ public class MscUserRegister {
         this.wxId = wxId;
     }
 
-    public String getIdCard() {
-        return idCard;
+    public int getIdType() {
+        return idType;
     }
 
-    public void setIdCard(String idCard) {
-        this.idCard = idCard;
+    public void setIdType(int idType) {
+        this.idType = idType;
+    }
+
+    public String getIdInfo() {
+        return idInfo;
+    }
+
+    public void setIdInfo(String idInfo) {
+        this.idInfo = idInfo;
     }
 
     public String getUserIcon() {

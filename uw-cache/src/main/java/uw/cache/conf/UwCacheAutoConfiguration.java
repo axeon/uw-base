@@ -109,12 +109,11 @@ public class UwCacheAutoConfiguration {
      * @return
      */
     @Bean
-    public RedisTemplate<String, byte[]> dataCacheRedisTemplate(final UwCacheProperties uwCacheProperties,
-                                                            final ClientResources clientResources) {
+    public RedisTemplate<String, byte[]> dataCacheRedisTemplate(final UwCacheProperties uwCacheProperties, final ClientResources clientResources) {
         RedisTemplate<String, byte[]> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setConnectionFactory(redisConnectionFactory(uwCacheProperties.getRedis(), clientResources));
-        redisTemplate.setEnableDefaultSerializer(false);
+        redisTemplate.setKeySerializer( new StringRedisSerializer() );
+        redisTemplate.setConnectionFactory( redisConnectionFactory( uwCacheProperties.getRedis(), clientResources ) );
+        redisTemplate.setEnableDefaultSerializer( false );
         redisTemplate.afterPropertiesSet();
         return redisTemplate;
     }
@@ -128,11 +127,10 @@ public class UwCacheAutoConfiguration {
      * @return
      */
     @Bean
-    public RedisTemplate<String, Long> longCacheRedisTemplate(final UwCacheProperties uwCacheProperties,
-                                                            final ClientResources clientResources) {
+    public RedisTemplate<String, Long> longCacheRedisTemplate(final UwCacheProperties uwCacheProperties, final ClientResources clientResources) {
         RedisTemplate<String, Long> redisTemplate = new RedisTemplate<>();
         redisTemplate.setKeySerializer( new StringRedisSerializer() );
-        redisTemplate.setValueSerializer( new GenericToStringSerializer<Long>(Long.class));
+        redisTemplate.setValueSerializer( new GenericToStringSerializer<Long>( Long.class ) );
         redisTemplate.setConnectionFactory( redisConnectionFactory( uwCacheProperties.getRedis(), clientResources ) );
         redisTemplate.setEnableDefaultSerializer( false );
         redisTemplate.afterPropertiesSet();
@@ -146,49 +144,41 @@ public class UwCacheAutoConfiguration {
      * @param clientResources
      * @return
      */
-    private RedisConnectionFactory redisConnectionFactory(RedisProperties redisProperties,
-                                                          ClientResources clientResources) {
-        RedisProperties.Pool pool = redisProperties.getLettuce().getPool();
-        LettuceClientConfiguration.LettuceClientConfigurationBuilder builder;
-        if (pool == null) {
-            builder = LettuceClientConfiguration.builder();
-        } else {
-            GenericObjectPoolConfig config = new GenericObjectPoolConfig();
-            config.setMaxTotal( pool.getMaxActive() );
-            config.setMaxIdle( pool.getMaxIdle() );
-            config.setMinIdle( pool.getMinIdle() );
-            if (pool.getMaxWait() != null) {
-                config.setMaxWait( pool.getMaxWait() );
-            }
-            builder = LettucePoolingClientConfiguration.builder().poolConfig( config );
-
+    private RedisConnectionFactory redisConnectionFactory(RedisProperties redisProperties, ClientResources clientResources) {
+        //设置连接池。
+        RedisProperties.Pool poolProperties = redisProperties.getLettuce().getPool();
+        GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
+        poolConfig.setMaxTotal( poolProperties.getMaxActive() );
+        poolConfig.setMaxIdle( poolProperties.getMaxIdle() );
+        poolConfig.setMinIdle( poolProperties.getMinIdle() );
+        if (poolProperties.getMaxWait() != null) {
+            poolConfig.setMaxWait( poolProperties.getMaxWait() );
         }
-
+        LettucePoolingClientConfiguration.LettucePoolingClientConfigurationBuilder builder = LettucePoolingClientConfiguration.builder().poolConfig( poolConfig );
         if (redisProperties.getTimeout() != null) {
             builder.commandTimeout( redisProperties.getTimeout() );
         }
-        if (redisProperties.getLettuce() != null) {
-            RedisProperties.Lettuce lettuce = redisProperties.getLettuce();
-            if (lettuce.getShutdownTimeout() != null && !lettuce.getShutdownTimeout().isZero()) {
-                builder.shutdownTimeout( redisProperties.getLettuce().getShutdownTimeout() );
-            }
+        //设置shutdownTimeout。
+        RedisProperties.Lettuce lettuce = redisProperties.getLettuce();
+        if (lettuce.getShutdownTimeout() != null && !lettuce.getShutdownTimeout().isZero()) {
+            builder.shutdownTimeout( redisProperties.getLettuce().getShutdownTimeout() );
         }
+        //设置clientResources。
         builder.clientResources( clientResources );
-        if (redisProperties.getSsl()!=null) {
+        //设置ssl。
+        if (redisProperties.getSsl().isEnabled()) {
             builder.useSsl();
-//            LettuceClientConfiguration.LettuceSslClientConfigurationBuilder sslBuilder = builder.useSsl();
-//            if (redisProperties.getSsl().getBundle()!=null) {
-//            }
         }
+        //构建standaloneConfig。
         LettuceClientConfiguration clientConfig = builder.build();
         RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration();
         standaloneConfig.setHostName( redisProperties.getHost() );
         standaloneConfig.setPort( redisProperties.getPort() );
         standaloneConfig.setDatabase( redisProperties.getDatabase() );
-        if (redisProperties.getUsername()!=null) {
+        if (redisProperties.getUsername() != null) {
             standaloneConfig.setUsername( redisProperties.getUsername() );
         }
-        if (redisProperties.getPassword()!=null) {
+        if (redisProperties.getPassword() != null) {
             standaloneConfig.setPassword( RedisPassword.of( redisProperties.getPassword() ) );
         }
         LettuceConnectionFactory factory = new LettuceConnectionFactory( standaloneConfig, clientConfig );

@@ -12,79 +12,79 @@ import java.util.Date;
 public class SysDataHistoryQueryParam extends AuthPageQueryParam {
 
     /**
-     * ID
+     * ID。
      */
     @QueryMeta(expr = "id=?")
     @Schema(title = "ID", description = "ID")
     private Long id;
     /**
-     * 商户ID
+     * 商户ID。
      */
     @QueryMeta(expr = "mch_id=?")
     @Schema(title = "商户ID", description = "商户ID")
     private Long mchId;
     /**
-     * 用户ID
+     * 用户ID。
      */
     @QueryMeta(expr = "user_id=?")
     @Schema(title = "用户ID", description = "用户ID")
     private Long userId;
     /**
-     * 用户类型
+     * 用户类型。
      */
     @QueryMeta(expr = "user_type=?")
     @Schema(title = "用户类型", description = "用户类型")
     private Integer userType;
     /**
-     * 用户的组ID
+     * 用户的组ID。
      */
     @QueryMeta(expr = "group_id=?")
     @Schema(title = "用户的组ID", description = "用户的组ID")
     private Long groupId;
     /**
-     * 用户名称
+     * 用户名称。
      */
     @QueryMeta(expr = "user_name like ?")
     @Schema(title = "用户名称", description = "用户名称")
     private String userName;
     /**
-     * 用户昵称
+     * 用户昵称。
      */
     @QueryMeta(expr = "nick_name like ?")
     @Schema(title = "用户昵称", description = "用户昵称")
     private String nickName;
     /**
-     * 真实名称
+     * 真实名称。
      */
     @QueryMeta(expr = "real_name like ?")
     @Schema(title = "真实名称", description = "真实名称")
     private String realName;
     /**
-     * 实体类
+     * 实体类。
      */
     @QueryMeta(expr = "entity_class like ?")
     @Schema(title = "实体类", description = "实体类")
     private String entityClass;
     /**
-     * 实体ID
+     * 实体ID。
      */
     @QueryMeta(expr = "entity_id like ?")
     @Schema(title = "实体ID", description = "实体ID")
     private String entityId;
     /**
-     * 实体名
+     * 实体名。
      */
     @QueryMeta(expr = "entity_name like ?")
     @Schema(title = "实体名", description = "实体名")
     private String entityName;
     /**
-     * 用户IP
+     * 用户IP。
      */
     @QueryMeta(expr = "user_ip like ?")
     @Schema(title = "用户IP", description = "用户IP")
     private String userIp;
     /**
-     * 创建日期范围
+     * 创建日期范围。
      */
     @QueryMeta(expr = "create_date between ? and ?")
     @Schema(title = "创建日期范围", description = "创建日期范围")
@@ -99,7 +99,7 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
-     * 获得ID。
+     * 获取ID。
      */
     public Long getId() {
         return this.id;
@@ -113,7 +113,7 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
-     * 获得商户ID。
+     * 获取商户ID。
      */
     public Long getMchId() {
         return this.mchId;
@@ -127,7 +127,7 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
-     * 获得用户ID。
+     * 获取用户ID。
      */
     public Long getUserId() {
         return this.userId;
@@ -141,7 +141,7 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
-     * 获得用户类型。
+     * 获取用户类型。
      */
     public Integer getUserType() {
         return this.userType;
@@ -155,7 +155,7 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
-     * 获得用户的组ID。
+     * 获取用户的组ID。
      */
     public Long getGroupId() {
         return this.groupId;
@@ -169,7 +169,7 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
-     * 获得用户名称。
+     * 获取用户名称。
      */
     public String getUserName() {
         return this.userName;
@@ -183,7 +183,7 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
-     * 获得用户昵称。
+     * 获取用户昵称。
      */
     public String getNickName() {
         return this.nickName;
@@ -197,7 +197,7 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
-     * 获得真实名称。
+     * 获取真实名称。
      */
     public String getRealName() {
         return this.realName;
@@ -211,7 +211,7 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
-     * 获得实体类。
+     * 获取实体类。
      */
     public String getEntityClass() {
         return this.entityClass;
@@ -246,7 +246,7 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
-     * 获得实体名。
+     * 获取实体名。
      */
     public String getEntityName() {
         return this.entityName;
@@ -260,7 +260,7 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
-     * 获得用户IP。
+     * 获取用户IP。
      */
     public String getUserIp() {
         return this.userIp;
@@ -274,7 +274,7 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
-     * 获得创建日期范围。
+     * 获取创建日期范围。
      */
     public Date[] getCreateDateRange() {
         return this.createDateRange;

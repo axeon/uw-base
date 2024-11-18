@@ -19,7 +19,7 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * 少于最小参数的，将转化为=查询。
      */
     @JsonIgnore
-    private int LIKE_QUERY_PARAM_MIN_LEN = 4;
+    private int LIKE_QUERY_PARAM_MIN_LEN = 3;
 
     /**
      * 是否开启LIKE查询。默认为true。

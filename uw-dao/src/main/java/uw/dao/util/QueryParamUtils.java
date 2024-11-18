@@ -13,7 +13,10 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -93,19 +96,19 @@ public class QueryParamUtils {
                         if (paramValue.getClass().isArray()) {
                             paramValueSize = Array.getLength( paramValue );
                             for (int i = 0; i < paramValueSize; i++) {
-                                paramValueList.add( decodeUrlParam(Array.get( paramValue, i )) );
+                                paramValueList.add( decodeUrlParam( Array.get( paramValue, i ) ) );
                             }
                         } else if (paramValue instanceof List list) {
                             paramValueSize = list.size();
-                            for(Object value : list){
-                                paramValueList.add( decodeUrlParam(value) );
+                            for (Object value : list) {
+                                paramValueList.add( decodeUrlParam( value ) );
                             }
                         } else {
-                            paramValueList.add( decodeUrlParam(paramValue) );
+                            paramValueList.add( decodeUrlParam( paramValue ) );
                             //此处要对单一数值表达式中多个占位符的，进行数值展开匹配。
                             if (placeholdersCount > 1) {
                                 for (int i = 1; i < placeholdersCount; i++) {
-                                    paramValueList.add( paramValue );
+                                    paramValueList.add( decodeUrlParam( paramValue ) );
                                     paramValueSize++;
                                 }
                             }
@@ -116,85 +119,32 @@ public class QueryParamUtils {
                             int expandNum = paramValueSize - placeholdersCount + 1;
                             //此时需要做参数展开，一般情况认为是in展开。
                             paramCond = paramCond.replace( "?", "?,".repeat( expandNum ).substring( 0, expandNum * 2 - 1 ) );
-                        } else {
-                            //处理like查询问题。
-                            if (StringUtils.contains( paramCond, " like " )) {
-                                boolean enableLikeQuery = queryParam.LIKE_QUERY_ENABLE();
-                                //检查参数长度有无问题。
-                                if (enableLikeQuery) {
-                                    for (int i = paramValueList.size() - paramValueSize; i < paramValueList.size(); i++) {
-                                        if (paramValueList.get( i ) instanceof String value) {
-                                            //小于最小数值的，直接移除通配符。
-                                            if (value.length() < queryParam.LIKE_QUERY_PARAM_MIN_LEN()) {
-                                                enableLikeQuery = false;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    //like转成=匹配。
-                                    paramCond = StringUtils.replace( paramCond, " like ", "=" );
-                                    //移除通配符，防止出问题。
-                                    for (int i = paramValueList.size() - paramValueSize; i < paramValueList.size(); i++) {
-                                        if (paramValueList.get( i ) instanceof String value) {
-                                            //直接移除通配符。
-                                            paramValueList.set( i, StringUtils.remove( value, '%' ) );
+                        }
+
+                        //处理like查询问题。
+                        if (StringUtils.containsIgnoreCase( paramCond, " like " )) {
+                            boolean enableLikeQuery = queryParam.LIKE_QUERY_ENABLE();
+                            //检查参数长度是否适配
+                            if (enableLikeQuery) {
+                                for (int i = paramValueList.size() - paramValueSize; i < paramValueList.size(); i++) {
+                                    if (paramValueList.get( i ) instanceof String value) {
+                                        //小于最小数值的，直接移除通配符。
+                                        if (value.length() <= queryParam.LIKE_QUERY_PARAM_MIN_LEN()) {
+                                            enableLikeQuery = false;
+                                            break;
                                         }
                                     }
                                 }
-                            } else {
-                                //此时进行运算符特定情况展开。
-                                if (!StringUtils.containsAny( paramCond, "=", "<", ">", " in ", " like ", " between " )) {
-                                    //缺失预算符，可能需要展开运算符。
-                                    for (int i = paramValueList.size() - paramValueSize; i < paramValueList.size(); i++) {
-                                        if (paramValueList.get( i ) instanceof String value) {
-                                            //占位符位置。
-                                            int placeholderPos = paramCond.indexOf( " ?" );
-                                            switch (value.charAt( 0 )) {
-                                                case '>':
-                                                    if (value.charAt( 1 ) == '=') {
-                                                        value = value.substring( 2 );
-                                                        paramCond = paramCond.substring( 0, placeholderPos ) + ">=" + paramCond.substring( placeholderPos + 1 );
-                                                    } else {
-                                                        value = value.substring( 1 );
-                                                        paramCond = paramCond.substring( 0, placeholderPos ) + ">" + paramCond.substring( placeholderPos + 1 );
-                                                    }
-                                                    break;
-                                                case '<':
-                                                    if (value.charAt( 2 ) == '>' && value.charAt( 1 ) == '=') {
-                                                        value = value.substring( 3 );
-                                                        paramCond = paramCond.substring( 0, placeholderPos ) + "<=>" + paramCond.substring( placeholderPos + 1 );
-                                                    } else if (value.charAt( 1 ) == '=') {
-                                                        value = value.substring( 2 );
-                                                        paramCond = paramCond.substring( 0, placeholderPos ) + "<=" + paramCond.substring( placeholderPos + 1 );
-                                                    } else if (value.charAt( 1 ) == '>') {
-                                                        value = value.substring( 2 );
-                                                        paramCond = paramCond.substring( 0, placeholderPos ) + "<>" + paramCond.substring( placeholderPos + 1 );
-                                                    } else {
-                                                        value = value.substring( 1 );
-                                                        paramCond = paramCond.substring( 0, placeholderPos ) + "<" + paramCond.substring( placeholderPos + 1 );
-                                                    }
-                                                    break;
-                                                case '=':
-                                                    value = value.substring( 1 );
-                                                    paramCond = paramCond.substring( 0, placeholderPos ) + "=" + paramCond.substring( placeholderPos + 1 );
-                                                    break;
-                                                case '!':
-                                                    if (value.charAt( 1 ) == '=') {
-                                                        value = value.substring( 2 );
-                                                        paramCond = paramCond.substring( 0, placeholderPos ) + "!=" + paramCond.substring( placeholderPos + 1 );
-                                                    } else {
-                                                        value = value.substring( 1 );
-                                                        paramCond = paramCond.substring( 0, placeholderPos ) + "!=" + paramCond.substring( placeholderPos + 1 );
-                                                    }
-                                                    break;
-                                            }
-                                            //替换原来参数，尽量造型正确。
-                                            try {
-                                                paramValueList.set( i, Long.parseLong( value.trim() ) );
-                                            } catch (Exception ignored) {
-                                            }
-                                        }
+                            }
+                            //如果不启用like查询，则自动转成=匹配。
+                            if (!enableLikeQuery) {
+                                //like转成=匹配。
+                                paramCond = StringUtils.replaceIgnoreCase( paramCond, " like ", "=" );
+                                //移除通配符，防止无法查询出数据。
+                                for (int i = paramValueList.size() - paramValueSize; i < paramValueList.size(); i++) {
+                                    if (paramValueList.get( i ) instanceof String value) {
+                                        //直接移除通配符。
+                                        paramValueList.set( i, StringUtils.remove( value, '%' ) );
                                     }
                                 }
                             }
@@ -221,6 +171,7 @@ public class QueryParamUtils {
 
     /**
      * 解码url参数。
+     *
      * @param value
      * @return
      */

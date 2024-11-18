@@ -20,7 +20,6 @@ public @interface QueryMeta {
      * 1.无占位符情况。 expr="cols>0", value="1"。只要value有数值，即生效。
      * 2.多占位符支持。 expr="(col1 like ? or col2 like ? or col3 like ?)", value="value"。
      * 3.in支持。 expr="col in (?)",value = Integer[]/List。
-     * 4.运算符嵌入数值。 expr="col ?", value=">0"/"<=100"/"!=99"。
      *
      * @return
      */

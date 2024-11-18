@@ -4,6 +4,7 @@ import uw.dao.annotation.QueryMeta;
 import uw.dao.annotation.TableMeta;
 import uw.dao.vo.QueryParamResult;
 
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Date;
@@ -16,8 +17,10 @@ public class QueryMetaTest {
     public static void main(String[] args) throws TransactionException {
         QueryParamA a = new QueryParamA();
         a.id = 1L;
-        a.name = URLEncoder.encode( "%[JTR]测试线路%" );
+        a.name = URLEncoder.encode( "JTR" );
+        a.stateGte = 1;
         a.date = new Date[]{new Date(1), new Date()};
+//        a.LIKE_QUERY_ENABLE(false);
         QueryParamResult queryParamResult = DaoFactory.getInstance().parseQueryParam(EntityA.class, a);
         System.out.println(queryParamResult.getSql().toString());
         System.out.println(Arrays.toString(queryParamResult.getParamList()));
@@ -30,11 +33,14 @@ public class QueryMetaTest {
         @QueryMeta(expr = "id=?")
         private Long id;
 
-        @QueryMeta(expr = "name like ?")
+        @QueryMeta(expr = "name LIKE ? or desc LIKE ?")
         private String name;
 
-        @QueryMeta(expr = "date between ? and ? order by id asc")
+        @QueryMeta(expr = "date between ? and ?")
         private Date[] date;
+
+        @QueryMeta(expr = "state>=?")
+        private int stateGte;
 
     }
 

@@ -54,8 +54,6 @@ public class TestSQLGen {
         queryParam.setAppInfo("%test%");
         queryParam.setCreateDate(new Date[]{new Date(System.currentTimeMillis()-86400000),new Date()});
         queryParam.setStateList(stateList);
-        queryParam.setStateOp("!=999");
-        queryParam.setStateOps(new String[]{">=1","<=100"});
         queryParam.setStateOn(true);
         queryParam.ADD_EXT_PARAM("and test>?",1);
         queryParam.ADD_EXT_PARAM("and test>? and test<?",new int[]{2,3});

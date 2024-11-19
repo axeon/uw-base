@@ -96,19 +96,19 @@ public class QueryParamUtils {
                         if (paramValue.getClass().isArray()) {
                             paramValueSize = Array.getLength( paramValue );
                             for (int i = 0; i < paramValueSize; i++) {
-                                paramValueList.add( decodeUrlParam( Array.get( paramValue, i ) ) );
+                                paramValueList.add( Array.get( paramValue, i ) );
                             }
                         } else if (paramValue instanceof List list) {
                             paramValueSize = list.size();
                             for (Object value : list) {
-                                paramValueList.add( decodeUrlParam( value ) );
+                                paramValueList.add( value );
                             }
                         } else {
-                            paramValueList.add( decodeUrlParam( paramValue ) );
+                            paramValueList.add( paramValue );
                             //此处要对单一数值表达式中多个占位符的，进行数值展开匹配。
                             if (placeholdersCount > 1) {
                                 for (int i = 1; i < placeholdersCount; i++) {
-                                    paramValueList.add( decodeUrlParam( paramValue ) );
+                                    paramValueList.add( paramValue );
                                     paramValueSize++;
                                 }
                             }
@@ -167,20 +167,6 @@ public class QueryParamUtils {
             sqlBuilder.append( param.GEN_SORT_SQL() );
         }
         return new QueryParamResult( sqlBuilder, paramValueList.toArray() );
-    }
-
-    /**
-     * 解码url参数。
-     *
-     * @param value
-     * @return
-     */
-    private static Object decodeUrlParam(Object value) {
-        if (value instanceof String str) {
-            return URLDecoder.decode( str, StandardCharsets.UTF_8 );
-        } else {
-            return value;
-        }
     }
 
     /**

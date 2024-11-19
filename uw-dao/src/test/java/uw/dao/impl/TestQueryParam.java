@@ -65,27 +65,9 @@ public class TestQueryParam extends PageQueryParam {
 
 
     /**
-     * 应用状态1: 上线; 0: 下线 -1:删除
-     */
-    @QueryMeta(expr = "state ?")
-    @Schema(title = "应用状态1: 上线; 0: 下线 -1:删除", description = "应用状态1: 上线; 0: 下线 -1:删除")
-    private String stateOp;
-
-
-    /**
-     * 支持预算符传值。
-     * 比如>-1,<100。
-     * 当前支持预算符如下：>,>=,<,<=,<=>,=,!=。
-     */
-    @QueryMeta(expr = "stateOps ? and stateOps ?")
-    @Schema(title = "应用状态1: 上线; 0: 下线 -1:删除", description = "应用状态1: 上线; 0: 下线 -1:删除")
-    private String[] stateOps;
-
-
-    /**
      * 只要传值，将会启用expr。
      */
-    @QueryMeta(expr = "stateOn>=0")
+    @QueryMeta(expr = "state>=0")
     @Schema(title = "应用状态1: 上线; 0: 下线 -1:删除", description = "应用状态1: 上线; 0: 下线 -1:删除")
     private Boolean stateOn;
 
@@ -143,22 +125,6 @@ public class TestQueryParam extends PageQueryParam {
 
     public void setCreateDate(Date[] createDate) {
         this.createDate = createDate;
-    }
-
-    public String getStateOp() {
-        return stateOp;
-    }
-
-    public void setStateOp(String stateOp) {
-        this.stateOp = stateOp;
-    }
-
-    public String[] getStateOps() {
-        return stateOps;
-    }
-
-    public void setStateOps(String[] stateOps) {
-        this.stateOps = stateOps;
     }
 
     public Boolean getStateOn() {

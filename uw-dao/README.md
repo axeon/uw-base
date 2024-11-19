@@ -212,7 +212,7 @@ QueryParam通过注解来自动生成sql。
 通过uw-code-center可以根据库表结构自动生成QueryParam的dto类，作为代码基可以做针对业务需求的修改。
 代码生成的规则如下：
 1.对于Date类型，生成DateRange的查询参数，支持基于between的范围查询。
-2.对于state字段，生成state,states(支持in查询),stateOp(支持预算符内嵌)，stateOn(支持state>-1)的方法。
+2.对于state字段，生成state,states(支持in查询)，stateGte(大于等于)，stateLte(小于等于)的方法。
 3.对于Saas专用版，自动屏蔽SaasId字段。
 
 ## QueryParam的注解使用。
@@ -248,17 +248,7 @@ private String appInfo;
 private Integer[] states;
 ```
 
-3.预算符内嵌数值。当前支持预算符如下：>,>=,<,<=,<=>,=,!=。
-```java
-/**
-* 应用状态1: 上线; 0: 下线 -1:删除
-*/
-@QueryMeta(expr = "state ?")
-@Schema(title = "应用状态1: 上线; 0: 下线 -1:删除", description = "支持传入>,<,>=,<=>,!=")
-private String stateOp;
-```
-
-4.数值不参与计算。
+3.数值不参与计算。
 ```java
 /**
 * 应用状态1: 上线; 0: 下线 -1:删除

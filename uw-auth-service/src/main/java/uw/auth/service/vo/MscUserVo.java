@@ -17,7 +17,7 @@ public class MscUserVo implements Serializable {
     public MscUserVo() {
     }
 
-    public MscUserVo(long id, long saasId, int userType, long mchId, long groupId, int isMaster, String username, String realName, String nickName, String mobile, String email, String wxId, int userGrade, String remark, Date lastLogonDate, String lastLogonIp, int logonCount, Date createDate, Date modifyDate, int state) {
+    public MscUserVo(long id, long saasId, int userType, long mchId, long groupId, int isMaster, String username, String realName, String nickName, String mobile, String email, String wxId, int gender, long areaCode, int idType, String idInfo, String userIcon, int userGrade, int authFlag, String remark, Date lastPasswdDate, Date lastLogonDate, String lastLogonIp, int logonCount, Date createDate, Date modifyDate, int state) {
         this.id = id;
         this.saasId = saasId;
         this.userType = userType;
@@ -30,8 +30,15 @@ public class MscUserVo implements Serializable {
         this.mobile = mobile;
         this.email = email;
         this.wxId = wxId;
+        this.gender = gender;
+        this.areaCode = areaCode;
+        this.idType = idType;
+        this.idInfo = idInfo;
+        this.userIcon = userIcon;
         this.userGrade = userGrade;
+        this.authFlag = authFlag;
         this.remark = remark;
+        this.lastPasswdDate = lastPasswdDate;
         this.lastLogonDate = lastLogonDate;
         this.lastLogonIp = lastLogonIp;
         this.logonCount = logonCount;
@@ -49,7 +56,7 @@ public class MscUserVo implements Serializable {
     /**
      * 运营商Id
      */
-    @Schema(title = "saasId", description = "saasId")
+    @Schema(title = "运营商Id", description = "运营商Id")
     private long saasId;
 
     /**
@@ -91,6 +98,7 @@ public class MscUserVo implements Serializable {
     /**
      * 别名 [用于业务前台匿名]
      */
+    @Schema(title = "别名 [用于业务前台匿名]", description = "别名 [用于业务前台匿名]")
     private String nickName;
 
     /**
@@ -112,16 +120,58 @@ public class MscUserVo implements Serializable {
     private String wxId;
 
     /**
+     * 性别-1未知0女1男
+     */
+    @Schema(title = "性别-1未知0女1男", description = "性别-1未知0女1男")
+    private int gender;
+
+    /**
+     * 地区
+     */
+    @Schema(title = "地区", description = "地区")
+    private long areaCode;
+
+    /**
+     * 证件类型
+     */
+    @Schema(title = "证件类型", description = "证件类型")
+    private int idType;
+
+    /**
+     * 证件信息
+     */
+    @Schema(title = "证件信息", description = "证件信息")
+    private String idInfo;
+
+    /**
+     * 用户头像
+     */
+    @Schema(title = "用户头像", description = "用户头像")
+    private String userIcon;
+
+    /**
      * 用户级别
      */
     @Schema(title = "用户级别", description = "用户级别")
     private int userGrade;
 
     /**
+     * 验证标记
+     */
+    @Schema(title = "验证标记", description = "验证标记")
+    private int authFlag;
+
+    /**
      * 备注
      */
     @Schema(title = "备注", description = "备注")
     private String remark;
+
+    /**
+     * 最后更新密码时间
+     */
+    @Schema(title = "最后更新密码时间", description = "最后更新密码时间")
+    private java.util.Date lastPasswdDate;
 
     /**
      * 最后登录时间
@@ -255,6 +305,46 @@ public class MscUserVo implements Serializable {
         this.wxId = wxId;
     }
 
+    public int getGender() {
+        return gender;
+    }
+
+    public void setGender(int gender) {
+        this.gender = gender;
+    }
+
+    public long getAreaCode() {
+        return areaCode;
+    }
+
+    public void setAreaCode(long areaCode) {
+        this.areaCode = areaCode;
+    }
+
+    public int getIdType() {
+        return idType;
+    }
+
+    public void setIdType(int idType) {
+        this.idType = idType;
+    }
+
+    public String getIdInfo() {
+        return idInfo;
+    }
+
+    public void setIdInfo(String idInfo) {
+        this.idInfo = idInfo;
+    }
+
+    public String getUserIcon() {
+        return userIcon;
+    }
+
+    public void setUserIcon(String userIcon) {
+        this.userIcon = userIcon;
+    }
+
     public int getUserGrade() {
         return userGrade;
     }
@@ -263,12 +353,28 @@ public class MscUserVo implements Serializable {
         this.userGrade = userGrade;
     }
 
+    public int getAuthFlag() {
+        return authFlag;
+    }
+
+    public void setAuthFlag(int authFlag) {
+        this.authFlag = authFlag;
+    }
+
     public String getRemark() {
         return remark;
     }
 
     public void setRemark(String remark) {
         this.remark = remark;
+    }
+
+    public Date getLastPasswdDate() {
+        return lastPasswdDate;
+    }
+
+    public void setLastPasswdDate(Date lastPasswdDate) {
+        this.lastPasswdDate = lastPasswdDate;
     }
 
     public Date getLastLogonDate() {

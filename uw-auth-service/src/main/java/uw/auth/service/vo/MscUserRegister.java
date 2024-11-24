@@ -87,6 +87,18 @@ public class MscUserRegister {
     private String wxId;
 
     /**
+     * 性别-1未知0女1男
+     */
+    @Schema(title = "性别-1未知0女1男", description = "性别-1未知0女1男")
+    private int gender;
+
+    /**
+     * 地区
+     */
+    @Schema(title = "地区", description = "地区")
+    private long areaCode;
+
+    /**
      * 证件类型
      */
     @Schema(title = "证件类型", description = "证件类型")
@@ -230,6 +242,22 @@ public class MscUserRegister {
 
     public void setWxId(String wxId) {
         this.wxId = wxId;
+    }
+
+    public int getGender() {
+        return gender;
+    }
+
+    public void setGender(int gender) {
+        this.gender = gender;
+    }
+
+    public long getAreaCode() {
+        return areaCode;
+    }
+
+    public void setAreaCode(long areaCode) {
+        this.areaCode = areaCode;
     }
 
     public int getIdType() {

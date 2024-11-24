@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 用位存储开关状态，可以支持最多32个开关。
+ * 用位存储开关状态，可以支持32/64个开关。
  */
 public class BitConfigUtils {
 

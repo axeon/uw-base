@@ -90,7 +90,7 @@ public class MscUserRegister {
      * 性别-1未知0女1男
      */
     @Schema(title = "性别-1未知0女1男", description = "性别-1未知0女1男")
-    private int gender;
+    private int gender = -1;
 
     /**
      * 地区

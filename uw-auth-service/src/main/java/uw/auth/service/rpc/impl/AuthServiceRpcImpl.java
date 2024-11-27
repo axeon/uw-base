@@ -97,7 +97,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/kickoutGuest" ).queryParam( "saasId", saasId ).queryParam(
                         "userId", userId ).queryParam( "remark", remark ).build().encode().toUri();
-        tokenRestTemplate.exchange( targetUrl, HttpMethod.POST, HttpEntity.EMPTY, ResponseData.class ).getBody();
+        return tokenRestTemplate.exchange( targetUrl, HttpMethod.POST, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 
     /**

@@ -48,6 +48,14 @@ public interface AuthServiceRpc {
     TokenResponse genGuestToken(long saasId, long mchId, long userId, String userName, String userIp, boolean checkDoubleLogin);
 
     /**
+     * 踢出Guest用户。
+     * @param saasId
+     * @param userId
+     * @param remark
+     */
+    ResponseData kickoutGuest(long saasId, long userId, String remark);
+
+    /**
      * 初始化Saas权限。
      *
      * @param saasId

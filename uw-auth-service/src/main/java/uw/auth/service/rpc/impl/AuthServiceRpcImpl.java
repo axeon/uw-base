@@ -86,6 +86,21 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     }
 
     /**
+     * 踢出Guest用户。
+     *
+     * @param saasId
+     * @param userId
+     * @param remark
+     */
+    @Override
+    public ResponseData kickoutGuest(long saasId, long userId, String remark) {
+        URI targetUrl =
+                UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/kickoutGuest" ).queryParam( "saasId", saasId ).queryParam(
+                        "userId", userId ).queryParam( "remark", remark ).build().encode().toUri();
+        tokenRestTemplate.exchange( targetUrl, HttpMethod.POST, HttpEntity.EMPTY, ResponseData.class ).getBody();
+    }
+
+    /**
      * 初始化Saas权限。
      * 这里不赋权
      *

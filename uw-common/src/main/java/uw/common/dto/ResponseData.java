@@ -14,7 +14,6 @@ import java.util.StringJoiner;
 @Schema(title = "返回信息结构体", description = "返回信息结构体")
 public final class ResponseData<T> {
 
-
     /**
      * 成功状态值。
      */

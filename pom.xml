@@ -9,7 +9,7 @@
     <description>uw-base</description>
     <version>${revision}</version>
     <properties>
-        <revision>2024.0803.1018</revision>
+        <revision>2024.0803.1019</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
@@ -28,7 +28,7 @@
         <uw-cache.version>1.1.65</uw-cache.version>
         <uw-mfa.version>1.0.22</uw-mfa.version>
         <uw-notify-client.version>1.0.18</uw-notify-client.version>
-        <uw-task.version>5.0.95</uw-task.version>
+        <uw-task.version>5.0.96</uw-task.version>
         <uw-tinyurl-client.version>1.0.18</uw-tinyurl-client.version>
         <uw-mydb-client.version>1.0.12</uw-mydb-client.version>
     </properties>

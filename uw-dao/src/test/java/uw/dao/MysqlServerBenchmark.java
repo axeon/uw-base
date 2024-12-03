@@ -11,6 +11,9 @@ import uw.dao.conf.DaoConfigManager;
 import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * mysql的benchmark。
+ */
 @BenchmarkMode({Mode.Throughput})//基准测试类型
 @OutputTimeUnit(TimeUnit.SECONDS)//基准测试结果的时间类型
 @Warmup(iterations = 1, time = 10, timeUnit = TimeUnit.SECONDS)
@@ -18,14 +21,14 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)//该状态为每个线程独享
 //度量:iterations进行测试的轮次，time每轮进行的时长，timeUnit时长单位,batchSize批次数量
 @Measurement(iterations = 3, time = 10, timeUnit = TimeUnit.SECONDS)
-public class SqlBenchmark {
+public class MysqlServerBenchmark {
 
     static final DaoFactory dao = DaoFactory.getInstance();
     private static final String LOAD_SEQ = "select seq_id,increment_num from sys_seq where seq_name=? ";
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
-                .include( SqlBenchmark.class.getSimpleName() )
+                .include( MysqlServerBenchmark.class.getSimpleName() )
                 .forks( 0 )
                 .build();
         new Runner( opt ).run();
@@ -37,9 +40,9 @@ public class SqlBenchmark {
         DaoConfig.ConnPool pool = new DaoConfig.ConnPool();
         DaoConfig.ConnPoolConfig poolConfig = new DaoConfig.ConnPoolConfig();
         poolConfig.setDriver( "com.mysql.cj.jdbc.Driver" );
-        poolConfig.setUrl( "jdbc:mysql://192.168.88.21:3300/uw_auth?characterEncoding=utf-8&useSSL=false&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true" );
+        poolConfig.setUrl( "jdbc:mysql://192.168.88.21:3308/uw_auth?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true" );
         poolConfig.setUsername( "root" );
-        poolConfig.setPassword( "mysqlRootPassword123" );
+        poolConfig.setPassword( "mysqlRootPassword" );
         poolConfig.setMinConn( 10 );
         poolConfig.setMaxConn( 100 );
         poolConfig.setConnMaxAge( 3600 );

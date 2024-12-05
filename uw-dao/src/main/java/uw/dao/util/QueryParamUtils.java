@@ -11,8 +11,6 @@ import uw.dao.vo.TableMetaInfo;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -78,8 +76,11 @@ public class QueryParamUtils {
                 }
             }
             //合并附加参数
-            if (queryParam.EXT_PARAM_MAP() != null) {
-                paramMap.putAll( queryParam.EXT_PARAM_MAP() );
+            Map<String, Object> extParamMap = queryParam.EXT_PARAM_MAP();
+            if (extParamMap != null) {
+                for (Map.Entry<String, Object> kv : extParamMap.entrySet()) {
+                    paramMap.put( "and " + kv.getKey(), kv.getValue() );
+                }
             }
             //开始生成sql.
             for (Map.Entry<String, Object> kv : paramMap.entrySet()) {
@@ -100,9 +101,7 @@ public class QueryParamUtils {
                             }
                         } else if (paramValue instanceof List list) {
                             paramValueSize = list.size();
-                            for (Object value : list) {
-                                paramValueList.add( value );
-                            }
+                            paramValueList.addAll( list );
                         } else {
                             paramValueList.add( paramValue );
                             //此处要对单一数值表达式中多个占位符的，进行数值展开匹配。
@@ -156,7 +155,7 @@ public class QueryParamUtils {
 
             //最后附加where sql。
             if (StringUtils.isNotBlank( queryParam.EXT_WHERE_SQL() )) {
-                sqlBuilder.append( " " ).append( queryParam.EXT_WHERE_SQL() );
+                sqlBuilder.append( " and " ).append( queryParam.EXT_WHERE_SQL() );
             }
 
         } catch (Throwable e) {

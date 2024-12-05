@@ -8,6 +8,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 测试查询meta
@@ -19,7 +20,9 @@ public class QueryMetaTest {
         a.id = 1L;
         a.name = URLEncoder.encode( "JTR" );
         a.stateGte = 1;
-        a.date = new Date[]{new Date(1), new Date()};
+        a.date = Arrays.asList( new Date[]{new Date(1), new Date()} );
+        a.ADD_EXT_PARAM( "create_date>?" ,new Date());
+        a.ADD_EXT_WHERE_SQL( " x>0" );
 //        a.LIKE_QUERY_ENABLE(false);
         QueryParamResult queryParamResult = DaoFactory.getInstance().parseQueryParam(EntityA.class, a);
         System.out.println(queryParamResult.getSql().toString());
@@ -37,7 +40,7 @@ public class QueryMetaTest {
         private String name;
 
         @QueryMeta(expr = "date between ? and ?")
-        private Date[] date;
+        private List<Date> date;
 
         @QueryMeta(expr = "state>=?")
         private int stateGte;

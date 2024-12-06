@@ -31,40 +31,36 @@ public class TaskRunnerContainer {
 
     private static final Logger log = LoggerFactory.getLogger( TaskRunnerContainer.class );
 
-    /**
-     * TaskFactory
-     */
-    private TaskFactory taskFactory;
 
     /**
      * 任务配置
      */
-    private TaskProperties taskProperties;
+    private final TaskProperties taskProperties;
 
     /**
      * 服务端任务API
      */
-    private TaskApiClient taskApiClient;
+    private final TaskApiClient taskApiClient;
 
     /**
      * 任务信息管理器。
      */
-    private TaskMetaInfoManager taskMetaInfoManager;
+    private final TaskMetaInfoManager taskMetaInfoManager;
 
     /**
      * 本地流量限制服务
      */
-    private TaskLocalRateLimiter taskLocalRateLimiter;
+    private final TaskLocalRateLimiter taskLocalRateLimiter;
 
     /**
      * 全局流量限制服务
      */
-    private TaskGlobalRateLimiter taskGlobalRateLimiter;
+    private final TaskGlobalRateLimiter taskGlobalRateLimiter;
 
     /**
      * 监听管理器。
      */
-    private TaskListenerManager taskListenerManager;
+    private final TaskListenerManager taskListenerManager;
 
     /**
      * 默认构造器。
@@ -85,9 +81,6 @@ public class TaskRunnerContainer {
         this.taskMetaInfoManager = taskMetaInfoManager;
     }
 
-    public void setTaskFactory(TaskFactory taskFactory) {
-        this.taskFactory = taskFactory;
-    }
 
     /**
      * 执行任务
@@ -254,11 +247,11 @@ public class TaskRunnerContainer {
                     taskData.setTaskDelay( taskData.getRanTimes() * taskProperties.getTaskRpcRetryDelay() );
                     if (taskData.getState() == TaskData.STATE_FAIL_CONFIG) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
-                            taskData = taskFactory.runTaskLocal( cleanTaskInfo( taskData ) );
+                            taskData = TaskFactory.getInstance().runTaskLocal( cleanTaskInfo( taskData ) );
                         }
                     } else if (taskData.getState() == TaskData.STATE_FAIL_PARTNER) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByPartner()) {
-                            taskData = taskFactory.runTaskLocal( cleanTaskInfo( taskData ) );
+                            taskData = TaskFactory.getInstance().runTaskLocal( cleanTaskInfo( taskData ) );
                         }
                     }
                 }
@@ -272,11 +265,11 @@ public class TaskRunnerContainer {
                     taskData.setTaskDelay( taskData.getRanTimes() * taskProperties.getTaskQueueRetryDelay() );
                     if (taskData.getState() == TaskData.STATE_FAIL_CONFIG) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
-                            taskFactory.sendToQueue( cleanTaskInfo( taskData ) );
+                            TaskFactory.getInstance().sendToQueue( cleanTaskInfo( taskData ) );
                         }
                     } else if (taskData.getState() == TaskData.STATE_FAIL_PARTNER) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByPartner()) {
-                            taskFactory.sendToQueue( cleanTaskInfo( taskData ) );
+                            TaskFactory.getInstance().sendToQueue( cleanTaskInfo( taskData ) );
                         }
                     }
                 }

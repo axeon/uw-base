@@ -15,12 +15,12 @@ public class TaskListenerManager {
     /**
      * runner监听器列表。
      */
-    private ArrayList<RunnerTaskListener> runnerListenerList = new ArrayList<>();
+    private final ArrayList<RunnerTaskListener> runnerListenerList = new ArrayList<>();
 
     /**
      * croner监听器列表。
      */
-    private ArrayList<CronerTaskListener> cronerListenerList = new ArrayList<>();
+    private final ArrayList<CronerTaskListener> cronerListenerList = new ArrayList<>();
 
     /**
      * 加入一个RunnerListener。

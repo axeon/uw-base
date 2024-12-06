@@ -15,8 +15,6 @@ import java.util.Date;
 @JsonIgnoreProperties({"refObject"})
 public class TaskCronerLog extends LogBaseVo implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     private long id;
 
     /**

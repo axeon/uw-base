@@ -22,7 +22,7 @@ import java.util.Date;
  */
 public class TaskMessageConverter implements MessageConverter {
 
-    private static Logger log = LoggerFactory.getLogger(TaskMessageConverter.class);
+    private static final Logger log = LoggerFactory.getLogger(TaskMessageConverter.class);
 
     /**
      * 数据类型
@@ -108,8 +108,7 @@ public class TaskMessageConverter implements MessageConverter {
                     log.warn("Could not convert incoming message with content-type [{}],message: {} ",
                             contentType, new String(message.getBody(), "UTF-8"));
                 } catch (Exception e) {
-                    log.warn("Could not convert incoming message with content-type [{}],message cannot be decode. " + e.getMessage(),
-                            contentType);
+                    log.warn( "Could not convert incoming message with content-type [{}],message cannot be decode. {}", contentType, e.getMessage() );
                 }
             }
         }

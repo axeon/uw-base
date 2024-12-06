@@ -36,27 +36,27 @@ public class TaskServiceRegister {
 
     private static final Logger log = LoggerFactory.getLogger( TaskServiceRegister.class );
 
-    private ConnectionFactory taskConnectionFactory;
+    private final ConnectionFactory taskConnectionFactory;
 
-    private TaskRunnerContainer taskRunnerContainer;
+    private final TaskRunnerContainer taskRunnerContainer;
 
-    private TaskCronerContainer taskCronerContainer;
+    private final TaskCronerContainer taskCronerContainer;
 
-    private TaskProperties taskProperties;
+    private final TaskProperties taskProperties;
 
-    private TaskApiClient taskApiClient;
+    private final TaskApiClient taskApiClient;
 
-    private RabbitAdmin rabbitAdmin;
+    private final RabbitAdmin rabbitAdmin;
 
     /**
      * 任务meta信息管理器。
      */
-    private TaskMetaInfoManager taskMetaInfoManager;
+    private final TaskMetaInfoManager taskMetaInfoManager;
 
     /**
      * container缓存。key=队列名,value=container。
      */
-    private ConcurrentHashMap<String, SimpleMessageListenerContainer> queueListenerMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, SimpleMessageListenerContainer> queueListenerMap = new ConcurrentHashMap<>();
 
     /**
      * 上次更新配置时间，初始值必须=0，用于标识整体加载。

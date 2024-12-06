@@ -318,8 +318,6 @@ public class TaskAutoConfiguration {
                 taskMetaInfoManager );
         // 返回TaskScheduler
         TaskFactory taskFactory = new TaskFactory( taskProperties, rabbitTemplate, taskRunnerContainer, taskSequenceManager, taskMetaInfoManager );
-        // taskRunnerContainer错误重试需要TaskScheduler
-        taskRunnerContainer.setTaskFactory( taskFactory );
         return taskFactory;
     }
 }

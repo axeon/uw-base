@@ -41,12 +41,12 @@ public class TaskMetaInfoManager {
     /**
      * 任务配置。
      */
-    private TaskProperties taskProperties;
+    private final TaskProperties taskProperties;
 
     /**
      * 应用上下文。
      */
-    private ApplicationContext context;
+    private final ApplicationContext context;
 
     public TaskMetaInfoManager(ApplicationContext context, TaskProperties taskProperties) {
         this.context = context;
@@ -239,11 +239,11 @@ public class TaskMetaInfoManager {
     public String getCronerConfigKey(TaskCronerConfig config) {
         StringBuilder sb = new StringBuilder( 168 );
         sb.append( config.getTaskClass() ).append( "#" );
-        if (config.getTaskParam() != null && config.getTaskParam().length() > 0) {
+        if (config.getTaskParam() != null && !config.getTaskParam().isEmpty()) {
             sb.append( config.getId() );
         }
         sb.append( "$" );
-        if (config.getRunTarget() != null && config.getRunTarget().length() > 0) {
+        if (config.getRunTarget() != null && !config.getRunTarget().isEmpty()) {
             sb.append( config.getRunTarget() );
         }
         return sb.toString();
@@ -257,11 +257,11 @@ public class TaskMetaInfoManager {
     public String getRunnerConfigKey(TaskRunnerConfig config) {
         StringBuilder sb = new StringBuilder( 168 );
         sb.append( config.getTaskClass() ).append( "#" );
-        if (config.getTaskTag() != null && config.getTaskTag().length() > 0) {
+        if (config.getTaskTag() != null && !config.getTaskTag().isEmpty()) {
             sb.append( config.getTaskTag() );
         }
         sb.append( "$" );
-        if (config.getRunTarget() != null && config.getRunTarget().length() > 0) {
+        if (config.getRunTarget() != null && !config.getRunTarget().isEmpty()) {
             sb.append( config.getRunTarget() );
         }
         return sb.toString();
@@ -275,11 +275,11 @@ public class TaskMetaInfoManager {
     public String getRunnerConfigKeyByData(TaskData<?, ?> data) {
         StringBuilder sb = new StringBuilder( 168 );
         sb.append( data.getTaskClass() ).append( "#" );
-        if (data.getTaskTag() != null && data.getTaskTag().length() > 0) {
+        if (data.getTaskTag() != null && !data.getTaskTag().isEmpty()) {
             sb.append( data.getTaskTag() );
         }
         sb.append( "$" );
-        if (data.getRunTarget() != null && data.getRunTarget().length() > 0) {
+        if (data.getRunTarget() != null && !data.getRunTarget().isEmpty()) {
             sb.append( data.getRunTarget() );
         }
         return sb.toString();

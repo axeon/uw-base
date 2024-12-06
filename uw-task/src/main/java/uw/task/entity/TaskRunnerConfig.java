@@ -11,8 +11,6 @@ import java.util.Date;
  */
 public class TaskRunnerConfig implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     /**
      * 项目队列。
      */

@@ -42,37 +42,37 @@ public class TaskCronerContainer {
      * cronerTask任务索引。
      */
     private final Map<Long, ScheduledFuture<?>> cronerTasks = new ConcurrentHashMap<>( 128 );
-    private org.springframework.scheduling.TaskScheduler taskScheduler;
-    private ScheduledExecutorService executorService;
+    private final org.springframework.scheduling.TaskScheduler taskScheduler;
+    private final ScheduledExecutorService executorService;
     /**
      * 选举
      */
-    private TaskGlobalLocker taskGlobalLocker;
+    private final TaskGlobalLocker taskGlobalLocker;
 
     /**
      * 服务端API
      */
-    private TaskApiClient taskApiClient;
+    private final TaskApiClient taskApiClient;
 
     /**
      * 监听管理器。
      */
-    private TaskListenerManager taskListenerManager;
+    private final TaskListenerManager taskListenerManager;
 
     /**
      * 全局序列发生器。
      */
-    private TaskSequenceManager taskSequenceManager;
+    private final TaskSequenceManager taskSequenceManager;
 
     /**
      * 任务配置
      */
-    private TaskProperties taskProperties;
+    private final TaskProperties taskProperties;
 
     /**
      * TaskCronerLog的ThreadLocal。
      */
-    private ThreadLocal<TaskCronerLog> cronerLogHolder = new ThreadLocal();
+    private final ThreadLocal<TaskCronerLog> cronerLogHolder = new ThreadLocal<>();
 
     public TaskCronerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskSequenceManager taskSequenceManager, TaskListenerManager taskListenerManager,
                                TaskGlobalLocker taskGlobalLocker) {

@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class TaskLocalRateLimiter {
 
-    private ConcurrentHashMap<String, RateLimiter> map = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, RateLimiter> map = new ConcurrentHashMap<>();
 
     /**
      * 尝试获得限制允许状态。

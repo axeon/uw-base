@@ -18,37 +18,37 @@ public class TaskCronerStats implements Serializable {
     /**
      * 执行总计数
      */
-    private AtomicInteger numAll = new AtomicInteger();
+    private final AtomicInteger numAll = new AtomicInteger();
 
     /**
      * 程序失败计数
      */
-    private AtomicInteger numFailProgram = new AtomicInteger();
+    private final AtomicInteger numFailProgram = new AtomicInteger();
 
     /**
      * 配置失败计数
      */
-    private AtomicInteger numFailConfig = new AtomicInteger();
+    private final AtomicInteger numFailConfig = new AtomicInteger();
 
     /**
      * 数据失败计数
      */
-    private AtomicInteger numFailData = new AtomicInteger();
+    private final AtomicInteger numFailData = new AtomicInteger();
 
     /**
      * 对方失败计数
      */
-    private AtomicInteger numFailPartner = new AtomicInteger();
+    private final AtomicInteger numFailPartner = new AtomicInteger();
 
     /**
      * 超时等待
      */
-    private AtomicInteger timeWait = new AtomicInteger();
+    private final AtomicInteger timeWait = new AtomicInteger();
 
     /**
      * 运行时间
      */
-    private AtomicInteger timeRun = new AtomicInteger();
+    private final AtomicInteger timeRun = new AtomicInteger();
 
     public TaskCronerStats(long taskId) {
         this.taskId = taskId;

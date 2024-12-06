@@ -20,12 +20,12 @@ public class TaskQueueLocalExecutor implements Runnable {
     /**
      * TaskFactory
      */
-    private TaskFactory taskFactory;
+    private final TaskFactory taskFactory;
 
     /**
      * 要执行的任务。
      */
-    private TaskData taskData;
+    private final TaskData taskData;
 
     public TaskQueueLocalExecutor(TaskFactory taskFactory, TaskData taskData) {
         this.taskFactory = taskFactory;

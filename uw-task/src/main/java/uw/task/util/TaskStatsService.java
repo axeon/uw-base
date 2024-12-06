@@ -15,23 +15,23 @@ public class TaskStatsService {
     /**
      * croner读写锁，用于提高性能。
      */
-    private static StampedLock cronerStampedLock = new StampedLock();
+    private static final StampedLock cronerStampedLock = new StampedLock();
 
     /**
      * croner数据存储map。
      */
-    private static ConcurrentHashMap<Long, TaskCronerStats> cronerStatsMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Long, TaskCronerStats> cronerStatsMap = new ConcurrentHashMap<>();
 
 
     /**
      * runner读写锁，用于提高性能。
      */
-    private static StampedLock runnerStampedLock = new StampedLock();
+    private static final StampedLock runnerStampedLock = new StampedLock();
 
     /**
      * runner数据存储map。
      */
-    private static ConcurrentHashMap<Long, TaskRunnerStats> runnerStatsMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Long, TaskRunnerStats> runnerStatsMap = new ConcurrentHashMap<>();
     
 
     /**

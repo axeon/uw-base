@@ -73,7 +73,7 @@ public class TaskSequenceManager {
         /**
          * 当前数值
          */
-        private AtomicLong currentId;
+        private final AtomicLong currentId;
 
         /**
          * 当前可以获取的最大id
@@ -83,12 +83,12 @@ public class TaskSequenceManager {
         /**
          * 增量数
          */
-        private int incrementNum;
+        private final int incrementNum;
 
         /**
          * redis计数器
          */
-        private RedisAtomicLong counter;
+        private final RedisAtomicLong counter;
 
         /**
          * 初始化一个序列器

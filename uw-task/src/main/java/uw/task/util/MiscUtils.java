@@ -64,9 +64,4 @@ public class MiscUtils {
         return sb.toString();
     }
 
-
-    public static void main(String[] args) {
-        String data = MiscUtils.exceptionToString(new Exception("test"));
-        System.out.println(data);
-    }
 }

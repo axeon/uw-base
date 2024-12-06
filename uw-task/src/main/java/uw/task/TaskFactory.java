@@ -38,27 +38,27 @@ public class TaskFactory {
     /**
      * rabbitTemplate模板.
      */
-    private RabbitTemplate rabbitTemplate;
+    private final RabbitTemplate rabbitTemplate;
     /**
      * 全局sequence序列，主要用于taskLog日志。
      */
-    private TaskSequenceManager taskSequenceManager;
+    private final TaskSequenceManager taskSequenceManager;
     /**
      * 用于本地执行任务的taskConsumer。
      */
-    private TaskRunnerContainer taskRunnerContainer;
+    private final TaskRunnerContainer taskRunnerContainer;
     /**
      * 任务meta信息管理器。
      */
-    private TaskMetaInfoManager taskMetaInfoManager;
+    private final TaskMetaInfoManager taskMetaInfoManager;
     /**
      * rpc异步调用线程池
      */
-    private ExecutorService taskRpcService;
+    private final ExecutorService taskRpcService;
     /**
      * 任务本地运行线程池。
      */
-    private ExecutorService taskQueueService;
+    private final ExecutorService taskQueueService;
 
     public TaskFactory(TaskProperties taskProperties, RabbitTemplate rabbitTemplate, TaskRunnerContainer taskRunnerContainer, TaskSequenceManager taskSequenceManager,
                        TaskMetaInfoManager taskMetaInfoManager) {

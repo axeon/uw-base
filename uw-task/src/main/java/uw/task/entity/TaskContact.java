@@ -10,8 +10,6 @@ import java.io.Serializable;
  */
 public class TaskContact implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     /**
      * 执行类信息
      */

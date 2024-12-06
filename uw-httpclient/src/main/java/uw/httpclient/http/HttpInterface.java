@@ -10,6 +10,7 @@ import uw.httpclient.json.JsonInterfaceHelper;
 import uw.httpclient.util.MediaTypes;
 import uw.task.exception.TaskPartnerException;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
@@ -25,34 +26,29 @@ public class HttpInterface {
     private static final OkHttpClient globalOkHttpClient = new OkHttpClient.Builder().retryOnConnectionFailure( false ).build();
     private static final Logger log = LoggerFactory.getLogger( HttpInterface.class );
     /**
-     * 对象Mapper。
-     */
-    public ObjectMapper objectMapper;
-
-    /**
      * okHttpClient。
      */
-    private OkHttpClient okHttpClient;
-
+    private final OkHttpClient okHttpClient;
     /**
      * http数据类型。
      */
-    private Class<? extends HttpData> httpDataCls;
-
+    private final Class<? extends HttpData> httpDataCls;
     /**
      * http数据日志级别。
      */
-    private HttpDataLogLevel httpDataLogLevel;
-
+    private final HttpDataLogLevel httpDataLogLevel;
     /**
      * HttpData数据处理器。
      */
-    private HttpDataProcessor httpDataProcessor;
-
+    private final HttpDataProcessor httpDataProcessor;
     /**
      * 默认发送的mediaType。
      */
-    private MediaType mediaType;
+    private final MediaType mediaType;
+    /**
+     * 对象Mapper。
+     */
+    public ObjectMapper objectMapper;
 
 
     public HttpInterface(HttpConfig httpConfig, Class<? extends HttpData> httpDataCls, HttpDataLogLevel httpDataLogLevel, HttpDataProcessor httpDataProcessor,
@@ -432,6 +428,20 @@ public class HttpInterface {
         return postFormForData( url, null, formData );
     }
 
+
+    /**
+     * POST Form获得HttpData。
+     *
+     * @param url
+     * @param formData
+     * @param <D>
+     * @return
+     * @throws Exception
+     */
+    public <D extends HttpData> D postFormFileForData(String url, Map<String, String> formData, Map<String, Object> fileData) {
+        return postFormFileForData( url, null, formData, fileData );
+    }
+
     /**
      * POST Form获得HttpData。
      *
@@ -444,6 +454,25 @@ public class HttpInterface {
      */
     public <D extends HttpData> D postFormForData(String url, Map<String, String> headers, Map<String, String> formData) {
         D httpData = postFormData( url, headers, formData );
+        if (this.httpDataProcessor != null) {
+            this.httpDataProcessor.postProcess( httpData, null );
+        }
+        return httpData;
+    }
+
+
+    /**
+     * POST Form获得HttpData。
+     *
+     * @param url
+     * @param headers
+     * @param formData
+     * @param <D>
+     * @return
+     * @throws Exception
+     */
+    public <D extends HttpData> D postFormFileForData(String url, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
+        D httpData = postFormFileData( url, headers, formData, fileData );
         if (this.httpDataProcessor != null) {
             this.httpDataProcessor.postProcess( httpData, null );
         }
@@ -553,6 +582,121 @@ public class HttpInterface {
      */
     public <D extends HttpData, T> HttpEntity<D, T> postFormForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> formData) {
         D httpData = postFormData( url, headers, formData );
+        T t = this.objectMapper.parse( httpData.getResponseData(), javaType );
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            this.httpDataProcessor.postProcess( httpData, t );
+        }
+        return new HttpEntity<>( httpData, t );
+    }
+
+
+    /**
+     * POST FormData 获得HttpEntity。
+     *
+     * @param url
+     * @param responseType
+     * @param formData
+     * @param <D>
+     * @param <T>
+     * @return
+     * @throws Exception
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> postFormFileForEntity(String url, Class<T> responseType, Map<String, String> formData, Map<String, Object> fileData) {
+        return postFormFileForEntity( url, responseType, null, formData, fileData );
+    }
+
+    /**
+     * POST FormData 获得HttpEntity。
+     *
+     * @param url
+     * @param responseType
+     * @param headers
+     * @param formData
+     * @param <D>
+     * @param <T>
+     * @return
+     * @throws Exception
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> postFormFileForEntity(String url, Class<T> responseType, Map<String, String> headers, Map<String, String> formData,
+                                                                          Map<String, Object> fileData) {
+        D httpData = postFormFileData( url, headers, formData, fileData );
+        T t = this.objectMapper.parse( httpData.getResponseData(), responseType );
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            this.httpDataProcessor.postProcess( httpData, t );
+        }
+        return new HttpEntity<>( httpData, t );
+    }
+
+    /**
+     * POST FormData 获得HttpEntity。
+     *
+     * @param url
+     * @param typeRef
+     * @param formData
+     * @param <D>
+     * @param <T>
+     * @return
+     * @throws Exception
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> postFormFileForEntity(String url, TypeReference<T> typeRef, Map<String, String> formData, Map<String, Object> fileData) {
+        return postFormFileForEntity( url, typeRef, null, formData, fileData );
+    }
+
+    /**
+     * POST FormData 获得HttpEntity。
+     *
+     * @param url
+     * @param typeRef
+     * @param headers
+     * @param formData
+     * @param <D>
+     * @param <T>
+     * @return
+     * @throws Exception
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> postFormFileForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Map<String, String> formData,
+                                                                          Map<String, Object> fileData) {
+        D httpData = postFormFileData( url, headers, formData, fileData );
+        T t = this.objectMapper.parse( httpData.getResponseData(), typeRef );
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            this.httpDataProcessor.postProcess( httpData, t );
+        }
+        return new HttpEntity<>( httpData, t );
+    }
+
+    /**
+     * POST FormData 获得HttpEntity。
+     *
+     * @param url
+     * @param javaType
+     * @param formData
+     * @param <D>
+     * @param <T>
+     * @return
+     * @throws Exception
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> postFormFileForEntity(String url, JavaType javaType, Map<String, String> formData, Map<String, Object> fileData) {
+        return postFormFileForEntity( url, javaType, null, formData, fileData );
+    }
+
+    /**
+     * POST FormData 获得HttpEntity。
+     *
+     * @param url
+     * @param javaType
+     * @param headers
+     * @param formData
+     * @param <D>
+     * @param <T>
+     * @return
+     * @throws Exception
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> postFormFileForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> formData, Map<String,
+            Object> fileData) {
+        D httpData = postFormFileData( url, headers, formData, fileData );
         T t = this.objectMapper.parse( httpData.getResponseData(), javaType );
         //处理日志。
         if (this.httpDataProcessor != null) {
@@ -1586,8 +1730,8 @@ public class HttpInterface {
             requestBuilder.headers( Headers.of( headers ) );
         }
         FormBody.Builder formBodyBuilder = new FormBody.Builder();
+        //表单数据。
         if (formData != null) {
-            //表单数据。
             for (Map.Entry<String, String> param : formData.entrySet()) {
                 formBodyBuilder.add( param.getKey(), param.getValue() );
             }
@@ -1620,6 +1764,79 @@ public class HttpInterface {
         }
         return httpData;
     }
+
+
+    /**
+     * POST Form获得HttpData。
+     *
+     * @param url
+     * @param headers
+     * @param formData
+     * @param <D>
+     * @return
+     * @throws Exception
+     */
+    private <D extends HttpData> D postFormFileData(String url, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
+        //request过滤器。
+        if (this.httpDataProcessor != null) {
+            this.httpDataProcessor.requestProcess( null, formData, headers );
+        }
+        Request.Builder requestBuilder = new Request.Builder().url( url );
+        if (headers != null) {
+            requestBuilder.headers( Headers.of( headers ) );
+        }
+        MultipartBody.Builder formBodyBuilder = new MultipartBody.Builder().setType( MultipartBody.FORM );
+        // 添加表单数据
+        if (formData != null) {
+            for (Map.Entry<String, String> entry : formData.entrySet()) {
+                formBodyBuilder.addFormDataPart( entry.getKey(), entry.getValue() );
+            }
+        }
+        if (fileData != null) {
+            //添加文件数据，同时支持file和bytep[
+            for (Map.Entry<String, Object> entry : fileData.entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                if (value instanceof byte[]) {
+                    RequestBody body = RequestBody.create( (byte[]) value, MediaType.parse( "application/octet-stream" ) );
+                    formBodyBuilder.addFormDataPart( key, key, body );
+                } else if (value instanceof File) {
+                    RequestBody body = RequestBody.create( (File) value, MediaType.parse( "application/octet-stream" ) );
+                    formBodyBuilder.addFormDataPart( key, ((File) value).getName(), body );
+                } else {
+                    formBodyBuilder.addFormDataPart( key, value.toString() );
+                }
+            }
+        }
+        Request request = requestBuilder.post( formBodyBuilder.build() ).build();
+        D httpData = initHttpData();
+        httpData.setRequestDate( new Date() );
+        httpData.setRequestUrl( request.url().toString() );
+        httpData.setRequestMethod( request.method() );
+        httpData.setRequestHeader( request.headers().toString() );
+        if (HttpDataLogLevel.isRecordRequest( httpDataLogLevel ) && formData != null && formData.size() > 0) {
+            httpData.setRequestData( JsonInterfaceHelper.JSON_CONVERTER.toString( formData ) );
+            if (httpData.getRequestData() != null) {
+                httpData.setRequestSize( httpData.getRequestData().length() );
+            }
+        }
+        try (Response response = okHttpClient.newCall( request ).execute()) {
+            httpData.setResponseDate( new Date() );
+            httpData.setStatusCode( response.code() );
+            httpData.setResponseType( response.header( "Content-Type" ) );
+            httpData.setResponseBytes( response.body().bytes() );
+            if (httpData.getResponseBytes() != null) {
+                httpData.setResponseSize( httpData.getResponseBytes().length );
+            }
+            if (this.httpDataProcessor != null) {
+                this.httpDataProcessor.responseProcess( httpData, response.headers() );
+            }
+        } catch (IOException e) {
+            throw new TaskPartnerException( e.getMessage(), e );
+        }
+        return httpData;
+    }
+
 
     /**
      * POST RequestBody获得HttpData。

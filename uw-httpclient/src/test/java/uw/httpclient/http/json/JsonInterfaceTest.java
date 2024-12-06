@@ -72,6 +72,15 @@ public class JsonInterfaceTest {
     }
 
     @Test
+    public void testPostFormFile() throws Exception {
+        Map<String, String> loginParam = new HashMap<>();
+        loginParam.put( "username", "test" );
+        loginParam.put( "password", "test" );
+
+    }
+
+
+    @Test
     public void testGetImage() throws Exception {
         HttpData data = jsonHelper.getForData( "https://www.baidu.com/img/flexible/logo/pc/result.png" );
         System.out.println( data );

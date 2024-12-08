@@ -228,7 +228,7 @@ public class DaoSequenceFactory {
                 }
             }
         } catch (Throwable e) {
-            logger.error( "DaoSequenceFactory getNextBlockImpl exception! " + e.getMessage(), e );
+            logger.error( "DaoSequenceFactory getNextBlockImpl exception! {}", e.getMessage(), e );
         }
         return success;
     }
@@ -240,7 +240,7 @@ public class DaoSequenceFactory {
         try {
             dao.executeCommand( DaoConfigManager.getRouteMapping( "sys_seq", "write" ), INIT_SEQ, new Object[]{seqName, currentId, seqName, incrementNum} );
         } catch (Throwable e) {
-            logger.error( "DaoSequenceFactory initSeq exception! " + e.getMessage(), e );
+            logger.error( "DaoSequenceFactory initSeq exception! {}", e.getMessage(), e );
         }
     }
 
@@ -260,7 +260,7 @@ public class DaoSequenceFactory {
                 this.maxId = 0;
             }
         } catch (Throwable e) {
-            logger.error( "DaoSequenceFactory resetSeq exception! " + e.getMessage(), e );
+            logger.error( "DaoSequenceFactory resetSeq exception! {}", e.getMessage(), e );
         }
         return success;
     }

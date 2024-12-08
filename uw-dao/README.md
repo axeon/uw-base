@@ -190,7 +190,7 @@ public abstract<T> Optional<T> load(Class<T> cls,String tableName,Serializable i
  * 根据指定的映射类型，返回一个DataList列表。
  * @param connName 连接名，如设置为null，则根据sql语句或表名动态路由确定
  * @param cls 要映射的对象类型
- * @param selectsql 查询的SQL
+ * @param selectSql 查询的SQL
  * @param paramList 查询SQL的绑定参数
  * @param startIndex 开始位置，默认为0
  * @param resultNum 结果集大小，默认为0，获取全部数据
@@ -198,7 +198,7 @@ public abstract<T> Optional<T> load(Class<T> cls,String tableName,Serializable i
  * @return
  * @throws TransactionException
  */
-public abstract<T> DataList<T> list(String connName,Class<T> cls,String selectsql,Object[]paramList,
+public abstract<T> DataList<T> list(String connName,Class<T> cls,String selectSql,Object[]paramList,
         int startIndex,int resultNum,boolean autoCount)throws TransactionException;
 ```
 
@@ -279,7 +279,7 @@ ADD_EXT_PARAM(String paramCond, Object paramValue) 添加额外的参数对，pa
  * 返回一个DataSet数据列表。
  * 相比较DataList列表，这不是一个强类型列表，但是更加灵活。
  * @param connName 连接名，如设置为null，则根据sql语句或表名动态路由确定
- * @param selectsql 查询的SQL
+ * @param selectSql 查询的SQL
  * @param paramList 查询SQL的绑定参数
  * @param startIndex 开始位置，默认为0
  * @param resultNum 结果集大小，默认为0，获取全部数据
@@ -287,7 +287,7 @@ ADD_EXT_PARAM(String paramCond, Object paramValue) 添加额外的参数对，pa
  * @return
  * @throws TransactionException
  */
-public abstract DataSet queryForDataSet(String connName,String selectsql,Object[]paramList,int startIndex,
+public abstract DataSet queryForDataSet(String connName,String selectSql,Object[]paramList,int startIndex,
         int resultNum,boolean autoCount)throws TransactionException;
 ```
 
@@ -298,7 +298,7 @@ public abstract DataSet queryForDataSet(String connName,String selectsql,Object[
  * 查询单个基本数值列表（多行单个字段）。
  * @param connName 连接名，如设置为null，则根据sql语句或表名动态路由确定
  * @param cls 要映射的基础类型，如int.class,long.class,String.class,Date.class
- * @param selectsql 查询的SQL
+ * @param selectSql 查询的SQL
  * @param paramList 查询SQL的参数
  * @return
  * @throws TransactionException

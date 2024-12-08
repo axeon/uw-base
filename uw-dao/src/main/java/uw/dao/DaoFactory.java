@@ -580,47 +580,47 @@ public abstract class DaoFactory {
      * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
-     * @param selectsql  查询的SQL
+     * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
      * @return DataSet数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(String connName, String selectsql, int startIndex, int resultNum,
+    public abstract DataSet queryForDataSet(String connName, String selectSql, int startIndex, int resultNum,
                                             boolean autoCount) throws TransactionException;
 
     /**
      * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
-     * @param selectsql 查询的SQL
+     * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
      * @return DataSet数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(String connName, String selectsql, Object[] paramList)
+    public abstract DataSet queryForDataSet(String connName, String selectSql, Object[] paramList)
             throws TransactionException;
 
     /**
      * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
-     * @param selectsql  查询的SQL
+     * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @return DataSet数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(String connName, String selectsql, Object[] paramList, int startIndex,
+    public abstract DataSet queryForDataSet(String connName, String selectSql, Object[] paramList, int startIndex,
                                             int resultNum) throws TransactionException;
 
     /**
      * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
-     * @param selectsql  查询的SQL
+     * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
@@ -628,7 +628,7 @@ public abstract class DaoFactory {
      * @return DataSet数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(String connName, String selectsql, Object[] paramList, int startIndex,
+    public abstract DataSet queryForDataSet(String connName, String selectSql, Object[] paramList, int startIndex,
                                             int resultNum, boolean autoCount) throws TransactionException;
 
     /**
@@ -708,23 +708,23 @@ public abstract class DaoFactory {
      *
      * @param entityCls 要映射的对象类型
      * @param <T>       映射的类型
-     * @param selectsql 查询的SQL
+     * @param selectSql 查询的SQL
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleObject(Class<T> entityCls, String selectsql) throws TransactionException;
+    public abstract <T> T queryForSingleObject(Class<T> entityCls, String selectSql) throws TransactionException;
 
     /**
      * 查询单个对象（单行数据）。 使用sql中探测到的表名来决定连接名.
      *
      * @param entityCls 要映射的对象类型
      * @param <T>       映射的类型
-     * @param selectsql 查询的SQL
+     * @param selectSql 查询的SQL
      * @param paramList 查询SQL的参数
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleObject(Class<T> entityCls, String selectsql, Object[] paramList)
+    public abstract <T> T queryForSingleObject(Class<T> entityCls, String selectSql, Object[] paramList)
             throws TransactionException;
 
     /**
@@ -733,11 +733,11 @@ public abstract class DaoFactory {
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls 要映射的对象类型
      * @param <T>       映射的类型
-     * @param selectsql 查询的SQL
+     * @param selectSql 查询的SQL
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleObject(String connName, Class<T> entityCls, String selectsql)
+    public abstract <T> T queryForSingleObject(String connName, Class<T> entityCls, String selectSql)
             throws TransactionException;
 
     /**
@@ -746,12 +746,12 @@ public abstract class DaoFactory {
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls 要映射的对象类型
      * @param <T>       映射的类型
-     * @param selectsql 查询的SQL
+     * @param selectSql 查询的SQL
      * @param paramList 查询SQL的参数
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleObject(String connName, Class<T> entityCls, String selectsql, Object[] paramList)
+    public abstract <T> T queryForSingleObject(String connName, Class<T> entityCls, String selectSql, Object[] paramList)
             throws TransactionException;
 
     /**

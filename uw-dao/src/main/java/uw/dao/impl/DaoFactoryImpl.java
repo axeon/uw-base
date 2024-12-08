@@ -713,7 +713,7 @@ public class DaoFactoryImpl extends DaoFactory {
     /**
      * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
      *
-     * @param selectsql  查询的SQL
+     * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
@@ -721,14 +721,14 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String selectsql, Object[] paramList, int startIndex, int resultNum) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, null, selectsql, paramList, startIndex, resultNum, false);
+    public DataSet queryForDataSet(String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException {
+        return SQLCommandImpl.selectForDataSet(this, null, selectSql, paramList, startIndex, resultNum, false);
     }
 
     /**
      * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
      *
-     * @param selectsql  查询的SQL
+     * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
@@ -737,36 +737,36 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String selectsql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, null, selectsql, paramList, startIndex, resultNum, autoCount);
+    public DataSet queryForDataSet(String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+        return SQLCommandImpl.selectForDataSet(this, null, selectSql, paramList, startIndex, resultNum, autoCount);
     }
 
     /**
      * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName  连接名，当设置为null时候，根据sql语句或表名确定
-     * @param selectsql 查询的SQL
+     * @param selectSql 查询的SQL
      * @return DataSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String connName, String selectsql) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, connName, selectsql, null, 0, 0, false);
+    public DataSet queryForDataSet(String connName, String selectSql) throws TransactionException {
+        return SQLCommandImpl.selectForDataSet(this, connName, selectSql, null, 0, 0, false);
     }
 
     /**
      * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
-     * @param selectsql  查询的SQL
+     * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @return DataSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String connName, String selectsql, int startIndex, int resultNum) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, connName, selectsql, null, startIndex, resultNum, false);
+    public DataSet queryForDataSet(String connName, String selectSql, int startIndex, int resultNum) throws TransactionException {
+        return SQLCommandImpl.selectForDataSet(this, connName, selectSql, null, startIndex, resultNum, false);
 
     }
 
@@ -774,7 +774,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
-     * @param selectsql  查询的SQL
+     * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
@@ -782,29 +782,29 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String connName, String selectsql, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, connName, selectsql, null, startIndex, resultNum, autoCount);
+    public DataSet queryForDataSet(String connName, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+        return SQLCommandImpl.selectForDataSet(this, connName, selectSql, null, startIndex, resultNum, autoCount);
     }
 
     /**
      * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
-     * @param selectsql 查询的SQL
+     * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
      * @return DataSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String connName, String selectsql, Object[] paramList) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, connName, selectsql, paramList, 0, 0, false);
+    public DataSet queryForDataSet(String connName, String selectSql, Object[] paramList) throws TransactionException {
+        return SQLCommandImpl.selectForDataSet(this, connName, selectSql, paramList, 0, 0, false);
     }
 
     /**
      * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
-     * @param selectsql  查询的SQL
+     * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
@@ -812,8 +812,8 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String connName, String selectsql, Object[] paramList, int startIndex, int resultNum) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, connName, selectsql, paramList, startIndex, resultNum, false);
+    public DataSet queryForDataSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException {
+        return SQLCommandImpl.selectForDataSet(this, connName, selectSql, paramList, startIndex, resultNum, false);
 
     }
 
@@ -821,7 +821,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
-     * @param selectsql  查询的SQL
+     * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
@@ -830,8 +830,8 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String connName, String selectsql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, connName, selectsql, paramList, startIndex, resultNum, autoCount);
+    public DataSet queryForDataSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+        return SQLCommandImpl.selectForDataSet(this, connName, selectSql, paramList, startIndex, resultNum, autoCount);
     }
 
     /**
@@ -927,13 +927,13 @@ public class DaoFactoryImpl extends DaoFactory {
      *
      * @param entityCls 要映射的对象类型
      * @param <T>       映射的类型
-     * @param selectsql 查询的SQL
+     * @param selectSql 查询的SQL
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleObject(Class<T> entityCls, String selectsql) throws TransactionException {
-        return EntityCommandImpl.listSingle(this, null, entityCls, selectsql, null);
+    public <T> T queryForSingleObject(Class<T> entityCls, String selectSql) throws TransactionException {
+        return EntityCommandImpl.listSingle(this, null, entityCls, selectSql, null);
     }
 
     /**
@@ -941,14 +941,14 @@ public class DaoFactoryImpl extends DaoFactory {
      *
      * @param entityCls 要映射的对象类型
      * @param <T>       映射的类型
-     * @param selectsql 查询的SQL
+     * @param selectSql 查询的SQL
      * @param paramList 查询SQL的参数
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleObject(Class<T> entityCls, String selectsql, Object[] paramList) throws TransactionException {
-        return EntityCommandImpl.listSingle(this, null, entityCls, selectsql, paramList);
+    public <T> T queryForSingleObject(Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException {
+        return EntityCommandImpl.listSingle(this, null, entityCls, selectSql, paramList);
     }
 
     /**
@@ -957,13 +957,13 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls 要映射的对象类型
      * @param <T>       映射的类型
-     * @param selectsql 查询的SQL
+     * @param selectSql 查询的SQL
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleObject(String connName, Class<T> entityCls, String selectsql) throws TransactionException {
-        return EntityCommandImpl.listSingle(this, connName, entityCls, selectsql, null);
+    public <T> T queryForSingleObject(String connName, Class<T> entityCls, String selectSql) throws TransactionException {
+        return EntityCommandImpl.listSingle(this, connName, entityCls, selectSql, null);
     }
 
     /**
@@ -972,14 +972,14 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls 要映射的对象类型
      * @param <T>       映射的类型
-     * @param selectsql 查询的SQL
+     * @param selectSql 查询的SQL
      * @param paramList 查询SQL的参数
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleObject(String connName, Class<T> entityCls, String selectsql, Object[] paramList) throws TransactionException {
-        return EntityCommandImpl.listSingle(this, connName, entityCls, selectsql, paramList);
+    public <T> T queryForSingleObject(String connName, Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException {
+        return EntityCommandImpl.listSingle(this, connName, entityCls, selectSql, paramList);
     }
 
     /**

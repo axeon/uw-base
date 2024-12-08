@@ -72,13 +72,7 @@ public class StatsLogWriteTask implements Runnable {
                 }
                 pstmt.setString(1, ss.getConnName());
                 pstmt.setInt(2, ss.getConnId());
-//                if (ss.getSql() != null && ss.getSql().length() > 1000) {
-//                    ss.setSql(ss.getSql().substring(0, 1000));
-//                }
                 pstmt.setString(3, ss.getSql());
-//                if (ss.getParam() != null && ss.getParam().length() > 1000) {
-//                    ss.setParam(ss.getParam().substring(0, 1000));
-//                }
                 pstmt.setString(4, Arrays.toString(ss.getParamList()));
                 pstmt.setInt(5, ss.getRowNum());
                 pstmt.setInt(6, (int) ss.getConnTime());
@@ -90,7 +84,7 @@ public class StatsLogWriteTask implements Runnable {
                 pstmt.setString(9, ss.getException());
                 pstmt.setTimestamp(10, DaoValueUtils.dateToTimestamp(ss.getActionDate()));
                 pstmt.addBatch();
-                if ((pos + 1) % 100 == 0 && pos > 0) {
+                if ((pos + 1) % 100 == 0) {
                     // 每隔100次自动提交
                     pstmt.executeBatch();
                 }

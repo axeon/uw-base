@@ -254,8 +254,8 @@ public class SQLCommandImpl {
 
         //自动count
         if (autoCount) {
-            String countsql = "select count(1) from (" + selectSql + ") must_alias";
-            allsize = SQLCommandImpl.selectForSingleValue(dao, connName, Integer.class, countsql, paramList);
+            String countSql = "select count(1) from (" + selectSql + ") must_alias";
+            allsize = SQLCommandImpl.selectForSingleValue(dao, connName, Integer.class, countSql, paramList);
         }
         //原始参数长度
         int originParamSize = paramList.length;
@@ -274,7 +274,6 @@ public class SQLCommandImpl {
         try {
             con = dao.getTransactionController().getConnection(connName);
             connId = con.hashCode();
-
             pstmt = con.prepareStatement(selectSql);
             int seq = 0;
             if (paramList != null) {

@@ -58,8 +58,8 @@ public class StatsCleanDataTask implements Runnable {
     @Override
     public void run() {
         logger.info("StatsInfo Clean Task is run start!");
-        HashSet<String> tset = getCurrentTableSet();
-        ArrayList<String> list = new ArrayList<String>(tset);
+        HashSet<String> tableSet = getCurrentTableSet();
+        ArrayList<String> list = new ArrayList<String>(tableSet);
         // 自然顺序排序
         Collections.sort(list);
         // 保留100天数据，假设
@@ -72,7 +72,7 @@ public class StatsCleanDataTask implements Runnable {
         for (int i = start; i < list.size(); i++) {
             try {
                 dao.executeCommand("DROP TABLE IF EXISTS " + list.get(i));
-                logger.info("删除数据表" + list.get(i));
+                logger.info( "删除数据表[{}].", list.get( i ) );
             } catch (TransactionException e) {
                 logger.error(e.getMessage());
             }

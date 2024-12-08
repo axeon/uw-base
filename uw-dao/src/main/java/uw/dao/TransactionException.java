@@ -8,11 +8,6 @@ package uw.dao;
 public class TransactionException extends Exception {
 
     /**
-     * <code>serialVersionUID</code> 的注释.
-     */
-    private static final long serialVersionUID = 8713460933603499992L;
-
-    /**
      * 构造函数.
      */
     public TransactionException() {

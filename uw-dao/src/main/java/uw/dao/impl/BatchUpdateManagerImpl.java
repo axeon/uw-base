@@ -55,7 +55,7 @@ public class BatchUpdateManagerImpl implements BatchUpdateManager {
     /**
      * dao实例。
      */
-    private DaoFactoryImpl dao;
+    private final DaoFactoryImpl dao;
 
     /**
      * 默认构造器,只能在本包内调用.
@@ -116,9 +116,9 @@ public class BatchUpdateManagerImpl implements BatchUpdateManager {
     public void startBatchUpdate() {
         this.isBatch = true;
         // 初始化map
-        pstmtMap = new LinkedHashMap();
-        sizeMap = new LinkedHashMap();
-        resultMap = new LinkedHashMap();
+        pstmtMap = new LinkedHashMap<>();
+        sizeMap = new LinkedHashMap<>();
+        resultMap = new LinkedHashMap<>();
     }
 
     /**
@@ -242,10 +242,10 @@ public class BatchUpdateManagerImpl implements BatchUpdateManager {
      */
     @Override
     public List<String> getBatchList() {
-        ArrayList<String> sqllist = new ArrayList<String>(sizeMap.size());
+        ArrayList<String> sqlList = new ArrayList<String>(sizeMap.size());
         // 获得相关sql和pstmt
-        sqllist.addAll(sizeMap.keySet());
-        return sqllist;
+        sqlList.addAll(sizeMap.keySet());
+        return sqlList;
     }
 
     /**

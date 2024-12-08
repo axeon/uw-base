@@ -21,7 +21,7 @@
         <uw-common.version>1.0.20</uw-common.version>
         <uw-auth-client.version>6.0.20</uw-auth-client.version>
         <uw-auth-service.version>6.0.127</uw-auth-service.version>
-        <uw-dao.version>5.1.37</uw-dao.version>
+        <uw-dao.version>5.1.38</uw-dao.version>
         <uw-httpclient.version>2.1.115</uw-httpclient.version>
         <uw-logback-es.version>3.0.58</uw-logback-es.version>
         <uw-log-es.version>3.0.56</uw-log-es.version>

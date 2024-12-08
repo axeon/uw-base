@@ -83,16 +83,20 @@ public class FusionSequenceFactory {
     public static long getCurrentId(String seqName) {
         for (int tryCount = 0; tryCount < MAX_RETRY_TIMES; tryCount++) {
             try {
-                long seqId = KV_OP.get( REDIS_SEQ + seqName);
-                return seqId;
+                Long seqId = KV_OP.get( REDIS_SEQ + seqName );
+                if (seqId == null) {
+                    return 0L;
+                } else {
+                    return seqId;
+                }
             } catch (Throwable e) {
                 log.error( e.getMessage(), e );
             }
-            log.warn( "WARNING: FusionSequence[{}] failed to obtain getCurrentId[{}]. Trying {} times ...", seqName, tryCount );
+            log.warn( "WARNING: FusionSequence[{}] failed to obtain getCurrentId. Trying {} times ...", seqName, tryCount );
             //休眠100ms，防止过多的无效冲击。
             try {
                 Thread.sleep( 100 );
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ignored) {
             }
         }
         throw new RuntimeException( "FusionSequence[" + seqName + "] failed to obtain getCurrentId!!!" );
@@ -129,11 +133,11 @@ public class FusionSequenceFactory {
             } catch (Throwable e) {
                 log.error( e.getMessage(), e );
             }
-            log.warn( "WARNING: FusionSequence[{}] failed to obtain getSequenceId[{}]. Trying {} times ...", seqName, tryCount );
+            log.warn( "WARNING: FusionSequence[{}] failed to obtain getSequenceId. Trying {} times ...", seqName, tryCount );
             //休眠100ms，防止过多的无效冲击。
             try {
                 Thread.sleep( 100 );
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ignored) {
             }
         }
         throw new RuntimeException( "FusionSequence[" + seqName + "] failed to obtain getSequenceId!!!" );

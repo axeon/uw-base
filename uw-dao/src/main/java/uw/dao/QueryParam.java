@@ -63,22 +63,40 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
         this.SELECT_SQL = SELECT_SQL;
     }
 
+    /**
+     * 获取like参数的最小长度。
+     * @return
+     */
     @JsonIgnore
     public int LIKE_QUERY_PARAM_MIN_LEN() {
         return LIKE_QUERY_PARAM_MIN_LEN;
     }
 
+    /**
+     * 设置like参数的最小长度。
+     * @param LIKE_QUERY_PARAM_MIN_LEN
+     * @return
+     */
     @JsonIgnore
     public P LIKE_QUERY_PARAM_MIN_LEN(int LIKE_QUERY_PARAM_MIN_LEN) {
         this.LIKE_QUERY_PARAM_MIN_LEN = LIKE_QUERY_PARAM_MIN_LEN;
         return (P) this;
     }
 
+    /**
+     * 是否开启like查询。
+     * @return
+     */
     @JsonIgnore
     public boolean LIKE_QUERY_ENABLE() {
         return LIKE_QUERY_ENABLE;
     }
 
+    /**
+     * 设置是否开启like查询。
+     * @param LIKE_QUERY_ENABLE
+     * @return
+     */
     @JsonIgnore
     public P LIKE_QUERY_ENABLE(boolean LIKE_QUERY_ENABLE) {
         this.LIKE_QUERY_ENABLE = LIKE_QUERY_ENABLE;

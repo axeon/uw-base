@@ -121,6 +121,10 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
         return " order by " + this.SORT_NAME + " " + (SORT_TYPE == SORT_ASC ? "asc" : "desc");
     }
 
+    /**
+     * 当前页码。
+     * @return
+     */
     public int PAGE() {
         if (PAGE < 1) {
             PAGE = 1;
@@ -128,6 +132,11 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
         return PAGE;
     }
 
+    /**
+     * 设置当前页码。
+     * @param PAGE
+     * @return
+     */
     public PageQueryParam PAGE(int PAGE) {
         if (PAGE < 1) {
             PAGE = 1;
@@ -137,10 +146,18 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
 
     }
 
+    /**
+     * 设置当前页码。
+     * @param page
+     */
     public void set$pg(int page) {
         PAGE( page );
     }
 
+    /**
+     * 每页条数。
+     * @return
+     */
     public int RESULT_NUM() {
         if (RESULT_NUM > 10000) {
             RESULT_NUM = 10000;
@@ -150,6 +167,11 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
         return RESULT_NUM;
     }
 
+    /**
+     * 设置每页条数。
+     * @param RESULT_NUM
+     * @return
+     */
     public PageQueryParam RESULT_NUM(int RESULT_NUM) {
         if (RESULT_NUM > 10000) {
             RESULT_NUM = 10000;
@@ -160,10 +182,18 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
         return this;
     }
 
+    /**
+     * 设置每页条数。
+     * @param resultNum
+     */
     public void set$rn(int resultNum) {
         RESULT_NUM( resultNum );
     }
 
+    /**
+     * 起始位置，此数值和分页数2选一。
+     * @return
+     */
     public int START_INDEX() {
         if (START_INDEX < 0) {
             START_INDEX = 0;
@@ -175,6 +205,11 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
         return START_INDEX;
     }
 
+    /**
+     * 设置起始位置，此数值和分页数2选一。
+     * @param START_INDEX
+     * @return
+     */
     public PageQueryParam START_INDEX(int START_INDEX) {
         if (START_INDEX < 0) {
             START_INDEX = 0;
@@ -187,49 +222,91 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
         return this;
     }
 
+    /**
+     * 设置起始位置，此数值和分页数2选一。
+     * @param startIndex
+     */
     public void set$si(int startIndex) {
         START_INDEX( startIndex );
     }
 
+    /**
+     * 请求类型。
+     * @return
+     */
     public int REQUEST_TYPE() {
         return REQUEST_TYPE;
     }
 
+    /**
+     * 设置请求类型。
+     * @param REQUEST_TYPE
+     * @return
+     */
     public PageQueryParam REQUEST_TYPE(int REQUEST_TYPE) {
         this.REQUEST_TYPE = REQUEST_TYPE;
         return this;
 
     }
 
+    /**
+     * 设置请求类型。
+     * @param requestType
+     */
     public void set$rt(int requestType) {
         this.REQUEST_TYPE = requestType;
     }
 
-
+    /**
+     * 排序名称。
+     * @return
+     */
     public String SORT_NAME() {
         return SORT_NAME;
     }
 
+    /**
+     * 设置排序名称。
+     * @param SORT_NAME
+     * @return
+     */
     public PageQueryParam SORT_NAME(String SORT_NAME) {
         this.SORT_NAME = SORT_NAME;
         return this;
 
     }
 
+    /**
+     * 设置排序名称。
+     * @param sortName
+     */
     public void set$sn(String sortName) {
         this.SORT_NAME = sortName;
     }
 
+    /**
+     * 排序类型。
+     * @return
+     */
     public int SORT_TYPE() {
         return SORT_TYPE;
     }
 
+    /**
+     * 设置排序类型。
+     * @param SORT_TYPE
+     * @return
+     */
     public PageQueryParam SORT_TYPE(int SORT_TYPE) {
         this.SORT_TYPE = SORT_TYPE;
         return this;
 
     }
 
+    /**
+     * 设置排序类型。
+     * @param sortType
+     */
     public void set$st(int sortType) {
         this.SORT_TYPE = sortType;
     }

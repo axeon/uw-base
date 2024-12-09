@@ -6,6 +6,7 @@ import uw.dao.vo.QueryParamResult;
 
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -18,7 +19,7 @@ public class QueryMetaTest {
     public static void main(String[] args) throws TransactionException {
         QueryParamA a = new QueryParamA();
         a.id = 1L;
-        a.name = URLEncoder.encode( "JTR" );
+        a.name = URLEncoder.encode( "JTR" , StandardCharsets.UTF_8);
         a.stateGte = 1;
         a.date = Arrays.asList( new Date[]{new Date(1), new Date()} );
         a.ADD_EXT_PARAM( "create_date>?" ,new Date());

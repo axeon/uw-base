@@ -118,7 +118,7 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
         if (SORT_TYPE == SORT_NONE || StringUtils.isBlank( SORT_NAME )) {
             return StringUtils.EMPTY;
         }
-        return new StringBuilder( 100 ).append( " order by " ).append( this.SORT_NAME ).append( " " ).append( SORT_TYPE == SORT_ASC ? "asc" : "desc" ).toString();
+        return " order by " + this.SORT_NAME + " " + (SORT_TYPE == SORT_ASC ? "asc" : "desc");
     }
 
     public int PAGE() {

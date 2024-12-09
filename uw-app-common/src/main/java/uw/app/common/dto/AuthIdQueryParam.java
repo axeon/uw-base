@@ -12,7 +12,7 @@ import uw.dao.annotation.QueryMeta;
  * 自带了saasId, mchId, userId, userType属性。
  * 使用assign方法来对以上参数进行赋值。
  */
-public class AuthIdQueryParam extends QueryParam {
+public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
 
     /**
      * id。
@@ -75,7 +75,7 @@ public class AuthIdQueryParam extends QueryParam {
      */
     public AuthIdQueryParam bindUserId() {
         AuthTokenData tokenData = getAuthToken();
-        setUserId( tokenData.getUserId() );
+        setUserId(tokenData.getUserId());
         return this;
     }
 
@@ -84,7 +84,7 @@ public class AuthIdQueryParam extends QueryParam {
      */
     public AuthIdQueryParam bindMchId() {
         AuthTokenData tokenData = getAuthToken();
-        setMchId( tokenData.getMchId() );
+        setMchId(tokenData.getMchId());
         return this;
     }
 
@@ -93,65 +93,143 @@ public class AuthIdQueryParam extends QueryParam {
      */
     public AuthIdQueryParam bindUserType() {
         AuthTokenData tokenData = getAuthToken();
-        setUserType( tokenData.getUserType() );
+        setUserType(tokenData.getUserType());
         return this;
     }
 
+    /**
+     * 获得id。
+     *
+     * @return
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * 设置id。
+     *
+     * @param id
+     */
     public void setId(Long id) {
         this.id = id;
     }
 
+    /**
+     * 设置id。
+     *
+     * @param id
+     * @return
+     */
+    public AuthIdQueryParam id(Long id) {
+        this.id = id;
+        return this;
+    }
+
+    /**
+     * 获取saasId。
+     *
+     * @return
+     */
     public Long getSaasId() {
         return saasId;
     }
 
+    /**
+     * 设置saasId。
+     *
+     * @param saasId
+     */
     public void setSaasId(Long saasId) {
         this.saasId = saasId;
     }
 
+    /**
+     * 设置saasId。
+     *
+     * @param saasId
+     * @return
+     */
     public AuthIdQueryParam saasId(Long saasId) {
         this.saasId = saasId;
         return this;
     }
 
+    /**
+     * 获取商户id。
+     *
+     * @return
+     */
     public Long getMchId() {
         return mchId;
     }
 
+    /**
+     * 设置商户id。
+     *
+     * @param mchId
+     */
     public void setMchId(Long mchId) {
         this.mchId = mchId;
     }
 
+    /**
+     * 设置商户id。
+     * @param mchId
+     * @return
+     */
     public AuthIdQueryParam mchId(Long mchId) {
         this.mchId = mchId;
         return this;
     }
 
+    /**
+     * 获取用户id。
+     * @return
+     */
     public Long getUserId() {
         return userId;
     }
 
+    /**
+     * 设置用户id。
+     * @param userId
+     */
     public void setUserId(Long userId) {
         this.userId = userId;
     }
 
+    /**
+     * 设置用户id。
+     * @param userId
+     * @return
+     */
     public AuthIdQueryParam userId(Long userId) {
         this.userId = userId;
         return this;
     }
 
+    /**
+     * 获取用户类型。
+     * @return
+     */
     public Integer getUserType() {
         return userType;
     }
 
+    /**
+     * 设置用户类型。
+     * @param userType
+     */
     public void setUserType(Integer userType) {
         this.userType = userType;
     }
 
+    /**
+     * 设置用户类型。
+     * @param userType
+     * @return
+     */
     public AuthIdQueryParam userType(Integer userType) {
         this.userType = userType;
         return this;
@@ -163,7 +241,7 @@ public class AuthIdQueryParam extends QueryParam {
     private AuthIdQueryParam bindSaasId() {
         AuthTokenData tokenData = getAuthToken();
         if (tokenData.getUserType() < UserType.RPC.getValue() || tokenData.getUserType() > UserType.ADMIN.getValue()) {
-            setSaasId( tokenData.getSaasId() );
+            setSaasId(tokenData.getSaasId());
         }
         return this;
     }
@@ -176,7 +254,7 @@ public class AuthIdQueryParam extends QueryParam {
     private AuthTokenData getAuthToken() {
         AuthTokenData authToken = AuthServiceHelper.getContextToken();
         if (authToken == null) {
-            throw new UnsupportedOperationException( "AuthServiceHelper must be run in auth-service web environment!" );
+            throw new UnsupportedOperationException("AuthServiceHelper must be run in auth-service web environment!");
         }
         return authToken;
     }

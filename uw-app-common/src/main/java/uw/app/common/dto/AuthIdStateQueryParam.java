@@ -11,7 +11,7 @@ import uw.dao.annotation.QueryMeta;
  * 自带验证信息的查询参数类。
  * 自带了saasId, mchId, userId, userType属性。
  */
-public class AuthIdStateQueryParam extends QueryParam {
+public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
 
     /**
      * id匹配。
@@ -62,6 +62,7 @@ public class AuthIdStateQueryParam extends QueryParam {
 
     /**
      * 指定saasId,id,state的构造器。
+     *
      * @param saasId
      * @param id
      * @param state
@@ -74,6 +75,7 @@ public class AuthIdStateQueryParam extends QueryParam {
 
     /**
      * 指定saasId,id,states的构造器。
+     *
      * @param saasId
      * @param id
      * @param states
@@ -87,6 +89,7 @@ public class AuthIdStateQueryParam extends QueryParam {
     /**
      * 指定id,state的构造器。
      * 如果不在web环境下运行，将会抛错。
+     *
      * @param id
      * @param state
      */
@@ -99,6 +102,7 @@ public class AuthIdStateQueryParam extends QueryParam {
     /**
      * 指定id,states的构造器。
      * 如果不在web环境下运行，将会抛错。
+     *
      * @param id
      * @param states
      */
@@ -135,78 +139,197 @@ public class AuthIdStateQueryParam extends QueryParam {
         return this;
     }
 
-
+    /**
+     * 获取id。
+     *
+     * @return
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * 设置id。
+     *
+     * @param id
+     */
     public void setId(Long id) {
         this.id = id;
     }
 
+    /**
+     * 设置id。
+     *
+     * @param id
+     * @return
+     */
+    public AuthIdStateQueryParam id(Long id) {
+        this.id = id;
+        return this;
+    }
+
+    /**
+     * 获取状态。
+     *
+     * @return
+     */
     public Integer getState() {
         return state;
     }
 
+    /**
+     * 设置状态。
+     *
+     * @param state
+     */
     public void setState(Integer state) {
         this.state = state;
     }
 
+    /**
+     * 设置state。
+     *
+     * @param state
+     * @return
+     */
+    public AuthIdStateQueryParam state(Integer state) {
+        this.state = state;
+        return this;
+    }
+
+    /**
+     * 获取状态。
+     *
+     * @return
+     */
     public Integer[] getStates() {
         return states;
     }
 
+    /**
+     * 设置状态。
+     *
+     * @param states
+     */
     public void setStates(Integer[] states) {
         this.states = states;
     }
 
+    /**
+     * 设置状态。
+     *
+     * @param states
+     */
+    public AuthIdStateQueryParam states(Integer[] states) {
+        this.states = states;
+        return this;
+    }
+
+
+    /**
+     * 获取saasId。
+     *
+     * @return
+     */
     public Long getSaasId() {
         return saasId;
     }
 
+    /**
+     * 设置saasId。
+     *
+     * @param saasId
+     */
     public void setSaasId(Long saasId) {
         this.saasId = saasId;
     }
 
+    /**
+     * 设置saasId。
+     *
+     * @param saasId
+     * @return
+     */
     public AuthIdStateQueryParam saasId(Long saasId) {
         this.saasId = saasId;
         return this;
     }
 
+    /**
+     * 获取商户id。
+     *
+     * @return
+     */
     public Long getMchId() {
         return mchId;
     }
 
+    /**
+     * 设置商户id。
+     *
+     * @param mchId
+     */
     public void setMchId(Long mchId) {
         this.mchId = mchId;
     }
 
+    /**
+     * 设置商户id。
+     * @param mchId
+     * @return
+     */
     public AuthIdStateQueryParam mchId(Long mchId) {
         this.mchId = mchId;
         return this;
     }
 
+    /**
+     * 获取用户id。
+     * @return
+     */
     public Long getUserId() {
         return userId;
     }
 
+    /**
+     * 设置用户id。
+     * @param userId
+     */
     public void setUserId(Long userId) {
         this.userId = userId;
     }
 
+    /**
+     * 设置用户id。
+     * @param userId
+     * @return
+     */
     public AuthIdStateQueryParam userId(Long userId) {
         this.userId = userId;
         return this;
     }
 
+    /**
+     * 获取用户类型。
+     * @return
+     */
     public Integer getUserType() {
         return userType;
     }
 
+    /**
+     * 设置用户类型。
+     * @param userType
+     */
     public void setUserType(Integer userType) {
         this.userType = userType;
     }
 
+    /**
+     * 设置用户类型。
+     * @param userType
+     * @return
+     */
     public AuthIdStateQueryParam userType(Integer userType) {
         this.userType = userType;
         return this;

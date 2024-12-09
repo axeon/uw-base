@@ -12,7 +12,7 @@ import uw.dao.annotation.QueryMeta;
  * 自带了saasId, mchId, userId, userType属性。
  */
 @Schema(title = "带验证的查询参数", description = "带验证的查询参数")
-public class AuthQueryParam extends QueryParam {
+public class AuthQueryParam extends QueryParam<AuthQueryParam> {
 
     /**
      * saasId。
@@ -87,53 +87,105 @@ public class AuthQueryParam extends QueryParam {
         return this;
     }
 
+    /**
+     * 获得saasId。
+     * @return
+     */
     public Long getSaasId() {
         return saasId;
     }
 
+    /**
+     * 设置saasId。
+     * @param saasId
+     */
     public void setSaasId(Long saasId) {
         this.saasId = saasId;
     }
 
+    /**
+     *  设置saasId。
+     * @param saasId
+     * @return
+     */
     public AuthQueryParam saasId(Long saasId) {
         this.saasId = saasId;
         return this;
     }
 
+    /**
+     * 获得mchId。
+     * @return
+     */
     public Long getMchId() {
         return mchId;
     }
 
+    /**
+     * 设置mchId。
+     * @param mchId
+     */
     public void setMchId(Long mchId) {
         this.mchId = mchId;
     }
 
+    /**
+     * 设置mchId。
+     * @param mchId
+     * @return
+     */
     public AuthQueryParam mchId(Long mchId) {
         this.mchId = mchId;
         return this;
     }
 
+    /**
+     * 获得userId。
+     * @return
+     */
     public Long getUserId() {
         return userId;
     }
 
+    /**
+     * 设置userId。
+     * @param userId
+     */
     public void setUserId(Long userId) {
         this.userId = userId;
     }
 
+    /**
+     * 设置userId。
+     * @param userId
+     * @return
+     */
     public AuthQueryParam userId(Long userId) {
         this.userId = userId;
         return this;
     }
 
+    /**
+     * 获得userType。
+     * @return
+     */
     public Integer getUserType() {
         return userType;
     }
 
+    /**
+     * 设置userType。
+     * @param userType
+     */
     public void setUserType(Integer userType) {
         this.userType = userType;
     }
 
+    /**
+     * 设置userType。
+     * @param userType
+     * @return
+     */
     public AuthQueryParam userType(Integer userType) {
         this.userType = userType;
         return this;

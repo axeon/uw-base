@@ -35,7 +35,7 @@ public class RSAUtils {
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec( buffer );
             return (RSAPublicKey) keyFactory.generatePublic( keySpec );
         } catch (Throwable e) {
-            log.error( "loadPublicKeyFromBytes error!", e );
+            log.error( "RSAUtils loadPublicKeyFromBytes error! {}", e.toString() );
         }
         return null;
     }
@@ -52,7 +52,7 @@ public class RSAUtils {
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec( buffer );
             return (RSAPrivateKey) keyFactory.generatePrivate( keySpec );
         } catch (Throwable e) {
-            log.error( "loadPrivateKeyFromBytes error!", e );
+            log.error( "RSAUtils loadPrivateKeyFromBytes error! {}", e.toString() );
         }
         return null;
     }
@@ -122,7 +122,7 @@ public class RSAUtils {
             out.close();
             return encryptedData;
         } catch (Throwable e) {
-            log.error( "encrypt error!", e );
+            log.error( "RSAUtils encrypt error! {}", e.toString() );
         }
         return null;
     }
@@ -162,7 +162,7 @@ public class RSAUtils {
             out.close();
             return encryptedData;
         } catch (Throwable e) {
-            log.error( "encrypt error!", e );
+            log.error( "RSAUtils encrypt error! {}", e.toString() );
         }
         return null;
     }
@@ -203,7 +203,7 @@ public class RSAUtils {
             out.close();
             return decryptedData;
         } catch (Throwable e) {
-            log.error( "decrypt error!", e );
+            log.error( "RSAUtils decrypt error! {}", e.toString() );
         }
         return null;
     }
@@ -243,7 +243,7 @@ public class RSAUtils {
             out.close();
             return decryptedData;
         } catch (Throwable e) {
-            log.error( "decrypt error!", e );
+            log.error( "RSAUtils decrypt error! {}", e.toString() );
         }
         return null;
     }
@@ -262,7 +262,7 @@ public class RSAUtils {
             signature.update( content );
             return signature.sign();
         } catch (Throwable e) {
-            log.error( "sign error!", e );
+            log.error( "RSAUtils sign error! {}", e.toString() );
         }
         return null;
     }
@@ -282,7 +282,7 @@ public class RSAUtils {
             signature.update( content );
             return signature.verify( sign );
         } catch (Throwable e) {
-            log.error( "checkSign error!", e );
+            log.error( "RSAUtils checkSign error! {}", e.toString() );
         }
         return false;
     }

@@ -126,7 +126,7 @@ public class TaskAutoConfiguration {
                 //主机报告任务
                 scheduledExecutorService.scheduleAtFixedRate( () -> serverConfig.reportHostInfo(), 20, 180, TimeUnit.SECONDS );
                 //选举任务
-                scheduledExecutorService.scheduleAtFixedRate( () -> taskGlobalLocker.checkLock(), 0, 60, TimeUnit.SECONDS );
+                scheduledExecutorService.scheduleAtFixedRate( () -> taskGlobalLocker.checkLeader(), 0, 60, TimeUnit.SECONDS );
             } else {
                 scheduledExecutorService = Executors.newScheduledThreadPool( 1, new ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "uw-task-service-%d" ).build() );
             }

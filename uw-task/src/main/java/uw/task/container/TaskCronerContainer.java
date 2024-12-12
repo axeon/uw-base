@@ -101,7 +101,7 @@ public class TaskCronerContainer {
     public boolean configureTask(TaskCroner taskCroner, TaskCronerConfig taskCronerConfig) {
 
         if (taskCronerConfig == null) {
-            log.warn( "配置信息不存在，无法启动CRONER!" );
+            log.warn( "定时任务配置信息不存在，无法启动CRONER!" );
             return false;
         }
         if (this.taskProperties.getCronerThreadNum() < 1) {
@@ -112,16 +112,16 @@ public class TaskCronerContainer {
         stopTask( taskCronerConfig.getId() );
         // 标记删除的，直接返回了。
         if (taskCronerConfig.getState() < 1) {
-            log.warn( "任务状态不符，无法启动！ID:{}, CRONER:{}, CRON:{}.", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron() );
+            log.warn( "定时任务状态不符，无法启动！ID:{}, CRONER:{}, CRON:{}.", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron() );
             return false;
         }
         CronTrigger cronTrigger = new CronTrigger( taskCronerConfig.getTaskCron() );
 
         ScheduledFuture<?> future = this.taskScheduler.schedule( () -> {
             // 判断全局唯一条件
-            if (taskCronerConfig.getRunType() == TaskCronerConfig.RUN_TYPE_SINGLETON && !taskGlobalLocker.isLock()) {
+            if (taskCronerConfig.getRunType() == TaskCronerConfig.RUN_TYPE_SINGLETON && !taskGlobalLocker.isLeader()) {
                 if (log.isDebugEnabled()) {
-                    log.debug( "非许可运行实例，直接返回。。。" );
+                    log.debug( "定时任务全局单实例运行时非Leader身份，直接返回。。。" );
                 }
                 return;
             }
@@ -189,7 +189,7 @@ public class TaskCronerContainer {
                 if (nextExec != null) {
                     taskCronerLog.setNextDate( Date.from( nextExec ) );
                     if (log.isDebugEnabled()) {
-                        log.debug( "正在调度ID:[{}], CRONER:[{}], CRON:[{}], 下次执行时间:[{}].", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), cronTrigger.getExpression(),
+                        log.debug( "正在调度定时任务ID:[{}], CRONER:[{}], CRON:[{}], 下次执行时间:[{}].", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), cronTrigger.getExpression(),
                                 nextExec.toString() );
                     }
                 }

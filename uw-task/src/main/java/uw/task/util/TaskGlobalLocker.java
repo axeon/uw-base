@@ -59,7 +59,7 @@ public class TaskGlobalLocker {
      *
      * @return
      */
-    public boolean isLock() {
+    public boolean isLeader() {
         return flag;
     }
 
@@ -68,7 +68,7 @@ public class TaskGlobalLocker {
      *
      * @return the isLeader
      */
-    public boolean checkLock() {
+    public boolean checkLeader() {
         String data = stringRedisTemplate.opsForValue().get( lockerName );
         if (data == null) {
             // 使用set nx来抢leader身份

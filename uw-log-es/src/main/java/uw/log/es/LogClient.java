@@ -25,7 +25,7 @@ public class LogClient {
     /**
      * 内部的logService对象。
      */
-    private LogService logService;
+    private final LogService logService;
 
     /**
      * 包内构造器。

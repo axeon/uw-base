@@ -50,7 +50,7 @@ public class LogClientProperties {
         /**
          * Elasticsearch bulk api 地址
          */
-        private String esBulk = "/_bulk";
+        private String esBulk = "/_bulk?filter_path=took,errors";
 
         /**
          * 是否添加执行应用信息

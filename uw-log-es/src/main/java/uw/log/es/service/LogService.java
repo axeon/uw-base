@@ -40,7 +40,6 @@ public class LogService {
 
     private static final Logger log = LoggerFactory.getLogger( LogService.class );
 
-
     /**
      * 日志编码
      */
@@ -70,91 +69,74 @@ public class LogService {
      * 注册Mapping,<Class<?>,String>
      */
     private final Map<Class<?>, IndexConfigVo> regMap = new HashMap<>();
-
-    /**
-     * httpInterface
-     */
-    private HttpInterface httpInterface;
-
     /**
      * es集群地址
      */
     private final String esServer;
-
     /**
      * 用户名
      */
     private final String esUsername;
-
     /**
      * 用户密码
      */
     private final String esPassword;
-
-    /**
-     * 是否需要记录日志
-     */
-    private boolean logState;
-
-    /**
-     * 是否需要Http Basic验证头
-     */
-    private boolean needBasicAuth;
-
-    /**
-     * Elasticsearch bulk api 地址
-     */
-    private String esBulk;
-
-    /**
-     * 刷新Bucket时间毫秒数
-     */
-    private long maxFlushInMilliseconds;
-
-    /**
-     * 允许最大Bucket字节数
-     */
-    private long maxBytesOfBatch;
-
-    /**
-     * 最大批量线程数
-     */
-    private int maxBatchThreads;
-
-    /**
-     * 最大批量线程队列数
-     */
-    private int maxBatchQueueSize;
-
-    /**
-     * buffer
-     */
-    private okio.Buffer buffer = new okio.Buffer();
-
-    /**
-     * 后台线程
-     */
-    private ElasticsearchDaemonExporter daemonExporter;
-
-    /**
-     * 后台批量线程池。
-     */
-    private ThreadPoolExecutor batchExecutor;
-
     /**
      * 应用名称
      */
     private final String appName;
-
     /**
      * 应用主机信息
      */
     private final String appHost;
-
     /**
      * 是否添加执行应用信息
      */
     private final boolean appInfoOverwrite;
+    /**
+     * httpInterface
+     */
+    private HttpInterface httpInterface;
+    /**
+     * 是否需要记录日志
+     */
+    private boolean logState;
+    /**
+     * 是否需要Http Basic验证头
+     */
+    private boolean needBasicAuth;
+    /**
+     * Elasticsearch bulk api 地址
+     */
+    private String esBulk;
+    /**
+     * 刷新Bucket时间毫秒数
+     */
+    private long maxFlushInMilliseconds;
+    /**
+     * 允许最大Bucket字节数
+     */
+    private long maxBytesOfBatch;
+    /**
+     * 最大批量线程数
+     */
+    private int maxBatchThreads;
+    /**
+     * 最大批量线程队列数
+     */
+    private int maxBatchQueueSize;
+    /**
+     * buffer
+     */
+    private okio.Buffer buffer = new okio.Buffer();
+    /**
+     * 后台线程
+     */
+    private ElasticsearchDaemonExporter daemonExporter;
+    /**
+     * 后台批量线程池。
+     */
+    private ThreadPoolExecutor batchExecutor;
 
     /**
      * LogService.
@@ -176,16 +158,13 @@ public class LogService {
             return;
         }
         this.needBasicAuth = StringUtils.isNotBlank( esUsername ) && StringUtils.isNotBlank( esPassword );
-        this.httpInterface =
-                new JsonInterfaceHelper( HttpConfig.builder().retryOnConnectionFailure( true ).connectTimeout( logClientProperties.getEs().getConnectTimeout() ).readTimeout( logClientProperties.getEs().getReadTimeout() ).writeTimeout( logClientProperties.getEs().getWriteTimeout() ).build() );
+        this.httpInterface = new JsonInterfaceHelper( HttpConfig.builder().retryOnConnectionFailure( true ).connectTimeout( logClientProperties.getEs().getConnectTimeout() ).readTimeout( logClientProperties.getEs().getReadTimeout() ).writeTimeout( logClientProperties.getEs().getWriteTimeout() ).build() );
         this.esBulk = logClientProperties.getEs().getEsBulk();
-        this.maxFlushInMilliseconds = logClientProperties.getEs().getMaxFlushInSeconds()*1000L;
-        this.maxBytesOfBatch = logClientProperties.getEs().getMaxKiloBytesOfBatch()*1024L;
+        this.maxFlushInMilliseconds = logClientProperties.getEs().getMaxFlushInSeconds() * 1000L;
+        this.maxBytesOfBatch = logClientProperties.getEs().getMaxKiloBytesOfBatch() * 1024L;
         this.maxBatchThreads = logClientProperties.getEs().getMaxBatchThreads();
         this.maxBatchQueueSize = logClientProperties.getEs().getMaxBatchQueueSize();
-        /**
-         * 模式
-         */
+
         LogClientProperties.LogMode mode = logClientProperties.getEs().getMode();
 
         // 如果
@@ -215,8 +194,13 @@ public class LogService {
      */
     public void regLogObject(Class<?> logClass, String index, String indexPattern) {
         String rawIndex = index == null ? buildIndexName( logClass ) : index;
-        FastDateFormat dateFormat = indexPattern == null ? null : FastDateFormat.getInstance( indexPattern, (TimeZone) null );
-        IndexConfigVo indexConfigVo = new IndexConfigVo( rawIndex, rawIndex + "_*", dateFormat );
+        FastDateFormat dateFormat = null;
+        String queryName = rawIndex;
+        if (StringUtils.isNotBlank( indexPattern )) {
+            dateFormat = FastDateFormat.getInstance( indexPattern, (TimeZone) null );
+            queryName = queryName + "_*";
+        }
+        IndexConfigVo indexConfigVo = new IndexConfigVo( rawIndex, queryName, dateFormat );
         regMap.put( logClass, indexConfigVo );
     }
 
@@ -277,20 +261,21 @@ public class LogService {
         if (!logState) {
             return;
         }
-        String index = getIndex( source.getClass() );
+        long now = System.currentTimeMillis();
+        String index = getIndex( source.getClass(), now );
         if (StringUtils.isBlank( index )) {
             log.warn( "LogClass[{}] not registry!!!", source.getClass().getName() );
             return;
         }
         // 写上时间戳
-        source.setTimestamp( DATE_FORMAT.format( System.currentTimeMillis() ) );
+        source.setTimestamp( DATE_FORMAT.format( now ) );
         // 是否需要覆写
         if (appInfoOverwrite) {
             source.setAppInfo( appName );
             source.setAppHost( appHost );
         }
         okio.Buffer okb = new okio.Buffer();
-        okb.writeUtf8( "{\"index\":{\"_index\":\"" ).writeUtf8( index ).writeUtf8( "\"}}" );
+        okb.writeUtf8( "{\"create\":{\"_index\":\"" ).writeUtf8( index ).writeUtf8( "\"},\"_source\":false}" );
         okb.write( LINE_SEPARATOR_BYTES );
         try {
             JsonInterfaceHelper.JSON_CONVERTER.write( okb.outputStream(), source );
@@ -322,8 +307,11 @@ public class LogService {
         if (sourceList == null || sourceList.isEmpty()) {
             return;
         }
-        Class logClass = sourceList.get( 0 ).getClass();
-        String index = getIndex( logClass );
+
+        Class<? extends LogBaseVo> logClass = sourceList.getFirst().getClass();
+        long now = System.currentTimeMillis();
+        String index = getIndex( logClass, now );
+
         if (StringUtils.isBlank( index )) {
             log.warn( "LogClass[{}] not registry!!!", logClass.getName() );
             return;
@@ -331,7 +319,7 @@ public class LogService {
         okio.Buffer okb = new okio.Buffer();
         for (T source : sourceList) {
             // 写上时间戳
-            source.setTimestamp( DATE_FORMAT.format( System.currentTimeMillis() ) );
+            source.setTimestamp( DATE_FORMAT.format( now ) );
             // 是否需要覆写
             if (appInfoOverwrite) {
                 source.setAppInfo( appName );
@@ -379,8 +367,8 @@ public class LogService {
                 requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
             }
             HttpData httpData = httpInterface.requestForData( requestBuilder.post( BufferRequestBody.create( bufferData, MediaTypes.JSON_UTF8 ) ).build() );
-            if (httpData.getStatusCode()!=200){
-                log.warn( "LogClient batch process error! code:{}, response:{}", httpData.getStatusCode(), httpData.getResponseData() );
+            if (httpData.getStatusCode() != 200) {
+                log.warn( "LogClient ES Batch process error! code:{}, response:{}", httpData.getStatusCode(), httpData.getResponseData() );
             }
         } catch (Exception e) {
             log.error( e.getMessage(), e );
@@ -636,7 +624,7 @@ public class LogService {
      * @param logClass
      * @return
      */
-    private String getIndex(Class<?> logClass) {
+    private String getIndex(Class<?> logClass, long timestamp) {
         IndexConfigVo configVo = regMap.get( logClass );
         if (configVo == null) {
             return null;
@@ -645,7 +633,7 @@ public class LogService {
         if (indexPattern == null) {
             return configVo.getRawName();
         }
-        return configVo.getRawName() + '_' + indexPattern.format( System.currentTimeMillis() );
+        return configVo.getRawName() + '_' + indexPattern.format( timestamp );
     }
 
     /**
@@ -681,8 +669,9 @@ public class LogService {
         public void run() {
             while (isRunning) {
                 try {
-                    if (buffer.size() > maxBytesOfBatch || System.currentTimeMillis() > nextScanTime) {
-                        nextScanTime = System.currentTimeMillis() + maxFlushInMilliseconds;
+                    long now = System.currentTimeMillis();
+                    if (buffer.size() > maxBytesOfBatch || now > nextScanTime) {
+                        nextScanTime = now + maxFlushInMilliseconds;
                         batchExecutor.submit( new Runnable() {
                             @Override
                             public void run() {

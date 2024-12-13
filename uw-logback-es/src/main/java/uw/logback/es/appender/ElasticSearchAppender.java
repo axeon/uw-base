@@ -8,6 +8,7 @@ import okhttp3.Credentials;
 import okhttp3.Request;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
+import uw.httpclient.http.HttpConfig;
 import uw.httpclient.http.HttpData;
 import uw.httpclient.http.HttpInterface;
 import uw.httpclient.json.JsonInterfaceHelper;
@@ -38,18 +39,15 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
     /**
      * http操作接口。
      */
-    private static final HttpInterface httpInterface = new JsonInterfaceHelper();
-
+    private static final HttpInterface HTTP_INTERFACE = new JsonInterfaceHelper( HttpConfig.builder().retryOnConnectionFailure( true ).connectTimeout( 10_000L ).readTimeout( 10_000L ).writeTimeout( 10_000L ).build() );
+    /**
+     * 索引格式器
+     */
+    public static FastDateFormat INDEX_DATE_FORMAT;
     /**
      * 读写锁
      */
     private final Lock batchLock = new ReentrantLock();
-
-    /**
-     * 索引格式器
-     */
-    public FastDateFormat INDEX_DATE_FORMAT;
-
     /**
      * Elasticsearch Web API endpoint
      */
@@ -58,7 +56,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
     /**
      * Elasticsearch bulk api endpoint
      */
-    private String esBulk = "/_bulk";
+    private String esBulk = "/_bulk?filter_path=took,errors";
 
     /**
      * es用户名
@@ -76,19 +74,19 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
     private boolean needBasicAuth;
 
     /**
-     * 索引
+     * ES索引
      */
-    private String index;
+    private String esIndex;
 
     /**
-     * 索引全名
+     * ES索引全名
      */
-    private String indexFullName;
+    private String esIndexFullName;
 
     /**
-     * 索引pattern
+     * ES索引pattern
      */
-    private String indexPattern;
+    private String esIndexSuffix;
 
     /**
      * 应用主机
@@ -163,6 +161,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
         processLogBucket();
     }
 
+    @Override
     public long getMaxFlushInSeconds() {
         return maxFlushInSeconds;
     }
@@ -222,20 +221,20 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
         this.esPassword = esPassword;
     }
 
-    public String getIndex() {
-        return index;
+    public String getEsIndex() {
+        return esIndex;
     }
 
-    public void setIndex(String index) {
-        this.index = index;
+    public void setEsIndex(String esIndex) {
+        this.esIndex = esIndex;
     }
 
-    public String getIndexPattern() {
-        return indexPattern;
+    public String getEsIndexSuffix() {
+        return esIndexSuffix;
     }
 
-    public void setIndexPattern(String indexPattern) {
-        this.indexPattern = indexPattern;
+    public void setEsIndexSuffix(String esIndexSuffix) {
+        this.esIndexSuffix = esIndexSuffix;
     }
 
     public int getMaxBatchThreads() {
@@ -331,11 +330,11 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
             addError( "!!!No elasticsearch index was configured. !!!" );
             return;
         }
-        if (index == null) {
-            index = appInfo;
+        if (StringUtils.isBlank( esIndex )) {
+            esIndex = appInfo;
         }
-        if (indexPattern != null) {
-            INDEX_DATE_FORMAT = FastDateFormat.getInstance( indexPattern, (TimeZone) null );
+        if (StringUtils.isNotBlank( esIndexSuffix )) {
+            INDEX_DATE_FORMAT = FastDateFormat.getInstance( esIndexSuffix, (TimeZone) null );
         }
         if (maxDepthPerThrowable < 10) {
             maxDepthPerThrowable = 10;
@@ -400,7 +399,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
      */
     private okio.Buffer fillBuffer(Event event) throws IOException {
         okio.Buffer okb = new okio.Buffer();
-        okb.writeUtf8( "{\"index\":{\"_index\":\"" ).writeUtf8( indexFullName ).writeUtf8( "\"}}" ).write( EncoderUtils.LINE_SEPARATOR_BYTES );
+        okb.writeUtf8( "{\"create\":{\"_index\":\"" ).writeUtf8( esIndexFullName ).writeUtf8( "\"},\"_source\":false}" ).write( EncoderUtils.LINE_SEPARATOR_BYTES );
         okb.writeUtf8( "{\"@timestamp\":\"" ).writeUtf8( EncoderUtils.DATE_FORMAT.format( event.getTimeStamp() ) ).writeUtf8( "\"," );
         okb.writeUtf8( "\"appName\":\"" ).writeUtf8( appInfo ).writeUtf8( "\"," );
         okb.writeUtf8( "\"appHost\":\"" ).writeUtf8( appHost ).writeUtf8( "\"," );
@@ -426,9 +425,10 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
      */
     private void calcIndexName() {
         if (INDEX_DATE_FORMAT == null) {
-            indexFullName = index;
+            esIndexFullName = esIndex;
+        } else {
+            esIndexFullName = esIndex + '_' + INDEX_DATE_FORMAT.format( System.currentTimeMillis() );
         }
-        indexFullName = index + '_' + INDEX_DATE_FORMAT.format( System.currentTimeMillis() );
     }
 
     /**
@@ -453,7 +453,11 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
             if (needBasicAuth) {
                 requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
             }
-            HttpData httpData = httpInterface.requestForData( requestBuilder.post( BufferRequestBody.create( bufferData, MediaTypes.JSON_UTF8 ) ).build() );
+            HttpData httpData = HTTP_INTERFACE.requestForData( requestBuilder.post( BufferRequestBody.create( bufferData, MediaTypes.JSON_UTF8 ) ).build() );
+            if (httpData.getStatusCode() != 200) {
+                System.err.println( "Logback ES Batch process error! code:" + httpData.getStatusCode() + ", response: " + httpData.getResponseData() );
+            }
+            System.out.println( "Logback ES Batch process success! " + httpData.getResponseData());
         } catch (Exception e) {
             //直接打印到控制台输出吧
             e.printStackTrace();

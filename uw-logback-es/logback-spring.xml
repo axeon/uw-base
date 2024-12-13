@@ -1,43 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE configuration>
 <configuration>
-    <property resource="application.yml"/>
+    <springProperty scope="context" name="appName" source="spring.application.name" defaultValue=""/>
+    <springProperty scope="context" name="appVersion" source="project.version" defaultValue=""/>
+    <springProperty scope="context" name="appHost" source="APP_HOST" defaultValue=""/>
+    <springProperty scope="context" name="appPort" source="APP_PORT" defaultValue=""/>
+    <springProperty scope="context" name="esServer" source="LOG_ES_SERVER" defaultValue=""/>
+    <springProperty scope="context" name="esUsername" source="LOG_ES_USERNAME" defaultValue=""/>
+    <springProperty scope="context" name="esPassword" source="LOG_ES_PASSWORD" defaultValue=""/>
+
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-    <springProfile name="default">
-        <include
-                resource="org/springframework/boot/logging/logback/console-appender.xml"/>
-        <appender name="ES"
-                  class="uw.logback.es.appender.ElasticSearchAppender">
-            <esServer>http://localhost:9200</esServer>
-            <!-- Basic Authentication -->
-            <esUsername>username</esUsername>
-            <esPassword>password</esPassword>
-            <!-- 索引名称,默认使用appName -->
-            <index>uw-auth-center</index>
-            <!-- 索引Pattern,生成index-indexPattern的索引,目前只支持时间格式器,比如:yyyy-MM-dd -->
-            <indexPattern>_yyyy-MM-dd</indexPattern>
-            <!-- 应用名称 -->
-            <appName>uw-auth-center2</appName>
-            <!-- 当前主机地址 -->
-            <appHost>${SPRING_CLOUD_CONSUL_DISCOVERY_IP_ADDRESS}</appHost>
-            <!-- 最大刷新时间间隔 单位秒 -->
-            <maxFlushInSeconds>10</maxFlushInSeconds>
-            <!-- 批量提交最小字节数 -->
-            <maxBytesOfBatch>2048</maxBytesOfBatch>
-            <!-- 批量提交日志最大线程数 -->
-            <maxBatchThreads>5</maxBatchThreads>
-            <!-- 最大批量线程队列数 -->
-            <maxBatchQueueSize>10</maxBatchQueueSize>
-            <!-- 每个异常堆栈打印的最大层数 -->
-            <maxDepthPerThrowable>10</maxDepthPerThrowable>
-            <!-- 需要排除的异常关键字，多个关键字之间用','分割。-->
-            <excludeThrowableKeys>org.spring,org.apache,java.base</excludeThrowableKeys>
-            <!-- 开启JMX监控支持,默认未开启 -->
-            <jmxMonitoring>false</jmxMonitoring>
-        </appender>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+    <appender name="ES" class="uw.logback.es.appender.ElasticSearchAppender">
+        <esServer>${esServer}</esServer>
+        <esUsername>${esUsername}</esUsername>
+        <esPassword>${esPassword}</esPassword>
+        <esIndex>${appName}</esIndex>
+        <appInfo>${appName}:${appVersion}</appInfo>
+        <appHost>${appHost}:${appPort}</appHost>
+        <!-- 最大刷新时间间隔 单位秒 -->
+        <maxFlushInSeconds>10</maxFlushInSeconds>
+        <!-- 批量提交最小字节数 -->
+        <maxKiloBytesOfBatch>8192</maxKiloBytesOfBatch>
+        <!-- 批量提交日志最大线程数 -->
+        <maxBatchThreads>5</maxBatchThreads>
+        <!-- 最大批量线程队列数 -->
+        <maxBatchQueueSize>20</maxBatchQueueSize>
+        <!-- 每个异常堆栈打印的最大层数 -->
+        <maxDepthPerThrowable>20</maxDepthPerThrowable>
+        <!-- 需要排除的异常关键字，多个关键字之间用','分割。-->
+        <excludeThrowableKeys>org.spring,org.apache,org.apache,java.base,jakarta,com.mysql</excludeThrowableKeys>
+        <!-- 开启JMX监控支持,默认未开启 -->
+        <jmxMonitoring>false</jmxMonitoring>
+    </appender>
+    <!-- 对于非生产环境，都打印console -->
+    <springProfile name="!(prod|stab)">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+    <!-- 对于非本地开发，都打印到ES -->
+    <springProfile name="!dev">
         <root level="INFO">
             <appender-ref ref="ES"/>
-            <appender-ref ref="CONSOLE"/>
         </root>
     </springProfile>
 </configuration>

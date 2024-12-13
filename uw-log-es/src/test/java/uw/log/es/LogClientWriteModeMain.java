@@ -27,7 +27,7 @@ public class LogClientWriteModeMain {
         esConfig.setMaxBatchQueueSize(10);
         logClientProperties.setEs(esConfig);
         logClient = new LogClient(new LogService(logClientProperties, null, null));
-        logClient.regLogObjectWithIndexPattern(LogInterface.class, "_yyyy-MM");
+        logClient.regLogObjectWithIndexPattern(LogInterface.class, "yyyyMM");
 
         for (int i = 0; i < 1000000000; i++) {
             LogInterface logInterface = new LogInterface();

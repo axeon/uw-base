@@ -30,8 +30,8 @@ public class LogClientDSLTest {
         logClientProperties.setEs(esConfig);
         logService = new LogService(logClientProperties, null, null);
         logClient = new LogClient(logService);
-        logClient.regLogObjectWithIndexPattern(LogInterface.class, "_yyyy-MM");
-        logClient.regLogObjectWithIndexPattern(LogInterfaceOrder.class, "_yyyy-MM");
+        logClient.regLogObjectWithIndexPattern(LogInterface.class, "yyyyMM");
+        logClient.regLogObjectWithIndexPattern(LogInterfaceOrder.class, "yyyyMM");
     }
 
 

@@ -106,10 +106,10 @@ public class TaskAutoConfiguration {
     @Bean
     public CommandLineRunner configTaskLogClient(final LogClient logClient) {
         return args -> {
-            // 登录日志查询
-            logClient.regLogObjectWithIndexPattern( TaskRunnerLog.class, "yyyyMM" );
-            // 操作日志
-            logClient.regLogObjectWithIndexPattern( TaskCronerLog.class, "yyyyMM" );
+            // runner日志
+            logClient.regLogObjectWithIndexName( TaskRunnerLog.class, "uw.task.runner.log" );
+            // croner日志
+            logClient.regLogObjectWithIndexName( TaskCronerLog.class, "uw.task.croner.log" );
         };
     }
 

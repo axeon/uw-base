@@ -457,7 +457,6 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
             if (httpData.getStatusCode() != 200) {
                 System.err.println( "Logback ES Batch process error! code:" + httpData.getStatusCode() + ", response: " + httpData.getResponseData() );
             }
-            System.out.println( "Logback ES Batch process success! " + httpData.getResponseData());
         } catch (Exception e) {
             //直接打印到控制台输出吧
             e.printStackTrace();

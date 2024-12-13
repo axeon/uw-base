@@ -85,7 +85,7 @@ public class LogClientReadModeTest {
         logInterface1.setProductType(10);
         logInterface1.setProductId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
         logInterface1.setInterfaceProductId(RandomStringUtils.randomNumeric(11));
-        logInterface1.setInterfaceFunction("zwy.common.log.client.logInterface");
+        logInterface1.setInterfaceFunction("common.log.client.logInterface");
         logInterface1.setRequestDate(new Date());
         logInterface1.setRequestBody("你吃饭了吗?");
         logInterface1.setResponseDate(new Date());
@@ -99,7 +99,7 @@ public class LogClientReadModeTest {
         logInterface2.setProductType(10);
         logInterface2.setProductId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
         logInterface2.setInterfaceProductId(RandomStringUtils.randomNumeric(11));
-        logInterface2.setInterfaceFunction("zwy.common.log.client.logInterface");
+        logInterface2.setInterfaceFunction("common.log.client.logInterface");
         logInterface2.setRequestDate(new Date());
         logInterface2.setRequestBody("你吃饭了吗?");
         logInterface2.setResponseDate(new Date());

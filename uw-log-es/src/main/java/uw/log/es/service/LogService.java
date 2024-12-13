@@ -11,6 +11,7 @@ import org.apache.commons.lang3.time.FastDateFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.httpclient.http.HttpConfig;
+import uw.httpclient.http.HttpData;
 import uw.httpclient.http.HttpInterface;
 import uw.httpclient.json.JsonInterfaceHelper;
 import uw.httpclient.util.BufferRequestBody;
@@ -377,7 +378,10 @@ public class LogService {
             if (needBasicAuth) {
                 requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
             }
-            httpInterface.requestForData( requestBuilder.post( BufferRequestBody.create( bufferData, MediaTypes.JSON_UTF8 ) ).build() );
+            HttpData httpData = httpInterface.requestForData( requestBuilder.post( BufferRequestBody.create( bufferData, MediaTypes.JSON_UTF8 ) ).build() );
+            if (httpData.getStatusCode()!=200){
+                log.warn( "LogClient batch process error! code:{}, response:{}", httpData.getStatusCode(), httpData.getResponseData() );
+            }
         } catch (Exception e) {
             log.error( e.getMessage(), e );
         }

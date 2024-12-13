@@ -1,6 +1,7 @@
 package uw.log.es.service;
 
 import com.fasterxml.jackson.databind.JavaType;
+import com.google.common.base.CaseFormat;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import okhttp3.Credentials;
 import okhttp3.Request;
@@ -68,74 +69,91 @@ public class LogService {
      * 注册Mapping,<Class<?>,String>
      */
     private final Map<Class<?>, IndexConfigVo> regMap = new HashMap<>();
-    /**
-     * es集群地址
-     */
-    private final String esServer;
-    /**
-     * 用户名
-     */
-    private final String esUsername;
-    /**
-     * 用户密码
-     */
-    private final String esPassword;
-    /**
-     * 应用名称
-     */
-    private final String appName;
-    /**
-     * 应用主机信息
-     */
-    private final String appHost;
-    /**
-     * 是否添加执行应用信息
-     */
-    private final boolean appInfoOverwrite;
+
     /**
      * httpInterface
      */
     private HttpInterface httpInterface;
+
+    /**
+     * es集群地址
+     */
+    private final String esServer;
+
+    /**
+     * 用户名
+     */
+    private final String esUsername;
+
+    /**
+     * 用户密码
+     */
+    private final String esPassword;
+
     /**
      * 是否需要记录日志
      */
     private boolean logState;
+
     /**
      * 是否需要Http Basic验证头
      */
     private boolean needBasicAuth;
+
     /**
      * Elasticsearch bulk api 地址
      */
     private String esBulk;
+
     /**
      * 刷新Bucket时间毫秒数
      */
     private long maxFlushInMilliseconds;
+
     /**
      * 允许最大Bucket字节数
      */
     private long maxBytesOfBatch;
+
     /**
      * 最大批量线程数
      */
     private int maxBatchThreads;
+
     /**
      * 最大批量线程队列数
      */
     private int maxBatchQueueSize;
+
     /**
      * buffer
      */
     private okio.Buffer buffer = new okio.Buffer();
+
     /**
      * 后台线程
      */
     private ElasticsearchDaemonExporter daemonExporter;
+
     /**
      * 后台批量线程池。
      */
     private ThreadPoolExecutor batchExecutor;
+
+    /**
+     * 应用名称
+     */
+    private final String appName;
+
+    /**
+     * 应用主机信息
+     */
+    private final String appHost;
+
+    /**
+     * 是否添加执行应用信息
+     */
+    private final boolean appInfoOverwrite;
 
     /**
      * LogService.
@@ -160,8 +178,8 @@ public class LogService {
         this.httpInterface =
                 new JsonInterfaceHelper( HttpConfig.builder().retryOnConnectionFailure( true ).connectTimeout( logClientProperties.getEs().getConnectTimeout() ).readTimeout( logClientProperties.getEs().getReadTimeout() ).writeTimeout( logClientProperties.getEs().getWriteTimeout() ).build() );
         this.esBulk = logClientProperties.getEs().getEsBulk();
-        this.maxFlushInMilliseconds = logClientProperties.getEs().getMaxFlushInSeconds() * 1000L;
-        this.maxBytesOfBatch = logClientProperties.getEs().getMaxKiloBytesOfBatch() * 1024L;
+        this.maxFlushInMilliseconds = logClientProperties.getEs().getMaxFlushInSeconds()*1000L;
+        this.maxBytesOfBatch = logClientProperties.getEs().getMaxKiloBytesOfBatch()*1024L;
         this.maxBatchThreads = logClientProperties.getEs().getMaxBatchThreads();
         this.maxBatchQueueSize = logClientProperties.getEs().getMaxBatchQueueSize();
         /**
@@ -594,7 +612,20 @@ public class LogService {
      * @return
      */
     private String buildIndexName(Class<?> logClass) {
-        return logClass.getName();
+        String className = logClass.getName();
+        int lastIndex = className.lastIndexOf( "." );
+        String indexName = "";
+        if (lastIndex > 0) {
+            // 偏移一下,把'.'带上
+            lastIndex++;
+            String canonicalPath = className.substring( 0, lastIndex );
+            String logVoName = className.substring( lastIndex, className.length() );
+            indexName = CaseFormat.UPPER_CAMEL.to( CaseFormat.LOWER_UNDERSCORE, logVoName );
+            indexName = canonicalPath + indexName;
+        } else {
+            indexName = CaseFormat.UPPER_CAMEL.to( CaseFormat.LOWER_UNDERSCORE, className );
+        }
+        return indexName;
     }
 
     /**

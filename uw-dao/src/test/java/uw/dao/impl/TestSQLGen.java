@@ -55,9 +55,9 @@ public class TestSQLGen {
         queryParam.setCreateDate(new Date[]{new Date(System.currentTimeMillis()-86400000),new Date()});
         queryParam.setStateList(stateList);
         queryParam.setStateOn(true);
-        queryParam.ADD_EXT_PARAM("and test>?",1);
-        queryParam.ADD_EXT_PARAM("and test>? and test<?",new int[]{2,3});
-        queryParam.ADD_EXT_PARAM("and test in (?)",new int[]{7,8,9});
+        queryParam.ADD_EXT_PARAM("test>?",1);
+        queryParam.ADD_EXT_PARAM("test>? and test<?",new int[]{2,3});
+        queryParam.ADD_EXT_PARAM("test in (?)",new int[]{7,8,9});
 //        queryParam.SET_LIKE_QUERY_ENABLE(false);
 //        queryParam.SET_LIKE_QUERY_PARAM_MIN_LEN(10);
         QueryParamResult result = QueryParamUtils.parseQueryParam(TestEntity.class, null, queryParam);

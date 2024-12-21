@@ -77,26 +77,56 @@ public class IpMatchUtils {
     /**
      * 匹配IP
      *
-     * @param ip
+     * @param ipLong
      * @return
      */
-    public static boolean matches(List<IpRange> sortedIpList, String ip) {
-        IpRange targetIpRange = new IpRange( ip );
-        long targetIpLong = targetIpRange.getStart();
-
+    public static boolean matches(List<IpRange> sortedIpList, long ipLong) {
         int start = 0;
         int end = sortedIpList.size() - 1;
         while (start <= end) {
             int mid = (start + end) / 2;
             IpRange ipRange = sortedIpList.get( mid );
-            if (targetIpLong < ipRange.getStart()) {
+            if (ipLong < ipRange.getStart()) {
                 end = mid - 1;
-            } else if (targetIpLong > ipRange.getEnd()) {
+            } else if (ipLong > ipRange.getEnd()) {
                 start = mid + 1;
             } else {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * 匹配IP
+     *
+     * @param ipStr
+     * @return
+     */
+    public static boolean matches(List<IpRange> sortedIpList, String ipStr) {
+        return matches( sortedIpList, ipToLong( ipStr ) );
+    }
+
+    /**
+     * 将字符串类型的ip转成long。
+     *
+     * @param ipStr
+     * @return
+     */
+    public static long ipToLong(String ipStr) {
+        if (ipStr == null) {
+            throw new IllegalArgumentException( "ip地址信息为null!" );
+        }
+        int pos1 = ipStr.indexOf( "." );
+        int pos2 = ipStr.indexOf( ".", pos1 + 1 );
+        int pos3 = ipStr.indexOf( ".", pos2 + 1 );
+        if (pos1 == -1 || pos2 == -1 || pos3 == -1 || pos1 > 15 || pos2 > 15 || pos3 > 15) {
+            throw new IllegalArgumentException( "非法的ip格式: " + ipStr );
+        }
+        long ipLong = Long.parseLong( ipStr.substring( 0, pos1 ) ) << 24;
+        ipLong += Long.parseLong( ipStr.substring( pos1 + 1, pos2 ) ) << 16;
+        ipLong += Long.parseLong( ipStr.substring( pos2 + 1, pos3 ) ) << 8;
+        ipLong += Long.parseLong( ipStr.substring( pos3 + 1 ) );
+        return ipLong;
     }
 }

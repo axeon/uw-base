@@ -37,13 +37,13 @@ public class BenchmarkIPHashTest {
     }
 
     @Benchmark
-    public void testIpToLong() {
-        ipToLong( IP_ADDRESS );
+    public void testIpSplit() {
+        ipToLongSplit( IP_ADDRESS );
     }
 
     @Benchmark
-    public void testIpToLong2() {
-        ipToLong2( IP_ADDRESS );
+    public void testIpIndexOf() {
+        ipToLongIndexOf( IP_ADDRESS );
     }
 
     @TearDown
@@ -53,11 +53,11 @@ public class BenchmarkIPHashTest {
     /**
      * 将字符串类型的ip转成long。
      *
-     * @param strIp
+     * @param ipStr
      * @return
      */
-    private static long ipToLong(String strIp) {
-        String[] ips = strIp.split( "\\." );
+    private static long ipToLongSplit(String ipStr) {
+        String[] ips = ipStr.split( "\\." );
         long[] ip = new long[4];
         if (ips.length != 4) {
             return -1;
@@ -77,20 +77,20 @@ public class BenchmarkIPHashTest {
     /**
      * 将字符串类型的ip转成long。
      *
-     * @param strIp
+     * @param ipStr
      * @return
      */
-    private static long ipToLong2(String strIp) {
-        int pos1 = strIp.indexOf( "." );
-        int pos2 = strIp.indexOf( ".", pos1 + 1 );
-        int pos3 = strIp.indexOf( ".", pos2 + 1 );
+    private static long ipToLongIndexOf(String ipStr) {
+        int pos1 = ipStr.indexOf( "." );
+        int pos2 = ipStr.indexOf( ".", pos1 + 1 );
+        int pos3 = ipStr.indexOf( ".", pos2 + 1 );
         if (pos1 == -1 || pos2 == -1 || pos3 == -1 || pos1 > 15 || pos2 > 15 || pos3 > 15) {
             return -1;
         }
-        long ip = Long.parseLong( strIp.substring( 0, pos1 ) ) << 24;
-        ip += Long.parseLong( strIp.substring( pos1 + 1, pos2 ) ) << 16;
-        ip += Long.parseLong( strIp.substring( pos2 + 1, pos3 ) ) << 8;
-        ip += Long.parseLong( strIp.substring( pos3 + 1 ) );
+        long ip = Long.parseLong( ipStr.substring( 0, pos1 ) ) << 24;
+        ip += Long.parseLong( ipStr.substring( pos1 + 1, pos2 ) ) << 16;
+        ip += Long.parseLong( ipStr.substring( pos2 + 1, pos3 ) ) << 8;
+        ip += Long.parseLong( ipStr.substring( pos3 + 1 ) );
         return ip;
 
     }

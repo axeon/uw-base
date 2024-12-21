@@ -56,12 +56,12 @@ public class IpRange {
         try {
             String ip = ipPattern.trim();
             long maskBitCount = IPV4_BIT_COUNT;
-            if (ipPattern.indexOf( "/" ) > 0) {
+            if (ipPattern.indexOf( '/' ) > 0) {
                 String[] addressAndMask = ipPattern.split( "/" );
                 ip = addressAndMask[0];
                 maskBitCount = Long.parseLong( addressAndMask[1] );
             } else if (ipPattern.indexOf( '*' ) > 0) {
-                maskBitCount = IPV4_BIT_COUNT - (StringUtils.countMatches( ipPattern, "*" ) * 8L);
+                maskBitCount = IPV4_BIT_COUNT - (StringUtils.countMatches( ipPattern, '*' ) * 8L);
                 ip = ipPattern.replaceAll( "\\*", "255" );
             }
 

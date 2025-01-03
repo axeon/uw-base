@@ -85,11 +85,11 @@ public class MfaIPLimitHelper {
             String ics = mfaRedisOp.get( RedisKeyUtils.buildKey( REDIS_LIMIT_IP_PREFIX, userIp ) );
             if (StringUtils.isNotBlank( ics )) {
                 int ic = Integer.parseInt( ics );
-                if (ic >= uwMfaProperties.getIpLimitTimes()) {
+                if (ic >= uwMfaProperties.getIpLimitErrorTimes()) {
                     long ttl = mfaRedisTemplate.getExpire( key, TimeUnit.MINUTES ) + 1;
                     return ResponseData.errorCode( MfaErrorType.IP_LIMIT_ERROR.getCode(), String.format( MfaErrorType.IP_LIMIT_ERROR.getMessage(), userIp,
                             (uwMfaProperties.getIpLimitSeconds() / 60), ic, ttl ) );
-                } else {
+                } else if (ic >= uwMfaProperties.getIpLimitWarnTimes()) {
                     return ResponseData.warnCode( MfaErrorType.IP_LIMIT_WARN.getCode(), String.format( MfaErrorType.IP_LIMIT_WARN.getMessage(), userIp,
                             (uwMfaProperties.getIpLimitSeconds() / 60), ic ) );
                 }

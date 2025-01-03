@@ -16,9 +16,14 @@ public class UwMfaProperties {
     private long ipLimitSeconds = 600L;
 
     /**
-     * IP最大失败次数
+     * IP限制报警次数，默认3次才弹验证码。
      */
-    private long ipLimitTimes = 10L;
+    private long ipLimitWarnTimes = 3L;
+
+    /**
+     * IP限制失败次数，默认10次开始屏蔽。
+     */
+    private long ipLimitErrorTimes = 10L;
 
     /**
      * 需要支持的算法，默认全部支持。
@@ -68,7 +73,7 @@ public class UwMfaProperties {
     /**
      * 设备识别码通知内容。
      */
-    private String deviceNotifyContent =  "验证码[$DEVICE_CODE$]，$EXPIRE_MINUTES$分钟后过期，如非本人操作，请忽略此信息。";
+    private String deviceNotifyContent = "验证码[$DEVICE_CODE$]，$EXPIRE_MINUTES$分钟后过期，如非本人操作，请忽略此信息。";
 
     /**
      * 设备识别码短信发送API。
@@ -101,12 +106,20 @@ public class UwMfaProperties {
         this.ipLimitSeconds = ipLimitSeconds;
     }
 
-    public long getIpLimitTimes() {
-        return ipLimitTimes;
+    public long getIpLimitWarnTimes() {
+        return ipLimitWarnTimes;
     }
 
-    public void setIpLimitTimes(long ipLimitTimes) {
-        this.ipLimitTimes = ipLimitTimes;
+    public void setIpLimitWarnTimes(long ipLimitWarnTimes) {
+        this.ipLimitWarnTimes = ipLimitWarnTimes;
+    }
+
+    public long getIpLimitErrorTimes() {
+        return ipLimitErrorTimes;
+    }
+
+    public void setIpLimitErrorTimes(long ipLimitErrorTimes) {
+        this.ipLimitErrorTimes = ipLimitErrorTimes;
     }
 
     public String getCaptchaStrategies() {

@@ -11,7 +11,9 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-
+/**
+ * AES加解密工具类.
+ */
 public class CaptchaAESUtils {
 
     private static final Logger logger = LoggerFactory.getLogger( CaptchaAESUtils.class );
@@ -39,7 +41,7 @@ public class CaptchaAESUtils {
             byte[] decryptBytes = cipher.doFinal( Base64.getDecoder().decode( encryptData ) );
             return new String( decryptBytes );
         } catch (Exception e) {
-            logger.error( "aesDecryptByBytes exception:{}", e.getMessage(), e );
+            logger.error( "aesDecrypt exception:{}", e.getMessage(), e );
             return "";
         }
     }

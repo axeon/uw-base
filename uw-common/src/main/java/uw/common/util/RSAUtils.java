@@ -96,6 +96,9 @@ public class RSAUtils {
      * @throws Exception 加密过程中的异常信息
      */
     public static byte[] encrypt(RSAPrivateKey privateKey, byte[] plainData) {
+        if (privateKey == null || plainData == null) {
+            return null;
+        }
         try {
             // 使用默认RSA
             Cipher cipher = Cipher.getInstance( "RSA" );
@@ -136,6 +139,9 @@ public class RSAUtils {
      * @throws Exception 加密过程中的异常信息
      */
     public static byte[] encrypt(RSAPublicKey publicKey, byte[] plainData) {
+        if (publicKey == null || plainData == null) {
+            return null;
+        }
         try {
             // 使用默认RSA
             Cipher cipher = Cipher.getInstance( "RSA" );
@@ -177,6 +183,9 @@ public class RSAUtils {
      * @throws Exception 解密过程中的异常信息
      */
     public static byte[] decrypt(RSAPublicKey publicKey, byte[] cipherData) {
+        if (publicKey == null || cipherData == null) {
+            return null;
+        }
         try {
             // 使用默认RSA
             Cipher cipher = Cipher.getInstance( "RSA" );
@@ -217,6 +226,9 @@ public class RSAUtils {
      * @throws Exception 解密过程中的异常信息
      */
     public static byte[] decrypt(RSAPrivateKey privateKey, byte[] cipherData) {
+        if (privateKey == null || cipherData == null) {
+            return null;
+        }
         try {
             // 使用默认RSA
             Cipher cipher = Cipher.getInstance( "RSA" );
@@ -256,6 +268,9 @@ public class RSAUtils {
      * @return
      */
     public static byte[] sign(RSAPrivateKey privateKey, byte[] content) {
+        if (privateKey == null || content == null) {
+            return null;
+        }
         try {
             Signature signature = Signature.getInstance( "SHA1WithRSA" );
             signature.initSign( privateKey );

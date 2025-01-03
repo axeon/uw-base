@@ -18,7 +18,7 @@
         <spring-cloud.version>2023.0.4</spring-cloud.version>
         <spring-cloud.alibaba.version>2023.0.1.2</spring-cloud.alibaba.version>
         <uw-app-common.version>1.0.19</uw-app-common.version>
-        <uw-common.version>1.0.22</uw-common.version>
+        <uw-common.version>1.0.23</uw-common.version>
         <uw-auth-client.version>6.0.20</uw-auth-client.version>
         <uw-auth-service.version>6.0.128</uw-auth-service.version>
         <uw-dao.version>5.1.38</uw-dao.version>
@@ -26,7 +26,7 @@
         <uw-logback-es.version>3.0.60</uw-logback-es.version>
         <uw-log-es.version>3.0.60</uw-log-es.version>
         <uw-cache.version>1.1.65</uw-cache.version>
-        <uw-mfa.version>1.0.23</uw-mfa.version>
+        <uw-mfa.version>1.0.25</uw-mfa.version>
         <uw-notify-client.version>1.0.18</uw-notify-client.version>
         <uw-task.version>5.0.99</uw-task.version>
         <uw-tinyurl-client.version>1.0.18</uw-tinyurl-client.version>

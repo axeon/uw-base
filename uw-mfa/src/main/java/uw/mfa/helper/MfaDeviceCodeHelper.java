@@ -226,6 +226,8 @@ public class MfaDeviceCodeHelper {
         data.put( "subject", subject );
         data.put( "content", content );
         data.put( "paramMap", paramMap );
+        //默认邮件为html格式
+        data.put( "isHtml", 1 );
         return tokenRestTemplate.postForObject( uwMfaProperties.getDeviceNotifyEmailApi(), data, ResponseData.class );
     }
 

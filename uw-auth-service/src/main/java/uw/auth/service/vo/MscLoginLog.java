@@ -10,6 +10,12 @@ import java.util.Date;
  */
 public class MscLoginLog extends LogBaseVo implements Serializable {
 
+
+    /**
+     * 登录客户端。
+     */
+    private String loginAgent;
+
     /**
      * 登录类型。
      */
@@ -95,6 +101,13 @@ public class MscLoginLog extends LogBaseVo implements Serializable {
      */
     private long responseMillis;
 
+    public String getLoginAgent() {
+        return loginAgent;
+    }
+
+    public void setLoginAgent(String loginAgent) {
+        this.loginAgent = loginAgent;
+    }
 
     public Date getLoginDate() {
         return loginDate;

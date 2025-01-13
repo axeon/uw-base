@@ -102,7 +102,6 @@ public enum UserType {
         return false;
     }
 
-
     /**
      * 根据数值匹配合适的UserType。
      *
@@ -117,6 +116,16 @@ public enum UserType {
         }
         return ANONYMOUS;
     }
+
+    /**
+     * 根据数值获得label。
+     * @param value
+     * @return
+     */
+    public static String getLabel(int value) {
+        return findByValue( value ).label;
+    }
+
 
     /**
      * 获得有菜单的用户类型。
@@ -206,10 +215,7 @@ public enum UserType {
      * @return
      */
     public static boolean isMchType(int value) {
-        if ( value == UserType.MCH.getValue()) {
-            return true;
-        }
-        return false;
+        return value == UserType.MCH.getValue();
     }
 
     public int getValue() {

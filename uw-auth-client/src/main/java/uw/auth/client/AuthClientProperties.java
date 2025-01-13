@@ -1,5 +1,6 @@
 package uw.auth.client;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -12,6 +13,30 @@ public class AuthClientProperties {
      * 是否开启Spring Cloud Load Balance支持
      */
     private boolean enableSpringCloud = true;
+
+    /**
+     * 应用名称
+     */
+    @Value("${project.name}")
+    private String appName;
+
+    /**
+     * 应用版本
+     */
+    @Value("${project.version}")
+    private String appVersion;
+
+    /**
+     * app主机地址。
+     */
+    @Value("${spring.cloud.nacos.discovery.ip:}")
+    private String appHost;
+
+    /**
+     * app端口号。
+     */
+    @Value("${server.port:8080}")
+    private int appPort;
 
     /**
      * 认证服务器地址
@@ -143,6 +168,38 @@ public class AuthClientProperties {
 
     public void setEnableSpringCloud(boolean enableSpringCloud) {
         this.enableSpringCloud = enableSpringCloud;
+    }
+
+    public String getAppName() {
+        return appName;
+    }
+
+    public void setAppName(String appName) {
+        this.appName = appName;
+    }
+
+    public String getAppVersion() {
+        return appVersion;
+    }
+
+    public void setAppVersion(String appVersion) {
+        this.appVersion = appVersion;
+    }
+
+    public String getAppHost() {
+        return appHost;
+    }
+
+    public void setAppHost(String appHost) {
+        this.appHost = appHost;
+    }
+
+    public int getAppPort() {
+        return appPort;
+    }
+
+    public void setAppPort(int appPort) {
+        this.appPort = appPort;
     }
 
     public String getAuthCenterHost() {

@@ -85,7 +85,7 @@ public class AuthClientToken {
             if (token == null) {
                 try {
                     Thread.sleep( 1000 );
-                } catch (InterruptedException e) {
+                } catch (InterruptedException ignored) {
                 }
             }
         }
@@ -113,8 +113,9 @@ public class AuthClientToken {
         retryTimes++;
         try {
             String loginUrl = authClientProperties.getAuthCenterHost() + authClientProperties.getLoginEntryPoint();
-            Map<String, String> credentialsMap = new HashMap<>( 5 );
-            credentialsMap.put( "loginType", "1" ); //写死
+            Map<String, String> credentialsMap = new HashMap<>( 6 );
+            credentialsMap.put( "loginType", "1" );
+            credentialsMap.put( "loginAgent", authClientProperties.getAppName()+":"+authClientProperties.getAppVersion()+"/"+authClientProperties.getAppHost()+":"+authClientProperties.getAppPort() );
             credentialsMap.put( "loginId", authClientProperties.getLoginId() );
             credentialsMap.put( "loginPass", authClientProperties.getLoginPass() );
             credentialsMap.put( "loginSecret", authClientProperties.getLoginSecret() );
@@ -129,7 +130,7 @@ public class AuthClientToken {
                 if (responseBody != null) {
                     if ("success".equals( responseBody.get( "state" ) )) {
                         List tokenList = (List) responseBody.get( "data" );
-                        if (tokenList != null && tokenList.size() > 0) {
+                        if (tokenList != null && !tokenList.isEmpty()) {
                             Map tokenMap = (Map) tokenList.get( 0 );
                             if (tokenMap != null && tokenMap.get( "token" ) != null) {
                                 token = String.valueOf( tokenMap.get( "token" ) );
@@ -152,7 +153,7 @@ public class AuthClientToken {
                 log.error( "!!!AuthClient登录出错! response: {}", loginResponse.toString() );
             }
         } catch (Throwable e) {
-            log.error( "!!!AuthClient登录出错! " + e.getMessage(), e );
+            log.error( "!!!AuthClient登录出错! {}", e.getMessage(), e );
         }
     }
 
@@ -201,7 +202,7 @@ public class AuthClientToken {
                 log.error( "!!!AuthClient刷新token出错! response: {}", responseEntity.toString() );
             }
         } catch (Throwable e) {
-            log.error( "!!!AuthClient刷新token出错! " + e.getMessage(), e );
+            log.error( "!!!AuthClient刷新token出错! {}", e.getMessage(), e );
         }
     }
 

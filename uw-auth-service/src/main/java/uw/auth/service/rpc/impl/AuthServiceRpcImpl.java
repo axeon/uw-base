@@ -77,10 +77,10 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
      * @return
      */
     @Override
-    public TokenResponse genGuestToken(long saasId, long mchId, long userId, String userName, String userIp, boolean checkDoubleLogin) {
+    public TokenResponse genGuestToken(long saasId, long mchId, long userId, String username, String userIp, boolean checkDoubleLogin) {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/genGuestToken" ).queryParam( "saasId", saasId ).queryParam(
-                        "mchId", mchId ).queryParam( "userId", userId ).queryParam( "username", userName ).queryParam( "userIp", userIp ).queryParam( "checkDoubleLogin",
+                        "mchId", mchId ).queryParam( "userId", userId ).queryParam( "username", username ).queryParam( "userIp", userIp ).queryParam( "checkDoubleLogin",
                         checkDoubleLogin ).build().encode().toUri();
         return tokenRestTemplate.getForObject( targetUrl, TokenResponse.class );
     }

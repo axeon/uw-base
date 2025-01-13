@@ -202,21 +202,21 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前appName。
-     *
-     * @return
-     */
-    public static String getAppName() {
-        return authServiceProperties.getAppName();
-    }
-
-    /**
      * 获得当前appLabel。
      *
      * @return
      */
     public static String getAppLabel() {
         return authServiceProperties.getAppLabel();
+    }
+
+    /**
+     * 获得当前appName。
+     *
+     * @return
+     */
+    public static String getAppName() {
+        return authServiceProperties.getAppName();
     }
 
     /**
@@ -244,6 +244,24 @@ public class AuthServiceHelper {
      */
     public static int getAppPort() {
         return authServiceProperties.getAppPort();
+    }
+
+    /**
+     * 获得当前appInfo。
+     *
+     * @return
+     */
+    public static String getAppInfo() {
+        return authServiceProperties.getAppName() + ":" + authServiceProperties.getAppVersion();
+    }
+
+    /**
+     * 获得当前appHostInfo。
+     *
+     * @return
+     */
+    public static String getAppHostInfo() {
+        return authServiceProperties.getAppName() + ":" + authServiceProperties.getAppVersion() + "/" + authServiceProperties.getAppHost() + ":" + authServiceProperties.getAppPort();
     }
 
     /**

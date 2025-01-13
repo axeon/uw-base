@@ -1,5 +1,7 @@
 package uw.auth.service.rpc;
 
+import io.swagger.v3.oas.annotations.Parameter;
+import org.springframework.web.bind.annotation.RequestParam;
 import uw.auth.service.token.AuthTokenData;
 import uw.auth.service.vo.MscUserGroupVo;
 import uw.auth.service.vo.MscUserRegister;
@@ -45,7 +47,7 @@ public interface AuthServiceRpc {
      * @return
      * @throws Exception
      */
-    TokenResponse genGuestToken(long saasId, long mchId, long userId, String userName, String userIp, boolean checkDoubleLogin);
+    TokenResponse genGuestToken(String loginAgent, long saasId, long mchId, long userId, String userName, String userIp, boolean checkDoubleLogin);
 
     /**
      * 踢出Guest用户。
@@ -53,7 +55,7 @@ public interface AuthServiceRpc {
      * @param userId
      * @param remark
      */
-    ResponseData kickoutGuest(long saasId, long userId, String remark);
+    ResponseData kickoutGuest(String loginAgent, long saasId, long userId, String remark);
 
     /**
      * 初始化Saas权限。

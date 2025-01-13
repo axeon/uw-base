@@ -77,26 +77,24 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
      * @return
      */
     @Override
-    public TokenResponse genGuestToken(long saasId, long mchId, long userId, String username, String userIp, boolean checkDoubleLogin) {
+    public TokenResponse genGuestToken(String loginAgent, long saasId, long mchId, long userId, String username, String userIp, boolean checkDoubleLogin) {
         URI targetUrl =
-                UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/genGuestToken" ).queryParam( "saasId", saasId ).queryParam(
-                        "mchId", mchId ).queryParam( "userId", userId ).queryParam( "username", username ).queryParam( "userIp", userIp ).queryParam( "checkDoubleLogin",
-                        checkDoubleLogin ).build().encode().toUri();
+                UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/genGuestToken" ).queryParam( "loginAgent", loginAgent ).queryParam( "saasId", saasId ).queryParam( "mchId", mchId ).queryParam( "userId", userId ).queryParam( "username", username ).queryParam( "userIp", userIp ).queryParam( "checkDoubleLogin", checkDoubleLogin ).build().encode().toUri();
         return tokenRestTemplate.getForObject( targetUrl, TokenResponse.class );
     }
 
     /**
      * 踢出Guest用户。
      *
+     * @param loginAgent
      * @param saasId
      * @param userId
      * @param remark
      */
     @Override
-    public ResponseData kickoutGuest(long saasId, long userId, String remark) {
+    public ResponseData kickoutGuest(String loginAgent, long saasId, long userId, String remark) {
         URI targetUrl =
-                UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/kickoutGuest" ).queryParam( "saasId", saasId ).queryParam(
-                        "userId", userId ).queryParam( "remark", remark ).build().encode().toUri();
+                UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/kickoutGuest" ).queryParam( "loginAgent", loginAgent ).queryParam( "saasId", saasId ).queryParam( "userId", userId ).queryParam( "remark", remark ).build().encode().toUri();
         return tokenRestTemplate.exchange( targetUrl, HttpMethod.POST, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 

@@ -7,6 +7,8 @@ import uw.auth.service.token.AuthTokenData;
 import uw.dao.QueryParam;
 import uw.dao.annotation.QueryMeta;
 
+import java.util.Map;
+
 /**
  * 自带验证信息的查询参数类。
  * 自带了saasId, mchId, userId, userType属性。
@@ -110,6 +112,17 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
         this.id = id;
         this.states = states;
         bindSaasId();
+    }
+
+    /**
+     * 允许的排序属性。
+     * key:排序名 value:排序字段
+     *
+     * @return
+     */
+    @Override
+    public Map<String, String> ALLOWED_SORT_PROPERTY() {
+        return Map.of( "id", "id" );
     }
 
     /**
@@ -275,6 +288,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
 
     /**
      * 设置商户id。
+     *
      * @param mchId
      * @return
      */
@@ -285,6 +299,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
 
     /**
      * 获取用户id。
+     *
      * @return
      */
     public Long getUserId() {
@@ -293,6 +308,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
 
     /**
      * 设置用户id。
+     *
      * @param userId
      */
     public void setUserId(Long userId) {
@@ -301,6 +317,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
 
     /**
      * 设置用户id。
+     *
      * @param userId
      * @return
      */
@@ -311,6 +328,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
 
     /**
      * 获取用户类型。
+     *
      * @return
      */
     public Integer getUserType() {
@@ -319,6 +337,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
 
     /**
      * 设置用户类型。
+     *
      * @param userType
      */
     public void setUserType(Integer userType) {
@@ -327,6 +346,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
 
     /**
      * 设置用户类型。
+     *
      * @param userType
      * @return
      */

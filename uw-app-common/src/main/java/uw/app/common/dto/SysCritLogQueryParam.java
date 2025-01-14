@@ -379,6 +379,21 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
     }
 
     /**
+     * 设置操作对象类。
+     */
+    public void setRefTypeClass(Class refTypeClass) {
+        this.refType = refTypeClass.getName();
+    }
+
+    /**
+     * 设置操作对象类型链式调用。
+     */
+    public SysCritLogQueryParam refTypeClass(Class refTypeClass) {
+        setRefTypeClass(refTypeClass);
+        return this;
+    }
+
+    /**
      * 获取操作对象id。
      */
     public String getRefId() {

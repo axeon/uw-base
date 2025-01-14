@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import uw.dao.annotation.QueryMeta;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 系统数据历史列表查询参数。
@@ -99,6 +101,32 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
+     * 允许的排序属性。
+     * key:排序名 value:排序字段
+     *
+     * @return
+     */
+    @Override
+    public Map<String, String> ALLOWED_SORT_PROPERTY() {
+        return new HashMap<>() {{
+            put( "id", "id" );
+            put( "saasId", "saas_id" );
+            put( "mchId", "mch_id" );
+            put( "userId", "user_id" );
+            put( "userType", "user_type" );
+            put( "groupId", "group_id" );
+            put( "userName", "user_name" );
+            put( "nickName", "nick_name" );
+            put( "realName", "real_name" );
+            put( "entityClass", "entity_class" );
+            put( "entityId", "entity_id" );
+            put( "entityName", "entity_name" );
+            put( "userIp", "user_ip" );
+            put( "createDate", "create_date" );
+        }};
+    }
+
+    /**
      * 获取ID。
      */
     public Long getId() {
@@ -110,6 +138,14 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
      */
     public void setId(Long id) {
         this.id = id;
+    }
+
+    /**
+     * 设置ID链式调用。
+     */
+    public SysDataHistoryQueryParam id(Long id) {
+        setId( id );
+        return this;
     }
 
     /**
@@ -127,6 +163,14 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
+     * 设置商户ID链式调用。
+     */
+    public SysDataHistoryQueryParam mchId(Long mchId) {
+        setMchId( mchId );
+        return this;
+    }
+
+    /**
      * 获取用户ID。
      */
     public Long getUserId() {
@@ -138,6 +182,14 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
      */
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    /**
+     * 设置用户ID链式调用。
+     */
+    public SysDataHistoryQueryParam userId(Long userId) {
+        setUserId( userId );
+        return this;
     }
 
     /**
@@ -155,6 +207,14 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
+     * 设置用户类型链式调用。
+     */
+    public SysDataHistoryQueryParam userType(Integer userType) {
+        setUserType( userType );
+        return this;
+    }
+
+    /**
      * 获取用户的组ID。
      */
     public Long getGroupId() {
@@ -166,6 +226,14 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
      */
     public void setGroupId(Long groupId) {
         this.groupId = groupId;
+    }
+
+    /**
+     * 设置用户的组ID链式调用。
+     */
+    public SysDataHistoryQueryParam groupId(Long groupId) {
+        setGroupId( groupId );
+        return this;
     }
 
     /**
@@ -183,6 +251,14 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
+     * 设置用户名称链式调用。
+     */
+    public SysDataHistoryQueryParam userName(String userName) {
+        setUserName( userName );
+        return this;
+    }
+
+    /**
      * 获取用户昵称。
      */
     public String getNickName() {
@@ -194,6 +270,14 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
      */
     public void setNickName(String nickName) {
         this.nickName = nickName;
+    }
+
+    /**
+     * 设置用户昵称链式调用。
+     */
+    public SysDataHistoryQueryParam nickName(String nickName) {
+        setNickName( nickName );
+        return this;
     }
 
     /**
@@ -211,6 +295,14 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
+     * 设置真实名称链式调用。
+     */
+    public SysDataHistoryQueryParam realName(String realName) {
+        setRealName( realName );
+        return this;
+    }
+
+    /**
      * 获取实体类。
      */
     public String getEntityClass() {
@@ -225,14 +317,15 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
-     * 设置实体类。
+     * 设置实体类链式调用。
      */
-    public void setEntityClass(Class entityClass) {
-        this.entityClass = entityClass.getName();
+    public SysDataHistoryQueryParam entityClass(String entityClass) {
+        setEntityClass( entityClass );
+        return this;
     }
 
     /**
-     * 获得实体ID。
+     * 获取实体ID。
      */
     public String getEntityId() {
         return this.entityId;
@@ -243,6 +336,14 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
      */
     public void setEntityId(String entityId) {
         this.entityId = entityId;
+    }
+
+    /**
+     * 设置实体ID链式调用。
+     */
+    public SysDataHistoryQueryParam entityId(String entityId) {
+        setEntityId( entityId );
+        return this;
     }
 
     /**
@@ -260,6 +361,14 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     }
 
     /**
+     * 设置实体名链式调用。
+     */
+    public SysDataHistoryQueryParam entityName(String entityName) {
+        setEntityName( entityName );
+        return this;
+    }
+
+    /**
      * 获取用户IP。
      */
     public String getUserIp() {
@@ -271,6 +380,14 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
      */
     public void setUserIp(String userIp) {
         this.userIp = userIp;
+    }
+
+    /**
+     * 设置用户IP链式调用。
+     */
+    public SysDataHistoryQueryParam userIp(String userIp) {
+        setUserIp( userIp );
+        return this;
     }
 
     /**
@@ -286,5 +403,14 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     public void setCreateDateRange(Date[] createDateRange) {
         this.createDateRange = createDateRange;
     }
+
+    /**
+     * 设置创建日期范围链式调用。
+     */
+    public SysDataHistoryQueryParam createDateRange(Date[] createDateRange) {
+        setCreateDateRange( createDateRange );
+        return this;
+    }
+
 
 }

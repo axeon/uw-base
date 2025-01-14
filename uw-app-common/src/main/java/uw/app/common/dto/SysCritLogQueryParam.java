@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import uw.dao.annotation.QueryMeta;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 系统关键日志列表查询参数。
@@ -147,6 +149,38 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
     }
 
     /**
+     * 允许的排序属性。
+     * key:排序名 value:排序字段
+     *
+     * @return
+     */
+    @Override
+    public Map<String, String> ALLOWED_SORT_PROPERTY() {
+        return new HashMap<>() {{
+            put( "id", "id" );
+            put( "saasId", "saas_id" );
+            put( "mchId", "mch_id" );
+            put( "userId", "user_id" );
+            put( "userType", "user_type" );
+            put( "groupId", "group_id" );
+            put( "userName", "user_name" );
+            put( "nickName", "nick_name" );
+            put( "realName", "real_name" );
+            put( "refType", "ref_type" );
+            put( "refId", "ref_id" );
+            put( "apiUri", "api_uri" );
+            put( "apiName", "api_name" );
+            put( "opState", "op_state" );
+            put( "responseMillis", "response_millis" );
+            put( "statusCode", "status_code" );
+            put( "appInfo", "app_info" );
+            put( "appHost", "app_host" );
+            put( "userIp", "user_ip" );
+            put( "requestDate", "request_date" );
+        }};
+    }
+
+    /**
      * 获取ID。
      */
     public Long getId() {
@@ -158,6 +192,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
      */
     public void setId(Long id) {
         this.id = id;
+    }
+
+    /**
+     * 设置ID链式调用。
+     */
+    public SysCritLogQueryParam id(Long id) {
+        setId( id );
+        return this;
     }
 
     /**
@@ -175,6 +217,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
     }
 
     /**
+     * 设置商户ID链式调用。
+     */
+    public SysCritLogQueryParam mchId(Long mchId) {
+        setMchId( mchId );
+        return this;
+    }
+
+    /**
      * 获取用户id。
      */
     public Long getUserId() {
@@ -186,6 +236,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
      */
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    /**
+     * 设置用户id链式调用。
+     */
+    public SysCritLogQueryParam userId(Long userId) {
+        setUserId( userId );
+        return this;
     }
 
     /**
@@ -203,6 +261,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
     }
 
     /**
+     * 设置用户类型链式调用。
+     */
+    public SysCritLogQueryParam userType(Integer userType) {
+        setUserType( userType );
+        return this;
+    }
+
+    /**
      * 获取用户组ID。
      */
     public Long getGroupId() {
@@ -214,6 +280,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
      */
     public void setGroupId(Long groupId) {
         this.groupId = groupId;
+    }
+
+    /**
+     * 设置用户组ID链式调用。
+     */
+    public SysCritLogQueryParam groupId(Long groupId) {
+        setGroupId( groupId );
+        return this;
     }
 
     /**
@@ -231,6 +305,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
     }
 
     /**
+     * 设置用户名链式调用。
+     */
+    public SysCritLogQueryParam userName(String userName) {
+        setUserName( userName );
+        return this;
+    }
+
+    /**
      * 获取用户昵称。
      */
     public String getNickName() {
@@ -242,6 +324,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
      */
     public void setNickName(String nickName) {
         this.nickName = nickName;
+    }
+
+    /**
+     * 设置用户昵称链式调用。
+     */
+    public SysCritLogQueryParam nickName(String nickName) {
+        setNickName( nickName );
+        return this;
     }
 
     /**
@@ -259,6 +349,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
     }
 
     /**
+     * 设置真实名称链式调用。
+     */
+    public SysCritLogQueryParam realName(String realName) {
+        setRealName( realName );
+        return this;
+    }
+
+    /**
      * 获取操作对象类型。
      */
     public String getRefType() {
@@ -273,14 +371,15 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
     }
 
     /**
-     * 设置操作对象类。
+     * 设置操作对象类型链式调用。
      */
-    public void setRefTypeClass(Class refTypeClass) {
-        this.refType = refTypeClass.getName();
+    public SysCritLogQueryParam refType(String refType) {
+        setRefType( refType );
+        return this;
     }
 
     /**
-     * 获得操作对象id。
+     * 获取操作对象id。
      */
     public String getRefId() {
         return this.refId;
@@ -291,6 +390,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
      */
     public void setRefId(String refId) {
         this.refId = refId;
+    }
+
+    /**
+     * 设置操作对象id链式调用。
+     */
+    public SysCritLogQueryParam refId(String refId) {
+        setRefId( refId );
+        return this;
     }
 
     /**
@@ -308,6 +415,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
     }
 
     /**
+     * 设置请求uri链式调用。
+     */
+    public SysCritLogQueryParam apiUri(String apiUri) {
+        setApiUri( apiUri );
+        return this;
+    }
+
+    /**
      * 获取API名称。
      */
     public String getApiName() {
@@ -319,6 +434,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
      */
     public void setApiName(String apiName) {
         this.apiName = apiName;
+    }
+
+    /**
+     * 设置API名称链式调用。
+     */
+    public SysCritLogQueryParam apiName(String apiName) {
+        setApiName( apiName );
+        return this;
     }
 
     /**
@@ -336,6 +459,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
     }
 
     /**
+     * 设置操作状态链式调用。
+     */
+    public SysCritLogQueryParam opState(String opState) {
+        setOpState( opState );
+        return this;
+    }
+
+    /**
      * 获取请求毫秒数。
      */
     public Long getResponseMillis() {
@@ -347,6 +478,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
      */
     public void setResponseMillis(Long responseMillis) {
         this.responseMillis = responseMillis;
+    }
+
+    /**
+     * 设置请求毫秒数链式调用。
+     */
+    public SysCritLogQueryParam responseMillis(Long responseMillis) {
+        setResponseMillis( responseMillis );
+        return this;
     }
 
     /**
@@ -364,6 +503,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
     }
 
     /**
+     * 设置请求毫秒数范围链式调用。
+     */
+    public SysCritLogQueryParam responseMillisRange(Long[] responseMillisRange) {
+        setResponseMillisRange( responseMillisRange );
+        return this;
+    }
+
+    /**
      * 获取响应状态码。
      */
     public Integer getStatusCode() {
@@ -375,6 +522,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
      */
     public void setStatusCode(Integer statusCode) {
         this.statusCode = statusCode;
+    }
+
+    /**
+     * 设置响应状态码链式调用。
+     */
+    public SysCritLogQueryParam statusCode(Integer statusCode) {
+        setStatusCode( statusCode );
+        return this;
     }
 
     /**
@@ -392,6 +547,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
     }
 
     /**
+     * 设置响应状态码范围链式调用。
+     */
+    public SysCritLogQueryParam statusCodeRange(Integer[] statusCodeRange) {
+        setStatusCodeRange( statusCodeRange );
+        return this;
+    }
+
+    /**
      * 获取应用信息。
      */
     public String getAppInfo() {
@@ -403,6 +566,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
      */
     public void setAppInfo(String appInfo) {
         this.appInfo = appInfo;
+    }
+
+    /**
+     * 设置应用信息链式调用。
+     */
+    public SysCritLogQueryParam appInfo(String appInfo) {
+        setAppInfo( appInfo );
+        return this;
     }
 
     /**
@@ -420,6 +591,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
     }
 
     /**
+     * 设置应用主机链式调用。
+     */
+    public SysCritLogQueryParam appHost(String appHost) {
+        setAppHost( appHost );
+        return this;
+    }
+
+    /**
      * 获取用户ip。
      */
     public String getUserIp() {
@@ -431,6 +610,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
      */
     public void setUserIp(String userIp) {
         this.userIp = userIp;
+    }
+
+    /**
+     * 设置用户ip链式调用。
+     */
+    public SysCritLogQueryParam userIp(String userIp) {
+        setUserIp( userIp );
+        return this;
     }
 
     /**
@@ -446,5 +633,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
     public void setRequestDateRange(Date[] requestDateRange) {
         this.requestDateRange = requestDateRange;
     }
+
+    /**
+     * 设置请求时间范围链式调用。
+     */
+    public SysCritLogQueryParam requestDateRange(Date[] requestDateRange) {
+        setRequestDateRange( requestDateRange );
+        return this;
+    }
+
 
 }

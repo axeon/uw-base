@@ -30,21 +30,6 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
     public static int REQUEST_ALL = 2;
 
     /**
-     * 不排序。
-     */
-    public static int SORT_NONE = 0;
-
-    /**
-     * 排顺序。
-     */
-    public static int SORT_ASC = 1;
-
-    /**
-     * 排倒序。
-     */
-    public static int SORT_DESC = 2;
-
-    /**
      * 当前页码。
      */
     @JsonProperty("page")
@@ -72,20 +57,6 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
     @Schema(name = "$rt", title = "请求类型", description = "请求类型。0:仅分页信息, 1:仅数据, 2:全部", defaultValue = "2")
     private int REQUEST_TYPE = REQUEST_DATA;
 
-    /**
-     * 排序名称。
-     */
-    @JsonProperty("sortName")
-    @Schema(name = "$sn", title = "排序名称", description = "排序名称")
-    private String SORT_NAME;
-
-    /**
-     * 排序类型。
-     */
-    @JsonProperty("sortType")
-    @Schema(name = "$st", title = "排序类型", description = "排序类型。0:不排序, 1:顺序, 2:倒序", defaultValue = "0")
-    private int SORT_TYPE = SORT_NONE;
-
     public PageQueryParam() {
 
     }
@@ -109,17 +80,6 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
     }
 
 
-    /**
-     * 生成sort的sql，直接使用sortName生成sql。
-     *
-     * @return
-     */
-    public String GEN_SORT_SQL() {
-        if (SORT_TYPE == SORT_NONE || StringUtils.isBlank( SORT_NAME )) {
-            return StringUtils.EMPTY;
-        }
-        return " order by " + this.SORT_NAME + " " + (SORT_TYPE == SORT_ASC ? "asc" : "desc");
-    }
 
     /**
      * 当前页码。
@@ -257,57 +217,4 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
         this.REQUEST_TYPE = requestType;
     }
 
-    /**
-     * 排序名称。
-     * @return
-     */
-    public String SORT_NAME() {
-        return SORT_NAME;
-    }
-
-    /**
-     * 设置排序名称。
-     * @param SORT_NAME
-     * @return
-     */
-    public PageQueryParam SORT_NAME(String SORT_NAME) {
-        this.SORT_NAME = SORT_NAME;
-        return this;
-
-    }
-
-    /**
-     * 设置排序名称。
-     * @param sortName
-     */
-    public void set$sn(String sortName) {
-        this.SORT_NAME = sortName;
-    }
-
-    /**
-     * 排序类型。
-     * @return
-     */
-    public int SORT_TYPE() {
-        return SORT_TYPE;
-    }
-
-    /**
-     * 设置排序类型。
-     * @param SORT_TYPE
-     * @return
-     */
-    public PageQueryParam SORT_TYPE(int SORT_TYPE) {
-        this.SORT_TYPE = SORT_TYPE;
-        return this;
-
-    }
-
-    /**
-     * 设置排序类型。
-     * @param sortType
-     */
-    public void set$st(int sortType) {
-        this.SORT_TYPE = sortType;
-    }
 }

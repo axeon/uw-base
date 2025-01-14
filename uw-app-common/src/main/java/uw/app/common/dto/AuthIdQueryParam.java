@@ -7,6 +7,9 @@ import uw.auth.service.token.AuthTokenData;
 import uw.dao.QueryParam;
 import uw.dao.annotation.QueryMeta;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 带验证信息的查询参数类。
  * 自带了saasId, mchId, userId, userType属性。
@@ -47,6 +50,17 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
     @QueryMeta(expr = "user_type=?")
     @Schema(title = "userType", description = "userType", hidden = true)
     private Integer userType;
+
+    /**
+     * 允许的排序属性。
+     * key:排序名 value:排序字段
+     *
+     * @return
+     */
+    @Override
+    public Map<String, String> ALLOWED_SORT_PROPERTY() {
+        return Map.of("id", "id");
+    }
 
     /**
      * 默认带id构造器。

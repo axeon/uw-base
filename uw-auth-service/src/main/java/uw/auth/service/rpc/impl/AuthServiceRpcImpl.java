@@ -125,7 +125,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/grantSaasPerm" ).queryParam( "saasId", saasId ).queryParam(
                         "permIds", permIds ).queryParam( "remark", remark ).build().encode().toUri();
-        return tokenRestTemplate.exchange( targetUrl, HttpMethod.PATCH, HttpEntity.EMPTY, ResponseData.class ).getBody();
+        return tokenRestTemplate.exchange( targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 
     /**
@@ -138,7 +138,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/revokeSaasPerm" ).queryParam( "saasId", saasId ).queryParam(
                         "permIds", permIds ).queryParam( "remark", remark ).build().encode().toUri();
-        return tokenRestTemplate.exchange( targetUrl, HttpMethod.PATCH, HttpEntity.EMPTY, ResponseData.class ).getBody();
+        return tokenRestTemplate.exchange( targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 
     /**
@@ -153,7 +153,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/enableSaasPerm" ).queryParam( "saasId", saasId ).queryParam(
                         "remark", remark ).build().encode().toUri();
-        return tokenRestTemplate.exchange( targetUrl, HttpMethod.PATCH, HttpEntity.EMPTY, ResponseData.class ).getBody();
+        return tokenRestTemplate.exchange( targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 
     /**
@@ -168,7 +168,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/disableSaasPerm" ).queryParam( "saasId", saasId ).queryParam(
                         "remark", remark ).build().encode().toUri();
-        return tokenRestTemplate.exchange( targetUrl, HttpMethod.PATCH, HttpEntity.EMPTY, ResponseData.class ).getBody();
+        return tokenRestTemplate.exchange( targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 
     /**
@@ -185,7 +185,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     public ResponseData updateSaasRateLimit(long saasId, int limitSeconds, int limitRequests, int limitBytes, Date expireDate, String remark) {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/updateSaasRateLimit" ).queryParam( "saasId", saasId ).queryParam( "remark", remark ).queryParam( "limitSeconds", limitSeconds ).queryParam( "limitRequests", limitRequests ).queryParam( "expireDate", expireDate ).queryParam( "limitBytes", limitBytes ).build().encode().toUri();
-        return tokenRestTemplate.exchange( targetUrl, HttpMethod.PATCH, HttpEntity.EMPTY, ResponseData.class ).getBody();
+        return tokenRestTemplate.exchange( targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 
     /**
@@ -199,7 +199,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     public ResponseData clearSaasRateLimit(long saasId, String remark) {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/clearSaasRateLimit" ).queryParam( "saasId", saasId ).queryParam( "remark", remark ).build().encode().toUri();
-        return tokenRestTemplate.exchange( targetUrl, HttpMethod.PATCH, HttpEntity.EMPTY, ResponseData.class ).getBody();
+        return tokenRestTemplate.exchange( targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 
 
@@ -215,7 +215,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     public ResponseData updateSaasUserLimit(long saasId, int userLimit, String remark) {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/updateSaasUserLimit" ).queryParam( "saasId", saasId ).queryParam( "remark", remark ).queryParam( "userLimit", userLimit ).build().encode().toUri();
-        return tokenRestTemplate.exchange( targetUrl, HttpMethod.PATCH, HttpEntity.EMPTY, ResponseData.class ).getBody();
+        return tokenRestTemplate.exchange( targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 
     /**
@@ -308,7 +308,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/updateSaasName" ).queryParam( "saasId", saasId ).queryParam(
                         "saasName", saasName ).build().encode().toUri();
-        return tokenRestTemplate.exchange( targetUrl, HttpMethod.PATCH, HttpEntity.EMPTY, ResponseData.class ).getBody();
+        return tokenRestTemplate.exchange( targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 
     /**

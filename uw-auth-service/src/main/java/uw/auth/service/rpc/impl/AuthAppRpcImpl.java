@@ -1,5 +1,7 @@
 package uw.auth.service.rpc.impl;
 
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestTemplate;
 import uw.auth.service.conf.AuthServiceProperties;
 import uw.auth.service.rpc.AuthAppRpc;
@@ -61,7 +63,8 @@ public class AuthAppRpcImpl implements AuthAppRpc {
      */
     @Override
     public ResponseData updatePermLicense(MscPermLicenseRequest mscPermLicenseRequest) {
-        return tokenRestTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/app/updatePermLicense", mscPermLicenseRequest, ResponseData.class );
+        return tokenRestTemplate.exchange( authServiceProperties.getAuthCenterHost() + "/rpc/app/updatePermLicense", HttpMethod.PUT, new HttpEntity<>( mscPermLicenseRequest ),
+                ResponseData.class ).getBody();
     }
 
 }

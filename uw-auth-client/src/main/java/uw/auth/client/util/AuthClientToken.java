@@ -175,6 +175,7 @@ public class AuthClientToken {
             headers.setContentType( MediaType.APPLICATION_FORM_URLENCODED );
             MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
             map.add( "refreshToken", refreshToken );
+            map.add( "loginAgent", authClientProperties.getAppName()+":"+authClientProperties.getAppVersion()+"/"+authClientProperties.getAppHost()+":"+authClientProperties.getAppPort() );
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>( map, headers );
             ResponseEntity<Map> responseEntity = restTemplate.postForEntity( refreshTokenUrl, request, Map.class );
             //刷新token成功以后，更新token

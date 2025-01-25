@@ -107,7 +107,7 @@ public class AuthClientToken {
             log.error( "!!!AuthClient获取token出错已超过{}次，请检查配置！", retryTimes );
         }
         //如果状态正常了，不再执行，防止重复执行。
-        if (StringUtils.isNotBlank(token)) {
+        if (StringUtils.isNotBlank( token )) {
             return;
         }
         retryTimes++;
@@ -115,7 +115,8 @@ public class AuthClientToken {
             String loginUrl = authClientProperties.getAuthCenterHost() + authClientProperties.getLoginEntryPoint();
             Map<String, String> credentialsMap = new HashMap<>( 6 );
             credentialsMap.put( "loginType", "1" );
-            credentialsMap.put( "loginAgent", authClientProperties.getAppName()+":"+authClientProperties.getAppVersion()+"/"+authClientProperties.getAppHost()+":"+authClientProperties.getAppPort() );
+            credentialsMap.put( "loginAgent",
+                    authClientProperties.getAppName() + ":" + authClientProperties.getAppVersion() + "/" + authClientProperties.getAppHost() + ":" + authClientProperties.getAppPort() );
             credentialsMap.put( "loginId", authClientProperties.getLoginId() );
             credentialsMap.put( "loginPass", authClientProperties.getLoginPass() );
             credentialsMap.put( "loginSecret", authClientProperties.getLoginSecret() );
@@ -148,12 +149,14 @@ public class AuthClientToken {
                 }
             }
             if (StringUtils.isBlank( token )) {
-                refreshToken = null;
-                expiresAt = 0;
                 log.error( "!!!AuthClient登录出错! response: {}", loginResponse.toString() );
             }
         } catch (Throwable e) {
             log.error( "!!!AuthClient登录出错! {}", e.getMessage(), e );
+        }
+        if (StringUtils.isBlank( token )) {
+            refreshToken = null;
+            expiresAt = 0;
         }
     }
 
@@ -165,7 +168,7 @@ public class AuthClientToken {
             log.error( "!!!AuthClient获取token出错已超过{}次，请检查配置！", retryTimes );
         }
         //如果状态正常了，不再执行，防止重复执行。
-        if (StringUtils.isNotBlank(token)) {
+        if (StringUtils.isNotBlank( token )) {
             return;
         }
         retryTimes++;
@@ -175,7 +178,8 @@ public class AuthClientToken {
             headers.setContentType( MediaType.APPLICATION_FORM_URLENCODED );
             MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
             map.add( "refreshToken", refreshToken );
-            map.add( "loginAgent", authClientProperties.getAppName()+":"+authClientProperties.getAppVersion()+"/"+authClientProperties.getAppHost()+":"+authClientProperties.getAppPort() );
+            map.add( "loginAgent",
+                    authClientProperties.getAppName() + ":" + authClientProperties.getAppVersion() + "/" + authClientProperties.getAppHost() + ":" + authClientProperties.getAppPort() );
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>( map, headers );
             ResponseEntity<Map> responseEntity = restTemplate.postForEntity( refreshTokenUrl, request, Map.class );
             //刷新token成功以后，更新token
@@ -198,12 +202,14 @@ public class AuthClientToken {
                 }
             }
             if (StringUtils.isBlank( token )) {
-                refreshToken = null;
-                expiresAt = 0;
                 log.error( "!!!AuthClient刷新token出错! response: {}", responseEntity.toString() );
             }
         } catch (Throwable e) {
             log.error( "!!!AuthClient刷新token出错! {}", e.getMessage(), e );
+        }
+        if (StringUtils.isBlank( token )) {
+            refreshToken = null;
+            expiresAt = 0;
         }
     }
 

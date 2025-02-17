@@ -16,7 +16,9 @@ import uw.common.dto.ResponseData;
 
 import java.net.URI;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * auth-server向auth-center RPC实现
@@ -77,10 +79,34 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
      * @return
      */
     @Override
-    public TokenResponse genGuestToken(String loginAgent, long saasId, long mchId, long userId, String username, String userIp, boolean checkDoubleLogin) {
+    public TokenResponse genGuestToken(String loginAgent, String clientAgent, int loginType, String loginId, long saasId, long mchId, long userId, String userName,
+                                       String nickName, String realName, String userIp, String remark, boolean checkDoubleLogin) {
         URI targetUrl =
-                UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/genGuestToken" ).queryParam( "loginAgent", loginAgent ).queryParam( "saasId", saasId ).queryParam( "mchId", mchId ).queryParam( "userId", userId ).queryParam( "username", username ).queryParam( "userIp", userIp ).queryParam( "checkDoubleLogin", checkDoubleLogin ).build().encode().toUri();
-        return tokenRestTemplate.getForObject( targetUrl, TokenResponse.class );
+                UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/genGuestToken" ).queryParam( "loginAgent", loginAgent ).queryParam( "clientAgent", clientAgent ).queryParam( "loginType", loginType ).queryParam( "loginId", loginId ).queryParam( "saasId", saasId ).queryParam( "mchId", mchId ).queryParam( "userId", userId ).queryParam( "userName", userName ).queryParam( "nickName", nickName ).queryParam( "realName", realName ).queryParam( "userIp", userIp ).queryParam( "remark", remark ).queryParam( "checkDoubleLogin", checkDoubleLogin ).build().encode().toUri();
+        return tokenRestTemplate.exchange( targetUrl, HttpMethod.POST, HttpEntity.EMPTY, TokenResponse.class ).getBody();
+    }
+
+    /**
+     * 通知guest登录失败。
+     *
+     * @param loginAgent
+     * @param saasId
+     * @param mchId
+     * @param userId
+     * @param userName
+     * @param nickName
+     * @param realName
+     * @param userIp     登录用户Ip。
+     * @param remark
+     * @return
+     * @throws Exception
+     */
+    @Override
+    public ResponseData notifyGuestLoginFail(String loginAgent, String clientAgent, int loginType, String loginId, long saasId, long mchId, long userId, String userName,
+                                             String nickName, String realName, String userIp, String remark) {
+        URI targetUrl =
+                UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/notifyGuestLoginFail" ).queryParam( "loginAgent", loginAgent ).queryParam( "clientAgent", clientAgent ).queryParam( "loginType", loginType ).queryParam( "loginId", loginId ).queryParam( "saasId", saasId ).queryParam( "mchId", mchId ).queryParam( "userId", userId ).queryParam( "userName", userName ).queryParam( "nickName", nickName ).queryParam( "realName", realName ).queryParam( "userIp", userIp ).queryParam( "remark", remark ).build().encode().toUri();
+        return tokenRestTemplate.exchange( targetUrl, HttpMethod.POST, HttpEntity.EMPTY, ResponseData.class ).getBody();
     }
 
     /**

@@ -1,7 +1,5 @@
 package uw.auth.service.rpc;
 
-import io.swagger.v3.oas.annotations.Parameter;
-import org.springframework.web.bind.annotation.RequestParam;
 import uw.auth.service.token.AuthTokenData;
 import uw.auth.service.vo.MscUserGroupVo;
 import uw.auth.service.vo.MscUserRegister;
@@ -47,10 +45,26 @@ public interface AuthServiceRpc {
      * @return
      * @throws Exception
      */
-    TokenResponse genGuestToken(String loginAgent, long saasId, long mchId, long userId, String userName, String userIp, boolean checkDoubleLogin);
+    TokenResponse genGuestToken(String loginAgent, String clientAgent, int loginType, String loginId, long saasId, long mchId, long userId, String userName, String nickName,
+                                String realName, String userIp, String remark, boolean checkDoubleLogin);
+
+    /**
+     * 通知guest登录失败。
+     *
+     * @param saasId
+     * @param mchId
+     * @param userId
+     * @param userName
+     * @param userIp   登录用户Ip。
+     * @return
+     * @throws Exception
+     */
+    ResponseData notifyGuestLoginFail(String loginAgent, String clientAgent, int loginType, String loginId, long saasId, long mchId, long userId, String userName,
+                                      String nickName, String realName, String userIp, String remark);
 
     /**
      * 踢出Guest用户。
+     *
      * @param saasId
      * @param userId
      * @param remark
@@ -153,8 +167,8 @@ public interface AuthServiceRpc {
      * @param email
      * @param wxId
      */
-    ResponseData<List<MscUserVo>> getUserList(long saasId, int userType, long mchId, long groupId, long userId, String userName, String nickName, String realName,
-                                              String mobile, String email, String wxId);
+    ResponseData<List<MscUserVo>> getUserList(long saasId, int userType, long mchId, long groupId, long userId, String userName, String nickName, String realName, String mobile,
+                                              String email, String wxId);
 
     /**
      * 获得saas用户组列表。

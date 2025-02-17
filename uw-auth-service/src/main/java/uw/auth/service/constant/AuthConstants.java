@@ -21,14 +21,19 @@ public class AuthConstants {
     public static final String TOKEN_HEADER_PREFIX = "Bearer ";
 
     /**
+     * 200 http code。
+     */
+    public static final String HTTP_SUCCESS_CODE = "200";
+
+    /**
      * 401 http code。
      */
     public static final String HTTP_UNAUTHORIZED_CODE = "401";
 
     /**
-     * 200 http code。
+     * 423 http code。
      */
-    public static final String HTTP_SUCCESS_CODE = "200";
+    public static final String HTTP_LOCKED_CODE = "423";
 
     /**
      * 获取用户名和SaasId

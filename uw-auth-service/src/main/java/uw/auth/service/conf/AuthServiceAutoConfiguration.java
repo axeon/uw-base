@@ -190,20 +190,4 @@ public class AuthServiceAutoConfiguration {
         appUpdateService.init();
     }
 
-    /**
-     * 注册日志对象
-     *
-     * @param logClient
-     * @return
-     */
-    @Bean
-    public CommandLineRunner configLogClient(final LogClient logClient) {
-        return args -> {
-            // 登录日志查询
-            logClient.regLogObjectWithIndexName( MscLoginLog.class, "uw.auth.login.log" );
-            // 操作日志
-            logClient.regLogObjectWithIndexName( MscActionLog.class, "uw.auth.action.log" );
-        };
-    }
-
 }

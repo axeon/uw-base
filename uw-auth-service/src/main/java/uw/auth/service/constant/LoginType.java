@@ -56,9 +56,40 @@ public enum LoginType {
     MOBILE_CODE( 23, "手机号验证码登录" ),
 
     /**
-     * 微信扫码登录。
+     * 微信登录。
      */
-    WECHAT_QR( 31, "微信扫码登录" );
+    OPEN_WECHAT( 31, "微信平台登录" ),
+
+    /**
+     * 抖音登录。
+     */
+    OPEN_DOUYIN( 32, "抖音平台登录" ),
+
+    /**
+     * 小红书平台登录。
+     */
+    OPEN_REDNOTE( 33, "小红书平台登录" ),
+
+    /**
+     * 快手平台登录。
+     */
+    OPEN_KUAISHOU( 34, "快手平台登录" ),
+
+    /**
+     * 阿里平台登录。
+     */
+    OPEN_ALI( 35, "阿里平台登录" ),
+
+    /**
+     * 拼多多平台登录。
+     */
+    OPEN_PDD( 36, "拼多多平台登录" ),
+
+    /**
+     * 其它开放平台。
+     */
+    OPEN_OTHER( 99, "其它开放平台" );
+
 
     /**
      * 参数值
@@ -99,20 +130,6 @@ public enum LoginType {
      */
     public static boolean isInputLoginType(int value) {
         if (value >= USER_PASS.getValue() && value <= MOBILE_CODE.getValue()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * 检查是否是扫码登录类型。
-     *
-     * @param value
-     * @return
-     */
-    public static boolean isScanLoginType(int value) {
-        if (value >= WECHAT_QR.getValue()) {
             return true;
         } else {
             return false;

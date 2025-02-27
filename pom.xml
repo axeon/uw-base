@@ -17,6 +17,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <spring-cloud.version>2023.0.4</spring-cloud.version>
         <spring-cloud.alibaba.version>2023.0.1.2</spring-cloud.alibaba.version>
+        <uw-ai.version>1.0.0</uw-ai.version>
         <uw-app-common.version>1.0.22</uw-app-common.version>
         <uw-common.version>1.0.23</uw-common.version>
         <uw-auth-client.version>6.0.25</uw-auth-client.version>

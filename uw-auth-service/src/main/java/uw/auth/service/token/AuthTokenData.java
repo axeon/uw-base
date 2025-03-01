@@ -79,10 +79,10 @@ public class AuthTokenData {
     private String email;
 
     /**
-     * 微信ID
+     * 登录IP
      */
-    @Schema(title = "微信ID", description = "微信ID")
-    private String wxId;
+    @Schema(title = "登录IP", description = "登录IP")
+    private String userIp;
 
     /**
      * 用户级别
@@ -115,7 +115,7 @@ public class AuthTokenData {
     }
 
     public AuthTokenData(long saasId, int userType, long userId, long mchId, long groupId, int isMaster, String userName, String nickName, String realName, String mobile,
-                         String email, String wxId, int userGrade) {
+                         String email, String userIp, int userGrade) {
         this.saasId = saasId;
         this.userType = userType;
         this.userId = userId;
@@ -127,7 +127,7 @@ public class AuthTokenData {
         this.nickName = nickName;
         this.mobile = mobile;
         this.email = email;
-        this.wxId = wxId;
+        this.userIp = userIp;
         this.userGrade = userGrade;
     }
 
@@ -223,12 +223,12 @@ public class AuthTokenData {
         this.email = email;
     }
 
-    public String getWxId() {
-        return wxId;
+    public String getUserIp() {
+        return userIp;
     }
 
-    public void setWxId(String wxId) {
-        this.wxId = wxId;
+    public void setUserIp(String userIp) {
+        this.userIp = userIp;
     }
 
     public int getUserGrade() {

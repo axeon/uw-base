@@ -72,6 +72,12 @@ public class TokenResponse {
     private long lastPasswdDate;
 
     /**
+     * 登录提示信息。
+     */
+    @Schema(title = "登录提示信息", description = "登录提示信息")
+    private String loginNotice;
+
+    /**
      * access token.
      */
     @Schema(title = "token", description = "token")
@@ -179,6 +185,14 @@ public class TokenResponse {
 
     public void setLastPasswdDate(long lastPasswdDate) {
         this.lastPasswdDate = lastPasswdDate;
+    }
+
+    public String getLoginNotice() {
+        return loginNotice;
+    }
+
+    public void setLoginNotice(String loginNotice) {
+        this.loginNotice = loginNotice;
     }
 
     public String getToken() {

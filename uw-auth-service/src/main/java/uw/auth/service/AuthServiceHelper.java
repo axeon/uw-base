@@ -402,14 +402,14 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前用户的微信id。
+     * 获得当前用户的登录IP。
      *
      * @return
      */
-    public static String getWxId() {
+    public static String getLoginIp() {
         AuthTokenData authToken = contextTokenHolder.get();
         if (authToken != null) {
-            return authToken.getWxId();
+            return authToken.getUserIp();
         } else {
             return null;
         }

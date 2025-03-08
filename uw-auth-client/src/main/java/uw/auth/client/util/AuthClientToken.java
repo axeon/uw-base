@@ -121,6 +121,7 @@ public class AuthClientToken {
             credentialsMap.put( "loginPass", authClientProperties.getLoginPass() );
             credentialsMap.put( "loginSecret", authClientProperties.getLoginSecret() );
             credentialsMap.put( "userType", String.valueOf( authClientProperties.getUserType() ) );
+            credentialsMap.put( "forceLogin", "true");
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType( MediaType.APPLICATION_JSON );
             String credentials = objectMapper.writeValueAsString( credentialsMap );

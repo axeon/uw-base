@@ -114,7 +114,7 @@ public class AppUpdateService {
                 logger.warn( "uw-auth-service registry failed {} times! will retry after 5 seconds.", i );
                 try {
                     Thread.sleep( 5000 );
-                } catch (InterruptedException e1) {
+                } catch (InterruptedException ignored) {
                 }
             }
         }
@@ -190,9 +190,8 @@ public class AppUpdateService {
             }
             // 扫描方法注解
             Map<RequestMappingInfo, HandlerMethod> map = requestMappingHandlerMapping.getHandlerMethods();
-            if (map != null && !map.isEmpty()) {
+            if (!map.isEmpty()) {
                 // 按照URI排序
-                Map<String, List<AppRegRequest.PermVo>> regSortAPIMap = new TreeMap<>();
                 for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : map.entrySet()) {
                     HandlerMethod method = entry.getValue();
                     MscPermDeclare mscPermDeclare = method.getMethodAnnotation( MscPermDeclare.class );
@@ -335,7 +334,7 @@ public class AppUpdateService {
                 }
             }
         } catch (Throwable e) {
-            logger.error( "reportStatus exception: " + e.getMessage(), e );
+            logger.error( "reportStatus exception: {}", e.getMessage(), e );
         }
     }
 

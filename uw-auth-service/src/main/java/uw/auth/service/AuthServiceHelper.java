@@ -109,7 +109,7 @@ public class AuthServiceHelper {
     /**
      * 反射的属性缓存
      */
-    private static LoadingCache<Class, Field[]> authFieldsCache = Caffeine.newBuilder().build( cls -> {
+    private static final LoadingCache<Class, Field[]> authFieldsCache = Caffeine.newBuilder().build( cls -> {
         List<Field> fields = new ArrayList<>();
         //获取类的所有属性，包括父类
         Class clazz = cls;
@@ -121,9 +121,8 @@ public class AuthServiceHelper {
         }
         // 过滤,只保存auth相关的属性
         Field[] authFields = new Field[4];
-        if (fields.size() > 0) {
-            for (int j = 0; j < fields.size(); j++) {
-                Field field = fields.get( j );
+        if (!fields.isEmpty()) {
+            for (Field field : fields) {
                 switch (field.getName()) {
                     case "saasId":
                         if (authFields[0] == null) {

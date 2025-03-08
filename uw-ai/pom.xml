@@ -20,7 +20,7 @@
     <dependencies>
         <dependency>
             <groupId>com.umtone</groupId>
-            <artifactId>uw-auth-client</artifactId>
+            <artifactId>uw-auth-service</artifactId>
         </dependency>
         <dependency>
             <groupId>com.umtone</groupId>
@@ -30,6 +30,23 @@
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.victools</groupId>
+            <artifactId>jsonschema-generator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.victools</groupId>
+            <artifactId>jsonschema-module-jackson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.victools</groupId>
+            <artifactId>jsonschema-module-swagger-2</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

@@ -9,19 +9,19 @@
     <description>uw-base</description>
     <version>${revision}</version>
     <properties>
-        <revision>2025.0118.1006</revision>
+        <revision>2025.0302.1000</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
-        <spring-cloud.version>2023.0.4</spring-cloud.version>
+        <spring-cloud.version>2023.0.5</spring-cloud.version>
         <spring-cloud.alibaba.version>2023.0.1.2</spring-cloud.alibaba.version>
         <uw-ai.version>1.0.0</uw-ai.version>
         <uw-app-common.version>1.0.22</uw-app-common.version>
         <uw-common.version>1.0.23</uw-common.version>
-        <uw-auth-client.version>6.0.25</uw-auth-client.version>
-        <uw-auth-service.version>6.0.136</uw-auth-service.version>
+        <uw-auth-client.version>6.0.26</uw-auth-client.version>
+        <uw-auth-service.version>6.0.137</uw-auth-service.version>
         <uw-dao.version>5.1.39</uw-dao.version>
         <uw-httpclient.version>2.1.116</uw-httpclient.version>
         <uw-logback-es.version>3.0.60</uw-logback-es.version>
@@ -36,7 +36,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.8</version>
+        <version>3.3.9</version>
     </parent>
     <dependencyManagement>
         <dependencies>
@@ -168,6 +168,21 @@
                 <groupId>com.esotericsoftware</groupId>
                 <artifactId>kryo</artifactId>
                 <version>5.6.2</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.victools</groupId>
+                <artifactId>jsonschema-generator</artifactId>
+                <version>4.37.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.victools</groupId>
+                <artifactId>jsonschema-module-jackson</artifactId>
+                <version>4.37.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.victools</groupId>
+                <artifactId>jsonschema-module-swagger-2</artifactId>
+                <version>4.37.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

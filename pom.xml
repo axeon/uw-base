@@ -9,7 +9,7 @@
     <description>uw-base</description>
     <version>${revision}</version>
     <properties>
-        <revision>2025.0302.1000</revision>
+        <revision>2025.0308.1000</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
@@ -53,6 +53,11 @@
                 <version>${spring-cloud.alibaba.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.umtone</groupId>
+                <artifactId>uw-ai</artifactId>
+                <version>${uw-ai.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.umtone</groupId>

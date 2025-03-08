@@ -9,7 +9,7 @@
     <description>uw-base</description>
     <version>${revision}</version>
     <properties>
-        <revision>2025.0308.1000</revision>
+        <revision>2025.0308.1001</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
@@ -193,6 +193,7 @@
     </dependencyManagement>
 
     <modules>
+        <module>uw-ai</module>
         <module>uw-app-common</module>
         <module>uw-auth-client</module>
         <module>uw-auth-service</module>

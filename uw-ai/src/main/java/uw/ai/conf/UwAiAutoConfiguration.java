@@ -15,7 +15,7 @@ import uw.ai.AiClientHelper;
 import uw.ai.controller.AiToolExecuteController;
 import uw.ai.rpc.AiToolRpc;
 import uw.ai.tool.AiTool;
-import uw.ai.util.JsonSchemaGenerator;
+import uw.ai.util.AiToolSchemaGenerator;
 import uw.ai.vo.AiToolMeta;
 import uw.common.dto.ResponseData;
 
@@ -53,6 +53,7 @@ public class UwAiAutoConfiguration {
 
     /**
      * AiClientHelper初始化。
+     *
      * @param toolRpc
      * @return
      */
@@ -61,18 +62,6 @@ public class UwAiAutoConfiguration {
     public AiClientHelper aiClientHelper(AiToolRpc toolRpc) {
         return new AiClientHelper( toolRpc );
     }
-
-    /**
-     * AiToolExecuteController初始化。
-     * @param applicationContext
-     * @return
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    AiToolExecuteController aiToolExecuteController(ApplicationContext applicationContext) {
-        return new AiToolExecuteController( applicationContext );
-    }
-
 
     /**
      * ApplicationContext初始化完成或刷新后执行init方法。
@@ -111,23 +100,38 @@ public class UwAiAutoConfiguration {
                 AiToolMeta sysToolMeta = sysAiToolMetaMap.get( toolClass );
                 if (sysToolMeta == null || !sysToolMeta.getToolVersion().equals( aiTool.toolVersion() )) {
                     AiToolMeta aiToolMeta = new AiToolMeta();
+                    if (sysToolMeta != null) {
+                        aiToolMeta.setId( sysToolMeta.getId() );
+                    }
                     aiToolMeta.setAppName( uwAiProperties.getAppName() );
                     aiToolMeta.setToolClass( toolClass );
                     aiToolMeta.setToolVersion( aiTool.toolVersion() );
                     aiToolMeta.setToolName( aiTool.toolName() );
                     aiToolMeta.setToolDesc( aiTool.toolDesc() );
-                    aiToolMeta.setToolInput( JsonSchemaGenerator.generateForMethodInput( applyMethod ) );
-                    aiToolMeta.setToolOutput( JsonSchemaGenerator.generateForMethodOutput( applyMethod ) );
+                    aiToolMeta.setToolInput( AiToolSchemaGenerator.generateForMethodInput( applyMethod ) );
+                    aiToolMeta.setToolOutput( AiToolSchemaGenerator.generateForMethodOutput( applyMethod ) );
                     ResponseData responseData = AiClientHelper.updateToolMeta( aiToolMeta );
                     if (responseData.isSuccess()) {
                         logger.info( "注册AiToolMeta[{}]成功！", toolClass );
                     } else {
-                        logger.error( "注册AiToolMeta[{}]失败！", toolClass );
+                        logger.error( "注册AiToolMeta[{}]失败！{}", toolClass, responseData.getMsg() );
                     }
                 }
             }
             logger.info( "完成注册AiToolMeta!" );
         }
+    }
+
+    /**
+     * AiToolExecuteController初始化。
+     *
+     * @param applicationContext
+     * @return
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    AiToolExecuteController aiToolExecuteController(ApplicationContext applicationContext) {
+        return new AiToolExecuteController( applicationContext );
     }
 
 }

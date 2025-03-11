@@ -135,7 +135,7 @@ public final class AiJsonParser {
      * @return The list of instantiated modules.
      */
     @SuppressWarnings("unchecked")
-    private static List<com.fasterxml.jackson.databind.Module> instantiateAvailableModules() {
+    public static List<com.fasterxml.jackson.databind.Module> instantiateAvailableModules() {
         List<com.fasterxml.jackson.databind.Module> modules = new ArrayList<>();
         try {
             Class<? extends com.fasterxml.jackson.databind.Module> jdk8ModuleClass = (Class<? extends com.fasterxml.jackson.databind.Module>) ClassUtils

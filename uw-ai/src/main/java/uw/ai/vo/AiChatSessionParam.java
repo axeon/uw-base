@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * AiChat生成参数。
  */
-public class AiChatGenerateParam {
+public class AiChatSessionParam {
 
     /**
      * 配置Id
@@ -27,7 +27,7 @@ public class AiChatGenerateParam {
      */
     private List<AiToolCallInfo> toolList;
 
-    public AiChatGenerateParam() {
+    public AiChatSessionParam() {
     }
 
     public long getConfigId() {

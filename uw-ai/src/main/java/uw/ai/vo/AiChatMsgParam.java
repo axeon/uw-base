@@ -5,12 +5,12 @@ import java.util.List;
 /**
  * AiChat生成参数。
  */
-public class AiChatGenerateParam {
+public class AiChatMsgParam {
 
     /**
-     * 配置Id
+     * sessionId
      */
-    private long configId;
+    private long sessionId;
 
     /**
      * 用户输入
@@ -27,15 +27,15 @@ public class AiChatGenerateParam {
      */
     private List<AiToolCallInfo> toolList;
 
-    public AiChatGenerateParam() {
+    public AiChatMsgParam() {
     }
 
-    public long getConfigId() {
-        return configId;
+    public long getSessionId() {
+        return sessionId;
     }
 
-    public void setConfigId(long configId) {
-        this.configId = configId;
+    public void setSessionId(long sessionId) {
+        this.sessionId = sessionId;
     }
 
     public String getUserPrompt() {

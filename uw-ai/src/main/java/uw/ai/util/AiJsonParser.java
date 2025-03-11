@@ -3,12 +3,10 @@ package uw.ai.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.springframework.beans.BeanUtils;
-import org.springframework.core.KotlinDetector;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
@@ -20,7 +18,7 @@ import java.util.List;
 /**
  * Utilities to perform parsing operations between JSON and Java.
  */
-public final class JsonParser {
+public final class AiJsonParser {
 
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
             .disable( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES )
@@ -28,7 +26,7 @@ public final class JsonParser {
             .addModules( instantiateAvailableModules() )
             .build();
 
-    private JsonParser() {
+    private AiJsonParser() {
     }
 
     /**
@@ -124,8 +122,8 @@ public final class JsonParser {
             return Enum.valueOf( (Class<Enum>) javaType, value.toString() );
         }
 
-        String json = JsonParser.toJson( value );
-        return JsonParser.fromJson( json, javaType );
+        String json = AiJsonParser.toJson( value );
+        return AiJsonParser.fromJson( json, javaType );
     }
 
     /**

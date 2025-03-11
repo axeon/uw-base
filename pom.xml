@@ -8,6 +8,13 @@
     <name>uw-base</name>
     <description>uw-base</description>
     <version>${revision}</version>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.9</version>
+    </parent>
+
     <properties>
         <revision>2025.0308.1001</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -33,11 +40,7 @@
         <uw-tinyurl-client.version>1.0.18</uw-tinyurl-client.version>
         <uw-mydb-client.version>1.0.12</uw-mydb-client.version>
     </properties>
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.9</version>
-    </parent>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -209,18 +212,31 @@
         <module>uw-task</module>
         <module>uw-tinyurl-client</module>
     </modules>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
     <developers>
         <developer>
             <name>axeon</name>
             <email>23231269@qq.com</email>
         </developer>
     </developers>
-    <licenses>
-        <license>
-            <name>The Apache Software License, Version 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-        </license>
-    </licenses>
+
+    <url>https://github.com/axeon/uw-base</url>
+    <scm>
+        <connection>scm:git@github.com:axeon/uw-base.git</connection>
+        <developerConnection>scm:git@github.com:axeon/uw-base.git</developerConnection>
+        <url>git@github.com:axeon/uw-base.git</url>
+    </scm>
+    <issueManagement>
+        <system>Github Issue</system>
+        <url>https://github.com/axeon/uw-base/issues</url>
+    </issueManagement>
 
 
     <profiles>

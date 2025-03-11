@@ -1,13 +1,14 @@
 package uw.ai.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import uw.ai.tool.AiTool;
+import uw.ai.tool.AiToolParam;
+import uw.ai.vo.AiToolExecuteParam;
 import uw.auth.service.annotation.MscPermDeclare;
 import uw.auth.service.constant.UserType;
 import uw.common.dto.ResponseData;
@@ -36,15 +37,19 @@ public class AiToolExecuteController {
      *
      * @return 是否成功
      */
-    @PostMapping("/run")
+    @PostMapping("/execute")
     @MscPermDeclare(user = UserType.RPC)
     @Operation(summary = "运行任务", description = "运行任务")
-    public ResponseData run(String toolClass, String toolInput) {
-        AiTool aiTool = applicationContext.getBean( toolClass, AiTool.class );
-        if (aiTool == null) {
-            return ResponseData.errorMsg( "找不到任务类：" + toolClass );
+    public ResponseData execute(@RequestBody AiToolExecuteParam executeParam) {
+        if (StringUtils.isBlank( executeParam.getToolClass())|| StringUtils.isBlank( executeParam.getToolInput() )){
+            return ResponseData.errorMsg( "请给出任务类和任务参数！" );
         }
-        return ResponseData.success( aiTool.apply( toolInput ) );
+        AiTool aiTool = applicationContext.getBean( executeParam.getToolClass(), AiTool.class );
+        if (aiTool == null) {
+            return ResponseData.errorMsg( "找不到任务类：" + executeParam.getToolClass() );
+        }
+        AiToolParam toolParam = aiTool.convertParam( executeParam.getToolInput() );
+        return (ResponseData)aiTool.apply( toolParam ) ;
     }
 
 }

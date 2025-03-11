@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import uw.ai.AiClientHelper;
+import uw.ai.controller.AiToolExecuteController;
 import uw.ai.rpc.AiToolRpc;
 import uw.ai.tool.AiTool;
 import uw.ai.util.JsonSchemaGenerator;
@@ -50,11 +51,28 @@ public class UwAiAutoConfiguration {
     }
 
 
+    /**
+     * AiClientHelper初始化。
+     * @param toolRpc
+     * @return
+     */
     @Bean
     @ConditionalOnMissingBean
     public AiClientHelper aiClientHelper(AiToolRpc toolRpc) {
         return new AiClientHelper( toolRpc );
     }
+
+    /**
+     * AiToolExecuteController初始化。
+     * @param applicationContext
+     * @return
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    AiToolExecuteController aiToolExecuteController(ApplicationContext applicationContext) {
+        return new AiToolExecuteController( applicationContext );
+    }
+
 
     /**
      * ApplicationContext初始化完成或刷新后执行init方法。
@@ -91,13 +109,13 @@ public class UwAiAutoConfiguration {
                     continue;
                 }
                 AiToolMeta sysToolMeta = sysAiToolMetaMap.get( toolClass );
-                if (sysToolMeta == null || !sysToolMeta.getToolVersion().equals( aiTool.version() )) {
+                if (sysToolMeta == null || !sysToolMeta.getToolVersion().equals( aiTool.toolVersion() )) {
                     AiToolMeta aiToolMeta = new AiToolMeta();
                     aiToolMeta.setAppName( uwAiProperties.getAppName() );
                     aiToolMeta.setToolClass( toolClass );
-                    aiToolMeta.setToolVersion( aiTool.version() );
-                    aiToolMeta.setToolName( aiTool.name() );
-                    aiToolMeta.setToolDesc( aiTool.desc() );
+                    aiToolMeta.setToolVersion( aiTool.toolVersion() );
+                    aiToolMeta.setToolName( aiTool.toolName() );
+                    aiToolMeta.setToolDesc( aiTool.toolDesc() );
                     aiToolMeta.setToolInput( JsonSchemaGenerator.generateForMethodInput( applyMethod ) );
                     aiToolMeta.setToolOutput( JsonSchemaGenerator.generateForMethodOutput( applyMethod ) );
                     ResponseData responseData = AiClientHelper.updateToolMeta( aiToolMeta );

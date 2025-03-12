@@ -13,6 +13,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import uw.ai.AiClientHelper;
 import uw.ai.controller.AiToolExecuteController;
+import uw.ai.rpc.AiChatRpc;
 import uw.ai.rpc.AiToolRpc;
 import uw.ai.tool.AiTool;
 import uw.ai.util.AiToolSchemaGenerator;
@@ -59,8 +60,8 @@ public class UwAiAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public AiClientHelper aiClientHelper(AiToolRpc toolRpc) {
-        return new AiClientHelper( toolRpc );
+    public AiClientHelper aiClientHelper(AiToolRpc toolRpc, AiChatRpc chatRpc) {
+        return new AiClientHelper( toolRpc, chatRpc );
     }
 
     /**

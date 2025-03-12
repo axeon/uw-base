@@ -14,6 +14,9 @@ import uw.common.dto.ResponseData;
 import java.net.URI;
 import java.util.List;
 
+/**
+ * AiToolRpcImpl.
+ */
 @Component
 public class AiToolRpcImpl implements AiToolRpc {
 

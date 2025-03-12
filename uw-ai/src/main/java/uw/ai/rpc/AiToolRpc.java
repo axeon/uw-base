@@ -5,6 +5,9 @@ import uw.common.dto.ResponseData;
 
 import java.util.List;
 
+/**
+ * AiToolRpc.
+ */
 public interface AiToolRpc {
 
 

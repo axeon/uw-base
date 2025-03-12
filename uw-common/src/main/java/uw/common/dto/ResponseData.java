@@ -2,6 +2,8 @@ package uw.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.util.StringJoiner;
 
@@ -354,7 +356,13 @@ public final class ResponseData<T> {
 
     @Override
     public String toString() {
-        return new StringJoiner( ", ", ResponseData.class.getSimpleName() + "[", "]" ).add( "timestamp=" + timestamp ).add( "state='" + state + "'" ).add( "msg='" + msg + "'" ).add( "code='" + code + "'" ).add( "data=" + data ).toString();
+        return new ToStringBuilder( this , ToStringStyle.JSON_STYLE )
+                .append( "timestamp", timestamp )
+                .append( "state", state )
+                .append( "msg", msg )
+                .append( "code", code )
+                .append( "data", data )
+                .toString();
     }
 
     public T getData() {

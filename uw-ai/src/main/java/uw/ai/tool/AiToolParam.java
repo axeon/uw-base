@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * Ai Tool Param.
  * 工具参数基类，主要保存了鉴权信息。
  */
+@Schema(title = "AiTool参数基类", description = "AiTool参数基类")
 public class AiToolParam {
 
     /**

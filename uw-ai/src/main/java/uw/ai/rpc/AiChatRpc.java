@@ -3,6 +3,9 @@ package uw.ai.rpc;
 import uw.ai.vo.AiChatGenerateParam;
 import uw.common.dto.ResponseData;
 
+/**
+ * AiChatRpc.
+ */
 public interface AiChatRpc {
 
 

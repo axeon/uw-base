@@ -1,31 +1,39 @@
 package uw.ai.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.List;
 
 /**
- * AiChat生成参数。
+ * AiChat聊天消息参数。
  */
+@Schema(title = "AiChat聊天消息参数", description = "AiChat聊天消息参数")
 public class AiChatMsgParam {
 
     /**
      * sessionId
      */
+    @Schema(title = "sessionId", description = "sessionId", requiredMode = Schema.RequiredMode.REQUIRED)
     private long sessionId;
 
     /**
      * 用户输入
      */
+    @Schema(title = "用户输入", description = "用户输入", requiredMode = Schema.RequiredMode.REQUIRED)
     private String userPrompt;
 
     /**
      * 系统提示
      */
+    @Schema(title = "系统提示", description = "系统提示", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String systemPrompt;
 
     /**
      * 工具信息。
      */
+    @Schema(title = "工具列表", description = "工具列表", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private List<AiToolCallInfo> toolList;
+
 
     public AiChatMsgParam() {
     }

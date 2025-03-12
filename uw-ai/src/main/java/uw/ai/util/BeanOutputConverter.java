@@ -23,6 +23,10 @@ import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * A utility class for converting LLM output to a specific type.
+ * @param <T>
+ */
 public class BeanOutputConverter<T> {
 
     private final Logger logger = LoggerFactory.getLogger( BeanOutputConverter.class );

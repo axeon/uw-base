@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 /**
  * 工具元数据。
  */
+@Schema(title = "工具元数据", description = "工具元数据")
 public class AiToolMeta {
 
     /**

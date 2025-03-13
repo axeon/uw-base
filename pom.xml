@@ -222,8 +222,14 @@
 
     <developers>
         <developer>
-            <name>axeon</name>
+            <id>central</id>
+            <name>zhangjin</name>
             <email>23231269@qq.com</email>
+            <roles>
+                <role>Owner</role>
+                <role>Maintainer</role>
+                <role>Developer</role>
+            </roles>
         </developer>
     </developers>
 
@@ -237,7 +243,6 @@
         <system>Github Issue</system>
         <url>https://github.com/axeon/uw-base/issues</url>
     </issueManagement>
-
 
     <profiles>
         <profile>
@@ -269,14 +274,63 @@
                             </execution>
                         </executions>
                     </plugin>
+
+                    <!--   central发布插件    -->
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                        </configuration>
+                    </plugin>
+                    <!--   source源码插件 -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!--   javadoc插件 -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <configuration>
+                            <additionalJOptions>
+                                <additionalJOption>-Xdoclint:none</additionalJOption>
+                            </additionalJOptions>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!--   gpg插件 -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
-            <distributionManagement>
-                <repository>
-                    <id>xili-nexus</id>
-                    <url>http://dev.xili.pub:61881/repository/maven-releases/</url>
-                </repository>
-            </distributionManagement>
         </profile>
     </profiles>
 </project>

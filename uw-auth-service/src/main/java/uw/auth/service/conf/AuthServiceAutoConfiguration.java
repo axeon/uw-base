@@ -33,6 +33,7 @@ import uw.auth.service.rpc.impl.AuthServiceRpcImpl;
 import uw.auth.service.service.AppUpdateService;
 import uw.auth.service.service.AuthPermService;
 import uw.auth.service.vo.MscActionLog;
+import uw.auth.service.vo.MscGuestLoginLog;
 import uw.auth.service.vo.MscLoginLog;
 import uw.log.es.LogClient;
 
@@ -91,6 +92,24 @@ public class AuthServiceAutoConfiguration {
             registrationBean.setUrlPatterns( Splitter.on( "," ).trimResults().omitEmptyStrings().splitToList( authServiceProperties.getAuthEntryPoint() ) );
         }
         return registrationBean;
+    }
+
+    /**
+     * 注册日志对象
+     *
+     * @param logClient
+     * @return
+     */
+    @Bean
+    public CommandLineRunner configAuthLogClient(final LogClient logClient) {
+        return args -> {
+            // 登录日志查询
+            logClient.regLogObjectWithIndexName( MscLoginLog.class, "uw.auth.login.log" );
+            // 操作日志
+            logClient.regLogObjectWithIndexName( MscActionLog.class, "uw.auth.action.log" );
+            // 客户登录日志查询
+            logClient.regLogObjectWithIndexName( MscGuestLoginLog.class, "uw.auth.guest.login.log" );
+        };
     }
 
     /**

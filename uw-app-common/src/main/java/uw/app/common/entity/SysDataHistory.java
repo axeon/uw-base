@@ -26,91 +26,91 @@ public class SysDataHistory implements DataEntity,Serializable{
      * ID
      */
     @ColumnMeta(columnName="id", dataType="long", dataSize=19, nullable=false, primaryKey=true)
-    @Schema(title = "ID", description = "ID")
+    @Schema(title = "ID", description = "ID", maxLength=19, nullable=false )
     private long id;
 
     /**
      * saasId
      */
     @ColumnMeta(columnName="saas_id", dataType="long", dataSize=19, nullable=false, primaryKey=true)
-    @Schema(title = "saasId", description = "saasId")
+    @Schema(title = "saasId", description = "saasId", maxLength=19, nullable=false )
     private long saasId;
 
     /**
      * 商户ID
      */
     @ColumnMeta(columnName="mch_id", dataType="long", dataSize=19, nullable=true)
-    @Schema(title = "商户ID", description = "商户ID")
+    @Schema(title = "商户ID", description = "商户ID", maxLength=19, nullable=true )
     private long mchId;
 
     /**
      * 用户ID
      */
     @ColumnMeta(columnName="user_id", dataType="long", dataSize=19, nullable=false)
-    @Schema(title = "用户ID", description = "用户ID")
+    @Schema(title = "用户ID", description = "用户ID", maxLength=19, nullable=false )
     private long userId;
 
     /**
      * 用户类型
      */
     @ColumnMeta(columnName="user_type", dataType="int", dataSize=10, nullable=true)
-    @Schema(title = "用户类型", description = "用户类型")
+    @Schema(title = "用户类型", description = "用户类型", maxLength=10, nullable=true )
     private int userType;
 
     /**
      * 用户的组ID
      */
     @ColumnMeta(columnName="group_id", dataType="long", dataSize=19, nullable=true)
-    @Schema(title = "用户的组ID", description = "用户的组ID")
+    @Schema(title = "用户的组ID", description = "用户的组ID", maxLength=19, nullable=true )
     private long groupId;
 
     /**
      * 用户名称
      */
     @ColumnMeta(columnName="user_name", dataType="String", dataSize=100, nullable=true)
-    @Schema(title = "用户名称", description = "用户名称")
+    @Schema(title = "用户名称", description = "用户名称", maxLength=100, nullable=true )
     private String userName;
 
     /**
      * 用户昵称
      */
     @ColumnMeta(columnName="nick_name", dataType="String", dataSize=100, nullable=true)
-    @Schema(title = "用户昵称", description = "用户昵称")
+    @Schema(title = "用户昵称", description = "用户昵称", maxLength=100, nullable=true )
     private String nickName;
 
     /**
      * 真实名称
      */
     @ColumnMeta(columnName="real_name", dataType="String", dataSize=100, nullable=true)
-    @Schema(title = "真实名称", description = "真实名称")
+    @Schema(title = "真实名称", description = "真实名称", maxLength=100, nullable=true )
     private String realName;
 
     /**
      * 实体类
      */
     @ColumnMeta(columnName="entity_class", dataType="String", dataSize=100, nullable=true)
-    @Schema(title = "实体类", description = "实体类")
+    @Schema(title = "实体类", description = "实体类", maxLength=100, nullable=true )
     private String entityClass;
 
     /**
      * 实体ID
      */
     @ColumnMeta(columnName="entity_id", dataType="String", dataSize=100, nullable=true)
-    @Schema(title = "实体ID", description = "实体ID")
+    @Schema(title = "实体ID", description = "实体ID", maxLength=100, nullable=true )
     private String entityId;
 
     /**
      * 实体名
      */
     @ColumnMeta(columnName="entity_name", dataType="String", dataSize=200, nullable=true)
-    @Schema(title = "实体名", description = "实体名")
+    @Schema(title = "实体名", description = "实体名", maxLength=200, nullable=true )
     private String entityName;
 
     /**
      * 实体数据
      */
     @ColumnMeta(columnName="entity_data", dataType="String", dataSize=1073741824, nullable=true)
-    @Schema(title = "实体数据", description = "实体数据")
+    @Schema(title = "实体数据", description = "实体数据", maxLength=1073741824, nullable=true )
     @JsonRawValue(value = false)
     private String entityData;
 
@@ -118,28 +118,28 @@ public class SysDataHistory implements DataEntity,Serializable{
      * 实体修改信息
      */
     @ColumnMeta(columnName="entity_update_info", dataType="String", dataSize=2147483647, nullable=true)
-    @Schema(title = "实体修改信息", description = "实体修改信息")
+    @Schema(title = "实体修改信息", description = "实体修改信息", maxLength=2147483647, nullable=true )
     private String entityUpdateInfo;
 
     /**
      * 备注信息
      */
     @ColumnMeta(columnName="remark", dataType="String", dataSize=65535, nullable=true)
-    @Schema(title = "备注信息", description = "备注信息")
+    @Schema(title = "备注信息", description = "备注信息", maxLength=65535, nullable=true )
     private String remark;
 
     /**
      * 用户IP
      */
     @ColumnMeta(columnName="user_ip", dataType="String", dataSize=100, nullable=true)
-    @Schema(title = "用户IP", description = "用户IP")
+    @Schema(title = "用户IP", description = "用户IP", maxLength=100, nullable=true )
     private String userIp;
 
     /**
      * 创建日期
      */
     @ColumnMeta(columnName="create_date", dataType="java.util.Date", dataSize=23, nullable=true)
-    @Schema(title = "创建日期", description = "创建日期")
+    @Schema(title = "创建日期", description = "创建日期", maxLength=23, nullable=true )
     private java.util.Date createDate;
 
     /**

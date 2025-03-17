@@ -26,168 +26,168 @@ public class SysCritLog implements DataEntity,Serializable{
      * ID
      */
     @ColumnMeta(columnName="id", dataType="long", dataSize=19, nullable=false, primaryKey=true)
-    @Schema(title = "ID", description = "ID")
+    @Schema(title = "ID", description = "ID", maxLength=19, nullable=false )
     private long id;
 
     /**
      * saasId
      */
     @ColumnMeta(columnName="saas_id", dataType="long", dataSize=19, nullable=false, primaryKey=true)
-    @Schema(title = "saasId", description = "saasId")
+    @Schema(title = "saasId", description = "saasId", maxLength=19, nullable=false )
     private long saasId;
 
     /**
      * 商户ID
      */
     @ColumnMeta(columnName="mch_id", dataType="long", dataSize=19, nullable=true)
-    @Schema(title = "商户ID", description = "商户ID")
+    @Schema(title = "商户ID", description = "商户ID", maxLength=19, nullable=true )
     private long mchId;
 
     /**
      * 用户id
      */
     @ColumnMeta(columnName="user_id", dataType="long", dataSize=19, nullable=false)
-    @Schema(title = "用户id", description = "用户id")
+    @Schema(title = "用户id", description = "用户id", maxLength=19, nullable=false )
     private long userId;
 
     /**
      * 用户类型
      */
     @ColumnMeta(columnName="user_type", dataType="int", dataSize=10, nullable=true)
-    @Schema(title = "用户类型", description = "用户类型")
+    @Schema(title = "用户类型", description = "用户类型", maxLength=10, nullable=true )
     private int userType;
 
     /**
      * 用户组ID
      */
     @ColumnMeta(columnName="group_id", dataType="long", dataSize=19, nullable=true)
-    @Schema(title = "用户组ID", description = "用户组ID")
+    @Schema(title = "用户组ID", description = "用户组ID", maxLength=19, nullable=true )
     private long groupId;
 
     /**
      * 用户名
      */
     @ColumnMeta(columnName="user_name", dataType="String", dataSize=100, nullable=true)
-    @Schema(title = "用户名", description = "用户名")
+    @Schema(title = "用户名", description = "用户名", maxLength=100, nullable=true )
     private String userName;
 
     /**
      * 用户昵称
      */
     @ColumnMeta(columnName="nick_name", dataType="String", dataSize=100, nullable=true)
-    @Schema(title = "用户昵称", description = "用户昵称")
+    @Schema(title = "用户昵称", description = "用户昵称", maxLength=100, nullable=true )
     private String nickName;
 
     /**
      * 真实名称
      */
     @ColumnMeta(columnName="real_name", dataType="String", dataSize=100, nullable=true)
-    @Schema(title = "真实名称", description = "真实名称")
+    @Schema(title = "真实名称", description = "真实名称", maxLength=100, nullable=true )
     private String realName;
 
     /**
      * 操作对象类型
      */
     @ColumnMeta(columnName="ref_type", dataType="String", dataSize=100, nullable=true)
-    @Schema(title = "操作对象类型", description = "操作对象类型")
+    @Schema(title = "操作对象类型", description = "操作对象类型", maxLength=100, nullable=true )
     private String refType;
 
     /**
      * 操作对象id
      */
     @ColumnMeta(columnName="ref_id", dataType="String", dataSize=100, nullable=true)
-    @Schema(title = "操作对象id", description = "操作对象id")
+    @Schema(title = "操作对象id", description = "操作对象id", maxLength=100, nullable=true )
     private String refId;
 
     /**
      * 请求uri
      */
     @ColumnMeta(columnName="api_uri", dataType="String", dataSize=200, nullable=true)
-    @Schema(title = "请求uri", description = "请求uri")
+    @Schema(title = "请求uri", description = "请求uri", maxLength=200, nullable=true )
     private String apiUri;
 
     /**
      * API名称
      */
     @ColumnMeta(columnName="api_name", dataType="String", dataSize=200, nullable=true)
-    @Schema(title = "API名称", description = "API名称")
+    @Schema(title = "API名称", description = "API名称", maxLength=200, nullable=true )
     private String apiName;
 
     /**
      * 操作状态
      */
     @ColumnMeta(columnName="op_state", dataType="String", dataSize=200, nullable=true)
-    @Schema(title = "操作状态", description = "操作状态")
+    @Schema(title = "操作状态", description = "操作状态", maxLength=200, nullable=true )
     private String opState;
 
     /**
      * 日志内容
      */
     @ColumnMeta(columnName="op_log", dataType="String", dataSize=65535, nullable=true)
-    @Schema(title = "日志内容", description = "日志内容")
+    @Schema(title = "日志内容", description = "日志内容", maxLength=65535, nullable=true )
     private String opLog;
 
     /**
      * 请求参数
      */
     @ColumnMeta(columnName="request_body", dataType="String", dataSize=2147483647, nullable=true)
-    @Schema(title = "请求参数", description = "请求参数")
+    @Schema(title = "请求参数", description = "请求参数", maxLength=2147483647, nullable=true )
     private String requestBody;
 
     /**
      * 响应日志
      */
     @ColumnMeta(columnName="response_body", dataType="String", dataSize=2147483647, nullable=true)
-    @Schema(title = "响应日志", description = "响应日志")
+    @Schema(title = "响应日志", description = "响应日志", maxLength=2147483647, nullable=true )
     private String responseBody;
 
     /**
      * 请求毫秒数
      */
     @ColumnMeta(columnName="response_millis", dataType="long", dataSize=19, nullable=true)
-    @Schema(title = "请求毫秒数", description = "请求毫秒数")
+    @Schema(title = "请求毫秒数", description = "请求毫秒数", maxLength=19, nullable=true )
     private long responseMillis;
 
     /**
      * 异常信息
      */
     @ColumnMeta(columnName="exception", dataType="String", dataSize=65535, nullable=true)
-    @Schema(title = "异常信息", description = "异常信息")
+    @Schema(title = "异常信息", description = "异常信息", maxLength=65535, nullable=true )
     private String exception;
 
     /**
      * 响应状态码
      */
     @ColumnMeta(columnName="status_code", dataType="int", dataSize=10, nullable=true)
-    @Schema(title = "响应状态码", description = "响应状态码")
+    @Schema(title = "响应状态码", description = "响应状态码", maxLength=10, nullable=true )
     private int statusCode;
 
     /**
      * 应用信息
      */
     @ColumnMeta(columnName="app_info", dataType="String", dataSize=100, nullable=true)
-    @Schema(title = "应用信息", description = "应用信息")
+    @Schema(title = "应用信息", description = "应用信息", maxLength=100, nullable=true )
     private String appInfo;
 
     /**
      * 应用主机
      */
     @ColumnMeta(columnName="app_host", dataType="String", dataSize=100, nullable=true)
-    @Schema(title = "应用主机", description = "应用主机")
+    @Schema(title = "应用主机", description = "应用主机", maxLength=100, nullable=true )
     private String appHost;
 
     /**
      * 用户ip
      */
     @ColumnMeta(columnName="user_ip", dataType="String", dataSize=50, nullable=true)
-    @Schema(title = "用户ip", description = "用户ip")
+    @Schema(title = "用户ip", description = "用户ip", maxLength=50, nullable=true )
     private String userIp;
 
     /**
      * 请求时间
      */
     @ColumnMeta(columnName="request_date", dataType="java.util.Date", dataSize=23, nullable=false)
-    @Schema(title = "请求时间", description = "请求时间")
+    @Schema(title = "请求时间", description = "请求时间", maxLength=23, nullable=false )
     private java.util.Date requestDate;
 
     /**

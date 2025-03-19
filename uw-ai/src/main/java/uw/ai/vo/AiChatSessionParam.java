@@ -29,6 +29,12 @@ public class AiChatSessionParam {
     private String systemPrompt;
 
     /**
+     * 窗口大小。
+     */
+    @Schema(title = "窗口大小", description = "窗口大小", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private int windowSize;
+
+    /**
      * 工具信息。
      */
     @Schema(title = "工具列表", description = "工具列表", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
@@ -60,6 +66,14 @@ public class AiChatSessionParam {
 
     public void setSystemPrompt(String systemPrompt) {
         this.systemPrompt = systemPrompt;
+    }
+
+    public int getWindowSize() {
+        return windowSize;
+    }
+
+    public void setWindowSize(int windowSize) {
+        this.windowSize = windowSize;
     }
 
     public List<AiToolCallInfo> getToolList() {

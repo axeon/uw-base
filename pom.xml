@@ -246,7 +246,7 @@
 
     <profiles>
         <profile>
-            <id>release-central</id>
+            <id>release-uw</id>
             <build>
                 <plugins>
                     <plugin>

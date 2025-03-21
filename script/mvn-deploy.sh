@@ -20,7 +20,7 @@ usage() {
 }
 
 # 初始化基础命令
-CMD_DEPLOY="mvn deploy -P release -DskipTests"
+CMD_DEPLOY="mvn deploy -P release-uw -DskipTests"
 CMD_CLEAN="mvn clean"
 
 # 检查参数是否存在

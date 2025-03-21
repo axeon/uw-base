@@ -39,7 +39,7 @@ public class AiChatGenerateParam {
      * 文件列表。
      */
     @Schema(title = "文件列表", description = "文件列表", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private MultipartFile[] files;
+    private MultipartFile[] fileList;
 
     public AiChatGenerateParam() {
     }
@@ -76,11 +76,11 @@ public class AiChatGenerateParam {
         this.toolList = toolList;
     }
 
-    public MultipartFile[] getFiles() {
-        return files;
+    public MultipartFile[] getFileList() {
+        return fileList;
     }
 
-    public void setFiles(MultipartFile[] files) {
-        this.files = files;
+    public void setFileList(MultipartFile[] fileList) {
+        this.fileList = fileList;
     }
 }

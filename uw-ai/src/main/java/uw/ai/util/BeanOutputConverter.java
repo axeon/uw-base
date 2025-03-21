@@ -103,6 +103,34 @@ public class BeanOutputConverter<T> {
     }
 
     /**
+     * Cleans the given text by removing leading and trailing whitespace, triple backticks, and "json" identifier.
+     * @param text
+     * @return
+     */
+    public String cleanJson(String text) {
+        // Remove leading and trailing whitespace
+        text = text.trim();
+
+        // Check for and remove triple backticks and "json" identifier
+        if (text.startsWith( "```" ) && text.endsWith( "```" )) {
+            // Remove the first line if it contains "```json"
+            String[] lines = text.split( "\n", 2 );
+            if (lines[0].trim().equalsIgnoreCase( "```json" )) {
+                text = lines.length > 1 ? lines[1] : "";
+            } else {
+                text = text.substring( 3 ); // Remove leading ```
+            }
+
+            // Remove trailing ```
+            text = text.substring( 0, text.length() - 3 );
+
+            // Trim again to remove any potential whitespace
+            text = text.trim();
+        }
+        return text;
+    }
+
+    /**
      * Parses the given text to transform it to the desired target type.
      *
      * @param text The LLM output in string format.
@@ -111,25 +139,6 @@ public class BeanOutputConverter<T> {
     @SuppressWarnings("unchecked")
     public T convert(@NonNull String text) {
         try {
-            // Remove leading and trailing whitespace
-            text = text.trim();
-
-            // Check for and remove triple backticks and "json" identifier
-            if (text.startsWith( "```" ) && text.endsWith( "```" )) {
-                // Remove the first line if it contains "```json"
-                String[] lines = text.split( "\n", 2 );
-                if (lines[0].trim().equalsIgnoreCase( "```json" )) {
-                    text = lines.length > 1 ? lines[1] : "";
-                } else {
-                    text = text.substring( 3 ); // Remove leading ```
-                }
-
-                // Remove trailing ```
-                text = text.substring( 0, text.length() - 3 );
-
-                // Trim again to remove any potential whitespace
-                text = text.trim();
-            }
             return (T) this.objectMapper.readValue( text, this.objectMapper.constructType( this.type ) );
         } catch (JsonProcessingException e) {
             logger.error(
@@ -146,11 +155,10 @@ public class BeanOutputConverter<T> {
      */
     public String getFormat() {
         String template = """
-                Your response should be in JSON format.
-                Do not include any explanations, only provide a RFC8259 compliant JSON response following this format without deviation.
-                Do not include markdown code blocks in your response.
-                Remove the ```json markdown from the output.
-                Here is the JSON Schema instance your output must adhere to:
+                请仅使用JSON格式返回信息。
+                请不要包含其他的解释和说明信息，仅输出RFC8259兼容的JSON信息。
+                请不要包含任何markdown code格式标签，请移除类似```json的markdown指令。
+                请严格按照以下的JSON Schema格式返回信息：
                 ```%s```
                 """;
         return String.format( template, this.jsonSchema );

@@ -21,7 +21,7 @@ usage() {
 
 # 初始化基础命令
 CMD_DEPLOY="mvn deploy -P release-uw -DskipTests"
-CMD_CLEAN="mvn clean"
+CMD_CLEAN="mvn clean -P release-uw"
 
 # 检查参数是否存在
 if [ ! -z "$1" ]; then

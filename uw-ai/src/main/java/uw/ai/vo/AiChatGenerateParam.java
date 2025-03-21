@@ -1,6 +1,7 @@
 package uw.ai.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -33,6 +34,12 @@ public class AiChatGenerateParam {
      */
     @Schema(title = "工具列表", description = "工具列表", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private List<AiToolCallInfo> toolList;
+
+    /**
+     * 文件列表。
+     */
+    @Schema(title = "文件列表", description = "文件列表", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private MultipartFile[] files;
 
     public AiChatGenerateParam() {
     }
@@ -67,5 +74,13 @@ public class AiChatGenerateParam {
 
     public void setToolList(List<AiToolCallInfo> toolList) {
         this.toolList = toolList;
+    }
+
+    public MultipartFile[] getFiles() {
+        return files;
+    }
+
+    public void setFiles(MultipartFile[] files) {
+        this.files = files;
     }
 }

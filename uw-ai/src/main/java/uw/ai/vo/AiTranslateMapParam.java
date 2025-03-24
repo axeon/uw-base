@@ -19,6 +19,10 @@ public class AiTranslateMapParam extends AiTranslateBaseParam {
     public AiTranslateMapParam() {
     }
 
+    public AiTranslateMapParam(LinkedHashMap<String, String> textMap) {
+        this.textMap = textMap;
+    }
+
     public LinkedHashMap<String, String> getTextMap() {
         return textMap;
     }

@@ -28,6 +28,9 @@ public abstract class AiTranslateBaseParam {
     @Schema(title = "目标语言列表", description = "目标语言列表")
     private List<String> langList;
 
+    public AiTranslateBaseParam() {
+    }
+
     public long getConfigId() {
         return configId;
     }

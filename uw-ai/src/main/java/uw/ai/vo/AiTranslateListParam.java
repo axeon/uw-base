@@ -16,6 +16,13 @@ public class AiTranslateListParam extends AiTranslateBaseParam {
     @Schema(title = "待翻译的文本列表", description = "待翻译的文本列表")
     private List<String> textList;
 
+    public AiTranslateListParam() {
+    }
+
+    public AiTranslateListParam(List<String> textList) {
+        this.textList = textList;
+    }
+
     public List<String> getTextList() {
         return textList;
     }

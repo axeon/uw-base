@@ -20,6 +20,9 @@ public class AiToolCallInfo {
     @Schema(title = "是否直接返回", description = "是否直接返回",requiredMode = Schema.RequiredMode.REQUIRED)
     private boolean returnDirect;
 
+    public AiToolCallInfo() {
+    }
+
     public AiToolCallInfo(String toolCode, boolean returnDirect) {
         this.toolCode = toolCode;
         this.returnDirect = returnDirect;

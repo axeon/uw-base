@@ -5,8 +5,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-import java.util.StringJoiner;
-
 /**
  * 用于作为返回给前端的vo类。
  * 支持链式调用，同时支持泛型。
@@ -53,7 +51,7 @@ public final class ResponseData<T> {
      * 响应时间
      */
     @Schema(title = "时间戳", description = "时间戳")
-    private long timestamp;
+    private long time;
 
     /**
      * 状态
@@ -82,7 +80,7 @@ public final class ResponseData<T> {
     private T data;
 
     private ResponseData(T data, String state, String code, String msg) {
-        this.timestamp = System.currentTimeMillis();
+        this.time = System.currentTimeMillis();
         this.state = state;
         this.msg = msg;
         this.code = code;
@@ -356,52 +354,101 @@ public final class ResponseData<T> {
 
     @Override
     public String toString() {
-        return new ToStringBuilder( this , ToStringStyle.JSON_STYLE )
-                .append( "timestamp", timestamp )
+        return new ToStringBuilder( this, ToStringStyle.JSON_STYLE )
+                .append( "times", time )
                 .append( "state", state )
                 .append( "msg", msg )
                 .append( "code", code )
                 .append( "data", data )
+                .append( "type", data == null ? null : data.getClass().getSimpleName() )
                 .toString();
     }
 
+    /**
+     * 获得数据。
+     * @return
+     */
     public T getData() {
         return data;
     }
 
+    /**
+     * 设置数据。
+     * @param data
+     */
     public void setData(T data) {
         this.data = data;
     }
 
+    /**
+     * 获得消息。
+     * @return
+     */
     public String getMsg() {
         return msg;
     }
 
+    /**
+     * 设置消息。
+     * @param msg
+     */
     public void setMsg(String msg) {
         this.msg = msg;
     }
 
+    /**
+     * 获得状态。
+     * @return
+     */
     public String getState() {
         return state;
     }
 
+    /**
+     * 设置状态。
+     * @param state
+     */
     public void setState(String state) {
         this.state = state;
     }
 
+    /**
+     * 获得代码。
+     * @return
+     */
     public String getCode() {
         return code;
     }
 
+    /**
+     * 设置代码。
+     * @param code
+     */
     public void setCode(String code) {
         this.code = code;
     }
 
-    public long getTimestamp() {
-        return timestamp;
+    /**
+     * 获得时间戳。
+     * @return
+     */
+    public long getTime() {
+        return time;
     }
 
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
+    /**
+     * 设置时间戳。
+     * @param time
+     */
+    public void setTime(long time) {
+        this.time = time;
+    }
+
+    /**
+     * 获得数据类型。
+     * @return
+     */
+    public String getType(){
+        return data == null ? null : data.getClass().getSimpleName();
     }
 }

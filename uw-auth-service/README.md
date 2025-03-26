@@ -201,12 +201,6 @@ public class $PackageInfo$ {
 }
 ```
 
-#### @RateLimitDeclare 限速注解
-
-1.target属性有以下几种：IP：基于ip限速；USER：基于用户限速；MCH：基于商户限速；SAAS：基于SAAS限速，USER_URI：基于用户和资源联合限速；MCH_URI：基于商户和资源联合限速；SAAS_URI：基于SAAS和资源联合限速。
-
-2.seonds和requests设置上，建议secons以5秒为单位，这样可以让用户访问限制带有一定弹性，减少屏蔽。
-
 ### AuthServiceHelper
 
 AuthServiceHelper是程序内获得用户权限信息的辅助类，此类通过ThreadLocal来传递关键的权限信息，通过AuthServiceHelper可以获得UserId，SaasId，mchId，token，log等相关信息。

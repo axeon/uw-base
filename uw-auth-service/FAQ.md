@@ -23,25 +23,6 @@ uw-auth由uw-auth-center，uw-auth-service，uw-auth-client三部分组成。
 @MscPermDeclare(type = UserType.OPS, auth = AuthType.USER)
 ```
 
-#### 4.RateLimitDeclare注解中都可以配置什么限速资源？不同限速器的区别和限制？
-
-可以配置的限速资源有：
-
-- NONE：不限速
-- IP：根据ip限速
-- USER：用户id限速
-- MCH：商户限速
-- SAAS：SAAS限速
-- USER_URI：用户资源限速
-- MCH_URI：商户资源限速
-- SAAS_URI：SAAS资源限速
-
-uw-auth的限速器都实现了MscRateLimiter接口，可以通过配置文件中的uw.auth.rateLimit.type这个属性来配置使用哪种限速器，有以下几种：
-
-- NoneRateLimiter: 不限速，直接默认返回通过值；
-- LocalRateLimiter: 本地限速器，基于guava RateLimiter实现，在性能比较宽裕的情况下，可以优先使用本地限速器；
-- GlobalRateLimiter: 全局限速器，基于redis和lua脚本实现，支持分布式。
-
 #### 5.ResponseAdviceIgnore注解有什么作用？什么时候会使用这个注解？
 
  某些程序内部调用的REST接口（如RPC接口），建议使用@ResponseAdviceIgnore注解来避免ResponseData<>封装，减小封装开销。  

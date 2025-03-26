@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * AiChat生成参数。
@@ -34,6 +35,12 @@ public class AiChatGenerateParam {
      */
     @Schema(title = "工具列表", description = "工具列表", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private List<AiToolCallInfo> toolList;
+
+    /**
+     * 工具上下文。
+     */
+    @Schema(title = "工具上下文", description = "工具上下文", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private Map<String,Object> toolContext;
 
     /**
      * 文件列表。
@@ -74,6 +81,14 @@ public class AiChatGenerateParam {
 
     public void setToolList(List<AiToolCallInfo> toolList) {
         this.toolList = toolList;
+    }
+
+    public Map<String, Object> getToolContext() {
+        return toolContext;
+    }
+
+    public void setToolContext(Map<String, Object> toolContext) {
+        this.toolContext = toolContext;
     }
 
     public MultipartFile[] getFileList() {

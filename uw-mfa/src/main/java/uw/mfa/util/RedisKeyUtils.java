@@ -43,7 +43,7 @@ public class RedisKeyUtils {
      * @param id
      * @return
      */
-    public static final String buildTypeId(String prefixWithColon, String type, Object id) {
+    public static String buildTypeId(String prefixWithColon, String type, Object id) {
         if (id == null) {
             return prefixWithColon + type;
         } else {

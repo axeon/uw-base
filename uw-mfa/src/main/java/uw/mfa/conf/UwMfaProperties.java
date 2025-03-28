@@ -1,6 +1,7 @@
 package uw.mfa.conf;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import uw.mfa.constant.HashingAlgorithm;
 
 @ConfigurationProperties(prefix = "uw.mfa")
 public class UwMfaProperties {
@@ -84,6 +85,36 @@ public class UwMfaProperties {
      * 设备识别码EMAIL发送API。
      */
     private String deviceNotifyEmailApi = "http://saas-base-app/rpc/saasMsg/sendMail";
+
+    /**
+     * TOTP算法，默认SHA256。
+     */
+    private HashingAlgorithm totpAlgorithm = HashingAlgorithm.SHA256;
+
+    /**
+     * TOTP密钥默认长度，默认32位。
+     */
+    private int totpSecretLength = 32;
+
+    /**
+     * TOTP验证码默认长度，默认6位。
+     */
+    private int totpCodeLength = 6;
+
+    /**
+     * TOTP验证码时间窗口，默认30秒。
+     */
+    private int totpTimePeriod = 30;
+
+    /**
+     * TOTP验证时间窗口偏移量
+     */
+    private int totpTimePeriodDiscrepancy = 3;
+
+    /**
+     * TOTP是否生成二维码，默认生成。
+     */
+    private boolean toptGenQr = true;
 
     /**
      * Redis配置
@@ -216,6 +247,54 @@ public class UwMfaProperties {
 
     public void setDeviceNotifyEmailApi(String deviceNotifyEmailApi) {
         this.deviceNotifyEmailApi = deviceNotifyEmailApi;
+    }
+
+    public HashingAlgorithm getTotpAlgorithm() {
+        return totpAlgorithm;
+    }
+
+    public void setTotpAlgorithm(HashingAlgorithm totpAlgorithm) {
+        this.totpAlgorithm = totpAlgorithm;
+    }
+
+    public int getTotpSecretLength() {
+        return totpSecretLength;
+    }
+
+    public void setTotpSecretLength(int totpSecretLength) {
+        this.totpSecretLength = totpSecretLength;
+    }
+
+    public int getTotpCodeLength() {
+        return totpCodeLength;
+    }
+
+    public void setTotpCodeLength(int totpCodeLength) {
+        this.totpCodeLength = totpCodeLength;
+    }
+
+    public int getTotpTimePeriod() {
+        return totpTimePeriod;
+    }
+
+    public void setTotpTimePeriod(int totpTimePeriod) {
+        this.totpTimePeriod = totpTimePeriod;
+    }
+
+    public int getTotpTimePeriodDiscrepancy() {
+        return totpTimePeriodDiscrepancy;
+    }
+
+    public void setTotpTimePeriodDiscrepancy(int totpTimePeriodDiscrepancy) {
+        this.totpTimePeriodDiscrepancy = totpTimePeriodDiscrepancy;
+    }
+
+    public boolean isToptGenQr() {
+        return toptGenQr;
+    }
+
+    public void setToptGenQr(boolean toptGenQr) {
+        this.toptGenQr = toptGenQr;
     }
 
     public RedisProperties getRedis() {

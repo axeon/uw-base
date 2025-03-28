@@ -40,6 +40,12 @@ public class AiChatSessionParam {
     @Schema(title = "工具列表", description = "工具列表", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private List<AiToolCallInfo> toolList;
 
+    /**
+     * rag知识库id列表。
+     */
+    @Schema(title = "rag知识库id列表", description = "rag知识库id列表", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private long[] ragLibIds;
+
 
     public AiChatSessionParam() {
     }
@@ -82,5 +88,13 @@ public class AiChatSessionParam {
 
     public void setToolList(List<AiToolCallInfo> toolList) {
         this.toolList = toolList;
+    }
+
+    public long[] getRagLibIds() {
+        return ragLibIds;
+    }
+
+    public void setRagLibIds(long[] ragLibIds) {
+        this.ragLibIds = ragLibIds;
     }
 }

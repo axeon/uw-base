@@ -35,7 +35,7 @@ public class ConfigParamUtils {
         }
         Map<String, String> configMixMap = new HashMap<>();
         for (ConfigParam configParam : configParamList) {
-            configMixMap.put( configParam.getName(), configParam.getValue() );
+            configMixMap.put( configParam.getKey(), configParam.getValue() );
         }
         if (configDataMap == null) {
             return ResponseData.warn( new ConfigParamBox( configMixMap ), "", "配置数据加载失败，使用默认配置信息！" );
@@ -53,11 +53,13 @@ public class ConfigParamUtils {
      */
     public static ResponseData<ConfigParamBox> buildParamBox(List<ConfigParam> configParamList, String configDataJson) {
         Map<String, String> configDataMap = null;
-        try {
-            configDataMap = OBJECT_MAPPER.readValue( configDataJson, new TypeReference<Map<String, String>>() {
-            } );
-        } catch (JsonProcessingException e) {
-            logger.error( "配置数据解析失败！{}", e.getMessage(), e );
+        if (StringUtils.isNotBlank( configDataJson )) {
+            try {
+                configDataMap = OBJECT_MAPPER.readValue( configDataJson, new TypeReference<Map<String, String>>() {
+                } );
+            } catch (JsonProcessingException e) {
+                logger.error( "配置数据解析失败！{}", e.getMessage(), e );
+            }
         }
         return buildParamBox( configParamList, configDataMap );
     }
@@ -72,17 +74,21 @@ public class ConfigParamUtils {
     public static ResponseData<ConfigParamBox> buildParamBox(String configParamJson, String configDataJson) {
         List<ConfigParam> configParams = null;
         Map<String, String> configDataMap = null;
-        try {
-            configParams = Arrays.asList( OBJECT_MAPPER.readValue( configParamJson, ConfigParam[].class ) );
-        } catch (JsonProcessingException e) {
-            logger.error( "配置参数解析失败！{}", e.getMessage(), e );
-            return ResponseData.error( ConfigParamBox.EMPTY_PARAM_BOX, "", "配置参数解析失败！" + e.getMessage() );
+        if (StringUtils.isNotBlank( configParamJson )) {
+            try {
+                configParams = Arrays.asList( OBJECT_MAPPER.readValue( configParamJson, ConfigParam[].class ) );
+            } catch (JsonProcessingException e) {
+                logger.error( "配置参数解析失败！{}", e.getMessage(), e );
+                return ResponseData.error( ConfigParamBox.EMPTY_PARAM_BOX, "", "配置参数解析失败！" + e.getMessage() );
+            }
         }
-        try {
-            configDataMap = OBJECT_MAPPER.readValue( configDataJson, new TypeReference<Map<String, String>>() {
-            } );
-        } catch (JsonProcessingException e) {
-            logger.error( "配置数据解析失败！{}", e.getMessage(), e );
+        if (StringUtils.isNotBlank( configDataJson )) {
+            try {
+                configDataMap = OBJECT_MAPPER.readValue( configDataJson, new TypeReference<Map<String, String>>() {
+                } );
+            } catch (JsonProcessingException e) {
+                logger.error( "配置数据解析失败！{}", e.getMessage(), e );
+            }
         }
         return buildParamBox( configParams, configDataMap );
     }
@@ -103,7 +109,7 @@ public class ConfigParamUtils {
         }
         List<ConfigParam> errorParamList = new ArrayList<>();
         for (ConfigParam configParam : configParamList) {
-            String paramValue = configDataMap.get( configParam.getName() );
+            String paramValue = configDataMap.get( configParam.getKey() );
             if (paramValue == null) {
                 continue;
             }
@@ -280,11 +286,13 @@ public class ConfigParamUtils {
      */
     public ResponseData<List<ConfigParam>> validateConfigData(List<ConfigParam> configParamList, String configDataJson) {
         Map<String, String> configDataMap = null;
-        try {
-            configDataMap = OBJECT_MAPPER.readValue( configDataJson, new TypeReference<Map<String, String>>() {
-            } );
-        } catch (JsonProcessingException e) {
-            logger.error( "配置数据解析失败！{}", e.getMessage(), e );
+        if (StringUtils.isNotBlank( configDataJson )) {
+            try {
+                configDataMap = OBJECT_MAPPER.readValue( configDataJson, new TypeReference<Map<String, String>>() {
+                } );
+            } catch (JsonProcessingException e) {
+                logger.error( "配置数据解析失败！{}", e.getMessage(), e );
+            }
         }
         return validateConfigData( configParamList, configDataMap );
 
@@ -300,17 +308,21 @@ public class ConfigParamUtils {
     public ResponseData<List<ConfigParam>> validateConfigData(String configParamJson, String configDataJson) {
         Map<String, String> configDataMap = null;
         List<ConfigParam> configParamList = null;
-        try {
-            configParamList = OBJECT_MAPPER.readValue( configParamJson, new TypeReference<List<ConfigParam>>() {
-            } );
-        } catch (JsonProcessingException e) {
-            logger.error( "配置参数解析失败！{}", e.getMessage(), e );
+        if (StringUtils.isNotBlank( configDataJson )) {
+            try {
+                configParamList = OBJECT_MAPPER.readValue( configParamJson, new TypeReference<List<ConfigParam>>() {
+                } );
+            } catch (JsonProcessingException e) {
+                logger.error( "配置参数解析失败！{}", e.getMessage(), e );
+            }
         }
-        try {
-            configDataMap = OBJECT_MAPPER.readValue( configDataJson, new TypeReference<Map<String, String>>() {
-            } );
-        } catch (JsonProcessingException e) {
-            logger.error( "配置数据解析失败！{}", e.getMessage(), e );
+        if (StringUtils.isNotBlank( configDataJson )) {
+            try {
+                configDataMap = OBJECT_MAPPER.readValue( configDataJson, new TypeReference<Map<String, String>>() {
+                } );
+            } catch (JsonProcessingException e) {
+                logger.error( "配置数据解析失败！{}", e.getMessage(), e );
+            }
         }
         return validateConfigData( configParamList, configDataMap );
 

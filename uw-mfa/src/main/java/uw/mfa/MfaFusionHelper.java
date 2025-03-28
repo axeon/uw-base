@@ -5,6 +5,8 @@ import uw.mfa.captcha.vo.CaptchaQuestion;
 import uw.mfa.helper.MfaCaptchaHelper;
 import uw.mfa.helper.MfaDeviceCodeHelper;
 import uw.mfa.helper.MfaIPLimitHelper;
+import uw.mfa.helper.MfaTotpHelper;
+import uw.mfa.totp.vo.TotpSecretData;
 
 /**
  * 一个融合MFA帮助类。
@@ -162,6 +164,36 @@ public class MfaFusionHelper {
             }
         }
         return checkData;
+    }
+
+    /**
+     * 生成totp密钥。
+     * @param issuer
+     * @param label
+     * @param qrSize
+     * @return
+     */
+    public static ResponseData<TotpSecretData> issueTotpSecret(String issuer, String label, int qrSize) {
+        return MfaTotpHelper.issue( issuer, label, qrSize );
+    }
+
+    /**
+     * 验证totp密钥。
+     * @param secret
+     * @param code
+     * @return
+     */
+    public static boolean verifyTotpCode(String secret, String code) {
+        return MfaTotpHelper.verifyCode( secret, code );
+    }
+
+    /**
+     * 生成totp密钥。
+     * @param amount
+     * @return
+     */
+    public static String[] generateRecoveryCode(int amount) {
+        return MfaTotpHelper.generateRecoveryCode( amount );
     }
 
 }

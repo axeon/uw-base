@@ -43,6 +43,12 @@ public class AiChatGenerateParam {
     private Map<String,Object> toolContext;
 
     /**
+     * rag知识库id列表。
+     */
+    @Schema(title = "rag知识库id列表", description = "rag知识库id列表", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private long[] ragLibIds;
+
+    /**
      * 文件列表。
      */
     @Schema(title = "文件列表", description = "文件列表", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
@@ -89,6 +95,14 @@ public class AiChatGenerateParam {
 
     public void setToolContext(Map<String, Object> toolContext) {
         this.toolContext = toolContext;
+    }
+
+    public long[] getRagLibIds() {
+        return ragLibIds;
+    }
+
+    public void setRagLibIds(long[] ragLibIds) {
+        this.ragLibIds = ragLibIds;
     }
 
     public MultipartFile[] getFileList() {

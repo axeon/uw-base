@@ -18,11 +18,6 @@ public class MfaTotpHelper {
     private static final Logger log = LoggerFactory.getLogger( MfaTotpHelper.class );
 
     /**
-     * 配置文件。
-     */
-    private static UwMfaProperties uwMfaProperties;
-
-    /**
      * Totp签发器。
      */
     private static TotpSecretDataGenerator totpSecretDataGenerator;
@@ -33,7 +28,6 @@ public class MfaTotpHelper {
     private static TotpCodeVerifier totpCodeVerifier;
 
     public MfaTotpHelper(UwMfaProperties uwMfaProperties) {
-        MfaTotpHelper.uwMfaProperties = uwMfaProperties;
         totpCodeVerifier = new TotpCodeVerifier( uwMfaProperties.getTotpAlgorithm(), uwMfaProperties.getTotpCodeLength(), uwMfaProperties.getTotpTimePeriod(),
                 uwMfaProperties.getTotpTimePeriodDiscrepancy() );
         totpSecretDataGenerator = new TotpSecretDataGenerator( uwMfaProperties.getTotpAlgorithm(), uwMfaProperties.getTotpSecretLength(), uwMfaProperties.getTotpCodeLength(),
@@ -59,7 +53,7 @@ public class MfaTotpHelper {
      * @param code   验证码
      * @return
      */
-    public static boolean verifyCode(String secret, String code) {
+    public static ResponseData verifyCode(String secret, String code) {
         return totpCodeVerifier.verifyCode( secret, code );
     }
 

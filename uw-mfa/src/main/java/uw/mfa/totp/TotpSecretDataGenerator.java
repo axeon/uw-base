@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.dto.ResponseData;
 import uw.mfa.constant.HashingAlgorithm;
+import uw.mfa.constant.MfaErrorType;
 import uw.mfa.totp.vo.TotpSecretData;
 
 import java.io.ByteArrayOutputStream;
@@ -20,7 +21,7 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 二维码签发器。
+ * 密钥数据生成器。
  */
 public class TotpSecretDataGenerator {
 
@@ -93,7 +94,7 @@ public class TotpSecretDataGenerator {
                 return ResponseData.success( new TotpSecretData( secret, totpUri, Base64.getEncoder().encodeToString( pngOutputStream.toByteArray() ) ) );
             } catch (Exception e) {
                 logger.error( e.getMessage(), e );
-                return ResponseData.errorMsg( e.getMessage() );
+                return ResponseData.errorCode( MfaErrorType.TOTP_SECRET_GEN_ERROR.getCode(), MfaErrorType.TOTP_SECRET_GEN_ERROR.getMessage() + e.getMessage() );
             }
         }
     }

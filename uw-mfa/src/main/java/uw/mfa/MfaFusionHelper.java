@@ -183,7 +183,7 @@ public class MfaFusionHelper {
      * @param code
      * @return
      */
-    public static boolean verifyTotpCode(String secret, String code) {
+    public static ResponseData verifyTotpCode(String secret, String code) {
         return MfaTotpHelper.verifyCode( secret, code );
     }
 

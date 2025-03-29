@@ -9,14 +9,13 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 public enum MfaErrorType {
 
     // ip限制
-
     IP_AUTH_ERROR( "MFA-0010", "你的IP[%s]不在授权IP范围内! " ),
 
     IP_LIMIT_WARN( "MFA-0011", "您的IP[%s]已经在[%s]分钟内连续[%s]次登录失败! " ),
 
     IP_LIMIT_ERROR( "MFA-0012", "您的IP[%s]已经在[%s]分钟内连续[%s]次登录失败! 请[%s]分钟后再试! " ),
 
-    // captcha
+    // Captcha
     CAPTCHA_LOST_FEE( "MFA-0020", "欠费! " ),
 
     CAPTCHA_SEND_LIMIT( "MFA-0021", "您的IP[%s]已经在[%s]分钟内连续[%s]次发送验证图片! 请[%s]分钟后再试! " ),
@@ -32,15 +31,28 @@ public enum MfaErrorType {
 
     DEVICE_CODE_SEND_LIMIT( "MFA-0031", "您的IP[%s]已经在[%s]分钟内连续[%s]次发送验证码! 请[%s]分钟后再试! " ),
 
-    DEVICE_CODE_SEND_FAIL( "MFA-0032", "设备识别码发送失败! " ),
+    DEVICE_CODE_SEND_FAIL( "MFA-0032", "设备认证码发送失败! " ),
 
-    DEVICE_CODE_LOST( "MFA-0033", "设备识别码信息丢失! " ),
+    DEVICE_CODE_LOST( "MFA-0033", "设备认证码信息丢失! " ),
 
-    DEVICE_CODE_VERIFY_FAIL( "MFA-0034", "设备识别码验证错误! " ),
+    DEVICE_CODE_VERIFY_FAIL( "MFA-0034", "设备认证码验证错误! " ),
 
-    DEVICE_TYPE_ERROR( "MFA-0035", "设备类型错误! " );
+    DEVICE_TYPE_ERROR( "MFA-0035", "设备类型错误! " ),
 
+    // TOTP
+    TOTP_SECRET_GEN_ERROR( "MFA-0050", "TOTP密钥生成失败! " ),
 
+    TOTP_SECRET_MATCH_FAIL( "MFA-0051", "TOTP密钥不匹配! " ),
+
+    TOTP_SECRET_LOST( "MFA-0052", "TOTP密钥信息丢失! " ),
+
+    TOTP_CODE_LOST( "MFA-0053", "TOTP认证码信息丢失! " ),
+
+    TOTP_CODE_VERIFY_FAIL( "MFA-0054", "TOTP认证码验证错误! " ),
+
+    TOTP_RECOVERY_CODE_VERIFY_FAIL( "MFA-0055", "TOTP恢复认证码验证错误! " ),
+
+    ;
     /**
      * 错误代码。
      */

@@ -2,10 +2,13 @@ package uw.mfa.totp;
 
 
 import org.apache.commons.codec.binary.Base32;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cglib.core.CodeGenerationException;
+import uw.common.dto.ResponseData;
 import uw.mfa.constant.HashingAlgorithm;
+import uw.mfa.constant.MfaErrorType;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -61,7 +64,13 @@ public class TotpCodeVerifier {
      * @param code
      * @return
      */
-    public boolean verifyCode(String secret, String code) {
+    public ResponseData verifyCode(String secret, String code) {
+        if (StringUtils.isBlank( secret)){
+            return ResponseData.errorCode( MfaErrorType.TOTP_SECRET_LOST.getCode(), MfaErrorType.TOTP_SECRET_LOST.getMessage() );
+        }
+        if (StringUtils.isBlank( code )) {
+            return ResponseData.errorCode( MfaErrorType.TOTP_CODE_LOST.getCode(), MfaErrorType.TOTP_CODE_LOST.getMessage() );
+        }
         // 获取当前时间戳，并计算已过的周期数。
         long currentBucket = Math.floorDiv( Instant.now().getEpochSecond(), timePeriod );
 
@@ -71,7 +80,11 @@ public class TotpCodeVerifier {
         for (int i = -allowedTimePeriodDiscrepancy; i <= allowedTimePeriodDiscrepancy; i++) {
             success = checkCode( secret, currentBucket + i, code ) || success;
         }
-        return success;
+        if (!success) {
+            return ResponseData.errorCode( MfaErrorType.TOTP_CODE_VERIFY_FAIL.getCode(), MfaErrorType.TOTP_CODE_VERIFY_FAIL.getMessage() );
+        }else{
+            return ResponseData.success();
+        }
     }
 
     /**

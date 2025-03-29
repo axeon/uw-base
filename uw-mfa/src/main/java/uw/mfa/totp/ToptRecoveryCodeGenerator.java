@@ -1,7 +1,5 @@
 package uw.mfa.totp;
 
-import java.security.InvalidParameterException;
-import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -33,32 +31,34 @@ public class ToptRecoveryCodeGenerator {
 
     /**
      * 生成恢复码.
+     *
      * @param amount 数量
      * @return
      */
     public static String[] generateCodes(int amount) {
         // Must generate at least one code
         if (amount < 1) {
-            throw new InvalidParameterException("Amount must be at least 1.");
+            amount = 1;
         }
         // Create an array and fill with generated codes
         String[] codes = new String[amount];
-        Arrays.setAll(codes, i -> generateCode());
+        Arrays.setAll( codes, i -> generateCode() );
         return codes;
     }
 
     /**
      * 生成恢复码.
+     *
      * @return
      */
     private static String generateCode() {
-        final StringBuilder code = new StringBuilder(CODE_LENGTH + (CODE_LENGTH/GROUPS_NBR) - 1);
+        final StringBuilder code = new StringBuilder( CODE_LENGTH + (CODE_LENGTH / GROUPS_NBR) - 1 );
         for (int i = 0; i < CODE_LENGTH; i++) {
             // Append random character from authorized ones
-            code.append(CHARACTERS[random.nextInt(CHARACTERS.length)]);
+            code.append( CHARACTERS[random.nextInt( CHARACTERS.length )] );
             // Split code into groups for increased readability
-            if ((i+1) % GROUPS_NBR == 0 && (i+1) != CODE_LENGTH) {
-                code.append("-");
+            if ((i + 1) % GROUPS_NBR == 0 && (i + 1) != CODE_LENGTH) {
+                code.append( "-" );
             }
         }
         return code.toString();

@@ -172,7 +172,7 @@ public class AuthServiceHelper {
         AuthServiceHelper.authServiceProperties = authServiceProperties;
         AuthServiceHelper.authPermService = authPermService;
         AuthServiceHelper.authServiceRpc = authServiceRpc;
-        Map<Integer, Long> userCacheConfig = authServiceProperties.getUserCache();
+        Map<Integer, Long> userCacheConfig = authServiceProperties.getTokenCache();
         userRpcCache = Caffeine.newBuilder().maximumSize( userCacheConfig.getOrDefault( UserType.RPC.getValue(), 100L ) ).expireAfter( cacheExpiryPolicy ).build();
         userRootCache = Caffeine.newBuilder().maximumSize( userCacheConfig.getOrDefault( UserType.ROOT.getValue(), 100L ) ).expireAfter( cacheExpiryPolicy ).build();
         userOpsCache = Caffeine.newBuilder().maximumSize( userCacheConfig.getOrDefault( UserType.OPS.getValue(), 100L ) ).expireAfter( cacheExpiryPolicy ).build();

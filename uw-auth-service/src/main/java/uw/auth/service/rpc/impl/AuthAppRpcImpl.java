@@ -23,15 +23,15 @@ public class AuthAppRpcImpl implements AuthAppRpc {
     /**
      * RPC Client
      */
-    private final RestTemplate tokenRestTemplate;
+    private final RestTemplate authRestTemplate;
 
     /**
      * @param authServiceProperties
-     * @param tokenRestTemplate
+     * @param authRestTemplate
      */
-    public AuthAppRpcImpl(final AuthServiceProperties authServiceProperties, final RestTemplate tokenRestTemplate) {
+    public AuthAppRpcImpl(final AuthServiceProperties authServiceProperties, final RestTemplate authRestTemplate) {
         this.authServiceProperties = authServiceProperties;
-        this.tokenRestTemplate = tokenRestTemplate;
+        this.authRestTemplate = authRestTemplate;
     }
 
     /**
@@ -42,7 +42,7 @@ public class AuthAppRpcImpl implements AuthAppRpc {
      */
     @Override
     public AppRegResponse regApp(AppRegRequest appRegRequest) {
-        return tokenRestTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/app/regApp", appRegRequest, AppRegResponse.class );
+        return authRestTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/app/regApp", appRegRequest, AppRegResponse.class );
     }
 
     /**
@@ -53,7 +53,7 @@ public class AuthAppRpcImpl implements AuthAppRpc {
      */
     @Override
     public MscAppReportResponse reportStatus(MscAppReportRequest mscAppReportRequest) {
-        return tokenRestTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/app/reportStatus", mscAppReportRequest, MscAppReportResponse.class );
+        return authRestTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/app/reportStatus", mscAppReportRequest, MscAppReportResponse.class );
     }
 
     /**
@@ -63,7 +63,7 @@ public class AuthAppRpcImpl implements AuthAppRpc {
      */
     @Override
     public ResponseData updatePermLicense(MscPermLicenseRequest mscPermLicenseRequest) {
-        return tokenRestTemplate.exchange( authServiceProperties.getAuthCenterHost() + "/rpc/app/updatePermLicense", HttpMethod.PUT, new HttpEntity<>( mscPermLicenseRequest ),
+        return authRestTemplate.exchange( authServiceProperties.getAuthCenterHost() + "/rpc/app/updatePermLicense", HttpMethod.PUT, new HttpEntity<>( mscPermLicenseRequest ),
                 ResponseData.class ).getBody();
     }
 

@@ -4,7 +4,7 @@ import uw.auth.service.token.AuthTokenData;
 import uw.auth.service.vo.MscUserGroupVo;
 import uw.auth.service.vo.MscUserRegister;
 import uw.auth.service.vo.MscUserVo;
-import uw.auth.service.vo.TokenResponse;
+import uw.auth.client.vo.TokenResponse;
 import uw.common.dto.ResponseData;
 
 import java.util.Date;

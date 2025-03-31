@@ -170,12 +170,12 @@ public class AuthServiceAutoConfiguration {
      * AuthAppRpc 接口
      *
      * @param authServiceProperties
-     * @param tokenRestTemplate
+     * @param authRestTemplate
      * @return
      */
     @Bean
-    public AuthAppRpc authAppRpc(final AuthServiceProperties authServiceProperties, @Qualifier("tokenRestTemplate") final RestTemplate tokenRestTemplate) {
-        return new AuthAppRpcImpl( authServiceProperties, tokenRestTemplate );
+    public AuthAppRpc authAppRpc(final AuthServiceProperties authServiceProperties, @Qualifier("authRestTemplate") final RestTemplate authRestTemplate) {
+        return new AuthAppRpcImpl( authServiceProperties, authRestTemplate );
     }
 
 
@@ -183,12 +183,12 @@ public class AuthServiceAutoConfiguration {
      * AuthServiceRpc 接口
      *
      * @param authServiceProperties
-     * @param tokenRestTemplate
+     * @param authRestTemplate
      * @return
      */
     @Bean
-    public AuthServiceRpc authServiceRpc(final AuthServiceProperties authServiceProperties, @Qualifier("tokenRestTemplate") final RestTemplate tokenRestTemplate) {
-        return new AuthServiceRpcImpl( authServiceProperties, tokenRestTemplate );
+    public AuthServiceRpc authServiceRpc(final AuthServiceProperties authServiceProperties, @Qualifier("authRestTemplate") final RestTemplate authRestTemplate) {
+        return new AuthServiceRpcImpl( authServiceProperties, authRestTemplate );
     }
 
     /**

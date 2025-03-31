@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
  * 登录错误信息。
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum MfaErrorType {
+public enum MfaCodeType {
 
     // ip限制
     IP_AUTH_ERROR( "MFA-0010", "你的IP[%s]不在授权IP范围内! " ),
@@ -63,13 +63,13 @@ public enum MfaErrorType {
      */
     private String message;
 
-    MfaErrorType(String code, String message) {
+    MfaCodeType(String code, String message) {
         this.code = code;
         this.message = message;
     }
 
-    public static MfaErrorType findByCode(String code) {
-        for (MfaErrorType e : MfaErrorType.values()) {
+    public static MfaCodeType findByCode(String code) {
+        for (MfaCodeType e : MfaCodeType.values()) {
             if (code.equals( e.code )) {
                 return e;
             }

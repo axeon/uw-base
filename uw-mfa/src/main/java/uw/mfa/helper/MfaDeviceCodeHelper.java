@@ -11,7 +11,7 @@ import org.springframework.web.client.RestTemplate;
 import uw.common.dto.ResponseData;
 import uw.mfa.conf.UwMfaProperties;
 import uw.mfa.constant.MfaDeviceType;
-import uw.mfa.constant.MfaErrorType;
+import uw.mfa.constant.MfaCodeType;
 import uw.mfa.util.RedisKeyUtils;
 
 import java.util.HashMap;
@@ -109,7 +109,7 @@ public class MfaDeviceCodeHelper {
      */
     public static ResponseData sendDeviceCode(String userIp, long saasId, int deviceType, String deviceId, int codeLen, String notifySubject, String notifyContent) {
         if (saasId == -1) {
-            return ResponseData.errorCode( MfaErrorType.DEVICE_CODE_LOST_FEE.getCode(), String.format( MfaErrorType.DEVICE_CODE_LOST_FEE.getMessage(), deviceId ) );
+            return ResponseData.errorCode( MfaCodeType.DEVICE_CODE_LOST_FEE.getCode(), String.format( MfaCodeType.DEVICE_CODE_LOST_FEE.getMessage(), deviceId ) );
         }
         if (codeLen < 1) {
             codeLen = uwMfaProperties.getDeviceCodeDefaultLength();
@@ -127,7 +127,7 @@ public class MfaDeviceCodeHelper {
             mfaRedisTemplate.expire( redisKey, uwMfaProperties.getDeviceCodeSendLimitSeconds(), TimeUnit.SECONDS );
         }
         if (sentTimes >= uwMfaProperties.getDeviceCodeSendLimitTimes()) {
-            return ResponseData.errorCode( MfaErrorType.DEVICE_CODE_SEND_LIMIT.getCode(), String.format( MfaErrorType.DEVICE_CODE_SEND_LIMIT.getMessage(), userIp,
+            return ResponseData.errorCode( MfaCodeType.DEVICE_CODE_SEND_LIMIT.getCode(), String.format( MfaCodeType.DEVICE_CODE_SEND_LIMIT.getMessage(), userIp,
                     (uwMfaProperties.getDeviceCodeSendLimitSeconds() / 60), uwMfaProperties.getDeviceCodeSendLimitTimes(),
                     (uwMfaProperties.getDeviceCodeSendLimitSeconds() / 60) ) );
         }
@@ -143,7 +143,7 @@ public class MfaDeviceCodeHelper {
             if (responseData.isSuccess()) {
                 return ResponseData.success();
             } else {
-                return ResponseData.errorCode( MfaErrorType.DEVICE_CODE_SEND_FAIL.getCode(), MfaErrorType.DEVICE_CODE_SEND_FAIL.getMessage() + responseData.getMsg() );
+                return ResponseData.errorCode( MfaCodeType.DEVICE_CODE_SEND_FAIL.getCode(), MfaCodeType.DEVICE_CODE_SEND_FAIL.getMessage() + responseData.getMsg() );
             }
         } else if (deviceType == MfaDeviceType.EMAIL.getValue()) {
             mfaRedisOp.set( RedisKeyUtils.buildKey( MfaDeviceCodeHelper.REDIS_DEVICE_CODE_PREFIX, deviceType, deviceId ), deviceCode,
@@ -154,10 +154,10 @@ public class MfaDeviceCodeHelper {
             if (responseData.isSuccess()) {
                 return ResponseData.success();
             } else {
-                return ResponseData.errorCode( MfaErrorType.DEVICE_CODE_SEND_FAIL.getCode(), MfaErrorType.DEVICE_CODE_SEND_FAIL.getMessage() + responseData.getMsg() );
+                return ResponseData.errorCode( MfaCodeType.DEVICE_CODE_SEND_FAIL.getCode(), MfaCodeType.DEVICE_CODE_SEND_FAIL.getMessage() + responseData.getMsg() );
             }
         } else {
-            return ResponseData.errorCode( MfaErrorType.DEVICE_TYPE_ERROR.getCode(), String.format( MfaErrorType.DEVICE_TYPE_ERROR.getMessage() ) );
+            return ResponseData.errorCode( MfaCodeType.DEVICE_TYPE_ERROR.getCode(), String.format( MfaCodeType.DEVICE_TYPE_ERROR.getMessage() ) );
         }
     }
 
@@ -168,13 +168,13 @@ public class MfaDeviceCodeHelper {
      */
     public static ResponseData verifyDeviceCode(String userIp, int deviceType, String deviceId, String deviceCode) {
         if (StringUtils.isBlank( deviceId ) || StringUtils.isBlank( deviceCode )) {
-            return ResponseData.errorCode( MfaErrorType.DEVICE_CODE_LOST.getCode(), MfaErrorType.DEVICE_CODE_LOST.getMessage() );
+            return ResponseData.errorCode( MfaCodeType.DEVICE_CODE_LOST.getCode(), MfaCodeType.DEVICE_CODE_LOST.getMessage() );
         }
         String redisCode = mfaRedisOp.getAndDelete( RedisKeyUtils.buildKey( MfaDeviceCodeHelper.REDIS_DEVICE_CODE_PREFIX, deviceType, deviceId ) );
         if (StringUtils.equals( redisCode, deviceCode )) {
             return ResponseData.success();
         } else {
-            return ResponseData.errorCode( MfaErrorType.DEVICE_CODE_VERIFY_FAIL.getCode(), String.format( MfaErrorType.DEVICE_CODE_VERIFY_FAIL.getMessage() ) );
+            return ResponseData.errorCode( MfaCodeType.DEVICE_CODE_VERIFY_FAIL.getCode(), String.format( MfaCodeType.DEVICE_CODE_VERIFY_FAIL.getMessage() ) );
         }
     }
 

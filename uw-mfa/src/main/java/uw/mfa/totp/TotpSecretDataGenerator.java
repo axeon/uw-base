@@ -6,11 +6,12 @@ import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import org.apache.commons.codec.binary.Base32;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.dto.ResponseData;
 import uw.mfa.constant.HashingAlgorithm;
-import uw.mfa.constant.MfaErrorType;
+import uw.mfa.constant.MfaCodeType;
 import uw.mfa.totp.vo.TotpSecretData;
 
 import java.io.ByteArrayOutputStream;
@@ -40,6 +41,11 @@ public class TotpSecretDataGenerator {
     private final Base32 encoder = new Base32();
 
     /**
+     * 签发者.
+     */
+    private final String issuer;
+
+    /**
      * Hashing算法.
      */
     private final HashingAlgorithm hashingAlgorithm;
@@ -62,29 +68,42 @@ public class TotpSecretDataGenerator {
     /**
      * 是否生成二维码.
      */
-    private final boolean isGenQr;
+    private final boolean enableGenQr;
 
-    public TotpSecretDataGenerator(HashingAlgorithm hashingAlgorithm, int secretLength, int codeLength, int timePeriod, boolean isGenQr) {
+    /**
+     * 二维码尺寸.
+     */
+    private final int qrSize;
+
+    public TotpSecretDataGenerator(String issuer, HashingAlgorithm hashingAlgorithm, int secretLength, int codeLength, int timePeriod, boolean enableGenQr, int qrSize) {
+        this.issuer = issuer;
         this.hashingAlgorithm = hashingAlgorithm;
         this.secretLength = secretLength;
         this.codeLength = codeLength;
         this.timePeriod = timePeriod;
-        this.isGenQr = isGenQr;
+        this.enableGenQr = enableGenQr;
+        this.qrSize = qrSize;
     }
 
     /**
      * 生成二维码。
      *
-     * @param issuer 签发者
      * @param label  标签
+     * @param issuer 签发者
      * @param qrSize 二维码尺寸。
      * @return
      */
-    public ResponseData<TotpSecretData> issue(String issuer, String label, int qrSize) {
+    public ResponseData<TotpSecretData> issue(String label, String issuer, int qrSize) {
+        if (StringUtils.isNotBlank(issuer)){
+            issuer = this.issuer;
+        }
+        if (qrSize<100){
+            qrSize = this.qrSize;
+        }
         String secret = generateSecret( secretLength );
         String totpUri = getTotpUri( issuer, label, secret, hashingAlgorithm.getLabel(), codeLength, timePeriod );
         // 不生成二维码则直接返回，让前端生成。
-        if (!isGenQr) {
+        if (!enableGenQr) {
             return ResponseData.success( new TotpSecretData( secret, totpUri, null ) );
         } else {
             try {
@@ -94,7 +113,7 @@ public class TotpSecretDataGenerator {
                 return ResponseData.success( new TotpSecretData( secret, totpUri, Base64.getEncoder().encodeToString( pngOutputStream.toByteArray() ) ) );
             } catch (Exception e) {
                 logger.error( e.getMessage(), e );
-                return ResponseData.errorCode( MfaErrorType.TOTP_SECRET_GEN_ERROR.getCode(), MfaErrorType.TOTP_SECRET_GEN_ERROR.getMessage() + e.getMessage() );
+                return ResponseData.errorCode( MfaCodeType.TOTP_SECRET_GEN_ERROR.getCode(), MfaCodeType.TOTP_SECRET_GEN_ERROR.getMessage() + e.getMessage() );
             }
         }
     }

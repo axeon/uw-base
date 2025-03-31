@@ -168,17 +168,29 @@ public class MfaFusionHelper {
 
     /**
      * 生成totp密钥。
-     * @param issuer
+     *
      * @param label
+     * @return
+     */
+    public static ResponseData<TotpSecretData> issueTotpSecret(String label) {
+        return MfaTotpHelper.issue( label);
+    }
+
+    /**
+     * 生成totp密钥。
+     *
+     * @param label
+     * @param issuer
      * @param qrSize
      * @return
      */
-    public static ResponseData<TotpSecretData> issueTotpSecret(String issuer, String label, int qrSize) {
-        return MfaTotpHelper.issue( issuer, label, qrSize );
+    public static ResponseData<TotpSecretData> issueTotpSecret(String label, String issuer, int qrSize) {
+        return MfaTotpHelper.issue( label, issuer, qrSize );
     }
 
     /**
      * 验证totp密钥。
+     *
      * @param secret
      * @param code
      * @return
@@ -189,6 +201,7 @@ public class MfaFusionHelper {
 
     /**
      * 生成totp密钥。
+     *
      * @param amount
      * @return
      */

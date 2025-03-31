@@ -18,6 +18,11 @@ public class MfaTotpHelper {
     private static final Logger log = LoggerFactory.getLogger( MfaTotpHelper.class );
 
     /**
+     * MFA配置。
+     */
+    private static UwMfaProperties uwMfaProperties;
+
+    /**
      * Totp签发器。
      */
     private static TotpSecretDataGenerator totpSecretDataGenerator;
@@ -28,22 +33,34 @@ public class MfaTotpHelper {
     private static TotpCodeVerifier totpCodeVerifier;
 
     public MfaTotpHelper(UwMfaProperties uwMfaProperties) {
-        totpCodeVerifier = new TotpCodeVerifier( uwMfaProperties.getTotpAlgorithm(), uwMfaProperties.getTotpCodeLength(), uwMfaProperties.getTotpTimePeriod(),
+        MfaTotpHelper.uwMfaProperties = uwMfaProperties;
+        MfaTotpHelper.totpCodeVerifier = new TotpCodeVerifier( uwMfaProperties.getTotpAlgorithm(), uwMfaProperties.getTotpCodeLength(), uwMfaProperties.getTotpTimePeriod(),
                 uwMfaProperties.getTotpTimePeriodDiscrepancy() );
-        totpSecretDataGenerator = new TotpSecretDataGenerator( uwMfaProperties.getTotpAlgorithm(), uwMfaProperties.getTotpSecretLength(), uwMfaProperties.getTotpCodeLength(),
-                uwMfaProperties.getTotpTimePeriod(), uwMfaProperties.isToptGenQr() );
+        MfaTotpHelper.totpSecretDataGenerator = new TotpSecretDataGenerator( uwMfaProperties.getTotpIssuer(), uwMfaProperties.getTotpAlgorithm(),
+                uwMfaProperties.getTotpSecretLength(), uwMfaProperties.getTotpCodeLength(), uwMfaProperties.getTotpTimePeriod(), uwMfaProperties.isTotpGenQr(),
+                uwMfaProperties.getTotpQrSize() );
     }
 
     /**
      * 签发Totp密钥数据。
      *
-     * @param issuer 签发人
+     * @param label
+     * @return
+     */
+    public static ResponseData<TotpSecretData> issue(String label) {
+        return totpSecretDataGenerator.issue( label, null, 0 );
+    }
+
+    /**
+     * 签发Totp密钥数据。
+     *
      * @param label  标签
+     * @param issuer 签发人
      * @param qrSize 二维码尺寸
      * @return
      */
-    public static ResponseData<TotpSecretData> issue(String issuer, String label, int qrSize) {
-        return totpSecretDataGenerator.issue( issuer, label, qrSize );
+    public static ResponseData<TotpSecretData> issue(String label, String issuer, int qrSize) {
+        return totpSecretDataGenerator.issue( label, issuer, qrSize );
     }
 
     /**

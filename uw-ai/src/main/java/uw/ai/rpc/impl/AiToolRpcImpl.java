@@ -23,12 +23,12 @@ public class AiToolRpcImpl implements AiToolRpc {
     /**
      * Rest模板类
      */
-    private final RestTemplate tokenRestTemplate;
+    private final RestTemplate authRestTemplate;
 
     private final UwAiProperties uwAiProperties;
 
-    public AiToolRpcImpl(RestTemplate tokenRestTemplate, UwAiProperties uwAiProperties) {
-        this.tokenRestTemplate = tokenRestTemplate;
+    public AiToolRpcImpl(RestTemplate authRestTemplate, UwAiProperties uwAiProperties) {
+        this.authRestTemplate = authRestTemplate;
         this.uwAiProperties = uwAiProperties;
     }
 
@@ -42,7 +42,7 @@ public class AiToolRpcImpl implements AiToolRpc {
     public ResponseData<List<AiToolMeta>> listToolMeta(String appName) {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( uwAiProperties.getAiCenterHost() ).path( "/rpc/tool/listToolMeta" ).queryParam( "appName", appName ).build().encode().toUri();
-        return tokenRestTemplate.exchange( targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<List<AiToolMeta>>>() {
+        return authRestTemplate.exchange( targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<List<AiToolMeta>>>() {
         } ).getBody();
     }
 
@@ -55,6 +55,6 @@ public class AiToolRpcImpl implements AiToolRpc {
     @Override
     public ResponseData updateToolMeta(AiToolMeta aiToolMeta) {
         String url = uwAiProperties.getAiCenterHost() + "/rpc/tool/updateToolMeta";
-        return tokenRestTemplate.postForObject( url, aiToolMeta, ResponseData.class );
+        return authRestTemplate.postForObject( url, aiToolMeta, ResponseData.class );
     }
 }

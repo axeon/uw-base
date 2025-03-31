@@ -1,10 +1,7 @@
 package uw.auth.service.constant;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * 用户类型。
@@ -17,45 +14,45 @@ public enum UserType {
      * 匿名用户类型
      * 未指定权限类型时候的默认值
      */
-    ANONYMOUS( -1, "匿名用户", 0, 0 ),
+    ANONYMOUS( -1, "匿名用户" ),
 
     /**
      * C站用户类型
      * 用于登录C站
      */
-    GUEST( 0, "C站用户", TimeUnit.MINUTES.toMillis( 30 ), TimeUnit.DAYS.toMillis( 30 ) ),
+    GUEST( 0, "C站用户" ),
 
     /**
      * RPC用户类型
      */
-    RPC( 1, "RPC用户", TimeUnit.DAYS.toMillis( 30 ), TimeUnit.DAYS.toMillis( 365 ) ),
+    RPC( 1, "RPC用户" ),
 
     /**
      * 超级管理员。
      */
-    ROOT( 100, "超级管理员", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) ),
+    ROOT( 100, "超级管理员" ),
 
     /**
      * devops用户。
      * 用于登陆开发和运维管理工具。
      */
-    OPS( 110, "开发运维", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) ),
+    OPS( 110, "开发运维" ),
 
     /**
      * 平台管理员。
      * 用于登录业务管理后台。
      */
-    ADMIN( 200, "平台管理员", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) ),
+    ADMIN( 200, "平台管理员" ),
 
     /**
      * SAAS用户。
      */
-    SAAS( 300, "SAAS运营商", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) ),
+    SAAS( 300, "SAAS运营商" ),
 
     /**
      * SAAS商户。
      */
-    MCH( 310, "SAAS商户", TimeUnit.MINUTES.toMillis( 60 ), TimeUnit.DAYS.toMillis( 30 ) );
+    MCH( 310, "SAAS商户" );
 
 
     /**
@@ -68,23 +65,9 @@ public enum UserType {
      */
     private final String label;
 
-    /**
-     * token有效期(ms)
-     */
-    @JsonIgnore
-    private final long tokenExpireMillis;
-
-    /**
-     * token刷新有效期(ms)
-     */
-    @JsonIgnore
-    private final long tokenRefreshExpireMillis;
-
-    UserType(int value, String label, long tokenExpireMillis, long tokenRefreshExpireMillis) {
+    UserType(int value, String label) {
         this.value = value;
         this.label = label;
-        this.tokenExpireMillis = tokenExpireMillis;
-        this.tokenRefreshExpireMillis = tokenRefreshExpireMillis;
     }
 
     /**
@@ -119,6 +102,7 @@ public enum UserType {
 
     /**
      * 根据数值获得label。
+     *
      * @param value
      * @return
      */
@@ -224,14 +208,6 @@ public enum UserType {
 
     public String getLabel() {
         return label;
-    }
-
-    public long getTokenExpireMillis() {
-        return tokenExpireMillis;
-    }
-
-    public long getTokenRefreshExpireMillis() {
-        return tokenRefreshExpireMillis;
     }
 
 }

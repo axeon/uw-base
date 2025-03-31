@@ -76,7 +76,7 @@ public class AuthServiceProperties {
     /**
      * 用户缓存大小配置
      */
-    private Map<Integer, Long> userCache = new HashMap<>();
+    private Map<Integer, Long> tokenCache = new HashMap<>();
 
     public String getAuthEntryPoint() {
         return authEntryPoint;
@@ -166,12 +166,12 @@ public class AuthServiceProperties {
         this.cors = cors;
     }
 
-    public Map<Integer, Long> getUserCache() {
-        return userCache;
+    public Map<Integer, Long> getTokenCache() {
+        return tokenCache;
     }
 
-    public void setUserCache(Map<Integer, Long> userCache) {
-        this.userCache = userCache;
+    public void setTokenCache(Map<Integer, Long> tokenCache) {
+        this.tokenCache = tokenCache;
     }
 
 

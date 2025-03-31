@@ -1,7 +1,6 @@
 package uw.auth.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
@@ -27,7 +26,7 @@ import org.springframework.http.converter.support.AllEncompassingFormHttpMessage
 import org.springframework.http.converter.xml.SourceHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import uw.auth.client.interceptor.TokenHeaderInterceptor;
-import uw.auth.client.util.AuthClientToken;
+import uw.auth.client.util.AuthClientTokenHelper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -79,13 +78,13 @@ public class AuthClientAutoConfiguration {
     }
 
     @Bean
-    public AuthClientToken authClientToken(final AuthClientProperties authClientProperties, final ObjectMapper objectMapper,
-                                           @Qualifier("baseAuthClientRestTemplate") final RestTemplate restTemplate) {
-        return new AuthClientToken(authClientProperties, objectMapper, restTemplate);
+    public AuthClientTokenHelper authClientToken(final AuthClientProperties authClientProperties, final ObjectMapper objectMapper,
+                                                 @Qualifier("baseAuthClientRestTemplate") final RestTemplate restTemplate) {
+        return new AuthClientTokenHelper(authClientProperties, objectMapper, restTemplate);
     }
 
     @Bean
-    public TokenHeaderInterceptor tokenHeaderInterceptor(final AuthClientToken authClientToken) {
+    public TokenHeaderInterceptor tokenHeaderInterceptor(final AuthClientTokenHelper authClientToken) {
         return new TokenHeaderInterceptor(authClientToken);
     }
 

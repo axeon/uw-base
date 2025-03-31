@@ -4,28 +4,31 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import uw.auth.client.AuthClientProperties;
+import uw.auth.client.vo.LoginRequest;
+import uw.auth.client.vo.LoginResponse;
+import uw.auth.client.vo.TokenResponse;
+import uw.common.dto.ResponseData;
 
 import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Token工具类
  */
-public class AuthClientToken {
+public class AuthClientTokenHelper {
 
     /**
      * 重试次数。
      */
     private static final int MAX_RETRY_TIMES = 10;
 
-    private static final Logger log = LoggerFactory.getLogger( AuthClientToken.class );
+    private static final Logger log = LoggerFactory.getLogger( AuthClientTokenHelper.class );
 
     private final AuthClientProperties authClientProperties;
 
@@ -54,7 +57,7 @@ public class AuthClientToken {
     private int retryTimes;
 
 
-    public AuthClientToken(AuthClientProperties authClientProperties, ObjectMapper objectMapper, RestTemplate restTemplate) {
+    public AuthClientTokenHelper(AuthClientProperties authClientProperties, ObjectMapper objectMapper, RestTemplate restTemplate) {
         this.authClientProperties = authClientProperties;
         this.objectMapper = objectMapper;
         this.restTemplate = restTemplate;
@@ -113,32 +116,32 @@ public class AuthClientToken {
         retryTimes++;
         try {
             String loginUrl = authClientProperties.getAuthCenterHost() + authClientProperties.getLoginEntryPoint();
-            Map<String, String> credentialsMap = new HashMap<>( 6 );
-            credentialsMap.put( "loginType", "1" );
-            credentialsMap.put( "loginAgent",
-                    authClientProperties.getAppName() + ":" + authClientProperties.getAppVersion() + "/" + authClientProperties.getAppHost() + ":" + authClientProperties.getAppPort() );
-            credentialsMap.put( "loginId", authClientProperties.getLoginId() );
-            credentialsMap.put( "loginPass", authClientProperties.getLoginPass() );
-            credentialsMap.put( "loginSecret", authClientProperties.getLoginSecret() );
-            credentialsMap.put( "userType", String.valueOf( authClientProperties.getUserType() ) );
-            credentialsMap.put( "forceLogin", "true");
+            LoginRequest loginRequest = new LoginRequest();
+            loginRequest.setLoginType( 1 );
+            loginRequest.setLoginAgent( authClientProperties.getAppName() + ":" + authClientProperties.getAppVersion() + "/" + authClientProperties.getAppHost() + ":" + authClientProperties.getAppPort() );
+            loginRequest.setUserType( authClientProperties.getUserType() );
+            loginRequest.setSaasId( 0 );
+            loginRequest.setLoginId( authClientProperties.getLoginId() );
+            loginRequest.setLoginPass( authClientProperties.getLoginPass() );
+            loginRequest.setLoginSecret( authClientProperties.getLoginSecret() );
+            loginRequest.setForceLogin( true );
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType( MediaType.APPLICATION_JSON );
-            String credentials = objectMapper.writeValueAsString( credentialsMap );
+            String credentials = objectMapper.writeValueAsString( loginRequest );
             RequestEntity<String> requestEntity = new RequestEntity<>( credentials, headers, HttpMethod.POST, URI.create( loginUrl ) );
-            ResponseEntity<Map> loginResponse = restTemplate.exchange( requestEntity, Map.class );
-            if (loginResponse.getStatusCode().value() == HttpStatus.OK.value()) {
-                Map responseBody = loginResponse.getBody();
-                if (responseBody != null) {
-                    if ("success".equals( responseBody.get( "state" ) )) {
-                        List tokenList = (List) responseBody.get( "data" );
+            ResponseEntity<LoginResponse> loginResponseEntity = restTemplate.exchange( requestEntity, LoginResponse.class );
+            if (loginResponseEntity.getStatusCode().value() == HttpStatus.OK.value()) {
+                LoginResponse loginResponse = loginResponseEntity.getBody();
+                if (loginResponse != null) {
+                    if (loginResponse.isSuccess()) {
+                        List<TokenResponse> tokenList = loginResponse.getData();
                         if (tokenList != null && !tokenList.isEmpty()) {
-                            Map tokenMap = (Map) tokenList.get( 0 );
-                            if (tokenMap != null && tokenMap.get( "token" ) != null) {
-                                token = String.valueOf( tokenMap.get( "token" ) );
-                                refreshToken = String.valueOf( tokenMap.get( "refreshToken" ) );
-                                long expiresIn = Long.parseLong( String.valueOf( tokenMap.get( "expiresIn" ) ) );
-                                long createAt = Long.parseLong( String.valueOf( tokenMap.get( "createAt" ) ) );
+                            TokenResponse tokenResponse = tokenList.getFirst();
+                            if (tokenResponse != null) {
+                                token = tokenResponse.getToken();
+                                refreshToken = tokenResponse.getRefreshToken();
+                                long expiresIn = tokenResponse.getExpiresIn();
+                                long createAt = tokenResponse.getCreateAt();
                                 // 预留5分钟缓冲。
                                 expiresAt = (createAt - 300_000L) + expiresIn;
                                 if (StringUtils.isNotBlank( token ) && StringUtils.isNotBlank( refreshToken ) && expiresAt > System.currentTimeMillis()) {
@@ -150,7 +153,7 @@ public class AuthClientToken {
                 }
             }
             if (StringUtils.isBlank( token )) {
-                log.error( "!!!AuthClient登录出错! response: {}", loginResponse.toString() );
+                log.error( "!!!AuthClient登录出错! response: {}", loginResponseEntity.toString() );
             }
         } catch (Throwable e) {
             log.error( "!!!AuthClient登录出错! {}", e.getMessage(), e );
@@ -182,22 +185,22 @@ public class AuthClientToken {
             map.add( "loginAgent",
                     authClientProperties.getAppName() + ":" + authClientProperties.getAppVersion() + "/" + authClientProperties.getAppHost() + ":" + authClientProperties.getAppPort() );
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>( map, headers );
-            ResponseEntity<Map> responseEntity = restTemplate.postForEntity( refreshTokenUrl, request, Map.class );
+            ResponseEntity<ResponseData<TokenResponse>> responseEntity = restTemplate.exchange( refreshTokenUrl, HttpMethod.POST, request,
+                    new ParameterizedTypeReference<ResponseData<TokenResponse>>() {
+            } );
             //刷新token成功以后，更新token
             if (responseEntity.getStatusCode().value() == HttpStatus.OK.value()) {
-                Map responseBody = responseEntity.getBody();
-                if (responseBody != null) {
-                    if ("success".equals( responseBody.get( "state" ) )) {
-                        Map tokenMap = (Map) responseBody.get( "data" );
-                        if (tokenMap != null && tokenMap.get( "token" ) != null) {
-                            token = String.valueOf( tokenMap.get( "token" ) );
-                            long expiresIn = Long.parseLong( String.valueOf( tokenMap.get( "expiresIn" ) ) );
-                            long createAt = Long.parseLong( String.valueOf( tokenMap.get( "createAt" ) ) );
-                            // 预留5分钟缓冲。
-                            expiresAt = (createAt - 300_000L) + expiresIn;
-                            if (StringUtils.isNotBlank( token ) && expiresAt > System.currentTimeMillis()) {
-                                retryTimes = 0;
-                            }
+                ResponseData<TokenResponse> responseBody = responseEntity.getBody();
+                if (responseBody != null && responseBody.isSuccess()) {
+                    TokenResponse tokenResponse = responseBody.getData();
+                    if (tokenResponse != null) {
+                        token = tokenResponse.getToken();
+                        long expiresIn = tokenResponse.getExpiresIn();
+                        long createAt = tokenResponse.getCreateAt();
+                        // 预留5分钟缓冲。
+                        expiresAt = (createAt - 300_000L) + expiresIn;
+                        if (StringUtils.isNotBlank( token ) && expiresAt > System.currentTimeMillis()) {
+                            retryTimes = 0;
                         }
                     }
                 }

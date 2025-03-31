@@ -7,7 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
-import uw.auth.client.util.AuthClientToken;
+import uw.auth.client.util.AuthClientTokenHelper;
 
 import java.io.IOException;
 
@@ -16,9 +16,9 @@ import java.io.IOException;
  */
 public class TokenHeaderInterceptor implements ClientHttpRequestInterceptor {
 
-    private final AuthClientToken authClientToken;
+    private final AuthClientTokenHelper authClientToken;
 
-    public TokenHeaderInterceptor(final AuthClientToken authClientToken) {
+    public TokenHeaderInterceptor(final AuthClientTokenHelper authClientToken) {
         this.authClientToken = authClientToken;
     }
 

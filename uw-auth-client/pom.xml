@@ -31,6 +31,10 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>com.umtone</groupId>
+            <artifactId>uw-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
@@ -42,6 +46,10 @@
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
         </dependency>
     </dependencies>
 </project>

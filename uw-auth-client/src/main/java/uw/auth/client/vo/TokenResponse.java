@@ -1,4 +1,4 @@
-package uw.auth.service.vo;
+package uw.auth.client.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -70,12 +70,6 @@ public class TokenResponse {
      */
     @Schema(title = "最后更新密码时间", description = "最后更新密码时间。用于前端提醒客户更新密码。")
     private long lastPasswdDate;
-
-    /**
-     * 登录提示信息。
-     */
-    @Schema(title = "登录提示信息", description = "登录提示信息")
-    private String loginNotice;
 
     /**
      * access token.
@@ -185,14 +179,6 @@ public class TokenResponse {
 
     public void setLastPasswdDate(long lastPasswdDate) {
         this.lastPasswdDate = lastPasswdDate;
-    }
-
-    public String getLoginNotice() {
-        return loginNotice;
-    }
-
-    public void setLoginNotice(String loginNotice) {
-        this.loginNotice = loginNotice;
     }
 
     public String getToken() {

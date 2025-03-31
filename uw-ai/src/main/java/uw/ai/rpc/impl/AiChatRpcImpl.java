@@ -25,12 +25,12 @@ public class AiChatRpcImpl implements AiChatRpc {
     /**
      * Rest模板类
      */
-    private final RestTemplate tokenRestTemplate;
+    private final RestTemplate authRestTemplate;
 
     private final UwAiProperties uwAiProperties;
 
-    public AiChatRpcImpl(RestTemplate tokenRestTemplate, UwAiProperties uwAiProperties) {
-        this.tokenRestTemplate = tokenRestTemplate;
+    public AiChatRpcImpl(RestTemplate authRestTemplate, UwAiProperties uwAiProperties) {
+        this.authRestTemplate = authRestTemplate;
         this.uwAiProperties = uwAiProperties;
     }
 
@@ -66,7 +66,7 @@ public class AiChatRpcImpl implements AiChatRpc {
         HttpEntity<MultiValueMap<String, Object>> requestEntity =
                 new HttpEntity<>( body, headers );
 
-        return tokenRestTemplate.exchange(
+        return authRestTemplate.exchange(
                 uwAiProperties.getAiCenterHost() + "/rpc/chat/generate",
                 HttpMethod.POST,
                 requestEntity,

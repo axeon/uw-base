@@ -28,12 +28,12 @@ public class AiTranslateRpcImpl implements AiTranslateRpc {
     /**
      * Rest模板类
      */
-    private final RestTemplate tokenRestTemplate;
+    private final RestTemplate authRestTemplate;
 
     private final UwAiProperties uwAiProperties;
 
-    public AiTranslateRpcImpl(RestTemplate tokenRestTemplate, UwAiProperties uwAiProperties) {
-        this.tokenRestTemplate = tokenRestTemplate;
+    public AiTranslateRpcImpl(RestTemplate authRestTemplate, UwAiProperties uwAiProperties) {
+        this.authRestTemplate = authRestTemplate;
         this.uwAiProperties = uwAiProperties;
     }
 
@@ -52,7 +52,7 @@ public class AiTranslateRpcImpl implements AiTranslateRpc {
                 .toUri();
 
         // 发送POST请求并处理响应
-        ResponseEntity<ResponseData<AiTranslateResultData[]>> response = tokenRestTemplate.exchange(
+        ResponseEntity<ResponseData<AiTranslateResultData[]>> response = authRestTemplate.exchange(
                 url,
                 HttpMethod.POST,
                 new HttpEntity<>(param),
@@ -77,7 +77,7 @@ public class AiTranslateRpcImpl implements AiTranslateRpc {
                 .toUri();
 
         // 发送POST请求并处理响应
-        ResponseEntity<ResponseData<AiTranslateResultData[]>> response = tokenRestTemplate.exchange(
+        ResponseEntity<ResponseData<AiTranslateResultData[]>> response = authRestTemplate.exchange(
                 url,
                 HttpMethod.POST,
                 new HttpEntity<>(param),

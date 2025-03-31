@@ -16,24 +16,24 @@ import java.io.IOException;
  */
 public class TokenHeaderInterceptor implements ClientHttpRequestInterceptor {
 
-    private final AuthClientTokenHelper authClientToken;
+    private final AuthClientTokenHelper authClientTokenHelper;
 
-    public TokenHeaderInterceptor(final AuthClientTokenHelper authClientToken) {
-        this.authClientToken = authClientToken;
+    public TokenHeaderInterceptor(final AuthClientTokenHelper authClientTokenHelper) {
+        this.authClientTokenHelper = authClientTokenHelper;
     }
 
     @Override
     public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
         HttpHeaders headers = request.getHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Bearer " + authClientToken.getToken());
+        headers.set("Authorization", "Bearer " + authClientTokenHelper.getToken());
         ClientHttpResponse response = execution.execute(request, body);
         //如果是无法验证的状态，则直接作废token。
         int code = response.getStatusCode().value();
         if (code == HttpStatus.UNAUTHORIZED.value() || code == HttpStatus.LOCKED.value()) {
-            authClientToken.invalidate();
+            authClientTokenHelper.invalidate();
             //再次重试
-            headers.set("Authorization", "Bearer " + authClientToken.getToken());
+            headers.set("Authorization", "Bearer " + authClientTokenHelper.getToken());
             response = execution.execute(request, body);
         }
         return response;

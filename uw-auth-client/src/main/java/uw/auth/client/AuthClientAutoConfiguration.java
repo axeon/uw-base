@@ -54,59 +54,40 @@ public class AuthClientAutoConfiguration {
         messageConverters.add(new MappingJackson2HttpMessageConverter());
     }
 
-
-    @Bean("baseAuthClientRestTemplate")
+    /**
+     * 负载均衡的RestTemplate
+     * @param clientHttpRequestFactory
+     * @return
+     */
     @LoadBalanced
-    @ConditionalOnProperty(prefix = "uw.auth.client", name = "enable-spring-cloud", havingValue = "true", matchIfMissing = true)
-    public RestTemplate scBaseAuthClientRestTemplate(final ClientHttpRequestFactory clientHttpRequestFactory) {
-        RestTemplate restTemplate = new RestTemplate(clientHttpRequestFactory);
-        restTemplate.setMessageConverters(messageConverters);
-        return restTemplate;
-    }
-
-    @Bean("baseAuthClientRestTemplate")
-    @ConditionalOnProperty(prefix = "uw.auth.client", name = "enable-spring-cloud", havingValue = "false")
-    public RestTemplate baseAuthClientRestTemplate(final ClientHttpRequestFactory clientHttpRequestFactory) {
-        RestTemplate restTemplate = new RestTemplate(clientHttpRequestFactory);
-        restTemplate.setMessageConverters(messageConverters);
-        return restTemplate;
-    }
-
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
-
-    @Bean
-    public AuthClientTokenHelper authClientToken(final AuthClientProperties authClientProperties, final ObjectMapper objectMapper,
-                                                 @Qualifier("baseAuthClientRestTemplate") final RestTemplate restTemplate) {
-        return new AuthClientTokenHelper(authClientProperties, objectMapper, restTemplate);
-    }
-
-    @Bean
-    public TokenHeaderInterceptor tokenHeaderInterceptor(final AuthClientTokenHelper authClientToken) {
-        return new TokenHeaderInterceptor(authClientToken);
-    }
-
-    @LoadBalanced
-    @Bean("tokenRestTemplate")
+    @Bean("authRestTemplate")
     @Primary
     @ConditionalOnProperty(prefix = "uw.auth.client", name = "enable-spring-cloud", havingValue = "true", matchIfMissing = true)
-    public RestTemplate lbTokenRestTemplate(final ClientHttpRequestFactory clientHttpRequestFactory, final TokenHeaderInterceptor tokenHeaderInterceptor) {
-        RestTemplate tokenRestTemplate = new RestTemplate(clientHttpRequestFactory);
-        tokenRestTemplate.setInterceptors(Collections.singletonList(tokenHeaderInterceptor));
-        tokenRestTemplate.setMessageConverters(messageConverters);
-        return tokenRestTemplate;
+    public RestTemplate lbAuthRestTemplate(final AuthClientProperties authClientProperties,final ClientHttpRequestFactory clientHttpRequestFactory) {
+        RestTemplate commonRestTemplate = new RestTemplate(clientHttpRequestFactory);
+        commonRestTemplate.setMessageConverters(messageConverters);
+        RestTemplate authRestTemplate = new RestTemplate(clientHttpRequestFactory);
+        authRestTemplate.setInterceptors(Collections.singletonList(new TokenHeaderInterceptor(new AuthClientTokenHelper(authClientProperties, commonRestTemplate))));
+        authRestTemplate.setMessageConverters(messageConverters);
+        return authRestTemplate;
     }
 
-    @Bean("tokenRestTemplate")
+    /**
+     * 非Spring cloud环境下的RestTemplate
+     *
+     * @param clientHttpRequestFactory
+     * @return
+     */
+    @Bean("authRestTemplate")
     @Primary
     @ConditionalOnProperty(prefix = "uw.auth.client", name = "enable-spring-cloud", havingValue = "false")
-    public RestTemplate tokenRestTemplate(final ClientHttpRequestFactory clientHttpRequestFactory, final TokenHeaderInterceptor tokenHeaderInterceptor) {
-        RestTemplate tokenRestTemplate = new RestTemplate(clientHttpRequestFactory);
-        tokenRestTemplate.setInterceptors(Collections.singletonList(tokenHeaderInterceptor));
-        tokenRestTemplate.setMessageConverters(messageConverters);
-        return tokenRestTemplate;
+    public RestTemplate authRestTemplate(final AuthClientProperties authClientProperties,final ClientHttpRequestFactory clientHttpRequestFactory) {
+        RestTemplate commonRestTemplate = new RestTemplate(clientHttpRequestFactory);
+        commonRestTemplate.setMessageConverters(messageConverters);
+        RestTemplate authRestTemplate = new RestTemplate(clientHttpRequestFactory);
+        authRestTemplate.setInterceptors(Collections.singletonList(new TokenHeaderInterceptor(new AuthClientTokenHelper(authClientProperties, commonRestTemplate))));
+        authRestTemplate.setMessageConverters(messageConverters);
+        return authRestTemplate;
     }
 
     /**

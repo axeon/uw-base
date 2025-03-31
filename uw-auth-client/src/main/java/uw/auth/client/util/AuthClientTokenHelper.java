@@ -32,7 +32,7 @@ public class AuthClientTokenHelper {
 
     private final AuthClientProperties authClientProperties;
 
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final RestTemplate restTemplate;
 
@@ -57,9 +57,8 @@ public class AuthClientTokenHelper {
     private int retryTimes;
 
 
-    public AuthClientTokenHelper(AuthClientProperties authClientProperties, ObjectMapper objectMapper, RestTemplate restTemplate) {
+    public AuthClientTokenHelper(AuthClientProperties authClientProperties, RestTemplate restTemplate) {
         this.authClientProperties = authClientProperties;
-        this.objectMapper = objectMapper;
         this.restTemplate = restTemplate;
     }
 
@@ -118,9 +117,9 @@ public class AuthClientTokenHelper {
             String loginUrl = authClientProperties.getAuthCenterHost() + authClientProperties.getLoginEntryPoint();
             LoginRequest loginRequest = new LoginRequest();
             loginRequest.setLoginType( 1 );
+            loginRequest.setSaasId( 0 );
             loginRequest.setLoginAgent( authClientProperties.getAppName() + ":" + authClientProperties.getAppVersion() + "/" + authClientProperties.getAppHost() + ":" + authClientProperties.getAppPort() );
             loginRequest.setUserType( authClientProperties.getUserType() );
-            loginRequest.setSaasId( 0 );
             loginRequest.setLoginId( authClientProperties.getLoginId() );
             loginRequest.setLoginPass( authClientProperties.getLoginPass() );
             loginRequest.setLoginSecret( authClientProperties.getLoginSecret() );

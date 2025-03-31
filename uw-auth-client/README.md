@@ -33,14 +33,14 @@ uw:
 
 ## 使用RestTemplate
 
-使用`@Qualifier("tokenRestTemplate")`来注入restTemplate：
+使用`@Qualifier("authRestTemplate")`来注入restTemplate：
 
 ```java
 @Component
 public class MyApp {
     @Autowired
-    @Qualifier("tokenRestTemplate")
-    private RestTemplate tokenRestTemplate;
+    @Qualifier("authRestTemplate")
+    private RestTemplate authRestTemplate;
     
     User me = restTemplate.getForObject("http://localhost:8080/protected/profile", User.class);
 }

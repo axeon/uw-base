@@ -62,8 +62,8 @@ public class UwMfaAutoConfiguration {
     @DependsOn("mfaRedisTemplate")
     @ConditionalOnMissingBean
     protected MfaDeviceCodeHelper mfaDeviceCodeHelper(final UwMfaProperties uwMfaProperties, @Qualifier("mfaRedisTemplate") final RedisTemplate<String, String> mfaRedisTemplate,
-                                                      @Qualifier("tokenRestTemplate") final RestTemplate tokenRestTemplate) {
-        return new MfaDeviceCodeHelper( uwMfaProperties, mfaRedisTemplate, tokenRestTemplate );
+                                                      @Qualifier("authRestTemplate") final RestTemplate authRestTemplate) {
+        return new MfaDeviceCodeHelper( uwMfaProperties, mfaRedisTemplate, authRestTemplate );
     }
 
     @Bean

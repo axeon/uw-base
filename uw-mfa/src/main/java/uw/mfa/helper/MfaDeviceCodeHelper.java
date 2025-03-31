@@ -55,7 +55,7 @@ public class MfaDeviceCodeHelper {
     /**
      * RPC Client
      */
-    private static RestTemplate tokenRestTemplate;
+    private static RestTemplate authRestTemplate;
 
     /**
      * 配置文件。
@@ -73,11 +73,11 @@ public class MfaDeviceCodeHelper {
     private static ValueOperations<String, String> mfaRedisOp;
 
     public MfaDeviceCodeHelper(UwMfaProperties uwMfaProperties, @Qualifier("mfaRedisTemplate") final RedisTemplate<String, String> mfaRedisTemplate, @Qualifier(
-            "tokenRestTemplate") final RestTemplate tokenRestTemplate) {
+            "authRestTemplate") final RestTemplate authRestTemplate) {
         MfaDeviceCodeHelper.uwMfaProperties = uwMfaProperties;
         MfaDeviceCodeHelper.mfaRedisTemplate = mfaRedisTemplate;
         MfaDeviceCodeHelper.mfaRedisOp = mfaRedisTemplate.opsForValue();
-        MfaDeviceCodeHelper.tokenRestTemplate = tokenRestTemplate;
+        MfaDeviceCodeHelper.authRestTemplate = authRestTemplate;
     }
 
     /**
@@ -204,7 +204,7 @@ public class MfaDeviceCodeHelper {
         data.put( "mobile", mobile );
         data.put( "content", content );
         data.put( "paramMap", paramMap );
-        return tokenRestTemplate.postForObject( uwMfaProperties.getDeviceNotifyMobileApi(), data, ResponseData.class );
+        return authRestTemplate.postForObject( uwMfaProperties.getDeviceNotifyMobileApi(), data, ResponseData.class );
     }
 
     /**
@@ -228,7 +228,7 @@ public class MfaDeviceCodeHelper {
         data.put( "paramMap", paramMap );
         //默认邮件为html格式
         data.put( "isHtml", 1 );
-        return tokenRestTemplate.postForObject( uwMfaProperties.getDeviceNotifyEmailApi(), data, ResponseData.class );
+        return authRestTemplate.postForObject( uwMfaProperties.getDeviceNotifyEmailApi(), data, ResponseData.class );
     }
 
     /**

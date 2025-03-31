@@ -114,7 +114,17 @@ public class UwMfaProperties {
     /**
      * TOTP是否生成二维码，默认生成。
      */
-    private boolean toptGenQr = true;
+    private boolean totpGenQr = true;
+
+    /**
+     * TOTP二维码尺寸，默认350px。
+     */
+    private int totpQrSize = 350;
+
+    /**
+     * TOTP签发人，默认uw-mfa。
+     */
+    private String totpIssuer = "uw-mfa" ;
 
     /**
      * Redis配置
@@ -289,12 +299,28 @@ public class UwMfaProperties {
         this.totpTimePeriodDiscrepancy = totpTimePeriodDiscrepancy;
     }
 
-    public boolean isToptGenQr() {
-        return toptGenQr;
+    public boolean isTotpGenQr() {
+        return totpGenQr;
     }
 
-    public void setToptGenQr(boolean toptGenQr) {
-        this.toptGenQr = toptGenQr;
+    public void setTotpGenQr(boolean totpGenQr) {
+        this.totpGenQr = totpGenQr;
+    }
+
+    public String getTotpIssuer() {
+        return totpIssuer;
+    }
+
+    public void setTotpIssuer(String totpIssuer) {
+        this.totpIssuer = totpIssuer;
+    }
+
+    public int getTotpQrSize() {
+        return totpQrSize;
+    }
+
+    public void setTotpQrSize(int totpQrSize) {
+        this.totpQrSize = totpQrSize;
     }
 
     public RedisProperties getRedis() {

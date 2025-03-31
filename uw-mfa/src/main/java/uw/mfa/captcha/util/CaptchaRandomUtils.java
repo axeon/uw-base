@@ -2,9 +2,9 @@ package uw.mfa.captcha.util;
 
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.RandomUtils;
 
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 
 public class CaptchaRandomUtils {
@@ -14,7 +14,7 @@ public class CaptchaRandomUtils {
      *
      * @return
      */
-    public static final String getUUID() {
+    public static String getUUID() {
         return UUID.randomUUID().toString().replaceAll( "-", "" );
     }
 
@@ -24,8 +24,8 @@ public class CaptchaRandomUtils {
      * @param bound
      * @return
      */
-    public static final int getRandomInt(int bound) {
-        return ThreadLocalRandom.current().nextInt( bound );
+    public static int getRandomInt(int bound) {
+        return RandomUtils.insecure().randomInt( 0, bound );
     }
 
     /**
@@ -35,8 +35,8 @@ public class CaptchaRandomUtils {
      * @param endNum
      * @return
      */
-    public static final int getRandomInt(int startNum, int endNum) {
-        return ThreadLocalRandom.current().nextInt( endNum - startNum ) + startNum;
+    public static int getRandomInt(int startNum, int endNum) {
+        return RandomUtils.insecure().randomInt( 0, endNum - startNum ) + startNum;
     }
 
     /**
@@ -45,8 +45,8 @@ public class CaptchaRandomUtils {
      * @param length
      * @return
      */
-    public static final String getRandomString(int length) {
-        return RandomStringUtils.randomAlphanumeric( length );
+    public static String getRandomString(int length) {
+        return RandomStringUtils.secureStrong().nextAlphanumeric( length );
     }
 
 }

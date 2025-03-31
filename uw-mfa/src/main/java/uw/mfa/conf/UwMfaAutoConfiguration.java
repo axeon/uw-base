@@ -26,6 +26,7 @@ import org.springframework.web.client.RestTemplate;
 import uw.mfa.helper.MfaCaptchaHelper;
 import uw.mfa.helper.MfaDeviceCodeHelper;
 import uw.mfa.helper.MfaIPLimitHelper;
+import uw.mfa.helper.MfaTotpHelper;
 
 
 /**
@@ -72,6 +73,11 @@ public class UwMfaAutoConfiguration {
         return new MfaIPLimitHelper( uwMfaProperties, mfaRedisTemplate );
     }
 
+    @Bean
+    @ConditionalOnMissingBean
+    protected MfaTotpHelper mfaTotpHelper(final UwMfaProperties uwMfaProperties) {
+        return new MfaTotpHelper( uwMfaProperties );
+    }
 
     /**
      * Redis连接工厂

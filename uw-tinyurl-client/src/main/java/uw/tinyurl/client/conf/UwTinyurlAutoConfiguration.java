@@ -19,7 +19,7 @@ public class UwTinyurlAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public TinyurlClientHelper tinyurlClientHelper(UwTinyurlProperties uwTinyurlProperties, RestTemplate tokenRestTemplate) {
-        return new TinyurlClientHelper( uwTinyurlProperties, tokenRestTemplate );
+    public TinyurlClientHelper tinyurlClientHelper(UwTinyurlProperties uwTinyurlProperties, RestTemplate authRestTemplate) {
+        return new TinyurlClientHelper( uwTinyurlProperties, authRestTemplate );
     }
 }

@@ -29,13 +29,13 @@ public class MydbClientHelper {
     /**
      * Rest模板类
      */
-    private static RestTemplate tokenRestTemplate;
+    private static RestTemplate authRestTemplate;
 
     private static UwMydbClientProperties uwMydbClientProperties;
 
-    public MydbClientHelper(UwMydbClientProperties uwMydbClientProperties, RestTemplate tokenRestTemplate) {
+    public MydbClientHelper(UwMydbClientProperties uwMydbClientProperties, RestTemplate authRestTemplate) {
         MydbClientHelper.uwMydbClientProperties = uwMydbClientProperties;
-        MydbClientHelper.tokenRestTemplate = tokenRestTemplate;
+        MydbClientHelper.authRestTemplate = authRestTemplate;
     }
 
     /**
@@ -80,7 +80,7 @@ public class MydbClientHelper {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( uwMydbClientProperties.getMydbCenterHost() ).path( "/rpc/app/assignSaasNode" ).queryParam( "configKey", configKey ).queryParam(
                         "saasId", saasId ).queryParam( "preferNode", preferNode ).build().encode().toUri();
-        return tokenRestTemplate.exchange( targetUrl, HttpMethod.POST, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<DataNode>>() {
+        return authRestTemplate.exchange( targetUrl, HttpMethod.POST, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<DataNode>>() {
         } ).getBody();
     }
 

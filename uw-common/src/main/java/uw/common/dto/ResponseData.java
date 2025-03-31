@@ -12,7 +12,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
  * @author axeon
  */
 @Schema(title = "返回信息结构体", description = "返回信息结构体")
-public final class ResponseData<T> {
+public class ResponseData<T> {
 
     /**
      * 成功状态值。
@@ -27,7 +27,7 @@ public final class ResponseData<T> {
      */
     public static final String STATE_ERROR = "error";
     /**
-     * 位置状态值。
+     * 未知状态值
      */
     public static final String STATE_UNKNOWN = "unknown";
 
@@ -355,7 +355,7 @@ public final class ResponseData<T> {
     @Override
     public String toString() {
         return new ToStringBuilder( this, ToStringStyle.JSON_STYLE )
-                .append( "times", time )
+                .append( "time", time )
                 .append( "state", state )
                 .append( "msg", msg )
                 .append( "code", code )

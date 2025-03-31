@@ -281,14 +281,14 @@ public class TaskAutoConfiguration {
      *
      * @param context
      * @param taskProperties
-     * @param tokenRestTemplate
+     * @param authRestTemplate
      * @param clientResources
      * @param logClient
      * @return
      */
     @Bean
     TaskFactory taskFactory(final ApplicationContext context, final TaskProperties taskProperties, final TaskListenerManager taskListenerManager,
-                            @Qualifier("tokenRestTemplate") final RestTemplate tokenRestTemplate, final ClientResources clientResources, final LogClient logClient) {
+                            @Qualifier("authRestTemplate") final RestTemplate authRestTemplate, final ClientResources clientResources, final LogClient logClient) {
         // task自定义的rabbit连接工厂
         ConnectionFactory taskRabbitConnectionFactory = getTaskRabbitConnectionFactory( taskProperties.getRabbitmq() );
         // task自定义的redis连接工厂
@@ -300,7 +300,7 @@ public class TaskAutoConfiguration {
         // 全局sequence管理器
         TaskSequenceManager taskSequenceManager = new TaskSequenceManager( taskRedisConnectionFactory );
         // 任务交互API
-        TaskApiClient taskApiClient = new TaskApiClient( taskProperties, tokenRestTemplate, logClient );
+        TaskApiClient taskApiClient = new TaskApiClient( taskProperties, authRestTemplate, logClient );
         // rabbit模板
         RabbitTemplate rabbitTemplate = getTaskRabbitTemplate( taskRabbitConnectionFactory );
         // rabbit管理器

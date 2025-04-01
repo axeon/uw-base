@@ -14,8 +14,7 @@ public class JsonInterfaceHelper extends HttpInterface {
     /**
      * json转换器。
      */
-    public static final ObjectMapper JSON_CONVERTER = new JsonObjectMapperImpl();
-
+    public static final DataObjectMapper JSON_CONVERTER = new JsonObjectMapperImpl();
 
     /**
      * 默认构造器。

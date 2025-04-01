@@ -4,9 +4,9 @@ package uw.mfa.captcha.strategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.dto.ResponseData;
+import uw.common.util.JsonUtils;
 import uw.mfa.captcha.CaptchaStrategy;
 import uw.mfa.captcha.util.CaptchaImageUtils;
-import uw.mfa.captcha.util.CaptchaJsonUtils;
 import uw.mfa.captcha.util.CaptchaRandomUtils;
 import uw.mfa.captcha.vo.CaptchaData;
 import uw.mfa.captcha.vo.CaptchaPoint;
@@ -73,8 +73,8 @@ public class SlidePuzzleCaptchaStrategy implements CaptchaStrategy {
 
             // 传输编码
             captchaQuestion.setCaptchaType( captchaType() );
-            captchaQuestion.setSubData( CaptchaJsonUtils.toJSONString( new CaptchaPoint( 0, y ) ) );
-            String captchaResult = CaptchaJsonUtils.toJSONString( point );
+            captchaQuestion.setSubData( JsonUtils.toString( new CaptchaPoint( 0, y ) ) );
+            String captchaResult = JsonUtils.toString( point );
             return ResponseData.success( new CaptchaData( captchaQuestion, captchaResult ) );
         } catch (Exception e) {
             return ResponseData.errorMsg( "SlidePuzzle captcha generate failed! " + e.getMessage() );
@@ -87,9 +87,9 @@ public class SlidePuzzleCaptchaStrategy implements CaptchaStrategy {
         CaptchaPoint pointAnswer = null;
         try {
             // 后端存储的验证码答案
-            pointResult = CaptchaJsonUtils.parseObject( captchaResult, CaptchaPoint.class );
+            pointResult = JsonUtils.parse( captchaResult, CaptchaPoint.class );
             // 前端的回答
-            pointAnswer = CaptchaJsonUtils.parseObject( answerData, CaptchaPoint.class );
+            pointAnswer = JsonUtils.parse( answerData, CaptchaPoint.class );
         } catch (Exception e) {
             return ResponseData.errorMsg( "SlidePuzzle point format invalid! " + e.getMessage() );
         }

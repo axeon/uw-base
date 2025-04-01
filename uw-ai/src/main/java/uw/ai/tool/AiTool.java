@@ -1,5 +1,6 @@
 package uw.ai.tool;
 
+import uw.common.util.JsonUtils;
 import uw.httpclient.json.JsonInterfaceHelper;
 
 import java.lang.reflect.ParameterizedType;
@@ -54,7 +55,7 @@ public interface AiTool<P extends AiToolParam, ResponseData> extends Function<P,
      * @return
      */
     default P convertParam(String toolTip) {
-        return (P) JsonInterfaceHelper.JSON_CONVERTER.parse( toolTip, getParamType() );
+        return (P) JsonUtils.parse( toolTip, getParamType() );
     }
 
 

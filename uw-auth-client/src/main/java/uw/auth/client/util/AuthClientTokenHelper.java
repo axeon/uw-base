@@ -1,6 +1,5 @@
 package uw.auth.client.util;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,10 +9,12 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import uw.auth.client.AuthClientProperties;
+import uw.auth.client.constant.LoginType;
 import uw.auth.client.vo.LoginRequest;
 import uw.auth.client.vo.LoginResponse;
 import uw.auth.client.vo.TokenResponse;
 import uw.common.dto.ResponseData;
+import uw.common.util.JsonUtils;
 
 import java.net.URI;
 import java.util.List;
@@ -31,8 +32,6 @@ public class AuthClientTokenHelper {
     private static final Logger log = LoggerFactory.getLogger( AuthClientTokenHelper.class );
 
     private final AuthClientProperties authClientProperties;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final RestTemplate restTemplate;
 
@@ -116,8 +115,8 @@ public class AuthClientTokenHelper {
         try {
             String loginUrl = authClientProperties.getAuthCenterHost() + authClientProperties.getLoginEntryPoint();
             LoginRequest loginRequest = new LoginRequest();
-            loginRequest.setLoginType( 1 );
-            loginRequest.setSaasId( 0 );
+            loginRequest.setLoginType( LoginType.USER_PASS.getValue() );
+            loginRequest.setSaasId( authClientProperties.getSaasId() );
             loginRequest.setLoginAgent( authClientProperties.getAppName() + ":" + authClientProperties.getAppVersion() + "/" + authClientProperties.getAppHost() + ":" + authClientProperties.getAppPort() );
             loginRequest.setUserType( authClientProperties.getUserType() );
             loginRequest.setLoginId( authClientProperties.getLoginId() );
@@ -126,7 +125,7 @@ public class AuthClientTokenHelper {
             loginRequest.setForceLogin( true );
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType( MediaType.APPLICATION_JSON );
-            String credentials = objectMapper.writeValueAsString( loginRequest );
+            String credentials = JsonUtils.toString(authClientProperties);
             RequestEntity<String> requestEntity = new RequestEntity<>( credentials, headers, HttpMethod.POST, URI.create( loginUrl ) );
             ResponseEntity<LoginResponse> loginResponseEntity = restTemplate.exchange( requestEntity, LoginResponse.class );
             if (loginResponseEntity.getStatusCode().value() == HttpStatus.OK.value()) {

@@ -2,15 +2,14 @@ package uw.app.common.helper;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.app.common.dto.SysDataHistoryQueryParam;
 import uw.app.common.entity.SysDataHistory;
 import uw.auth.service.AuthServiceHelper;
+import uw.common.util.JsonUtils;
 import uw.dao.DaoFactory;
 import uw.dao.DataEntity;
-import uw.dao.DataList;
 import uw.dao.TransactionException;
 import uw.httpclient.exception.DataMapperException;
-import uw.httpclient.http.ObjectMapper;
+import uw.httpclient.http.DataObjectMapper;
 import uw.httpclient.json.JsonInterfaceHelper;
 
 import java.io.Serializable;
@@ -24,8 +23,6 @@ public class SysDataHistoryHelper {
     private static final Logger log = LoggerFactory.getLogger( SysDataHistoryHelper.class );
 
     private static final DaoFactory dao = DaoFactory.getInstance();
-
-    private static final ObjectMapper mapper = JsonInterfaceHelper.JSON_CONVERTER;
 
     /**
      * 保存历史记录。
@@ -64,7 +61,7 @@ public class SysDataHistoryHelper {
         }
         history.setCreateDate( new Date() );
         try {
-            history.setEntityData( mapper.toString( entityData ) );
+            history.setEntityData( JsonUtils.toString( entityData ) );
             if (entityData instanceof DataEntity de) {
                 history.setEntityUpdateInfo( de.GET_UPDATED_INFO() );
             }

@@ -1,8 +1,6 @@
 package uw.common.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +16,6 @@ public class ConfigParamUtils {
     /**
      * 对象映射器。
      */
-    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Logger logger = LoggerFactory.getLogger( ConfigParamUtils.class );
 
 
@@ -55,9 +52,9 @@ public class ConfigParamUtils {
         Map<String, String> configDataMap = null;
         if (StringUtils.isNotBlank( configDataJson )) {
             try {
-                configDataMap = OBJECT_MAPPER.readValue( configDataJson, new TypeReference<Map<String, String>>() {
+                configDataMap = JsonUtils.parse( configDataJson, new TypeReference<Map<String, String>>() {
                 } );
-            } catch (JsonProcessingException e) {
+            } catch (Exception e) {
                 logger.error( "配置数据解析失败！{}", e.getMessage(), e );
             }
         }
@@ -76,17 +73,17 @@ public class ConfigParamUtils {
         Map<String, String> configDataMap = null;
         if (StringUtils.isNotBlank( configParamJson )) {
             try {
-                configParams = Arrays.asList( OBJECT_MAPPER.readValue( configParamJson, ConfigParam[].class ) );
-            } catch (JsonProcessingException e) {
+                configParams = Arrays.asList( JsonUtils.parse( configParamJson, ConfigParam[].class ) );
+            } catch (Exception e) {
                 logger.error( "配置参数解析失败！{}", e.getMessage(), e );
                 return ResponseData.error( ConfigParamBox.EMPTY_PARAM_BOX, "", "配置参数解析失败！" + e.getMessage() );
             }
         }
         if (StringUtils.isNotBlank( configDataJson )) {
             try {
-                configDataMap = OBJECT_MAPPER.readValue( configDataJson, new TypeReference<Map<String, String>>() {
+                configDataMap = JsonUtils.parse( configDataJson, new TypeReference<Map<String, String>>() {
                 } );
-            } catch (JsonProcessingException e) {
+            } catch (Exception e) {
                 logger.error( "配置数据解析失败！{}", e.getMessage(), e );
             }
         }
@@ -163,79 +160,79 @@ public class ConfigParamUtils {
             } else if (configParam.getType().equals( TypeConfigParam.ENUM.getValue() )) {
                 Set<String> enumSet = null;
                 try {
-                    enumSet = OBJECT_MAPPER.readValue( configParam.getValue(), new TypeReference<Set<String>>() {
+                    enumSet = JsonUtils.parse( configParam.getValue(), new TypeReference<Set<String>>() {
                     } );
-                } catch (JsonProcessingException ignored) {
+                } catch (Exception ignored) {
                 }
                 if (enumSet == null || !enumSet.contains( paramValue )) {
                     errorParamList.add( configParam );
                 }
             } else if (configParam.getType().equals( TypeConfigParam.MAP.getValue() )) {
                 try {
-                    Map<String, String> map = OBJECT_MAPPER.readValue( paramValue, new TypeReference<Map<String, String>>() {
+                    Map<String, String> map = JsonUtils.parse( paramValue, new TypeReference<Map<String, String>>() {
                     } );
-                } catch (JsonProcessingException ignored) {
+                } catch (Exception ignored) {
                     errorParamList.add( configParam );
                 }
             } else if (configParam.getType().equals( TypeConfigParam.SET_STRING.getValue() )) {
                 try {
-                    OBJECT_MAPPER.readValue( paramValue, new TypeReference<List<String>>() {
+                    JsonUtils.parse( paramValue, new TypeReference<List<String>>() {
                     } );
-                } catch (JsonProcessingException ignored) {
+                } catch (Exception ignored) {
                     errorParamList.add( configParam );
                 }
             } else if (configParam.getType().equals( TypeConfigParam.SET_INT.getValue() )) {
                 try {
-                    String[] list = OBJECT_MAPPER.readValue( paramValue, String[].class );
+                    String[] list = JsonUtils.parse( paramValue, String[].class );
                     for (String s : list) {
                         Integer.parseInt( s );
                     }
-                } catch (JsonProcessingException ignored) {
+                } catch (Exception ignored) {
                     errorParamList.add( configParam );
                 }
             } else if (configParam.getType().equals( TypeConfigParam.SET_LONG.getValue() )) {
                 try {
-                    String[] list = OBJECT_MAPPER.readValue( paramValue, String[].class );
+                    String[] list = JsonUtils.parse( paramValue, String[].class );
                     for (String s : list) {
                         Long.parseLong( s );
                     }
-                } catch (JsonProcessingException ignored) {
+                } catch (Exception ignored) {
                     errorParamList.add( configParam );
                 }
 
             } else if (configParam.getType().equals( TypeConfigParam.SET_DOUBLE.getValue() )) {
                 try {
-                    String[] list = OBJECT_MAPPER.readValue( paramValue, String[].class );
+                    String[] list = JsonUtils.parse( paramValue, String[].class );
                     for (String s : list) {
                         Double.parseDouble( s );
                     }
-                } catch (JsonProcessingException ignored) {
+                } catch (Exception ignored) {
                     errorParamList.add( configParam );
                 }
 
             } else if (configParam.getType().equals( TypeConfigParam.SET_FLOAT.getValue() )) {
                 try {
-                    String[] list = OBJECT_MAPPER.readValue( paramValue, String[].class );
+                    String[] list = JsonUtils.parse( paramValue, String[].class );
                     for (String s : list) {
                         Float.parseFloat( s );
                     }
-                } catch (JsonProcessingException ignored) {
+                } catch (Exception ignored) {
                     errorParamList.add( configParam );
                 }
 
             } else if (configParam.getType().equals( TypeConfigParam.SET_BOOLEAN.getValue() )) {
                 try {
-                    String[] list = OBJECT_MAPPER.readValue( paramValue, String[].class );
+                    String[] list = JsonUtils.parse( paramValue, String[].class );
                     for (String s : list) {
                         Boolean.parseBoolean( s );
                     }
-                } catch (JsonProcessingException ignored) {
+                } catch (Exception ignored) {
                     errorParamList.add( configParam );
                 }
 
             } else if (configParam.getType().equals( TypeConfigParam.SET_DATE.getValue() )) {
                 try {
-                    String[] list = OBJECT_MAPPER.readValue( paramValue, String[].class );
+                    String[] list = JsonUtils.parse( paramValue, String[].class );
                     for (String s : list) {
                         if (DateUtils.stringToDate( s, DateUtils.DATE ) == null) {
                             errorParamList.add( configParam );
@@ -247,7 +244,7 @@ public class ConfigParamUtils {
                 }
             } else if (configParam.getType().equals( TypeConfigParam.SET_TIME.getValue() )) {
                 try {
-                    String[] list = OBJECT_MAPPER.readValue( paramValue, String[].class );
+                    String[] list = JsonUtils.parse( paramValue, String[].class );
                     for (String s : list) {
                         if (DateUtils.stringToDate( s, DateUtils.TIME ) == null) {
                             errorParamList.add( configParam );
@@ -259,7 +256,7 @@ public class ConfigParamUtils {
                 }
             } else if (configParam.getType().equals( TypeConfigParam.SET_DATETIME.getValue() )) {
                 try {
-                    String[] list = OBJECT_MAPPER.readValue( paramValue, String[].class );
+                    String[] list = JsonUtils.parse( paramValue, String[].class );
                     for (String s : list) {
                         if (DateUtils.stringToDate( s, DateUtils.DATE_TIME ) == null) {
                             errorParamList.add( configParam );
@@ -288,9 +285,9 @@ public class ConfigParamUtils {
         Map<String, String> configDataMap = null;
         if (StringUtils.isNotBlank( configDataJson )) {
             try {
-                configDataMap = OBJECT_MAPPER.readValue( configDataJson, new TypeReference<Map<String, String>>() {
+                configDataMap = JsonUtils.parse( configDataJson, new TypeReference<Map<String, String>>() {
                 } );
-            } catch (JsonProcessingException e) {
+            } catch (Exception e) {
                 logger.error( "配置数据解析失败！{}", e.getMessage(), e );
             }
         }
@@ -310,17 +307,17 @@ public class ConfigParamUtils {
         List<ConfigParam> configParamList = null;
         if (StringUtils.isNotBlank( configDataJson )) {
             try {
-                configParamList = OBJECT_MAPPER.readValue( configParamJson, new TypeReference<List<ConfigParam>>() {
+                configParamList = JsonUtils.parse( configParamJson, new TypeReference<List<ConfigParam>>() {
                 } );
-            } catch (JsonProcessingException e) {
+            } catch (Exception e) {
                 logger.error( "配置参数解析失败！{}", e.getMessage(), e );
             }
         }
         if (StringUtils.isNotBlank( configDataJson )) {
             try {
-                configDataMap = OBJECT_MAPPER.readValue( configDataJson, new TypeReference<Map<String, String>>() {
+                configDataMap = JsonUtils.parse( configDataJson, new TypeReference<Map<String, String>>() {
                 } );
-            } catch (JsonProcessingException e) {
+            } catch (Exception e) {
                 logger.error( "配置数据解析失败！{}", e.getMessage(), e );
             }
         }

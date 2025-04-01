@@ -14,7 +14,7 @@ public class XmlInterfaceHelper extends HttpInterface {
     /**
      * xml转换器。
      */
-    public static final ObjectMapper XML_CONVERTER = new XmlObjectMapperImpl();
+    public static final DataObjectMapper XML_CONVERTER = new XmlObjectMapperImpl();
 
     /**
      * 默认构造器。

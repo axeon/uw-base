@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.JsonUtils;
 import uw.httpclient.http.HttpConfig;
 import uw.httpclient.http.HttpData;
 import uw.httpclient.http.HttpInterface;
@@ -278,7 +279,7 @@ public class LogService {
         okb.writeUtf8( "{\"create\":{\"_index\":\"" ).writeUtf8( index ).writeUtf8( "\"},\"_source\":false}" );
         okb.write( LINE_SEPARATOR_BYTES );
         try {
-            JsonInterfaceHelper.JSON_CONVERTER.write( okb.outputStream(), source );
+            JsonUtils.write( okb.outputStream(), source );
         } catch (Exception e) {
             log.error( e.getMessage(), e );
         }
@@ -328,7 +329,7 @@ public class LogService {
             okb.writeUtf8( "{\"index\":{\"_index\":\"" ).writeUtf8( index ).writeUtf8( "\"}}" );
             okb.write( LINE_SEPARATOR_BYTES );
             try {
-                JsonInterfaceHelper.JSON_CONVERTER.write( okb.outputStream(), source );
+                JsonUtils.write( okb.outputStream(), source );
             } catch (Exception e) {
                 log.error( e.getMessage(), e );
             }
@@ -404,7 +405,7 @@ public class LogService {
         StringBuilder urlBuilder = new StringBuilder( esServer );
         urlBuilder.append( "/" ).append( index ).append( "/" ).append( "_search" );
         SearchResponse<T> resp = null;
-        JavaType javaType = JsonInterfaceHelper.JSON_CONVERTER.constructParametricType( SearchResponse.class, tClass );
+        JavaType javaType = JsonUtils.constructParametricType( SearchResponse.class, tClass );
 
         try {
             Request.Builder requestBuilder = new Request.Builder().url( urlBuilder.toString() );
@@ -442,7 +443,7 @@ public class LogService {
             if (needBasicAuth) {
                 requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
             }
-            JavaType javaType = JsonInterfaceHelper.JSON_CONVERTER.constructParametricType( ScrollResponse.class, tClass );
+            JavaType javaType = JsonUtils.constructParametricType( ScrollResponse.class, tClass );
             resp = (ScrollResponse<T>) httpInterface.requestForEntity( requestBuilder.post( RequestBody.create( dslQuery, MediaTypes.JSON_UTF8 ) ).build(), javaType ).getValue();
         } catch (Exception e) {
             log.error( e.getMessage(), e );
@@ -470,7 +471,7 @@ public class LogService {
         urlBuilder.append( "/_search/" ).append( SCROLL );
         String requestBody = String.format( "{\"scroll_id\" : \"%s\",\"scroll\": \"%s\"}", scrollId, scrollExpireSeconds + "s" );
         ScrollResponse<T> resp = null;
-        JavaType javaType = JsonInterfaceHelper.JSON_CONVERTER.constructParametricType( ScrollResponse.class, tClass );
+        JavaType javaType = JsonUtils.constructParametricType( ScrollResponse.class, tClass );
 
         try {
             Request.Builder requestBuilder = new Request.Builder().url( urlBuilder.toString() );
@@ -579,7 +580,7 @@ public class LogService {
         if (StringUtils.isNotBlank( resp )) {
             SearchResponse<T> response = null;
             try {
-                response = JsonInterfaceHelper.JSON_CONVERTER.parse( resp, JsonInterfaceHelper.JSON_CONVERTER.constructParametricType( SearchResponse.class, tClass ) );
+                response = JsonUtils.parse( resp, JsonUtils.constructParametricType( SearchResponse.class, tClass ) );
             } catch (Exception e) {
                 log.error( e.getMessage(), e );
             }

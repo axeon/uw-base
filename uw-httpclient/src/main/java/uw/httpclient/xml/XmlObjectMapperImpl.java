@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import uw.httpclient.http.ObjectMapper;
+import uw.httpclient.http.DataObjectMapper;
 import uw.httpclient.exception.DataMapperException;
 
 import java.io.OutputStream;
@@ -14,7 +14,7 @@ import java.io.OutputStream;
  *
  * @since 2018-03-01
  */
-public class XmlObjectMapperImpl implements ObjectMapper {
+public class XmlObjectMapperImpl implements DataObjectMapper {
 
     private final static com.fasterxml.jackson.dataformat.xml.XmlMapper xmlMapper = xmlMapperInit();
 

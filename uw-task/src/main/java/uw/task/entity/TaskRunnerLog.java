@@ -3,9 +3,9 @@ package uw.task.entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.JsonUtils;
 import uw.log.es.vo.LogBaseVo;
 import uw.task.TaskData;
-import uw.task.util.JsonMapper;
 
 import java.util.Date;
 
@@ -107,7 +107,7 @@ public class TaskRunnerLog extends LogBaseVo {
                     logLevel == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_TASK_PARAM) {
                 String data = null;
                 try {
-                    data = JsonMapper.MAPPER.writeValueAsString(value);
+                    data = JsonUtils.toString( value );
                 } catch (Exception e) {
                     data = e.getMessage();
                     logger.error(e.getMessage(), e);
@@ -183,7 +183,7 @@ public class TaskRunnerLog extends LogBaseVo {
                     logLevel == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_RESULT_DATA) {
                 String data = null;
                 try {
-                    data = JsonMapper.MAPPER.writeValueAsString(value);
+                    data = JsonUtils.toString(value);
                 } catch (Exception e) {
                     data = e.getMessage();
                     logger.error(e.getMessage(), e);

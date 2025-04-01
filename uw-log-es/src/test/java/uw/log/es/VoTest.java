@@ -1,5 +1,6 @@
 package uw.log.es;
 
+import uw.common.util.JsonUtils;
 import uw.httpclient.json.JsonInterfaceHelper;
 import uw.log.es.vo.ScrollResponse;
 import uw.log.es.vo.TaskRunnerLog;
@@ -72,9 +73,8 @@ public class VoTest {
                 "    ]\n" +
                 "  }\n" +
                 "}";
-        ScrollResponse<TaskRunnerLog> scrollResponse = JsonInterfaceHelper.JSON_CONVERTER.parse(a,
-                JsonInterfaceHelper.JSON_CONVERTER
-                        .constructParametricType(ScrollResponse.class, TaskRunnerLog.class));
+        ScrollResponse<TaskRunnerLog> scrollResponse = JsonUtils.parse(a,
+                JsonUtils.constructParametricType(ScrollResponse.class, TaskRunnerLog.class));
         System.out.println(scrollResponse);
     }
 }

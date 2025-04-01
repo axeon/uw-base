@@ -9,8 +9,6 @@ import uw.task.exception.TaskPartnerException;
  */
 public class HttpRequestException extends TaskPartnerException {
 
-    private static final long serialVersionUID = -4816326148147854194L;
-
     public HttpRequestException() {
         super();
     }

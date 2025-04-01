@@ -2,8 +2,7 @@ package uw.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
+import uw.common.util.JsonUtils;
 
 /**
  * 用于作为返回给前端的vo类。
@@ -30,41 +29,34 @@ public class ResponseData<T> {
      * 未知状态值
      */
     public static final String STATE_UNKNOWN = "unknown";
-
     /**
      * 成功常量，不带时间戳。
      */
     public static final ResponseData SUCCESS = new ResponseData( STATE_SUCCESS );
-
     /**
      * 报警常量，不带时间戳。
      */
     public static final ResponseData WARN = new ResponseData( STATE_WARN );
-
     /**
      * 失败常量，不带时间戳。
      */
     public static final ResponseData ERROR = new ResponseData( STATE_ERROR );
-
 
     /**
      * 响应时间
      */
     @Schema(title = "时间戳", description = "时间戳")
     private long time;
-
     /**
      * 状态
      */
     @Schema(title = "状态", description = "状态")
     private String state = STATE_UNKNOWN;
-
     /**
      * 信息。
      */
     @Schema(title = "信息", description = "信息")
     private String msg;
-
     /**
      * 自定义代码，一般情况下代表错误代码。
      * 请尽量不要使用此代码存储http code，没用。
@@ -72,7 +64,6 @@ public class ResponseData<T> {
      */
     @Schema(title = "自定义代码", description = "自定义代码")
     private String code;
-
     /**
      * 返回数据
      */
@@ -354,18 +345,12 @@ public class ResponseData<T> {
 
     @Override
     public String toString() {
-        return new ToStringBuilder( this, ToStringStyle.JSON_STYLE )
-                .append( "time", time )
-                .append( "state", state )
-                .append( "msg", msg )
-                .append( "code", code )
-                .append( "data", data )
-                .append( "type", data == null ? null : data.getClass().getSimpleName() )
-                .toString();
+        return JsonUtils.toString( this);
     }
 
     /**
      * 获得数据。
+     *
      * @return
      */
     public T getData() {
@@ -374,6 +359,7 @@ public class ResponseData<T> {
 
     /**
      * 设置数据。
+     *
      * @param data
      */
     public void setData(T data) {
@@ -382,6 +368,7 @@ public class ResponseData<T> {
 
     /**
      * 获得消息。
+     *
      * @return
      */
     public String getMsg() {
@@ -390,6 +377,7 @@ public class ResponseData<T> {
 
     /**
      * 设置消息。
+     *
      * @param msg
      */
     public void setMsg(String msg) {
@@ -398,6 +386,7 @@ public class ResponseData<T> {
 
     /**
      * 获得状态。
+     *
      * @return
      */
     public String getState() {
@@ -406,6 +395,7 @@ public class ResponseData<T> {
 
     /**
      * 设置状态。
+     *
      * @param state
      */
     public void setState(String state) {
@@ -414,6 +404,7 @@ public class ResponseData<T> {
 
     /**
      * 获得代码。
+     *
      * @return
      */
     public String getCode() {
@@ -422,6 +413,7 @@ public class ResponseData<T> {
 
     /**
      * 设置代码。
+     *
      * @param code
      */
     public void setCode(String code) {
@@ -430,6 +422,7 @@ public class ResponseData<T> {
 
     /**
      * 获得时间戳。
+     *
      * @return
      */
     public long getTime() {
@@ -438,6 +431,7 @@ public class ResponseData<T> {
 
     /**
      * 设置时间戳。
+     *
      * @param time
      */
     public void setTime(long time) {
@@ -446,9 +440,10 @@ public class ResponseData<T> {
 
     /**
      * 获得数据类型。
+     *
      * @return
      */
-    public String getType(){
+    public String getType() {
         return data == null ? null : data.getClass().getSimpleName();
     }
 }

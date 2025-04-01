@@ -41,7 +41,7 @@ uw-httpclient针对接口业务需求设计的一个HttpClient库。
  * @param httpDataFilter HttpData数据处理器。
  */
 public JsonInterfaceHelper(HttpConfig httpConfig, Class<? extends HttpData> httpDataCls, HttpDataLogLevel httpDataLogLevel, HttpDataProcessor httpDataFilter) {
-    super( httpConfig, httpDataCls, httpDataLogLevel, httpDataFilter, JSON_CONVERTER, MediaTypes.JSON_UTF8 );
+    super( httpConfig, httpDataCls, httpDataLogLevel, httpDataFilter, JsonUtils, MediaTypes.JSON_UTF8 );
 }
 ```
 

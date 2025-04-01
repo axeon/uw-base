@@ -5,8 +5,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.dto.ResponseData;
+import uw.common.util.JsonUtils;
 import uw.mfa.captcha.util.CaptchaAESUtils;
-import uw.mfa.captcha.util.CaptchaJsonUtils;
 import uw.mfa.captcha.util.CaptchaRandomUtils;
 import uw.mfa.captcha.vo.CaptchaAnswer;
 import uw.mfa.captcha.vo.CaptchaData;
@@ -114,7 +114,7 @@ public class CaptchaService {
 
         String captchaAnswerStr = CaptchaAESUtils.aesDecrypt( captchaSign, captchaId );
         // 前端回答的答案
-        CaptchaAnswer captchaAnswer = CaptchaJsonUtils.parseObject( captchaAnswerStr, CaptchaAnswer.class );
+        CaptchaAnswer captchaAnswer = JsonUtils.parse( captchaAnswerStr, CaptchaAnswer.class );
         // 校验验证码类型是否正确
         String captchaType = captchaAnswer.getCaptchaType();
         CaptchaStrategy captchaStrategy = getCaptchaStrategy( captchaType );

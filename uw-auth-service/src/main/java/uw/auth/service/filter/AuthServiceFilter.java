@@ -26,12 +26,14 @@ import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.util.logging.LoggingHttpServletRequestWrapper;
 import uw.auth.service.util.logging.LoggingHttpServletResponseWrapper;
 import uw.auth.service.vo.MscActionLog;
+import uw.common.util.JsonUtils;
 import uw.httpclient.json.JsonInterfaceHelper;
 import uw.log.es.LogClient;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Date;
+import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -161,13 +163,15 @@ public class AuthServiceFilter implements Filter {
                     //保存request
                     if (logType == ActionLog.REQUEST || logType == ActionLog.ALL || logType == ActionLog.CRIT) {
                         LoggingHttpServletRequestWrapper requestWrapper = (LoggingHttpServletRequestWrapper) request;
-                        StringBuilder sb = new StringBuilder( 2560 );
+                        StringBuilder sb = new StringBuilder( 1280 );
                         sb.append( "{" );
-                        if (!requestWrapper.getParameterMap().isEmpty()) {
-                            sb.append( "\"param\":" ).append( JsonInterfaceHelper.JSON_CONVERTER.toString( requestWrapper.getParameterMap() ) ).append( "," );
+                        Map<String, String[]>  requestParamMap = requestWrapper.getParameterMap();
+                        if (!requestParamMap.isEmpty()) {
+                            sb.append( "\"param\":" ).append( JsonUtils.toString( requestParamMap ) ).append( "," );
                         }
-                        if (requestWrapper.getContentAsByteArray() != null && requestWrapper.getContentAsByteArray().length > 0) {
-                            sb.append( "\"body\":" ).append( new StringBuilder( new String( requestWrapper.getContentAsByteArray(), requestWrapper.getCharacterEncoding() ) ) );
+                        byte[] requestContentBytes = requestWrapper.getContentAsByteArray();
+                        if (requestContentBytes.length > 0) {
+                            sb.append( "\"body\":" ).append( new String( requestContentBytes, requestWrapper.getCharacterEncoding() ) );
                         }
                         if (sb.length() > 1) {
                             if (sb.charAt( sb.length() - 1 ) == ',') {
@@ -180,7 +184,7 @@ public class AuthServiceFilter implements Filter {
                     //保存response
                     if (logType == ActionLog.RESPONSE || logType == ActionLog.ALL || logType == ActionLog.CRIT) {
                         LoggingHttpServletResponseWrapper responseWrapper = (LoggingHttpServletResponseWrapper) response;
-                        mscActionLog.setResponseBody( new String( responseWrapper.getContentAsByteArray() ) );
+                        mscActionLog.setResponseBody( new String( responseWrapper.getContentAsByteArray(), responseWrapper.getCharacterEncoding() ) );
                         responseWrapper.copyBodyToResponse();
                     }
                     //如果是crit数据，保存数据库。

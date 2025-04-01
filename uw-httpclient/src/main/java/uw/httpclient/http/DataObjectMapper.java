@@ -12,7 +12,7 @@ import java.io.OutputStream;
  * 
  * @since 2017/9/20
  */
-public interface ObjectMapper {
+public interface DataObjectMapper {
 
     /**
      * Java 泛型绑定

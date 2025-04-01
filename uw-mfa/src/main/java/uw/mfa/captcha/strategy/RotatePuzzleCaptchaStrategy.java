@@ -4,9 +4,9 @@ package uw.mfa.captcha.strategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.dto.ResponseData;
+import uw.common.util.JsonUtils;
 import uw.mfa.captcha.CaptchaStrategy;
 import uw.mfa.captcha.util.CaptchaImageUtils;
-import uw.mfa.captcha.util.CaptchaJsonUtils;
 import uw.mfa.captcha.util.CaptchaRandomUtils;
 import uw.mfa.captcha.vo.CaptchaData;
 import uw.mfa.captcha.vo.CaptchaPoint;
@@ -71,7 +71,7 @@ public class RotatePuzzleCaptchaStrategy implements CaptchaStrategy {
             captchaQuestion.setSubImageBase64( CaptchaImageUtils.imageToBase64( degreeImage ) );
             captchaQuestion.setCaptchaId( captchaId );
             captchaQuestion.setCaptchaType( captchaType() );
-            captchaQuestion.setSubData( CaptchaJsonUtils.toJSONString(new CaptchaPoint( x, y ) ));
+            captchaQuestion.setSubData( JsonUtils.toString(new CaptchaPoint( x, y ) ));
             String captchaResult = String.valueOf( answer );
             return  ResponseData.success(new CaptchaData( captchaQuestion, captchaResult )) ;
         } catch (Exception e) {

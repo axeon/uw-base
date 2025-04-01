@@ -74,6 +74,11 @@ public class AuthClientProperties {
     private int userType = 1;
 
     /**
+     * SaasId.
+     */
+    private long saasId = 0;
+
+    /**
      * 连接池配置
      */
     private HttpPool httpPool = new HttpPool();
@@ -256,6 +261,14 @@ public class AuthClientProperties {
 
     public void setUserType(int userType) {
         this.userType = userType;
+    }
+
+    public long getSaasId() {
+        return saasId;
+    }
+
+    public void setSaasId(long saasId) {
+        this.saasId = saasId;
     }
 
     public HttpPool getHttpPool() {

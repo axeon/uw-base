@@ -1,4 +1,4 @@
-package uw.auth.service.constant;
+package uw.auth.client.constant;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -44,6 +44,16 @@ public enum LoginType {
      * 手机号密码登录。
      */
     MOBILE_PASS( 3, "手机号密码登录" ),
+
+    /**
+     * TOTP恢复码登录
+     */
+    TOTP_RECOVERY_CODE( 20, "TOTP恢复码登录"),
+
+    /**
+     * TOTP验证码登录
+     */
+    TOTP_CODE( 21, "TOTP验证码登录" ),
 
     /**
      * Email验证码登录

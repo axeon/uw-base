@@ -1,7 +1,9 @@
 package uw.auth.client.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.util.Date;
 import java.util.StringJoiner;
 
 /**
@@ -9,7 +11,6 @@ import java.util.StringJoiner;
  **/
 @Schema(title = "token返回结果", description = "token返回结果")
 public class TokenResponse {
-
 
     /**
      * 运营商Id
@@ -66,10 +67,28 @@ public class TokenResponse {
     private String nickName;
 
     /**
+     * 手机号码
+     */
+    @Schema(title = "手机号码", description = "手机号码")
+    private String mobile;
+
+    /**
+     * email
+     */
+    @Schema(title = "email", description = "email")
+    private String email;
+
+    /**
      * 最后更新密码时间。用于前端提醒客户更新密码。
      */
     @Schema(title = "最后更新密码时间", description = "最后更新密码时间。用于前端提醒客户更新密码。")
-    private long lastPasswdDate;
+    private Date lastPasswdDate;
+
+    /**
+     * 登录提示信息。
+     */
+    @Schema(title = "登录提示信息", description = "登录提示信息")
+    private String loginNotice;
 
     /**
      * access token.
@@ -173,12 +192,36 @@ public class TokenResponse {
         this.nickName = nickName;
     }
 
-    public long getLastPasswdDate() {
+    public String getMobile() {
+        return mobile;
+    }
+
+    public void setMobile(String mobile) {
+        this.mobile = mobile;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public Date getLastPasswdDate() {
         return lastPasswdDate;
     }
 
-    public void setLastPasswdDate(long lastPasswdDate) {
+    public void setLastPasswdDate(Date lastPasswdDate) {
         this.lastPasswdDate = lastPasswdDate;
+    }
+
+    public String getLoginNotice() {
+        return loginNotice;
+    }
+
+    public void setLoginNotice(String loginNotice) {
+        this.loginNotice = loginNotice;
     }
 
     public String getToken() {
@@ -223,6 +266,25 @@ public class TokenResponse {
 
     @Override
     public String toString() {
-        return new StringJoiner( ", ", TokenResponse.class.getSimpleName() + "[", "]" ).add( "saasId=" + saasId ).add( "saasName='" + saasName + "'" ).add( "userType=" + userType ).add( "userId=" + userId ).add( "mchId=" + mchId ).add( "groupId=" + groupId ).add( "userName='" + userName + "'" ).add( "realName='" + realName + "'" ).add( "nickName='" + nickName + "'" ).add( "lastPasswdDate=" + lastPasswdDate ).add( "token='" + token + "'" ).add( "refreshToken='" + refreshToken + "'" ).add( "expiresIn=" + expiresIn ).add( "refreshExpiresIn=" + refreshExpiresIn ).add( "createAt=" + createAt ).toString();
+        return new ToStringBuilder( this )
+                .append( "saasId", saasId )
+                .append( "saasName", saasName )
+                .append( "userType", userType )
+                .append( "userId", userId )
+                .append( "mchId", mchId )
+                .append( "groupId", groupId )
+                .append( "userName", userName )
+                .append( "realName", realName )
+                .append( "nickName", nickName )
+                .append( "mobile", mobile )
+                .append( "email", email )
+                .append( "lastPasswdDate", lastPasswdDate )
+                .append( "loginNotice", loginNotice )
+                .append( "token", token )
+                .append( "refreshToken", refreshToken )
+                .append( "expiresIn", expiresIn )
+                .append( "refreshExpiresIn", refreshExpiresIn )
+                .append( "createAt", createAt )
+                .toString();
     }
 }

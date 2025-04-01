@@ -1,15 +1,15 @@
 package uw.common.vo;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.JsonUtils;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static uw.common.util.ConfigParamUtils.OBJECT_MAPPER;
 
 /**
  * 配置参数盒子类。
@@ -17,13 +17,11 @@ import static uw.common.util.ConfigParamUtils.OBJECT_MAPPER;
  */
 public class ConfigParamBox {
 
-    private static final Logger logger = LoggerFactory.getLogger( ConfigParamBox.class );
-
     /**
      * 空的配置参数盒子。
      */
     public static final ConfigParamBox EMPTY_PARAM_BOX = new ConfigParamBox( new HashMap<>( 0 ) );
-
+    private static final Logger logger = LoggerFactory.getLogger( ConfigParamBox.class );
     /**
      * 配置混合Map。
      */
@@ -52,11 +50,10 @@ public class ConfigParamBox {
      */
     public String[] getParams(String paramName) {
         String temp = configMixMap.get( paramName );
-        try {
-            return OBJECT_MAPPER.readValue( temp, String[].class );
-        } catch (JsonProcessingException e) {
+        if (StringUtils.isBlank( temp )) {
             return new String[0];
         }
+        return JsonUtils.parse( temp, String[].class );
     }
 
     /**
@@ -92,11 +89,10 @@ public class ConfigParamBox {
      */
     public int[] getIntParams(String paramName) {
         String temp = configMixMap.get( paramName );
-        try {
-            return OBJECT_MAPPER.readValue( temp, int[].class );
-        } catch (JsonProcessingException e) {
+        if (StringUtils.isBlank( temp )) {
             return new int[0];
         }
+        return JsonUtils.parse( temp, int[].class );
     }
 
     /**
@@ -134,11 +130,10 @@ public class ConfigParamBox {
      */
     public long[] getLongParams(String paramName) {
         String temp = configMixMap.get( paramName );
-        try {
-            return OBJECT_MAPPER.readValue( temp, long[].class );
-        } catch (JsonProcessingException e) {
+        if (StringUtils.isBlank( temp )) {
             return new long[0];
         }
+        return JsonUtils.parse( temp, long[].class );
     }
 
     /**
@@ -176,11 +171,10 @@ public class ConfigParamBox {
      */
     public double[] getDoubleParams(String paramName) {
         String temp = configMixMap.get( paramName );
-        try {
-            return OBJECT_MAPPER.readValue( temp, double[].class );
-        } catch (JsonProcessingException e) {
+        if (StringUtils.isBlank( temp )) {
             return new double[0];
         }
+        return JsonUtils.parse( temp, double[].class );
     }
 
     /**
@@ -220,11 +214,10 @@ public class ConfigParamBox {
      */
     public float[] getFloatParams(String paramName) {
         String temp = configMixMap.get( paramName );
-        try {
-            return OBJECT_MAPPER.readValue( temp, float[].class );
-        } catch (JsonProcessingException e) {
+        if (StringUtils.isBlank( temp )) {
             return new float[0];
         }
+        return JsonUtils.parse( temp, float[].class );
     }
 
     /**
@@ -263,11 +256,10 @@ public class ConfigParamBox {
      */
     public boolean[] getBooleanParams(String paramName) {
         String temp = configMixMap.get( paramName );
-        try {
-            return OBJECT_MAPPER.readValue( temp, boolean[].class );
-        } catch (JsonProcessingException e) {
+        if (StringUtils.isBlank( temp )) {
             return new boolean[0];
         }
+        return JsonUtils.parse( temp, boolean[].class );
     }
 
     /**
@@ -296,12 +288,11 @@ public class ConfigParamBox {
      */
     public Map<String, String> getMapParam(String paramName) {
         String temp = configMixMap.get( paramName );
-        try {
-            return OBJECT_MAPPER.readValue( temp, new TypeReference<Map<String, String>>() {
-            } );
-        } catch (JsonProcessingException e) {
-            return new HashMap<>( 0 );
+        if (StringUtils.isBlank( temp )) {
+            return Collections.emptyMap();
         }
+        return JsonUtils.parse( temp, new TypeReference<Map<String, String>>() {
+        } );
     }
 
 }

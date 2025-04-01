@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.JsonUtils;
 import uw.httpclient.json.JsonInterfaceHelper;
 
 import java.io.IOException;
@@ -20,7 +21,7 @@ public class ObjectAsStringSerializer<T> extends JsonSerializer<T> {
     @Override
     public void serialize(T value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         try {
-            gen.writeString(JsonInterfaceHelper.JSON_CONVERTER.toString(value));
+            gen.writeString( JsonUtils.toString(value));
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }

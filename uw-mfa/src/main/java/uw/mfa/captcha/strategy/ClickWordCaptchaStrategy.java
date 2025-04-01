@@ -4,9 +4,9 @@ package uw.mfa.captcha.strategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.dto.ResponseData;
+import uw.common.util.JsonUtils;
 import uw.mfa.captcha.CaptchaStrategy;
 import uw.mfa.captcha.util.CaptchaImageUtils;
-import uw.mfa.captcha.util.CaptchaJsonUtils;
 import uw.mfa.captcha.util.CaptchaRandomUtils;
 import uw.mfa.captcha.vo.CaptchaData;
 import uw.mfa.captcha.vo.CaptchaPoint;
@@ -111,10 +111,10 @@ public class ClickWordCaptchaStrategy implements CaptchaStrategy {
             captchaQuestion.setMainImageBase64( CaptchaImageUtils.imageToBase64( mainImage ) );
             captchaQuestion.setCaptchaId( captchaId );
             captchaQuestion.setCaptchaType( captchaType() );
-            captchaQuestion.setSubData( CaptchaJsonUtils.toJSONString(wordList));
+            captchaQuestion.setSubData( JsonUtils.toString(wordList));
 
             // 存储的验证信息
-            String captchaResult = CaptchaJsonUtils.toJSONString( pointList );
+            String captchaResult = JsonUtils.toString( pointList );
 
             return ResponseData.success( new CaptchaData( captchaQuestion, captchaResult ) );
         } catch (Exception e) {
@@ -143,8 +143,8 @@ public class ClickWordCaptchaStrategy implements CaptchaStrategy {
          * ]
          */
         try {
-            pointResult = CaptchaJsonUtils.parseArray( captchaResult, CaptchaPoint[].class );
-            pointAnswer = CaptchaJsonUtils.parseArray( answerData, CaptchaPoint[].class );
+            pointResult = JsonUtils.parse( captchaResult, CaptchaPoint[].class );
+            pointAnswer = JsonUtils.parse( answerData, CaptchaPoint[].class );
         } catch (Exception e) {
             return ResponseData.errorMsg( "ClickWordPuzzle point format invalid! " + e.getMessage() );
         }

@@ -9,8 +9,6 @@ import uw.task.exception.TaskDataException;
  */
 public class DataMapperException extends TaskDataException {
 
-    private static final long serialVersionUID = -4816326148147854194L;
-
     public DataMapperException() {
         super();
     }

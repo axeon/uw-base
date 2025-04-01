@@ -48,11 +48,11 @@ public class HttpInterface {
     /**
      * 对象Mapper。
      */
-    public ObjectMapper objectMapper;
+    public DataObjectMapper objectMapper;
 
 
     public HttpInterface(HttpConfig httpConfig, Class<? extends HttpData> httpDataCls, HttpDataLogLevel httpDataLogLevel, HttpDataProcessor httpDataProcessor,
-                         ObjectMapper objectMapper, MediaType mediaType) {
+                         DataObjectMapper objectMapper, MediaType mediaType) {
         if (httpConfig != null) {
             OkHttpClient.Builder okHttpClientBuilder =
                     globalOkHttpClient.newBuilder().connectTimeout( httpConfig.getConnectTimeout(), TimeUnit.MILLISECONDS ).readTimeout( httpConfig.getConnectTimeout(),
@@ -98,7 +98,7 @@ public class HttpInterface {
      *
      * @return
      */
-    public ObjectMapper getObjectMapper() {
+    public DataObjectMapper getObjectMapper() {
         return objectMapper;
     }
 

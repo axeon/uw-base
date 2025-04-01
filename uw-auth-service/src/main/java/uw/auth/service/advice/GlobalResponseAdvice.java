@@ -15,6 +15,7 @@ import uw.auth.service.AuthServiceHelper;
 import uw.auth.service.annotation.ResponseAdviceIgnore;
 import uw.auth.service.vo.MscActionLog;
 import uw.common.dto.ResponseData;
+import uw.common.util.JsonUtils;
 import uw.httpclient.json.JsonInterfaceHelper;
 
 import java.util.LinkedHashMap;
@@ -94,7 +95,7 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
             }
             //是否字符串类型要单独处理一下，否则会抛错。
             if (returnType.getParameterType().equals( String.class )) {
-                return JsonInterfaceHelper.JSON_CONVERTER.toString( body );
+                return JsonUtils.toString( body );
             } else {
                 return responseData;
             }
@@ -114,7 +115,7 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
             }
         } else if (returnType.getParameterType().equals( String.class )) {
             //字符串类型需要单独包裹。
-            return JsonInterfaceHelper.JSON_CONVERTER.toString( ResponseData.success( body ) );
+            return JsonUtils.toString( ResponseData.success( body ) );
         }
 
         return ResponseData.success(body);

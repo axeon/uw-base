@@ -37,7 +37,7 @@ public class VerifiedUtils {
      * @param data
      * @return
      */
-    public static String tagData(String data) {
+    public static String tag(String data) {
         if (StringUtils.isBlank(data)) {
             return data;
         }
@@ -55,7 +55,7 @@ public class VerifiedUtils {
      * @param data
      * @return
      */
-    public static String untagData(String data) {
+    public static String untag(String data) {
         if (StringUtils.isBlank(data)) {
             return data;
         }

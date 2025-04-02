@@ -133,7 +133,6 @@ public class TaskMetaInfoManager {
      * 获得定时任务配置Map。
      *
      * @return
-     *
      */
     public ConcurrentHashMap<String, TaskCronerConfig> getCronerConfigMap() {
         return cronerConfigMap;
@@ -200,7 +199,8 @@ public class TaskMetaInfoManager {
                 default -> taskProperties.getTaskProject() + "$" + config.getRunTarget();
             };
             // 只有开启了延时队列并且发送队列异步进行才会返回TTL队列名称
-            return config.getDelayType() == TaskRunnerConfig.TYPE_DELAY_ON && data.getRunType() == TaskData.RUN_TYPE_GLOBAL ? getTTLQueueName( queueName ) : queueName;
+            return config.getDelayType() == TaskRunnerConfig.TYPE_DELAY_ON && data.getRunType() == TaskData.RUN_TYPE_GLOBAL && data.getTaskDelay() > 0 ?
+                    getTTLQueueName( queueName ) : queueName;
         } else {
             throw new RuntimeException( "找不到合适的任务配置: taskClass = " + data.getTaskClass() );
         }

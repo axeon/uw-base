@@ -1,4 +1,4 @@
-package uw.common.constant;
+package uw.app.common.constant;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 @Schema(title = "配置参数类型", description = "配置参数类型")
-public enum TypeConfigParam {
+public enum ConfigParamType {
 
     /**
      * 字符串类型
@@ -120,7 +120,7 @@ public enum TypeConfigParam {
 
     private final String label;
 
-    TypeConfigParam(String value, String label) {
+    ConfigParamType(String value, String label) {
         this.value = value;
         this.label = label;
     }

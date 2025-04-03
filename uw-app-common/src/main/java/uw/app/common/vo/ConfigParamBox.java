@@ -1,4 +1,4 @@
-package uw.common.vo;
+package uw.app.common.vo;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.StringUtils;

@@ -11,7 +11,7 @@ import uw.mfa.captcha.CaptchaService;
 import uw.mfa.captcha.vo.CaptchaData;
 import uw.mfa.captcha.vo.CaptchaQuestion;
 import uw.mfa.conf.UwMfaProperties;
-import uw.mfa.constant.MfaCodeType;
+import uw.mfa.constant.MfaResponseCode;
 import uw.mfa.util.RedisKeyUtils;
 
 import java.util.concurrent.TimeUnit;
@@ -75,12 +75,12 @@ public class MfaCaptchaHelper {
             mfaRedisTemplate.expire( redisKey, uwMfaProperties.getCaptchaSendLimitSeconds(), TimeUnit.SECONDS );
         }
         if (sentTimes >= uwMfaProperties.getCaptchaSendLimitTimes()) {
-            return ResponseData.errorCode( MfaCodeType.CAPTCHA_SEND_LIMIT.getCode(), String.format( MfaCodeType.CAPTCHA_SEND_LIMIT.getMessage(), userIp,
+            return ResponseData.errorCode( MfaResponseCode.CAPTCHA_SEND_LIMIT.getCode(), String.format( MfaResponseCode.CAPTCHA_SEND_LIMIT.getMessage(), userIp,
                     (uwMfaProperties.getCaptchaSendLimitSeconds() / 60), uwMfaProperties.getCaptchaSendLimitTimes(), (uwMfaProperties.getCaptchaSendLimitSeconds() / 60) ) );
         }
         ResponseData<CaptchaData> captchaResData = captchaService.generateCaptcha( captchaId );
         if (captchaResData.isNotSuccess()) {
-            return ResponseData.errorCode( MfaCodeType.CAPTCHA_GENERATE_FAIL.getCode(), MfaCodeType.CAPTCHA_GENERATE_FAIL.getMessage() + captchaResData.getMsg() );
+            return ResponseData.errorCode( MfaResponseCode.CAPTCHA_GENERATE_FAIL.getCode(), MfaResponseCode.CAPTCHA_GENERATE_FAIL.getMessage() + captchaResData.getMsg() );
         }
         CaptchaData captchaData = captchaResData.getData();
         CaptchaQuestion captchaQuestion = captchaData.getCaptchaQuestion();
@@ -99,12 +99,12 @@ public class MfaCaptchaHelper {
      */
     public static ResponseData verifyCaptcha(String userIp, String captchaId, String captchaSign) {
         if (StringUtils.isBlank( captchaId ) || StringUtils.isBlank( captchaSign )) {
-            return ResponseData.errorCode( MfaCodeType.CAPTCHA_LOST.getCode(), MfaCodeType.CAPTCHA_LOST.getMessage() );
+            return ResponseData.errorCode( MfaResponseCode.CAPTCHA_LOST.getCode(), MfaResponseCode.CAPTCHA_LOST.getMessage() );
         }
         String captchaResult = mfaRedisOp.getAndDelete( RedisKeyUtils.buildKey( REDIS_CAPTCHA_PREFIX, captchaId ) );
         ResponseData verifyData = captchaService.verifyCaptcha( captchaId, captchaSign, captchaResult );
         if (verifyData.isNotSuccess()) {
-            return ResponseData.errorCode( MfaCodeType.CAPTCHA_VERIFY_FAIL.getCode(), MfaCodeType.CAPTCHA_VERIFY_FAIL.getMessage() + verifyData.getMsg() );
+            return ResponseData.errorCode( MfaResponseCode.CAPTCHA_VERIFY_FAIL.getCode(), MfaResponseCode.CAPTCHA_VERIFY_FAIL.getMessage() + verifyData.getMsg() );
         }
         return ResponseData.success();
     }

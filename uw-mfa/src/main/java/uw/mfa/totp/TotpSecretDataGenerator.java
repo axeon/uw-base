@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.dto.ResponseData;
 import uw.mfa.constant.HashingAlgorithm;
-import uw.mfa.constant.MfaCodeType;
+import uw.mfa.constant.MfaResponseCode;
 import uw.mfa.totp.vo.TotpSecretData;
 
 import java.io.ByteArrayOutputStream;
@@ -113,7 +113,7 @@ public class TotpSecretDataGenerator {
                 return ResponseData.success( new TotpSecretData( secret, totpUri, Base64.getEncoder().encodeToString( pngOutputStream.toByteArray() ) ) );
             } catch (Exception e) {
                 logger.error( e.getMessage(), e );
-                return ResponseData.errorCode( MfaCodeType.TOTP_SECRET_GEN_ERROR.getCode(), MfaCodeType.TOTP_SECRET_GEN_ERROR.getMessage() + e.getMessage() );
+                return ResponseData.errorCode( MfaResponseCode.TOTP_SECRET_GEN_ERROR.getCode(), MfaResponseCode.TOTP_SECRET_GEN_ERROR.getMessage() + e.getMessage() );
             }
         }
     }

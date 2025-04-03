@@ -3,6 +3,8 @@ package uw.auth.client.constant;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.Set;
+
 /**
  * 登录类型
  */
@@ -132,13 +134,47 @@ public enum LoginType {
     }
 
     /**
+     * 根据值获取枚举。
+     *
+     * @param value
+     * @return
+     */
+    public static LoginType valueOf(int value) {
+        for (LoginType type : LoginType.values()) {
+            if (value == type.value) {
+                return type;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 所有登录类型。
+     *
+     * @return
+     */
+    public static Set<LoginType> types() {
+        return Set.of(values());
+    }
+
+    /**
+     * 输入登录类型。
+     * 包括密码和验证码登录。
+     *
+     * @return
+     */
+    public static Set<LoginType> inputTypes() {
+        return Set.of(USER_PASS, EMAIL_PASS, MOBILE_PASS, EMAIL_CODE, MOBILE_CODE);
+    }
+
+    /**
      * 检查是否是输入登录类型。
      * 包括密码和验证码登录。
      *
      * @param value
      * @return
      */
-    public static boolean isInputLoginType(int value) {
+    public static boolean isInputType(int value) {
         if (value >= USER_PASS.getValue() && value <= MOBILE_CODE.getValue()) {
             return true;
         } else {
@@ -147,12 +183,42 @@ public enum LoginType {
     }
 
     /**
+     * 检查是否是开放平台登录类型。
+     * @return
+     */
+    public static Set<LoginType> openTypes() {
+        return Set.of(OPEN_WECHAT, OPEN_DOUYIN, OPEN_REDNOTE, OPEN_KUAISHOU, OPEN_ALI, OPEN_PDD, OPEN_OTHER);
+    }
+
+    /**
+     * 检查是否是开放平台登录类型。
+     * @param value
+     * @return
+     */
+    public static boolean isOpenType(int value) {
+        if (value >= OPEN_WECHAT.getValue() && value <= OPEN_OTHER.getValue()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * 用户名密码登录类型。
+     *
+     * @return
+     */
+    public static Set<LoginType> userPassTypes() {
+        return Set.of(USER_PASS);
+    }
+
+    /**
      * 是否是用户名密码类型。
      *
      * @param value
      * @return
      */
-    public static boolean isAccountPassLoginType(int value) {
+    public static boolean isUserPassType(int value) {
         if (value == USER_PASS.getValue()) {
             return true;
         } else {
@@ -161,12 +227,20 @@ public enum LoginType {
     }
 
     /**
+     * 密码登录类型。
+     * @return
+     */
+    public static Set<LoginType> passTypes() {
+        return Set.of(USER_PASS, EMAIL_PASS, MOBILE_PASS);
+    }
+
+    /**
      * 是否是密码类型。
      *
      * @param value
      * @return
      */
-    public static boolean isPassLoginType(int value) {
+    public static boolean isPassType(int value) {
         if (value >= USER_PASS.getValue() && value <= MOBILE_PASS.getValue()) {
             return true;
         } else {
@@ -175,12 +249,20 @@ public enum LoginType {
     }
 
     /**
+     * 验证码登录类型。
+     * @return
+     */
+    public static Set<LoginType> codeTypes() {
+        return Set.of(EMAIL_CODE, MOBILE_CODE);
+    }
+
+    /**
      * 是否是验证码类型。
      *
      * @param value
      * @return
      */
-    public static boolean isCodeLoginType(int value) {
+    public static boolean isCodeType(int value) {
         if (value >= EMAIL_CODE.getValue() && value <= MOBILE_CODE.getValue()) {
             return true;
         } else {

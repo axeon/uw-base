@@ -13,6 +13,12 @@ import java.util.StringJoiner;
 public class TokenResponse {
 
     /**
+     * token类型。
+     */
+    @Schema(title = "token类型", description = "token类型")
+    private int tokenType;
+
+    /**
      * 运营商Id
      */
     @Schema(title = "saasId", description = "saasId")
@@ -119,6 +125,14 @@ public class TokenResponse {
      */
     @Schema(title = "创建时间", description = "创建时间")
     private long createAt;
+
+    public int getTokenType() {
+        return tokenType;
+    }
+
+    public void setTokenType(int tokenType) {
+        this.tokenType = tokenType;
+    }
 
     public long getSaasId() {
         return saasId;

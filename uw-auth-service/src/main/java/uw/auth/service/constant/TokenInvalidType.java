@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 @Schema(title = "非法token类型", description = "非法token类型")
-public enum InvalidTokenType {
+public enum TokenInvalidType {
 
     /**
      * 无效token。
@@ -46,7 +46,7 @@ public enum InvalidTokenType {
      */
     private final String label;
 
-    InvalidTokenType(int value, String label) {
+    TokenInvalidType(int value, String label) {
         this.value = value;
         this.label = label;
     }
@@ -57,8 +57,8 @@ public enum InvalidTokenType {
      * @param value
      * @return
      */
-    public static InvalidTokenType findByValue(int value) {
-        for (InvalidTokenType type : InvalidTokenType.values()) {
+    public static TokenInvalidType findByValue(int value) {
+        for (TokenInvalidType type : TokenInvalidType.values()) {
             if (value == type.value) {
                 return type;
             }
@@ -67,7 +67,7 @@ public enum InvalidTokenType {
     }
 
     public static void main(String[] args) {
-        System.out.println(InvalidTokenType.findByValue(1));
+        System.out.println( TokenInvalidType.findByValue(1));
     }
 
     public int getValue() {

@@ -6,11 +6,17 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 用户令牌。
+ * 用户令牌数据。
  *
  * @author axeon
  */
 public class AuthTokenData {
+
+    /**
+     * Token类型。
+     */
+    @Schema(title = "tokenType", description = "tokenType")
+    private int tokenType;
 
     /**
      * 运营商Id
@@ -93,29 +99,35 @@ public class AuthTokenData {
     /**
      * Token过期时间
      */
+    @Schema(title = "Token过期时间", description = "Token过期时间")
     private long expireAt;
 
     /**
      * Token创建时间
      */
+    @Schema(title = "Token创建时间", description = "Token创建时间")
     private long createAt;
 
     /**
      * 权限ID集合。
      */
+    @Schema(title = "权限ID集合", description = "权限ID集合")
     private Set<Integer> permSet;
 
     /**
      * 用户配置。
      */
+    @Schema(title = "用户配置", description = "用户配置")
     private Map<String, String> configMap;
 
     public AuthTokenData() {
 
     }
 
-    public AuthTokenData(long saasId, int userType, long userId, long mchId, long groupId, int isMaster, String userName, String nickName, String realName, String mobile,
+    public AuthTokenData(int tokenType,long saasId, int userType, long userId, long mchId, long groupId, int isMaster, String userName, String nickName, String realName, String mobile,
                          String email, String userIp, int userGrade) {
+
+        this.tokenType = tokenType;
         this.saasId = saasId;
         this.userType = userType;
         this.userId = userId;
@@ -131,8 +143,21 @@ public class AuthTokenData {
         this.userGrade = userGrade;
     }
 
+    /**
+     * 判断Token是否过期。
+     *
+     * @return
+     */
     public boolean isExpired() {
         return System.currentTimeMillis() >= expireAt;
+    }
+
+    public int getTokenType() {
+        return tokenType;
+    }
+
+    public void setTokenType(int tokenType) {
+        this.tokenType = tokenType;
     }
 
     public long getSaasId() {
@@ -274,29 +299,12 @@ public class AuthTokenData {
 
     /**
      * 获取用户配置参数。
+     *
      * @param paramName
      * @return
      */
-    public String getConfig( String paramName) {
-        return getConfig( paramName, null);
-    }
-
-    /**
-     * 获取用户配置参数。
-     *
-     * @param paramName    参数名字
-     * @param defaultValue 集合没值时或者报异常，默认返回值
-     * @return 参数的值
-     */
-    private String getConfig( String paramName, String defaultValue) {
-        if (configMap == null || configMap.isEmpty()) {
-            return defaultValue;
-        }
-        String temp = configMap.get( paramName );
-        if (temp != null && !temp.isEmpty()) {
-            return temp;
-        }
-        return defaultValue;
+    public String getConfig(String paramName) {
+        return getConfig( paramName, null );
     }
 
     /**
@@ -305,39 +313,18 @@ public class AuthTokenData {
      * @param paramName 参数名字
      * @return 参数的值
      */
-    public int getIntConfig( String paramName) {
-        return getIntConfig( paramName, 0);
-    }
-
-    /**
-     * 获取用户配置参数(int)
-     *
-     * @param paramName    参数名字
-     * @param defaultValue 集合没值时或者报异常，默认的返回值
-     * @return 参数的值
-     */
-    private int getIntConfig( String paramName, int defaultValue) {
-        if (configMap == null || configMap.isEmpty()) {
-            return defaultValue;
-        }
-        String temp = configMap.get( paramName );
-        if (temp != null && !temp.isEmpty()) {
-            try {
-                return Integer.parseInt( temp );
-            } catch (Exception ignored) {
-            }
-        }
-        return defaultValue;
+    public int getIntConfig(String paramName) {
+        return getIntConfig( paramName, 0 );
     }
 
     /**
      * 获取用户配置参数(long)
      *
-     * @param paramName    参数名字
+     * @param paramName 参数名字
      * @return 参数的值
      */
-    public long getLongConfig( String paramName) {
-        return getLongConfig( paramName, 0);
+    public long getLongConfig(String paramName) {
+        return getLongConfig( paramName, 0 );
     }
 
     /**
@@ -347,7 +334,7 @@ public class AuthTokenData {
      * @param defaultValue 集合没值时或者报异常，默认的返回值
      * @return 参数的值
      */
-    public long getLongConfig( String paramName, long defaultValue) {
+    public long getLongConfig(String paramName, long defaultValue) {
         if (configMap == null || configMap.isEmpty()) {
             return defaultValue;
         }
@@ -364,11 +351,11 @@ public class AuthTokenData {
     /**
      * 获取用户配置参数(double)
      *
-     * @param paramName    参数名字
+     * @param paramName 参数名字
      * @return 参数的值
      */
-    public double getDoubleConfig( String paramName) {
-        return getDoubleConfig( paramName, 0);
+    public double getDoubleConfig(String paramName) {
+        return getDoubleConfig( paramName, 0 );
     }
 
     /**
@@ -378,7 +365,7 @@ public class AuthTokenData {
      * @param defaultValue 集合没值时或者报异常，默认的返回值
      * @return 参数的值
      */
-    public double getDoubleConfig( String paramName, double defaultValue) {
+    public double getDoubleConfig(String paramName, double defaultValue) {
         if (configMap == null || configMap.isEmpty()) {
             return defaultValue;
         }
@@ -395,11 +382,11 @@ public class AuthTokenData {
     /**
      * 获取用户配置参数(float)
      *
-     * @param paramName    参数名字
+     * @param paramName 参数名字
      * @return 参数的值
      */
-    public float getFloatConfig( String paramName) {
-        return getFloatConfig( paramName, 0);
+    public float getFloatConfig(String paramName) {
+        return getFloatConfig( paramName, 0 );
     }
 
     /**
@@ -409,7 +396,7 @@ public class AuthTokenData {
      * @param defaultValue 集合没值时或者报异常，默认的返回值
      * @return 参数的值
      */
-    public float getFloatConfig( String paramName, float defaultValue) {
+    public float getFloatConfig(String paramName, float defaultValue) {
         if (configMap == null || configMap.isEmpty()) {
             return defaultValue;
         }
@@ -426,11 +413,11 @@ public class AuthTokenData {
     /**
      * 获取用户配置参数(boolean)
      *
-     * @param paramName    参数名字
+     * @param paramName 参数名字
      * @return 参数的值
      */
-    public boolean getBooleanConfig( String paramName) {
-        return getBooleanConfig( paramName, false);
+    public boolean getBooleanConfig(String paramName) {
+        return getBooleanConfig( paramName, false );
     }
 
     /**
@@ -440,7 +427,7 @@ public class AuthTokenData {
      * @param defaultValue 集合没值时或者报异常，默认的返回值
      * @return 参数的值
      */
-    public boolean getBooleanConfig( String paramName, boolean defaultValue) {
+    public boolean getBooleanConfig(String paramName, boolean defaultValue) {
         if (configMap == null || configMap.isEmpty()) {
             return defaultValue;
         }
@@ -448,6 +435,45 @@ public class AuthTokenData {
         if (temp != null && !temp.isEmpty()) {
             try {
                 return Boolean.parseBoolean( temp );
+            } catch (Exception ignored) {
+            }
+        }
+        return defaultValue;
+    }
+
+    /**
+     * 获取用户配置参数。
+     *
+     * @param paramName    参数名字
+     * @param defaultValue 集合没值时或者报异常，默认返回值
+     * @return 参数的值
+     */
+    private String getConfig(String paramName, String defaultValue) {
+        if (configMap == null || configMap.isEmpty()) {
+            return defaultValue;
+        }
+        String temp = configMap.get( paramName );
+        if (temp != null && !temp.isEmpty()) {
+            return temp;
+        }
+        return defaultValue;
+    }
+
+    /**
+     * 获取用户配置参数(int)
+     *
+     * @param paramName    参数名字
+     * @param defaultValue 集合没值时或者报异常，默认的返回值
+     * @return 参数的值
+     */
+    private int getIntConfig(String paramName, int defaultValue) {
+        if (configMap == null || configMap.isEmpty()) {
+            return defaultValue;
+        }
+        String temp = configMap.get( paramName );
+        if (temp != null && !temp.isEmpty()) {
+            try {
+                return Integer.parseInt( temp );
             } catch (Exception ignored) {
             }
         }

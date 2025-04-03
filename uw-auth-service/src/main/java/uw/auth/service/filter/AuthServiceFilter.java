@@ -16,9 +16,8 @@ import uw.auth.service.annotation.MscPermDeclare;
 import uw.auth.service.conf.AuthServiceProperties;
 import uw.auth.service.constant.ActionLog;
 import uw.auth.service.constant.AuthConstants;
+import uw.auth.service.constant.AuthType;
 import uw.auth.service.constant.UserType;
-import uw.auth.service.exception.TokenExpiredException;
-import uw.auth.service.exception.TokenInvalidateException;
 import uw.auth.service.log.AuthCriticalLogStorage;
 import uw.auth.service.service.AuthPermService;
 import uw.auth.service.token.AuthTokenData;
@@ -26,8 +25,8 @@ import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.util.logging.LoggingHttpServletRequestWrapper;
 import uw.auth.service.util.logging.LoggingHttpServletResponseWrapper;
 import uw.auth.service.vo.MscActionLog;
+import uw.common.dto.ResponseData;
 import uw.common.util.JsonUtils;
-import uw.httpclient.json.JsonInterfaceHelper;
 import uw.log.es.LogClient;
 
 import java.io.IOException;
@@ -44,12 +43,33 @@ import java.util.concurrent.atomic.LongAdder;
  */
 public class AuthServiceFilter implements Filter {
 
+    /**
+     * 请求计数器
+     */
+    public static final LongAdder invokeCounter = new LongAdder();
+    /**
+     * 日志记录器
+     */
     private static final Logger logger = LoggerFactory.getLogger( AuthServiceFilter.class );
-    public static LongAdder invokeCounter = new LongAdder();
+    /**
+     * AuthService配置文件。
+     */
     private final AuthServiceProperties authServerProperties;
+    /**
+     * 请求映射处理器。
+     */
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
+    /**
+     * 权限服务。
+     */
     private final AuthPermService authPermService;
+    /**
+     * 日志客户端。
+     */
     private final LogClient logClient;
+    /**
+     * CRIT日志存储器。
+     */
     private final AuthCriticalLogStorage authCriticalLogStorage;
 
     public AuthServiceFilter(final AuthServiceProperties authServerProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping,
@@ -61,13 +81,29 @@ public class AuthServiceFilter implements Filter {
         this.authCriticalLogStorage = authCriticalLogStorage;
     }
 
+    /**
+     * 初始化。
+     *
+     * @param filterConfig
+     * @throws ServletException
+     */
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         logger.info( "Init AuthServiceFilter." );
     }
 
+    /**
+     * 过滤器。
+     *
+     * @param request
+     * @param response
+     * @param chain
+     * @throws IOException
+     * @throws ServletException
+     */
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        // 请求对象和响应对象
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         //请求uri
@@ -76,16 +112,26 @@ public class AuthServiceFilter implements Filter {
         String method = httpServletRequest.getMethod();
         //远端IP
         String remoteIp = IpWebUtils.getTrueIp( httpServletRequest );
-
+        //操作日志
         MscActionLog mscActionLog = null;
-
-        ActionLog logType = ActionLog.NONE;
-
+        //
+        UserType permUserType = UserType.ANYONE;
+        AuthType permAuthType = AuthType.NONE;
+        ActionLog permLogType = ActionLog.NONE;
         try {
-            // 取得上下文用户对象
-            String rawToken = httpServletRequest.getHeader( AuthConstants.TOKEN_HEADER_PARAM );
-            AuthTokenData authToken = AuthServiceHelper.parseRawToken( remoteIp, rawToken );
             invokeCounter.increment();
+            // 获得原始token
+            String rawToken = httpServletRequest.getHeader( AuthConstants.TOKEN_HEADER_PARAM );
+            // 解析token
+            ResponseData<AuthTokenData> authTokenDataResponse = AuthServiceHelper.parseRawToken( remoteIp, rawToken );
+            // token异常直接抛出
+            if (!authTokenDataResponse.isNotSuccess()) {
+                httpServletResponse.sendError( Integer.parseInt( authTokenDataResponse.getCode() ), authTokenDataResponse.getMsg() );
+                return;
+            }
+            // 取出tokenData
+            AuthTokenData authTokenData = authTokenDataResponse.getData();
+            // 获取HandlerExecutionChain
             HandlerExecutionChain handlerExecutionChain = null;
             try {
                 handlerExecutionChain = requestMappingHandlerMapping.getHandler( (HttpServletRequest) request );
@@ -97,62 +143,64 @@ public class AuthServiceFilter implements Filter {
                 chain.doFilter( request, response );
                 return;
             }
-            // 设定当前线程专有对象
-            AuthServiceHelper.setContextToken( authToken );
 
+            // 设定当前线程tokenData
+            AuthServiceHelper.setContextToken( authTokenData );
             // 查询接口方法
             HandlerMethod handler = (HandlerMethod) handlerExecutionChain.getHandler();
             Method javaMethod = handler.getMethod();
             MscPermDeclare mscPermDeclare = javaMethod.getAnnotation( MscPermDeclare.class );
-
             // 鉴权开始
             String permCode = uri + ":" + method;
-            if (authPermService.hasPerm( authToken, mscPermDeclare, permCode )) {
-                //准备操作日志内容，关键日志必须记录，并记录操作人员日志。
-                logType = mscPermDeclare.log();
-                if (logType.getValue() == ActionLog.CRIT.getValue() || (logType.getValue() > ActionLog.NONE.getValue() && mscPermDeclare.user().getValue() > UserType.RPC.getValue())) {
-                    //设定操作名称，mscPermDeclare有优先级
-                    String apiName = mscPermDeclare.name();
-                    if (StringUtils.isBlank( apiName )) {
-                        Operation operation = javaMethod.getAnnotation( Operation.class );
-                        if (operation != null) {
-                            apiName = operation.summary();
-                        }
-                    }
-                    mscActionLog = new MscActionLog();
-                    mscActionLog.setAppInfo( authServerProperties.getAppName() + ":" + authServerProperties.getAppVersion() );
-                    mscActionLog.setAppHost( authServerProperties.getAppHost() + ":" + authServerProperties.getAppPort() );
-                    mscActionLog.setLogLevel( logType.getValue() );
-                    mscActionLog.setUserId( authToken.getUserId() );
-                    mscActionLog.setUserName( authToken.getUserName() );
-                    mscActionLog.setNickName( authToken.getNickName() );
-                    mscActionLog.setRealName( authToken.getRealName() );
-                    mscActionLog.setSaasId( authToken.getSaasId() );
-                    mscActionLog.setMchId( authToken.getMchId() );
-                    mscActionLog.setGroupId( authToken.getGroupId() );
-                    mscActionLog.setUserType( authToken.getUserType() );
-                    mscActionLog.setApiUri( permCode );
-                    mscActionLog.setApiName( apiName );
-                    mscActionLog.setUserIp( remoteIp );
-                    mscActionLog.setRequestDate( new Date() );
-                    if (logType == ActionLog.REQUEST || logType == ActionLog.ALL || logType == ActionLog.CRIT) {
-                        request = new LoggingHttpServletRequestWrapper( httpServletRequest );
-                    }
-                    if (logType == ActionLog.RESPONSE || logType == ActionLog.ALL || logType == ActionLog.CRIT) {
-                        response = new LoggingHttpServletResponseWrapper( (HttpServletResponse) response );
-                    }
-                    AuthServiceHelper.setContextLog( mscActionLog );
-                }
-                // 执行后续Filter
-                chain.doFilter( request, response );
+            // 权限鉴权
+            ResponseData authPermResponse = authPermService.hasPerm( authTokenData, mscPermDeclare, permCode );
+            // 鉴权异常直接抛出
+            if (!authPermResponse.isNotSuccess()) {
+                httpServletResponse.sendError( Integer.parseInt( authPermResponse.getCode() ), authPermResponse.getMsg() );
                 return;
             }
-            // 没有权限访问
-            httpServletResponse.sendError( HttpStatus.FORBIDDEN.value(), "!!!No Permission!!!" );
-        } catch (TokenInvalidateException e) {// Token无效，此时需要重新登录。
-            httpServletResponse.sendError( HttpStatus.UNAUTHORIZED.value(), e.getMessage() );
-        } catch (TokenExpiredException e) {// Token过期，此时需要刷新Token。
-            httpServletResponse.sendError( HttpStatus.LOCKED.value(), e.getMessage() );
+            //准备操作日志内容，关键日志必须记录，并记录操作人员日志。
+            permUserType = mscPermDeclare.user();
+            permAuthType = mscPermDeclare.auth();
+            permLogType = mscPermDeclare.log();
+            if (permLogType.getValue() == ActionLog.CRIT.getValue() || (permLogType.getValue() > ActionLog.NONE.getValue() && permUserType.getValue() > UserType.RPC.getValue())) {
+                //设定操作名称，mscPermDeclare有优先级
+                String apiName = mscPermDeclare.name();
+                if (StringUtils.isBlank( apiName )) {
+                    Operation operation = javaMethod.getAnnotation( Operation.class );
+                    if (operation != null) {
+                        apiName = operation.summary();
+                    }
+                }
+                mscActionLog = new MscActionLog();
+                mscActionLog.setAppInfo( authServerProperties.getAppName() + ":" + authServerProperties.getAppVersion() );
+                mscActionLog.setAppHost( authServerProperties.getAppHost() + ":" + authServerProperties.getAppPort() );
+                mscActionLog.setLogLevel( permLogType.getValue() );
+                mscActionLog.setUserId( authTokenData.getUserId() );
+                mscActionLog.setUserName( authTokenData.getUserName() );
+                mscActionLog.setNickName( authTokenData.getNickName() );
+                mscActionLog.setRealName( authTokenData.getRealName() );
+                mscActionLog.setSaasId( authTokenData.getSaasId() );
+                mscActionLog.setMchId( authTokenData.getMchId() );
+                mscActionLog.setGroupId( authTokenData.getGroupId() );
+                mscActionLog.setUserType( authTokenData.getUserType() );
+                mscActionLog.setApiUri( permCode );
+                mscActionLog.setApiName( apiName );
+                mscActionLog.setUserIp( remoteIp );
+                mscActionLog.setRequestDate( new Date() );
+                if (permLogType == ActionLog.REQUEST || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT || permAuthType == AuthType.SUDO) {
+                    request = new LoggingHttpServletRequestWrapper( httpServletRequest );
+                }
+                if (permLogType == ActionLog.RESPONSE || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT || permAuthType == AuthType.SUDO) {
+                    response = new LoggingHttpServletResponseWrapper( (HttpServletResponse) response );
+                }
+                AuthServiceHelper.setContextLog( mscActionLog );
+            }
+            // 执行后续Filter
+            chain.doFilter( request, response );
+            return;
+        } catch (Throwable t) {
+            httpServletResponse.sendError( HttpStatus.INTERNAL_SERVER_ERROR.value(), t.getMessage() );
         } finally {
             AuthServiceHelper.destroyContextToken();
             if (mscActionLog != null) {
@@ -161,11 +209,11 @@ public class AuthServiceFilter implements Filter {
                 mscActionLog.setStatusCode( ((HttpServletResponse) response).getStatus() );
                 try {
                     //保存request
-                    if (logType == ActionLog.REQUEST || logType == ActionLog.ALL || logType == ActionLog.CRIT) {
+                    if (permLogType == ActionLog.REQUEST || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT || permAuthType == AuthType.SUDO) {
                         LoggingHttpServletRequestWrapper requestWrapper = (LoggingHttpServletRequestWrapper) request;
                         StringBuilder sb = new StringBuilder( 1280 );
                         sb.append( "{" );
-                        Map<String, String[]>  requestParamMap = requestWrapper.getParameterMap();
+                        Map<String, String[]> requestParamMap = requestWrapper.getParameterMap();
                         if (!requestParamMap.isEmpty()) {
                             sb.append( "\"param\":" ).append( JsonUtils.toString( requestParamMap ) ).append( "," );
                         }
@@ -182,13 +230,13 @@ public class AuthServiceFilter implements Filter {
                         }
                     }
                     //保存response
-                    if (logType == ActionLog.RESPONSE || logType == ActionLog.ALL || logType == ActionLog.CRIT) {
+                    if (permLogType == ActionLog.RESPONSE || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT || permAuthType == AuthType.SUDO) {
                         LoggingHttpServletResponseWrapper responseWrapper = (LoggingHttpServletResponseWrapper) response;
                         mscActionLog.setResponseBody( new String( responseWrapper.getContentAsByteArray(), responseWrapper.getCharacterEncoding() ) );
                         responseWrapper.copyBodyToResponse();
                     }
                     //如果是crit数据，保存数据库。
-                    if (logType == ActionLog.CRIT) {
+                    if (permLogType == ActionLog.CRIT || permAuthType == AuthType.SUDO) {
                         authCriticalLogStorage.save( mscActionLog );
                     }
                     //发送到es

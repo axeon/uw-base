@@ -70,18 +70,6 @@ public class LoginRequest {
     @Schema(title = "强制登录", description = "强制登录")
     private boolean forceLogin = true;
 
-    /**
-     * MFA类型
-     */
-    @Schema(title = "MFA类型", description = "MFA类型")
-    private int mfaType;
-
-    /**
-     * MFA验证码
-     */
-    @Schema(title = "MFA验证码", description = "MFA验证码")
-    private String mfaCode;
-
     public String getLoginAgent() {
         return loginAgent;
     }
@@ -162,19 +150,4 @@ public class LoginRequest {
         this.forceLogin = forceLogin;
     }
 
-    public int getMfaType() {
-        return mfaType;
-    }
-
-    public void setMfaType(int mfaType) {
-        this.mfaType = mfaType;
-    }
-
-    public String getMfaCode() {
-        return mfaCode;
-    }
-
-    public void setMfaCode(String mfaCode) {
-        this.mfaCode = mfaCode;
-    }
 }

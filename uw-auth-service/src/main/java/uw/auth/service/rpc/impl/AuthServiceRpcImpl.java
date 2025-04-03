@@ -54,9 +54,9 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     public ResponseData<AuthTokenData> verifyToken(String token) {
         URI targetUrl =
                 UriComponentsBuilder.fromHttpUrl( authServiceProperties.getAuthCenterHost() ).path( "/rpc/service/verifyToken" ).queryParam( "token", token ).build().encode().toUri();
-        return authRestTemplate.exchange( targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<AuthTokenData>>() {
+        ResponseData<AuthTokenData> responseData = authRestTemplate.exchange( targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<AuthTokenData>>() {
         } ).getBody();
-
+        return responseData;
     }
 
     /**

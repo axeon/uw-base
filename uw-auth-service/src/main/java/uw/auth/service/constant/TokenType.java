@@ -4,36 +4,33 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * 授权类型
+ * Token类型
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-@Schema(title = "授权类型", description = "授权类型")
-public enum AuthType {
+@Schema(title = "Token类型", description = "Token类型")
+public enum TokenType {
+
+
+    NONE(-1, "无Token"),
+    /**
+     * 临时Token。
+     */
+    TEMP(0, "临时Token"),
 
     /**
-     * 不验证鉴权。
+     * 正常Token。
      */
-    NONE(0, "不验证"),
+    COMMON(1, "标准Token"),
 
     /**
-     * 临时授权
+     * 付费Token。（预留）
      */
-    TEMP(1, "临时授权"),
+    PAID(2, "付费Token"),
 
     /**
-     * 仅验证用户类型
+     * 超级Token。
      */
-    USER(2, "仅验证用户类型"),
-
-    /**
-     * 验证用户类型和权限
-     */
-    PERM(3, "验证用户类型和权限"),
-
-    /**
-     * 超级用户权限
-     */
-    SUDO(5, "超级用户权限");
+    SUDO(3, "超级Token");
 
     /**
      * 参数值
@@ -45,7 +42,7 @@ public enum AuthType {
      */
     private final String label;
 
-    AuthType(int value, String label) {
+    TokenType(int value, String label) {
         this.value = value;
         this.label = label;
     }

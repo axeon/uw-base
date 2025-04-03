@@ -3,12 +3,16 @@ package uw.auth.service.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.auth.service.annotation.MscPermDeclare;
+import uw.auth.service.constant.AuthConstants;
 import uw.auth.service.constant.AuthType;
+import uw.auth.service.constant.TokenType;
 import uw.auth.service.constant.UserType;
 import uw.auth.service.token.AuthTokenData;
+import uw.common.dto.ResponseData;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 用户信息服务接口
@@ -16,6 +20,32 @@ import java.util.Map;
 public class AuthPermService {
 
     private static final Logger logger = LoggerFactory.getLogger( AuthPermService.class );
+
+    /**
+     * 默认成功返回。
+     */
+    private static final ResponseData RESPONSE_SUCCESS = ResponseData.SUCCESS;
+
+    /**
+     * 拒绝权限返回。
+     */
+    private static final ResponseData RESPONSE_FORBIDDEN = new ResponseData( ResponseData.STATE_ERROR, AuthConstants.HTTP_FORBIDDEN_CODE, "No Permission!" );
+
+    /**
+     * 服务不可用返回。
+     */
+    private static final ResponseData RESPONSE_SERVICE_UNAVAILABLE = new ResponseData( ResponseData.STATE_ERROR, AuthConstants.HTTP_SERVICE_UNAVAILABLE_CODE, "Service " +
+            "Unavailable!" );
+
+    /**
+     * 需要升级返回。
+     */
+    private static final ResponseData RESPONSE_UPGRADE_REQUIRED = new ResponseData( ResponseData.STATE_WARN, AuthConstants.HTTP_UPGRADE_REQUIRED_CODE, "Upgrade Required!" );
+
+    /**
+     * 需要支付返回。
+     */
+    private static final ResponseData RESPONSE_PAYMENT_REQUIRED = new ResponseData( ResponseData.STATE_WARN, AuthConstants.HTTP_PAYMENT_REQUIRED_CODE, "Payment Required!" );
 
     /**
      * 应用权限数据,初始化载入。
@@ -36,21 +66,6 @@ public class AuthPermService {
 
 
     public AuthPermService() {
-    }
-
-    /**
-     * 初始化应用权限数据
-     *
-     * @param appId
-     * @param appPermMap
-     * @param regState
-     */
-    public void initAppPerm(long appId, Map<String, Integer> appPermMap, int regState) {
-        this.appId = appId;
-        this.regState = regState;
-        if (appPermMap != null) {
-            this.appPermMap = Collections.unmodifiableMap( appPermMap );
-        }
     }
 
     /**
@@ -81,54 +96,101 @@ public class AuthPermService {
     }
 
     /**
-     * 判断用户权限信息
+     * 检查权限。
      *
-     * @param authToken - 业务对象上下文
-     * @param uri       - URI
+     * @param authTokenData
+     * @param mscPermDeclare
+     * @param uri
      * @return
      */
-    public boolean hasPerm(AuthTokenData authToken, MscPermDeclare mscPermDeclare, String uri) {
-        //没有加注解的，直接返回true
-        if (authToken == null || mscPermDeclare == null) {
-            return true;
+    public ResponseData hasPerm(AuthTokenData authTokenData, MscPermDeclare mscPermDeclare, String uri) {
+        //没有加注解或者uri为空的，直接返回true。从调用关系看，貌似不会为null。
+        //优先判定主要是为了尽量直通。
+        if (mscPermDeclare == null) {
+            return RESPONSE_SUCCESS;
         }
-        long currentUserType = authToken.getUserType();
-        UserType declareType = mscPermDeclare.user();
-        // RPC用户 调用RPC权限，放在第一位是因为rpc操作高频，减少不必要的判定直通。
-        if (currentUserType == UserType.RPC.getValue() && declareType == UserType.RPC) {
-            return true;
+        //token为null，直接返回false。
+        if (authTokenData == null) {
+            return RESPONSE_FORBIDDEN;
         }
-        // ANONYMOUS权限，所有人直接过
-        if (declareType == UserType.ANONYMOUS) {
-            return true;
+        //权限定义用户类型。
+        UserType permUserType = mscPermDeclare.user();
+        //权限定义验证类型。
+        AuthType permAuthType = mscPermDeclare.auth();
+        //token用户类型。
+        long tokenUserType = authTokenData.getUserType();
+        //token用户类型和权限用户类型不匹配，直接返回false。
+        if (permUserType.getValue() > UserType.ANYONE.getValue() && permUserType.getValue() != tokenUserType) {
+            return RESPONSE_FORBIDDEN;
         }
-        // GUEST权限，并且是guest用户，直接过。
-        if (declareType == UserType.GUEST && currentUserType == UserType.GUEST.getValue()) {
-            return true;
-        }
-        /** 以下为需要严格判定权限的功能 , UserType>=100**/
-        // 超级管理员 调用ROOT权限直接过
-        if (declareType == UserType.ROOT && currentUserType == UserType.ROOT.getValue() && authToken.getIsMaster() == 1) {
-            return true;
-        }
-        //处理验证类型，如果不判定验证类型，那就直接过。
-        if (mscPermDeclare.auth() == AuthType.NONE) {
-            //不验证类型
-            return true;
-        } else if (mscPermDeclare.auth() == AuthType.USER) {
-            if (currentUserType == declareType.getValue()) {
-                return true;
-            }
-        }
-        //此时需要校验权限id。
-        if (authToken.getPermSet() == null) {
-            return false;
-        }
+        //检测应用权限表。
         if (appPermMap == null) {
-            logger.warn( "App初始化过程中......请等待!" );
-            return false;
+            logger.warn( "应用权限数据尚未初始化完成，请稍后重试!" );
+            return ResponseData.warnCode( AuthConstants.HTTP_SERVICE_UNAVAILABLE_CODE, "应用权限数据尚未初始化完成，请稍后重试!" );
         }
-        Integer permId = appPermMap.get( uri );
-        return permId != null && authToken.getPermSet().contains( permId );
+        //根据用户类型进行权限验证。
+        switch (permAuthType) {
+            case TEMP:
+                //临时用户验证需要仅确认临时Token类型。
+                if (authTokenData.getTokenType() == TokenType.TEMP.getValue()) {
+                    return RESPONSE_SUCCESS;
+                } else {
+                    return RESPONSE_FORBIDDEN;
+                }
+            case USER:
+                //用户验证需要仅确认标准Token类型。
+                if (authTokenData.getTokenType() >= TokenType.COMMON.getValue()) {
+                    return RESPONSE_SUCCESS;
+                } else {
+                    return RESPONSE_FORBIDDEN;
+                }
+            case PERM:
+                //权限验证需要确认标准Token类型和权限集合。
+                if (authTokenData.getTokenType() >= TokenType.COMMON.getValue() && checkTokenPermSet( authTokenData.getPermSet(), uri )) {
+                    return RESPONSE_SUCCESS;
+                } else {
+                    return RESPONSE_FORBIDDEN;
+                }
+            case SUDO:
+                //超级用户权限需要确认超级Token类型和权限集合。
+                if (!checkTokenPermSet( authTokenData.getPermSet(), uri )) {
+                    return RESPONSE_FORBIDDEN;
+                }
+                if (authTokenData.getTokenType() < TokenType.SUDO.getValue()) {
+                    return RESPONSE_UPGRADE_REQUIRED;
+                } else {
+                    return RESPONSE_SUCCESS;
+                }
+            default:
+                return RESPONSE_FORBIDDEN;
+        }
     }
+
+    /**
+     * 初始化应用权限数据
+     *
+     * @param appId
+     * @param appPermMap
+     * @param regState
+     */
+    protected void initAppPerm(long appId, Map<String, Integer> appPermMap, int regState) {
+        this.appId = appId;
+        this.regState = regState;
+        this.appPermMap = appPermMap != null
+                ? Collections.unmodifiableMap( appPermMap )
+                : Collections.emptyMap();
+    }
+
+    /**
+     * 检查Token权限集合中是否有URI权限。
+     *
+     * @param permSet
+     * @param uri
+     * @return
+     */
+    private boolean checkTokenPermSet(Set<Integer> permSet, String uri) {
+        Integer permId = appPermMap.get( uri );
+        return permId != null && permSet.contains( permId );
+    }
+
 }

@@ -11,21 +11,21 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public enum UserType {
 
     /**
-     * 匿名用户类型
+     * 任意用户类型
      * 未指定权限类型时候的默认值
      */
-    ANONYMOUS( -1, "匿名用户" ),
+    ANYONE( 0, "任意用户" ),
 
     /**
      * C站用户类型
      * 用于登录C站
      */
-    GUEST( 0, "C站用户" ),
+    GUEST( 1, "C站用户" ),
 
     /**
      * RPC用户类型
      */
-    RPC( 1, "RPC用户" ),
+    RPC( 10, "RPC用户" ),
 
     /**
      * 超级管理员。
@@ -97,7 +97,7 @@ public enum UserType {
                 return type;
             }
         }
-        return ANONYMOUS;
+        return ANYONE;
     }
 
     /**
@@ -125,7 +125,7 @@ public enum UserType {
      *
      * @return
      */
-    public static UserType[] getRootManageTypes() {
+    public static UserType[] getRootManagedTypes() {
         return new UserType[]{UserType.ROOT, UserType.RPC, UserType.OPS, UserType.ADMIN};
     }
 
@@ -134,7 +134,7 @@ public enum UserType {
      *
      * @return
      */
-    public static UserType[] getAdminManageTypes() {
+    public static UserType[] getAdminManagedTypes() {
         return new UserType[]{UserType.ADMIN};
     }
 
@@ -143,7 +143,7 @@ public enum UserType {
      *
      * @return
      */
-    public static UserType[] getSaasManageTypes() {
+    public static UserType[] getSaasManagedTypes() {
         return new UserType[]{UserType.SAAS, UserType.MCH};
     }
 
@@ -153,8 +153,8 @@ public enum UserType {
      * @param value
      * @return
      */
-    public static boolean isRootManageType(int value) {
-        for (UserType type : getRootManageTypes()) {
+    public static boolean isRootManagedType(int value) {
+        for (UserType type : getRootManagedTypes()) {
             if (value == type.value) {
                 return true;
             }
@@ -168,8 +168,8 @@ public enum UserType {
      * @param value
      * @return
      */
-    public static boolean isAdminManageType(int value) {
-        for (UserType type : getAdminManageTypes()) {
+    public static boolean isAdminManagedType(int value) {
+        for (UserType type : getAdminManagedTypes()) {
             if (value == type.value) {
                 return true;
             }
@@ -183,8 +183,8 @@ public enum UserType {
      * @param value
      * @return
      */
-    public static boolean isSaasManageType(int value) {
-        for (UserType type : getSaasManageTypes()) {
+    public static boolean isSaasManagedType(int value) {
+        for (UserType type : getSaasManagedTypes()) {
             if (value == type.value) {
                 return true;
             }

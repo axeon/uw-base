@@ -1,5 +1,8 @@
 package uw.auth.service.constant;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+
 /**
  * 常量表。
  */
@@ -23,17 +26,37 @@ public class AuthConstants {
     /**
      * 200 http code。
      */
-    public static final String HTTP_SUCCESS_CODE = "200";
+    public static final String HTTP_SUCCESS_CODE = String.valueOf( HttpStatus.OK.value() );
 
     /**
-     * 401 http code。
+     * 401 http code。无Token。
      */
-    public static final String HTTP_UNAUTHORIZED_CODE = "401";
+    public static final String HTTP_UNAUTHORIZED_CODE = String.valueOf( HttpStatus.UNAUTHORIZED.value() );
 
     /**
-     * 423 http code。
+     * 403 http code。无权限。
      */
-    public static final String HTTP_LOCKED_CODE = "423";
+    public static final String HTTP_FORBIDDEN_CODE = String.valueOf( HttpStatus.FORBIDDEN.value() );
+
+    /**
+     * 498 http code。token过期。
+     */
+    public static final String HTTP_TOKEN_EXPIRED_CODE = String.valueOf( 498 );
+
+    /**
+     * 426 http code。token需要升级。
+     */
+    public static final String HTTP_UPGRADE_REQUIRED_CODE = String.valueOf( HttpStatus.UPGRADE_REQUIRED.value() );
+
+    /**
+     * 402 http code。token需要付费。
+     */
+    public static final String HTTP_PAYMENT_REQUIRED_CODE = String.valueOf(HttpStatus.PAYMENT_REQUIRED.value());
+
+    /**
+     * 503 http code。服务不可用。
+     */
+    public static final String HTTP_SERVICE_UNAVAILABLE_CODE = String.valueOf(HttpStatus.SERVICE_UNAVAILABLE.value());
 
     /**
      * 获取用户名和SaasId

@@ -13,10 +13,9 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import uw.auth.service.conf.AuthServiceProperties;
 import uw.auth.service.constant.AuthConstants;
-import uw.auth.service.constant.InvalidTokenType;
+import uw.auth.service.constant.TokenInvalidType;
+import uw.auth.service.constant.TokenType;
 import uw.auth.service.constant.UserType;
-import uw.auth.service.exception.TokenExpiredException;
-import uw.auth.service.exception.TokenInvalidateException;
 import uw.auth.service.rpc.AuthServiceRpc;
 import uw.auth.service.service.AuthPermService;
 import uw.auth.service.token.AuthTokenData;
@@ -76,36 +75,6 @@ public class AuthServiceHelper {
             return currentDuration;
         }
     };
-
-    /**
-     * RPC用户
-     */
-    private static Cache<String, AuthTokenData> userRpcCache;
-    /**
-     * ROOT用户
-     */
-    private static Cache<String, AuthTokenData> userRootCache;
-    /**
-     * devops用户
-     */
-    private static Cache<String, AuthTokenData> userOpsCache;
-    /**
-     * Admin用户
-     */
-    private static Cache<String, AuthTokenData> userAdminCache;
-    /**
-     * 300-运营商用户
-     */
-    private static Cache<String, AuthTokenData> userSaasCache;
-    /**
-     * guest-C站用户类型
-     */
-    private static Cache<String, AuthTokenData> userGuestCache;
-    /**
-     * 非法token
-     */
-    private static Cache<String, String> invalidTokenCache;
-
     /**
      * 反射的属性缓存
      */
@@ -155,6 +124,34 @@ public class AuthServiceHelper {
         }
         return authFields;
     } );
+    /**
+     * RPC用户
+     */
+    private static Cache<String, AuthTokenData> userRpcCache;
+    /**
+     * ROOT用户
+     */
+    private static Cache<String, AuthTokenData> userRootCache;
+    /**
+     * devops用户
+     */
+    private static Cache<String, AuthTokenData> userOpsCache;
+    /**
+     * Admin用户
+     */
+    private static Cache<String, AuthTokenData> userAdminCache;
+    /**
+     * 300-运营商用户
+     */
+    private static Cache<String, AuthTokenData> userSaasCache;
+    /**
+     * guest-C站用户类型
+     */
+    private static Cache<String, AuthTokenData> userGuestCache;
+    /**
+     * 非法token
+     */
+    private static Cache<String, String> invalidTokenCache;
     /**
      * authServer rpc。
      */
@@ -270,7 +267,7 @@ public class AuthServiceHelper {
      */
     public static void invalidToken(InvalidTokenData invalidToken) {
         if (invalidContextToken( invalidToken.getUserType(), invalidToken.getToken() )) {
-            invalidTokenCache.put( invalidToken.getToken(), InvalidTokenType.findByValue( invalidToken.getInvalidType() ) + ":" + invalidToken.getNotice() );
+            invalidTokenCache.put( invalidToken.getToken(), TokenInvalidType.findByValue( invalidToken.getInvalidType() ) + ":" + invalidToken.getNotice() );
         }
     }
 
@@ -280,7 +277,7 @@ public class AuthServiceHelper {
      * @return
      */
     public static String genAnonymousToken(long saasId, long mchId) {
-        return String.valueOf( UserType.ANONYMOUS.getValue() ) + TOKEN_TYPE_SEPARATOR + mchId + "!0@" + saasId;
+        return String.valueOf( UserType.ANYONE.getValue() ) + TOKEN_TYPE_SEPARATOR + mchId + "!0@" + saasId;
     }
 
     /**
@@ -300,6 +297,18 @@ public class AuthServiceHelper {
      */
     public static int getSaasUserLimit(long saasId) {
         return authServiceRpc.getSaasUserLimit( saasId ).getData();
+    }
+
+    /**
+     * 获得当前token类型。
+     */
+    public static int getTokenType() {
+        AuthTokenData authToken = contextTokenHolder.get();
+        if (authToken != null) {
+            return authToken.getTokenType();
+        } else {
+            return TokenType.NONE.getValue();
+        }
     }
 
     /**
@@ -975,71 +984,6 @@ public class AuthServiceHelper {
     }
 
     /**
-     * genAuthSql的便利方法，生成当前用户saasId的sql
-     */
-    public static String genSaasIdSql() {
-        return genAuthSql( true, false, false, false );
-    }
-
-    /**
-     * 生成当前用户的权限属性的sql
-     *
-     * @param assignSaasId   是否填入saasId
-     * @param assignUserId   是否填入用户id
-     * @param assignMchId    是否填入商户id
-     * @param assignUserType 是否填入用户类型
-     */
-    public static String genAuthSql(boolean assignSaasId, boolean assignUserId, boolean assignMchId, boolean assignUserType) {
-        AuthTokenData authToken = getContextToken();
-        if (authToken == null) {
-            throw new RuntimeException( "用户信息获取为空，该方法仅能在Controller线程中使用" );
-        }
-        StringBuilder sql = new StringBuilder();
-        // saasId
-        if (assignSaasId) {
-            sql.append( "saas_id_=" ).append( authToken.getSaasId() );
-        }
-        // userType
-        if (assignUserType) {
-            sql.append( " and user_type=" ).append( authToken.getUserType() );
-        }
-        // mchId
-        if (assignMchId) {
-            sql.append( " and mch_id=" ).append( authToken.getMchId() );
-        }
-        // userId
-        if (assignUserId) {
-            sql.append( " and user_id=" ).append( authToken.getUserId() );
-        }
-        // 如果是and开头就去掉
-        if (sql.indexOf( " and " ) == 0) {
-            return sql.substring( 5 );
-        }
-        return sql.toString();
-    }
-
-    /**
-     * genAuthSql的便利方法，生成当前用户saasId和userId的sql
-     */
-    public static String genSaasUserIdSql() {
-        return genAuthSql( true, true, false, false );
-    }
-
-    /**
-     * genAuthSql的便利方法，生成当前用户saasId和mchId的sql
-     */
-    public static String genSaasMchIdSql() {
-        return genAuthSql( true, false, true, false );
-    }
-
-    /**
-     * genAuthSql的便利方法，生成当前用户saasId,userType,mchId,userId的sql
-     */
-    public static String genAuthSql() {
-        return genAuthSql( true, true, true, true );
-    }
-
-    /**
      * 获得活跃用户信息。
      *
      * @param userType
@@ -1068,58 +1012,60 @@ public class AuthServiceHelper {
      * @param bearerToken
      * @return
      */
-    public static AuthTokenData parseRawToken(String ip, String bearerToken) {
+    public static ResponseData<AuthTokenData> parseRawToken(String ip, String bearerToken) {
         if (bearerToken == null) {
-            throw new TokenInvalidateException( "!!!Server Token header null. " );
+            return ResponseData.errorCode( AuthConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token header null." );
         }
         if (bearerToken.length() < AuthConstants.TOKEN_HEADER_PREFIX.length()) {
-            throw new TokenInvalidateException( "!!!Server Token header invalid. Header Data: " + bearerToken );
+            return ResponseData.errorCode( AuthConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token header invalid. Header Data: " + bearerToken );
         }
         int tokenStart = AuthConstants.TOKEN_HEADER_PREFIX.length();
         //解析出token来
         String token = bearerToken.substring( tokenStart );
         int typeSeparator = token.indexOf( TOKEN_TYPE_SEPARATOR );
         if (typeSeparator == -1) {
-            throw new TokenInvalidateException( "!!!Server Token parse illegal. Token: " + token );
+            return ResponseData.errorCode( AuthConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token parse illegal. Token: " + token );
         }
         //解析token信息。
         int userType = -1;
         try {
             userType = Integer.parseInt( token.substring( 0, typeSeparator ) );
         } catch (Exception e) {
-            throw new TokenInvalidateException( "!!!Server Token UserType parse illegal. Token: " + token );
+            return ResponseData.errorCode( AuthConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token UserType parse illegal. Token: " + token );
         }
         //  检查用户类型映射
         if (!UserType.checkTypeValid( userType )) {
-            throw new TokenInvalidateException( "!!!Server Token UserType invalid. Token: " + token );
+            return ResponseData.errorCode( AuthConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token UserType invalid. Token: " + token );
         }
-        if (userType == UserType.ANONYMOUS.getValue()) {
-            return parseAnonymousToken( token.substring( typeSeparator + 1 ) );
+        if (userType == UserType.ANYONE.getValue()) {
+            return ResponseData.success( parseAnonymousToken( token.substring( typeSeparator + 1 ) ) );
+        }
+        //检查是否非法token请求，如果确认非法，则直接抛异常，引导用户重新登录。
+        String invalidNotice = invalidTokenCache.getIfPresent( token );
+        if (StringUtils.isNotBlank( invalidNotice )) {
+            return ResponseData.errorCode( AuthConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token[" + token + "] Invalid. Msg: " + invalidNotice );
         }
         //检查缓存中的token。
-        AuthTokenData authTokenData = parseAuthToken( userType, token );
+        AuthTokenData authTokenData = loadCachedTokenData( userType, token );
+        //服务器端拉取缓存。
         if (authTokenData == null) {
-            //去中心服务器验证一下token。
-            if (logger.isDebugEnabled()) {
-                logger.debug( "uw-auth-service send to center verifyToken: {}", token );
-            }
             ResponseData<AuthTokenData> verifyResponse = authServiceRpc.verifyToken( token );
             if (verifyResponse.isSuccess()) {
                 authTokenData = verifyResponse.getData();
                 putContextToken( ip, userType, token, authTokenData );
             } else {
                 //失败的token要缓存一下，防止有人乱试
-                invalidTokenCache.put( token, "INVALID:ERROR" );
+                invalidTokenCache.put( token, "INVALID. "+verifyResponse.getMsg() );
                 //找不到的抛Token过期异常。
-                throw new TokenExpiredException( verifyResponse.getMsg() );
+                return verifyResponse;
             }
         }
         // 检查过期
         if (authTokenData.isExpired()) {
             invalidContextToken( userType, token );
-            throw new TokenExpiredException( "!Server Token expired. " );
+            return ResponseData.errorCode( AuthConstants.HTTP_TOKEN_EXPIRED_CODE, "!Server AccessToken expired. Token: " + token );
         }
-        return authTokenData;
+        return ResponseData.success( authTokenData );
     }
 
     /**
@@ -1175,7 +1121,7 @@ public class AuthServiceHelper {
             //说明数据有问题，直接返回吧。
             return authToken;
         }
-        authToken.setUserType( UserType.ANONYMOUS.getValue() );
+        authToken.setUserType( UserType.ANYONE.getValue() );
         authToken.setSaasId( Long.parseLong( ids[1] ) );
         authToken.setMchId( Long.parseLong( ids[0] ) );
         authToken.setUserId( 0 );
@@ -1189,7 +1135,8 @@ public class AuthServiceHelper {
      * @param rawToken
      * @return
      */
-    private static AuthTokenData parseAuthToken(int userType, String rawToken) {
+    private static AuthTokenData loadCachedTokenData(int userType, String rawToken) {
+        //检查缓存。
         AuthTokenData authTokenData = null;
         if (userType == UserType.RPC.getValue()) {
             authTokenData = userRpcCache.getIfPresent( rawToken );
@@ -1204,15 +1151,7 @@ public class AuthServiceHelper {
         } else if (UserType.SAAS.getValue() <= userType) {
             authTokenData = userSaasCache.getIfPresent( rawToken );
         }
-        if (authTokenData != null) {
-            return authTokenData;
-        }
-        //检查是否非法token请求，如果确认非法，则直接抛异常，引导用户重新登录。
-        String invalidNotice = invalidTokenCache.getIfPresent( rawToken );
-        if (StringUtils.isNotBlank( invalidNotice )) {
-            throw new TokenInvalidateException( "!!!Server Token[" + rawToken + "] Invalid. Msg: " + invalidNotice );
-        }
-        return null;
+        return authTokenData;
     }
 
     /**

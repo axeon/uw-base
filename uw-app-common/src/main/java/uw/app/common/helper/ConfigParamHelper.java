@@ -1,22 +1,24 @@
-package uw.common.util;
+package uw.app.common.helper;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.common.constant.TypeConfigParam;
+import uw.app.common.constant.ConfigParamType;
 import uw.common.dto.ResponseData;
-import uw.common.vo.ConfigParam;
-import uw.common.vo.ConfigParamBox;
+import uw.common.util.DateUtils;
+import uw.common.util.JsonUtils;
+import uw.app.common.vo.ConfigParam;
+import uw.app.common.vo.ConfigParamBox;
 
 import java.util.*;
 
-public class ConfigParamUtils {
+public class ConfigParamHelper {
 
     /**
      * 对象映射器。
      */
-    private static final Logger logger = LoggerFactory.getLogger( ConfigParamUtils.class );
+    private static final Logger logger = LoggerFactory.getLogger( ConfigParamHelper.class );
 
 
     /**
@@ -110,54 +112,54 @@ public class ConfigParamUtils {
             if (paramValue == null) {
                 continue;
             }
-            if (configParam.getType().equals( TypeConfigParam.STRING.getValue() )) {
+            if (configParam.getType().equals( ConfigParamType.STRING.getValue() )) {
                 if (StringUtils.isBlank( paramValue )) {
                     errorParamList.add( configParam );
                 }
-            } else if (configParam.getType().equals( TypeConfigParam.INT.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.INT.getValue() )) {
                 try {
                     Integer.parseInt( paramValue );
                 } catch (Exception ignored) {
                     errorParamList.add( configParam );
                 }
-            } else if (configParam.getType().equals( TypeConfigParam.LONG.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.LONG.getValue() )) {
                 try {
                     Long.parseLong( paramValue );
                 } catch (Exception ignored) {
                     errorParamList.add( configParam );
                 }
-            } else if (configParam.getType().equals( TypeConfigParam.FLOAT.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.FLOAT.getValue() )) {
                 try {
                     Float.parseFloat( paramValue );
                 } catch (Exception ignored) {
                     errorParamList.add( configParam );
                 }
-            } else if (configParam.getType().equals( TypeConfigParam.DOUBLE.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.DOUBLE.getValue() )) {
                 try {
                     Double.parseDouble( paramValue );
                 } catch (Exception ignored) {
                     errorParamList.add( configParam );
                 }
 
-            } else if (configParam.getType().equals( TypeConfigParam.BOOLEAN.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.BOOLEAN.getValue() )) {
                 try {
                     Boolean.parseBoolean( paramValue );
                 } catch (Exception ignored) {
                     errorParamList.add( configParam );
                 }
-            } else if (configParam.getType().equals( TypeConfigParam.DATE.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.DATE.getValue() )) {
                 if (DateUtils.stringToDate( paramValue, DateUtils.DATE ) == null) {
                     errorParamList.add( configParam );
                 }
-            } else if (configParam.getType().equals( TypeConfigParam.TIME.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.TIME.getValue() )) {
                 if (DateUtils.stringToDate( paramValue, DateUtils.TIME ) == null) {
                     errorParamList.add( configParam );
                 }
-            } else if (configParam.getType().equals( TypeConfigParam.DATETIME.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.DATETIME.getValue() )) {
                 if (DateUtils.stringToDate( paramValue, DateUtils.DATE_TIME ) == null) {
                     errorParamList.add( configParam );
                 }
-            } else if (configParam.getType().equals( TypeConfigParam.ENUM.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.ENUM.getValue() )) {
                 Set<String> enumSet = null;
                 try {
                     enumSet = JsonUtils.parse( configParam.getValue(), new TypeReference<Set<String>>() {
@@ -167,21 +169,21 @@ public class ConfigParamUtils {
                 if (enumSet == null || !enumSet.contains( paramValue )) {
                     errorParamList.add( configParam );
                 }
-            } else if (configParam.getType().equals( TypeConfigParam.MAP.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.MAP.getValue() )) {
                 try {
                     Map<String, String> map = JsonUtils.parse( paramValue, new TypeReference<Map<String, String>>() {
                     } );
                 } catch (Exception ignored) {
                     errorParamList.add( configParam );
                 }
-            } else if (configParam.getType().equals( TypeConfigParam.SET_STRING.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.SET_STRING.getValue() )) {
                 try {
                     JsonUtils.parse( paramValue, new TypeReference<List<String>>() {
                     } );
                 } catch (Exception ignored) {
                     errorParamList.add( configParam );
                 }
-            } else if (configParam.getType().equals( TypeConfigParam.SET_INT.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.SET_INT.getValue() )) {
                 try {
                     String[] list = JsonUtils.parse( paramValue, String[].class );
                     for (String s : list) {
@@ -190,7 +192,7 @@ public class ConfigParamUtils {
                 } catch (Exception ignored) {
                     errorParamList.add( configParam );
                 }
-            } else if (configParam.getType().equals( TypeConfigParam.SET_LONG.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.SET_LONG.getValue() )) {
                 try {
                     String[] list = JsonUtils.parse( paramValue, String[].class );
                     for (String s : list) {
@@ -200,7 +202,7 @@ public class ConfigParamUtils {
                     errorParamList.add( configParam );
                 }
 
-            } else if (configParam.getType().equals( TypeConfigParam.SET_DOUBLE.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.SET_DOUBLE.getValue() )) {
                 try {
                     String[] list = JsonUtils.parse( paramValue, String[].class );
                     for (String s : list) {
@@ -210,7 +212,7 @@ public class ConfigParamUtils {
                     errorParamList.add( configParam );
                 }
 
-            } else if (configParam.getType().equals( TypeConfigParam.SET_FLOAT.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.SET_FLOAT.getValue() )) {
                 try {
                     String[] list = JsonUtils.parse( paramValue, String[].class );
                     for (String s : list) {
@@ -220,7 +222,7 @@ public class ConfigParamUtils {
                     errorParamList.add( configParam );
                 }
 
-            } else if (configParam.getType().equals( TypeConfigParam.SET_BOOLEAN.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.SET_BOOLEAN.getValue() )) {
                 try {
                     String[] list = JsonUtils.parse( paramValue, String[].class );
                     for (String s : list) {
@@ -230,7 +232,7 @@ public class ConfigParamUtils {
                     errorParamList.add( configParam );
                 }
 
-            } else if (configParam.getType().equals( TypeConfigParam.SET_DATE.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.SET_DATE.getValue() )) {
                 try {
                     String[] list = JsonUtils.parse( paramValue, String[].class );
                     for (String s : list) {
@@ -242,7 +244,7 @@ public class ConfigParamUtils {
                 } catch (Exception ignored) {
                     errorParamList.add( configParam );
                 }
-            } else if (configParam.getType().equals( TypeConfigParam.SET_TIME.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.SET_TIME.getValue() )) {
                 try {
                     String[] list = JsonUtils.parse( paramValue, String[].class );
                     for (String s : list) {
@@ -254,7 +256,7 @@ public class ConfigParamUtils {
                 } catch (Exception ignored) {
                     errorParamList.add( configParam );
                 }
-            } else if (configParam.getType().equals( TypeConfigParam.SET_DATETIME.getValue() )) {
+            } else if (configParam.getType().equals( ConfigParamType.SET_DATETIME.getValue() )) {
                 try {
                     String[] list = JsonUtils.parse( paramValue, String[].class );
                     for (String s : list) {

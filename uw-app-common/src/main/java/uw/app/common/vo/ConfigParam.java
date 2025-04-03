@@ -1,4 +1,4 @@
-package uw.common.vo;
+package uw.app.common.vo;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;

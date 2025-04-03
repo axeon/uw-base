@@ -1,4 +1,4 @@
-package uw.common.constant;
+package uw.app.common.constant;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -8,17 +8,23 @@ import io.swagger.v3.oas.annotations.media.Schema;
  **/
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 @Schema(title = "全局公共状态", description = "全局公共状态")
-public enum StateCommon {
+public enum CommonState {
 
     DELETED( -1, "标记删除" ),
     DISABLED( 0, "禁用状态" ),
     ENABLED( 1, "启用状态" );
 
+    /**
+     * 状态值
+     */
     private final int value;
 
+    /**
+     * 状态描述
+     */
     private final String label;
 
-    StateCommon(int value, String label) {
+    CommonState(int value, String label) {
         this.value = value;
         this.label = label;
     }
@@ -29,8 +35,8 @@ public enum StateCommon {
      * @param value
      * @return
      */
-    public static StateCommon findByValue(int value) {
-        for (StateCommon state : values()) {
+    public static CommonState valueOf(int value) {
+        for (CommonState state : values()) {
             if (state.getValue() == value) {
                 return state;
             }

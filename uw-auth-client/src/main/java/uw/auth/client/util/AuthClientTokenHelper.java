@@ -11,7 +11,6 @@ import org.springframework.web.client.RestTemplate;
 import uw.auth.client.AuthClientProperties;
 import uw.auth.client.constant.LoginType;
 import uw.auth.client.vo.LoginRequest;
-import uw.auth.client.vo.LoginResponse;
 import uw.auth.client.vo.TokenResponse;
 import uw.common.dto.ResponseData;
 import uw.common.util.JsonUtils;
@@ -125,11 +124,13 @@ public class AuthClientTokenHelper {
             loginRequest.setForceLogin( true );
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType( MediaType.APPLICATION_JSON );
-            String credentials = JsonUtils.toString(authClientProperties);
+            String credentials = JsonUtils.toString( authClientProperties );
             RequestEntity<String> requestEntity = new RequestEntity<>( credentials, headers, HttpMethod.POST, URI.create( loginUrl ) );
-            ResponseEntity<LoginResponse> loginResponseEntity = restTemplate.exchange( requestEntity, LoginResponse.class );
+            ResponseEntity<ResponseData<List<TokenResponse>>> loginResponseEntity = restTemplate.exchange( requestEntity,
+                    new ParameterizedTypeReference<ResponseData<List<TokenResponse>>>() {
+            } );
             if (loginResponseEntity.getStatusCode().value() == HttpStatus.OK.value()) {
-                LoginResponse loginResponse = loginResponseEntity.getBody();
+                ResponseData<List<TokenResponse>> loginResponse = loginResponseEntity.getBody();
                 if (loginResponse != null) {
                     if (loginResponse.isSuccess()) {
                         List<TokenResponse> tokenList = loginResponse.getData();
@@ -185,7 +186,7 @@ public class AuthClientTokenHelper {
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>( map, headers );
             ResponseEntity<ResponseData<TokenResponse>> responseEntity = restTemplate.exchange( refreshTokenUrl, HttpMethod.POST, request,
                     new ParameterizedTypeReference<ResponseData<TokenResponse>>() {
-            } );
+                    } );
             //刷新token成功以后，更新token
             if (responseEntity.getStatusCode().value() == HttpStatus.OK.value()) {
                 ResponseData<TokenResponse> responseBody = responseEntity.getBody();

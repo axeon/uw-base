@@ -1,14 +1,16 @@
 package uw.app.common.constant;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * 描述: 数据类型
+ * JSON配置数据类型
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-@Schema(title = "配置参数类型", description = "配置参数类型")
-public enum ConfigParamType {
+@Schema(title = "JSON配置数据类型", description = "JSON配置数据类型")
+public enum JsonParamType {
 
     /**
      * 字符串类型
@@ -116,13 +118,29 @@ public enum ConfigParamType {
     MAP( "map", "MAP类型" ),
     ;
 
+    @JsonValue
     private final String value;
 
     private final String label;
 
-    ConfigParamType(String value, String label) {
+    JsonParamType(String value, String label) {
         this.value = value;
         this.label = label;
+    }
+
+    /**
+     * 反序列化时根据 value 值解析枚举。
+     * @param value
+     * @return
+     */
+    @JsonCreator
+    public static JsonParamType fromValue(String value) {
+        for (JsonParamType type : JsonParamType.values()) {
+            if (type.getValue().equals(value)) {
+                return type;
+            }
+        }
+        throw null;
     }
 
     public String getLabel() {

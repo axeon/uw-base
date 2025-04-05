@@ -343,7 +343,7 @@ public class RSAUtils {
 //        System.out.println( "解密：" + restr );
 //
 //        System.out.println( "---------------私钥签名过程------------------" );
-//        String content = "ihep_这是用于签名的原始数据";
+//        String content = "这是用于签名的原始数据";
 //        byte[] signed = RSAUtils.sign( RSAUtils.loadPrivateKeyFromBase64( privateKey ), content.getBytes() );
 //        System.out.println( "签名原串：" + content );
 //        System.out.println( "签名串：" + org.apache.commons.codec.binary.Base64.encodeBase64String( signed ) );

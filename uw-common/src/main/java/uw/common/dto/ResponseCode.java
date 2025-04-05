@@ -6,11 +6,11 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import java.util.Locale;
 
 /**
- * 响应码消息接口。
+ * 响应码定义接口。
  *
  * @author axeon
  */
-public interface ResponseCodeMsg {
+public interface ResponseCode {
 
     /**
      * 获取响应码.

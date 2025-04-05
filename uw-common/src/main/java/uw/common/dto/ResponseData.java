@@ -159,8 +159,8 @@ public class ResponseData<T> {
      *
      * @return
      */
-    public static <T> ResponseData<T> success(T t, ResponseCodeMsg responseCodeMsg) {
-        return new ResponseData<T>( t, STATE_SUCCESS, responseCodeMsg.getCode(), responseCodeMsg.getLocalizedMessage() );
+    public static <T> ResponseData<T> success(T t, ResponseCode responseCode) {
+        return new ResponseData<T>( t, STATE_SUCCESS, responseCode.getCode(), responseCode.getLocalizedMessage() );
     }
 
     /**
@@ -188,8 +188,8 @@ public class ResponseData<T> {
      *
      * @return
      */
-    public static <T> ResponseData<T> successCode(ResponseCodeMsg responseCodeMsg) {
-        return new ResponseData<T>( null, STATE_SUCCESS, responseCodeMsg.getCode(), responseCodeMsg.getLocalizedMessage() );
+    public static <T> ResponseData<T> successCode(ResponseCode responseCode) {
+        return new ResponseData<T>( null, STATE_SUCCESS, responseCode.getCode(), responseCode.getLocalizedMessage() );
     }
 
     /**
@@ -241,12 +241,12 @@ public class ResponseData<T> {
     /**
      * 带结果、代码和消息的警告返回值。
      * @param t
-     * @param responseCodeMsg
+     * @param responseCode
      * @return
      * @param <T>
      */
-    public static <T> ResponseData<T> warn(T t, ResponseCodeMsg responseCodeMsg) {
-        return new ResponseData<T>( t, STATE_WARN, responseCodeMsg.getCode(), responseCodeMsg.getLocalizedMessage() );
+    public static <T> ResponseData<T> warn(T t, ResponseCode responseCode) {
+        return new ResponseData<T>( t, STATE_WARN, responseCode.getCode(), responseCode.getLocalizedMessage() );
     }
 
     /**
@@ -271,12 +271,12 @@ public class ResponseData<T> {
 
     /**
      * 带代码和消息的警告返回值。
-     * @param responseCodeMsg
+     * @param responseCode
      * @return
      * @param <T>
      */
-    public static <T> ResponseData<T> warnCode(ResponseCodeMsg responseCodeMsg) {
-        return new ResponseData<T>( null, STATE_WARN, responseCodeMsg.getCode(), responseCodeMsg.getLocalizedMessage() );
+    public static <T> ResponseData<T> warnCode(ResponseCode responseCode) {
+        return new ResponseData<T>( null, STATE_WARN, responseCode.getCode(), responseCode.getLocalizedMessage() );
     }
 
     /**
@@ -320,12 +320,12 @@ public class ResponseData<T> {
     /**
      * 带结果、代码和消息的失败返回值。
      * @param t
-     * @param responseCodeMsg
+     * @param responseCode
      * @return
      * @param <T>
      */
-    public static <T> ResponseData<T> error(T t, ResponseCodeMsg responseCodeMsg) {
-        return new ResponseData<T>( t, STATE_ERROR, responseCodeMsg.getCode(), responseCodeMsg.getLocalizedMessage() );
+    public static <T> ResponseData<T> error(T t, ResponseCode responseCode) {
+        return new ResponseData<T>( t, STATE_ERROR, responseCode.getCode(), responseCode.getLocalizedMessage() );
     }
 
     /**
@@ -350,12 +350,12 @@ public class ResponseData<T> {
 
     /**
      * 带代码和消息的失败返回值。
-     * @param responseCodeMsg
+     * @param responseCode
      * @return
      * @param <T>
      */
-    public static <T> ResponseData<T> errorCode(ResponseCodeMsg responseCodeMsg) {
-        return new ResponseData<T>( null, STATE_ERROR, responseCodeMsg.getCode(), responseCodeMsg.getLocalizedMessage() );
+    public static <T> ResponseData<T> errorCode(ResponseCode responseCode) {
+        return new ResponseData<T>( null, STATE_ERROR, responseCode.getCode(), responseCode.getLocalizedMessage() );
     }
 
     /**
@@ -399,12 +399,12 @@ public class ResponseData<T> {
     /**
      * 带结果、代码和消息的严重错误返回值。
      * @param t
-     * @param responseCodeMsg
+     * @param responseCode
      * @return
      * @param <T>
      */
-    public static <T> ResponseData<T> fatal(T t, ResponseCodeMsg responseCodeMsg) {
-        return new ResponseData<T>( t, STATE_FATAL, responseCodeMsg.getCode(), responseCodeMsg.getLocalizedMessage() );
+    public static <T> ResponseData<T> fatal(T t, ResponseCode responseCode) {
+        return new ResponseData<T>( t, STATE_FATAL, responseCode.getCode(), responseCode.getLocalizedMessage() );
     }
 
     /**
@@ -429,12 +429,12 @@ public class ResponseData<T> {
 
     /**
      * 带代码和消息的严重错误返回值。
-     * @param responseCodeMsg
+     * @param responseCode
      * @return
      * @param <T>
      */
-    public static <T> ResponseData<T> fatalCode(ResponseCodeMsg responseCodeMsg) {
-        return new ResponseData<T>( null, STATE_FATAL, responseCodeMsg.getCode(), responseCodeMsg.getLocalizedMessage() );
+    public static <T> ResponseData<T> fatalCode(ResponseCode responseCode) {
+        return new ResponseData<T>( null, STATE_FATAL, responseCode.getCode(), responseCode.getLocalizedMessage() );
     }
 
     /**

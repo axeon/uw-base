@@ -2,13 +2,13 @@ package uw.mfa.constant;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import uw.common.dto.ResponseCodeMsg;
+import uw.common.dto.ResponseCode;
 
 /**
  * 登录错误信息。
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum MfaResponseCode implements ResponseCodeMsg {
+public enum MfaResponseCode implements ResponseCode {
 
     // ip限制
     MFA_IP_AUTH_ERROR( "你的IP[%s]不在授权IP范围内! " ),

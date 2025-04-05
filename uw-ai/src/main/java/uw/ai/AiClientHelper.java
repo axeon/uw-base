@@ -82,6 +82,7 @@ public class AiClientHelper {
      * @return
      * @param <T>
      */
+    @SuppressWarnings("unchecked")
     public <T> ResponseData<T> chatGenerateEntity(AiChatGenerateParam param, Class<T> clazz) {
         // 设置类型转换器
         BeanOutputConverter<T> beanOutputConverter = new BeanOutputConverter<>( clazz );
@@ -96,7 +97,7 @@ public class AiClientHelper {
         // 调用生成
         ResponseData<String> responseData = chatGenerate( param );
         if (responseData.isNotSuccess()) {
-            return responseData.prototype();
+            return responseData.raw();
         }
         // 转换成实体
         return ResponseData.success( beanOutputConverter.convert( responseData.getData() ) );

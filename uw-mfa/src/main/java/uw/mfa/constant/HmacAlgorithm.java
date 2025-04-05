@@ -1,6 +1,9 @@
 package uw.mfa.constant;
 
-public enum HashingAlgorithm {
+/**
+ * Hmac算法枚举。
+ */
+public enum HmacAlgorithm {
 
     SHA1( "HmacSHA1", "SHA1" ),
     SHA256( "HmacSHA256", "SHA256" ),
@@ -9,7 +12,7 @@ public enum HashingAlgorithm {
     private final String value;
     private final String label;
 
-    HashingAlgorithm(String value, String friendlyName) {
+    HmacAlgorithm(String value, String friendlyName) {
         this.value = value;
         this.label = friendlyName;
     }

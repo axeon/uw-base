@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cglib.core.CodeGenerationException;
 import uw.common.dto.ResponseData;
-import uw.mfa.constant.HashingAlgorithm;
+import uw.mfa.constant.HmacAlgorithm;
 import uw.mfa.constant.MfaResponseCode;
 
 import javax.crypto.Mac;
@@ -29,7 +29,7 @@ public class TotpCodeVerifier {
     /**
      * Hashing algorithm.
      */
-    private final HashingAlgorithm algorithm;
+    private final HmacAlgorithm algorithm;
     /**
      * 代码位数。
      */
@@ -51,7 +51,7 @@ public class TotpCodeVerifier {
      * @param timePeriod
      * @param allowedTimePeriodDiscrepancy
      */
-    public TotpCodeVerifier(HashingAlgorithm algorithm, int digits, int timePeriod, int allowedTimePeriodDiscrepancy) {
+    public TotpCodeVerifier(HmacAlgorithm algorithm, int digits, int timePeriod, int allowedTimePeriodDiscrepancy) {
         this.algorithm = algorithm;
         this.digits = digits;
         this.timePeriod = timePeriod;

@@ -10,7 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.dto.ResponseData;
-import uw.mfa.constant.HashingAlgorithm;
+import uw.mfa.constant.HmacAlgorithm;
 import uw.mfa.constant.MfaResponseCode;
 import uw.mfa.totp.vo.TotpSecretData;
 
@@ -48,7 +48,7 @@ public class TotpSecretDataGenerator {
     /**
      * Hashing算法.
      */
-    private final HashingAlgorithm hashingAlgorithm;
+    private final HmacAlgorithm hashingAlgorithm;
 
     /**
      * 密钥长度.
@@ -75,7 +75,7 @@ public class TotpSecretDataGenerator {
      */
     private final int qrSize;
 
-    public TotpSecretDataGenerator(String issuer, HashingAlgorithm hashingAlgorithm, int secretLength, int codeLength, int timePeriod, boolean enableGenQr, int qrSize) {
+    public TotpSecretDataGenerator(String issuer, HmacAlgorithm hashingAlgorithm, int secretLength, int codeLength, int timePeriod, boolean enableGenQr, int qrSize) {
         this.issuer = issuer;
         this.hashingAlgorithm = hashingAlgorithm;
         this.secretLength = secretLength;

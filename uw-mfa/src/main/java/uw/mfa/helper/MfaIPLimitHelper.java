@@ -87,10 +87,10 @@ public class MfaIPLimitHelper {
                 int ic = Integer.parseInt( ics );
                 if (ic >= uwMfaProperties.getIpLimitErrorTimes()) {
                     long ttl = mfaRedisTemplate.getExpire( key, TimeUnit.MINUTES ) + 1;
-                    return ResponseData.errorCode( MfaResponseCode.IP_LIMIT_ERROR.getCode(), String.format( MfaResponseCode.IP_LIMIT_ERROR.getMessage(), userIp,
+                    return ResponseData.errorCode( MfaResponseCode.MFA_IP_LIMIT_ERROR.getCode(), String.format( MfaResponseCode.MFA_IP_LIMIT_ERROR.getMessage(), userIp,
                             (uwMfaProperties.getIpLimitSeconds() / 60), ic, ttl ) );
                 } else if (ic >= uwMfaProperties.getIpLimitWarnTimes()) {
-                    return ResponseData.warnCode( MfaResponseCode.IP_LIMIT_WARN.getCode(), String.format( MfaResponseCode.IP_LIMIT_WARN.getMessage(), userIp,
+                    return ResponseData.warnCode( MfaResponseCode.MFA_IP_LIMIT_WARN.getCode(), String.format( MfaResponseCode.MFA_IP_LIMIT_WARN.getMessage(), userIp,
                             (uwMfaProperties.getIpLimitSeconds() / 60), ic ) );
                 }
             }

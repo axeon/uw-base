@@ -5,8 +5,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import uw.common.util.JsonUtils;
 
 /**
- * 用于作为返回给前端的vo类。
- * 支持链式调用，同时支持泛型。
+ * ResponseData是一个基于泛型的响应数据对象，封装了响应数据，以及响应状态码。
+ * 在整个项目中，所有响应数据都使用ResponseData进行封装，包括返回给前端的数据，以及返回给后端的数据。
+ * 使用ResponseData的好处是，可以统一处理响应数据，尤其在返回数据的同时，也返回了响应状态码和消息，使得程序可以更好的处理响应数据。这样也避免了不必要的异常处理和异常捕获代码，可能获得更简单和更优雅的代码。
+ * 同时，ResponseData和i18n的结合，使得处理国际化的工作更加简单和方便。
+ * ResponseCode定义了响应状态码和消息的统一接口，通过继承关系，可以定义各种状态码和消息，使得代码更加清晰和可读。
+ * ResponseData通过传入ResponseCode，简化调用代码，同时更简单的支持多语言。
  *
  * @author axeon
  */
@@ -18,15 +22,15 @@ public class ResponseData<T> {
      */
     public static final String STATE_SUCCESS = "success";
     /**
-     * 报警状态值。
+     * 警告状态值。警告信息可以忽略，返回的数据仍可使用。
      */
     public static final String STATE_WARN = "warn";
     /**
-     * 错误状态值。
+     * 错误状态值。错误信息表示执行失败，返回的数据应不可用。
      */
     public static final String STATE_ERROR = "error";
     /**
-     * 严重错误状态值。
+     * 严重错误状态值。系统已经报错，返回数据不可用，需要立即处理。
      */
     public static final String STATE_FATAL = "fatal";
     /**
@@ -39,7 +43,7 @@ public class ResponseData<T> {
      */
     public static final ResponseData SUCCESS = new ResponseData( STATE_SUCCESS, null, null );
     /**
-     * 报警常量，不带时间戳。
+     * 警告常量，不带时间戳。
      */
     public static final ResponseData WARN = new ResponseData( STATE_WARN, null, null );
     /**
@@ -494,7 +498,7 @@ public class ResponseData<T> {
     }
 
     /**
-     * 是否没有错误
+     * 判断是否既非错误状态也非严重错误状态
      *
      * @return
      */
@@ -504,15 +508,21 @@ public class ResponseData<T> {
     }
 
     /**
-     * 获得原型。
-     * 主要用于某些情况下抹除泛型标记。
+     * 返回未泛型化的原始响应对象实例。
+     * 主要用于需要抹除泛型类型参数的场景（如某些框架要求非泛型对象）。
      *
      * @return
      */
-    public ResponseData prototype() {
+    @SuppressWarnings("rawtypes")
+    public ResponseData raw() {
         return this;
     }
 
+
+    /**
+     * 转换为字符串。
+     * @return
+     */
     @Override
     public String toString() {
         return JsonUtils.toString( this );

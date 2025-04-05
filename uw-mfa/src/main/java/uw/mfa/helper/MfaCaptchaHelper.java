@@ -75,12 +75,12 @@ public class MfaCaptchaHelper {
             mfaRedisTemplate.expire( redisKey, uwMfaProperties.getCaptchaSendLimitSeconds(), TimeUnit.SECONDS );
         }
         if (sentTimes >= uwMfaProperties.getCaptchaSendLimitTimes()) {
-            return ResponseData.errorCode( MfaResponseCode.CAPTCHA_SEND_LIMIT.getCode(), String.format( MfaResponseCode.CAPTCHA_SEND_LIMIT.getMessage(), userIp,
+            return ResponseData.errorCode( MfaResponseCode.MFA_CAPTCHA_SEND_LIMIT_ERROR.getCode(), String.format( MfaResponseCode.MFA_CAPTCHA_SEND_LIMIT_ERROR.getMessage(), userIp,
                     (uwMfaProperties.getCaptchaSendLimitSeconds() / 60), uwMfaProperties.getCaptchaSendLimitTimes(), (uwMfaProperties.getCaptchaSendLimitSeconds() / 60) ) );
         }
         ResponseData<CaptchaData> captchaResData = captchaService.generateCaptcha( captchaId );
         if (captchaResData.isNotSuccess()) {
-            return ResponseData.errorCode( MfaResponseCode.CAPTCHA_GENERATE_FAIL.getCode(), MfaResponseCode.CAPTCHA_GENERATE_FAIL.getMessage() + captchaResData.getMsg() );
+            return ResponseData.errorCode( MfaResponseCode.MFA_CAPTCHA_GENERATE_ERROR.getCode(), MfaResponseCode.MFA_CAPTCHA_GENERATE_ERROR.getMessage() + captchaResData.getMsg() );
         }
         CaptchaData captchaData = captchaResData.getData();
         CaptchaQuestion captchaQuestion = captchaData.getCaptchaQuestion();
@@ -99,12 +99,12 @@ public class MfaCaptchaHelper {
      */
     public static ResponseData verifyCaptcha(String userIp, String captchaId, String captchaSign) {
         if (StringUtils.isBlank( captchaId ) || StringUtils.isBlank( captchaSign )) {
-            return ResponseData.errorCode( MfaResponseCode.CAPTCHA_LOST.getCode(), MfaResponseCode.CAPTCHA_LOST.getMessage() );
+            return ResponseData.errorCode( MfaResponseCode.MFA_CAPTCHA_LOST_ERROR.getCode(), MfaResponseCode.MFA_CAPTCHA_LOST_ERROR.getMessage() );
         }
         String captchaResult = mfaRedisOp.getAndDelete( RedisKeyUtils.buildKey( REDIS_CAPTCHA_PREFIX, captchaId ) );
         ResponseData verifyData = captchaService.verifyCaptcha( captchaId, captchaSign, captchaResult );
         if (verifyData.isNotSuccess()) {
-            return ResponseData.errorCode( MfaResponseCode.CAPTCHA_VERIFY_FAIL.getCode(), MfaResponseCode.CAPTCHA_VERIFY_FAIL.getMessage() + verifyData.getMsg() );
+            return ResponseData.errorCode( MfaResponseCode.MFA_CAPTCHA_VERIFY_ERROR.getCode(), MfaResponseCode.MFA_CAPTCHA_VERIFY_ERROR.getMessage() + verifyData.getMsg() );
         }
         return ResponseData.success();
     }

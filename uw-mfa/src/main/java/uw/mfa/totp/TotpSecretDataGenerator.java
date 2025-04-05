@@ -113,7 +113,7 @@ public class TotpSecretDataGenerator {
                 return ResponseData.success( new TotpSecretData( secret, totpUri, Base64.getEncoder().encodeToString( pngOutputStream.toByteArray() ) ) );
             } catch (Exception e) {
                 logger.error( e.getMessage(), e );
-                return ResponseData.errorCode( MfaResponseCode.TOTP_SECRET_GEN_ERROR.getCode(), MfaResponseCode.TOTP_SECRET_GEN_ERROR.getMessage() + e.getMessage() );
+                return ResponseData.errorCode( MfaResponseCode.MFA_TOTP_SECRET_GEN_ERROR.getCode(), MfaResponseCode.MFA_TOTP_SECRET_GEN_ERROR.getMessage() + e.getMessage() );
             }
         }
     }

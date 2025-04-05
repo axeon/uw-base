@@ -1,7 +1,7 @@
 package uw.mfa.conf;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import uw.mfa.constant.HashingAlgorithm;
+import uw.mfa.constant.HmacAlgorithm;
 
 @ConfigurationProperties(prefix = "uw.mfa")
 public class UwMfaProperties {
@@ -89,7 +89,7 @@ public class UwMfaProperties {
     /**
      * TOTP算法，默认SHA256。
      */
-    private HashingAlgorithm totpAlgorithm = HashingAlgorithm.SHA256;
+    private HmacAlgorithm totpAlgorithm = HmacAlgorithm.SHA256;
 
     /**
      * TOTP密钥默认长度，默认32位。
@@ -259,11 +259,11 @@ public class UwMfaProperties {
         this.deviceNotifyEmailApi = deviceNotifyEmailApi;
     }
 
-    public HashingAlgorithm getTotpAlgorithm() {
+    public HmacAlgorithm getTotpAlgorithm() {
         return totpAlgorithm;
     }
 
-    public void setTotpAlgorithm(HashingAlgorithm totpAlgorithm) {
+    public void setTotpAlgorithm(HmacAlgorithm totpAlgorithm) {
         this.totpAlgorithm = totpAlgorithm;
     }
 

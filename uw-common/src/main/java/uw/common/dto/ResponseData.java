@@ -159,8 +159,8 @@ public class ResponseData<T> {
      *
      * @return
      */
-    public static <T> ResponseData<T> success(T t, ResponseCode responseCodeMsg) {
-        return new ResponseData<T>( t, STATE_SUCCESS, responseCodeMsg.getCode(), responseCodeMsg.getMessage() );
+    public static <T> ResponseData<T> success(T t, ResponseCodeMsg responseCodeMsg) {
+        return new ResponseData<T>( t, STATE_SUCCESS, responseCodeMsg.getCode(), responseCodeMsg.getLocalizedMessage() );
     }
 
     /**
@@ -188,8 +188,8 @@ public class ResponseData<T> {
      *
      * @return
      */
-    public static <T> ResponseData<T> successCode(ResponseCode responseCodeMsg) {
-        return new ResponseData<T>( null, STATE_SUCCESS, responseCodeMsg.getCode(), responseCodeMsg.getMessage() );
+    public static <T> ResponseData<T> successCode(ResponseCodeMsg responseCodeMsg) {
+        return new ResponseData<T>( null, STATE_SUCCESS, responseCodeMsg.getCode(), responseCodeMsg.getLocalizedMessage() );
     }
 
     /**
@@ -245,8 +245,8 @@ public class ResponseData<T> {
      * @return
      * @param <T>
      */
-    public static <T> ResponseData<T> warn(T t, ResponseCode responseCodeMsg) {
-        return new ResponseData<T>( t, STATE_WARN, responseCodeMsg.getCode(), responseCodeMsg.getMessage() );
+    public static <T> ResponseData<T> warn(T t, ResponseCodeMsg responseCodeMsg) {
+        return new ResponseData<T>( t, STATE_WARN, responseCodeMsg.getCode(), responseCodeMsg.getLocalizedMessage() );
     }
 
     /**
@@ -275,8 +275,8 @@ public class ResponseData<T> {
      * @return
      * @param <T>
      */
-    public static <T> ResponseData<T> warnCode(ResponseCode responseCodeMsg) {
-        return new ResponseData<T>( null, STATE_WARN, responseCodeMsg.getCode(), responseCodeMsg.getMessage() );
+    public static <T> ResponseData<T> warnCode(ResponseCodeMsg responseCodeMsg) {
+        return new ResponseData<T>( null, STATE_WARN, responseCodeMsg.getCode(), responseCodeMsg.getLocalizedMessage() );
     }
 
     /**
@@ -324,8 +324,8 @@ public class ResponseData<T> {
      * @return
      * @param <T>
      */
-    public static <T> ResponseData<T> error(T t, ResponseCode responseCodeMsg) {
-        return new ResponseData<T>( t, STATE_ERROR, responseCodeMsg.getCode(), responseCodeMsg.getMessage() );
+    public static <T> ResponseData<T> error(T t, ResponseCodeMsg responseCodeMsg) {
+        return new ResponseData<T>( t, STATE_ERROR, responseCodeMsg.getCode(), responseCodeMsg.getLocalizedMessage() );
     }
 
     /**
@@ -354,8 +354,8 @@ public class ResponseData<T> {
      * @return
      * @param <T>
      */
-    public static <T> ResponseData<T> errorCode(ResponseCode responseCodeMsg) {
-        return new ResponseData<T>( null, STATE_ERROR, responseCodeMsg.getCode(), responseCodeMsg.getMessage() );
+    public static <T> ResponseData<T> errorCode(ResponseCodeMsg responseCodeMsg) {
+        return new ResponseData<T>( null, STATE_ERROR, responseCodeMsg.getCode(), responseCodeMsg.getLocalizedMessage() );
     }
 
     /**
@@ -403,8 +403,8 @@ public class ResponseData<T> {
      * @return
      * @param <T>
      */
-    public static <T> ResponseData<T> fatal(T t, ResponseCode responseCodeMsg) {
-        return new ResponseData<T>( t, STATE_FATAL, responseCodeMsg.getCode(), responseCodeMsg.getMessage() );
+    public static <T> ResponseData<T> fatal(T t, ResponseCodeMsg responseCodeMsg) {
+        return new ResponseData<T>( t, STATE_FATAL, responseCodeMsg.getCode(), responseCodeMsg.getLocalizedMessage() );
     }
 
     /**
@@ -433,8 +433,8 @@ public class ResponseData<T> {
      * @return
      * @param <T>
      */
-    public static <T> ResponseData<T> fatalCode(ResponseCode responseCodeMsg) {
-        return new ResponseData<T>( null, STATE_FATAL, responseCodeMsg.getCode(), responseCodeMsg.getMessage() );
+    public static <T> ResponseData<T> fatalCode(ResponseCodeMsg responseCodeMsg) {
+        return new ResponseData<T>( null, STATE_FATAL, responseCodeMsg.getCode(), responseCodeMsg.getLocalizedMessage() );
     }
 
     /**

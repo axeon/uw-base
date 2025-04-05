@@ -10,7 +10,7 @@ import java.util.Locale;
  *
  * @author axeon
  */
-public interface ResponseCode {
+public interface ResponseCodeMsg {
 
     /**
      * 获取响应码.
@@ -51,7 +51,7 @@ public interface ResponseCode {
      * @param params 参数数组
      * @return
      */
-    default String getI18Message(Locale locale, Object... params) {
+    default String getLocalizedMessage(Locale locale, Object... params) {
         String message = getMessage();
         if (getMessageSource() != null) {
             try {
@@ -72,8 +72,8 @@ public interface ResponseCode {
      * @param params 参数数组
      * @return
      */
-    default String getI18Message(Object... params) {
-        return getI18Message( LocaleContextHolder.getLocale(), params );
+    default String getLocalizedMessage(Object... params) {
+        return getLocalizedMessage( LocaleContextHolder.getLocale(), params );
     }
 
     /**
@@ -81,8 +81,8 @@ public interface ResponseCode {
      *
      * @return
      */
-    default String getI18Message() {
-        return getI18Message( LocaleContextHolder.getLocale(), null );
+    default String getLocalizedMessage() {
+        return getLocalizedMessage( LocaleContextHolder.getLocale(), null );
     }
 
 }

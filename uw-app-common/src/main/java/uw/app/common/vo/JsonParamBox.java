@@ -12,23 +12,26 @@ import java.util.Map;
 
 
 /**
- * 配置参数盒子类。
+ * Json配置参数盒子。
  * 使用Json保存配置信息，同时支持强类型校验和参数获取。
  */
-public class ConfigParamBox {
+public class JsonParamBox {
 
     /**
      * 空的配置参数盒子。
      */
-    public static final ConfigParamBox EMPTY_PARAM_BOX = new ConfigParamBox( new HashMap<>( 0 ) );
-    private static final Logger logger = LoggerFactory.getLogger( ConfigParamBox.class );
+    public static final JsonParamBox EMPTY_PARAM_BOX = new JsonParamBox( new HashMap<>( 0 ) );
+    /**
+     * 日志记录器。
+     */
+    private static final Logger logger = LoggerFactory.getLogger( JsonParamBox.class );
     /**
      * 配置混合Map。
      */
     public final Map<String, String> configMixMap;
 
 
-    public ConfigParamBox(Map<String, String> configMixMap) {
+    public JsonParamBox(Map<String, String> configMixMap) {
         this.configMixMap = configMixMap;
     }
 

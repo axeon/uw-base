@@ -3,13 +3,13 @@ package uw.app.common.constant;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import uw.common.dto.ResponseCodeMsg;
+import uw.common.dto.ResponseCode;
 
 /**
  * 通用返回代码。
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum CommonResponseCode implements ResponseCodeMsg {
+public enum CommonResponseCode implements ResponseCode {
 
     COMMON_SAVE_ERROR( "数据创建失败！" ),
     COMMON_UPDATE_ERROR( "数据更新失败！" ),

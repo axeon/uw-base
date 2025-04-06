@@ -35,6 +35,12 @@ public interface ResponseCode {
         return null;
     }
 
+    /**
+     * 获取响应消息。
+     *
+     * @param params 参数数组
+     * @return
+     */
     default String getMessage(Object... params) {
         String message = getMessage();
         if (params == null || params.length == 0) {

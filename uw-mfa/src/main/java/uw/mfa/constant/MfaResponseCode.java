@@ -3,6 +3,7 @@ package uw.mfa.constant;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import uw.common.dto.ResponseCode;
+import uw.common.util.EnumUtils;
 
 /**
  * 登录错误信息。
@@ -65,11 +66,17 @@ public enum MfaResponseCode implements ResponseCode {
     }};
 
     /**
+     * 响应码。
+     */
+    private final String code;
+
+    /**
      * 错误信息。
      */
     private final String message;
 
     MfaResponseCode(String message) {
+        this.code = EnumUtils.enumNameToDotCase( this.name() );
         this.message = message;
     }
 
@@ -80,7 +87,7 @@ public enum MfaResponseCode implements ResponseCode {
      */
     @Override
     public String getCode() {
-        return name();
+        return code;
     }
 
     /**

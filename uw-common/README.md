@@ -91,3 +91,6 @@ AESUtils是一个非常简单的AES工具类，主要用于AES加密和解密。
 ## DigestUtils 签名工具类
 DigestUtils是一个非常简单的摘要工具类，主要用于签名验证。
 
+## EnumUtils 枚举工具类
+EnumUtils是一个非常简单的枚举工具类，主要用于枚举的转换。
+

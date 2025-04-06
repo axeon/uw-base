@@ -576,7 +576,7 @@ public class ResponseData<T> {
      */
     @JsonIgnore
     public boolean isError() {
-        return STATE_ERROR.equals( this.state );
+        return STATE_ERROR.equals( this.state )|| STATE_FATAL.equals( this.state );
     }
 
     /**

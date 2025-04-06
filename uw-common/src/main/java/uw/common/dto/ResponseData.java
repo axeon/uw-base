@@ -164,6 +164,18 @@ public class ResponseData<T> {
     }
 
     /**
+     * 带结果、代码和消息的成功返回值，支持参数化消息格式。
+     * @param t 返回数据
+     * @param responseCode 响应代码对象
+     * @param params 用于格式化消息的参数（如i18n占位符替换）
+     * @param <T> 泛型类型
+     * @return ResponseData实例
+     */
+    public static <T> ResponseData<T> success(T t, ResponseCode responseCode, Object... params) {
+        return new ResponseData<>(t, STATE_SUCCESS, responseCode.getCode(), responseCode.getLocalizedMessage(params));
+    }
+
+    /**
      * 带代码的成功返回值。
      *
      * @param code
@@ -190,6 +202,17 @@ public class ResponseData<T> {
      */
     public static <T> ResponseData<T> successCode(ResponseCode responseCode) {
         return new ResponseData<T>( null, STATE_SUCCESS, responseCode.getCode(), responseCode.getLocalizedMessage() );
+    }
+
+    /**
+     * 带代码和消息的成功返回值，支持参数化消息格式。
+     * @param responseCode 响应代码对象
+     * @param params 用于格式化消息的参数（如i18n占位符替换）
+     * @param <T> 泛型类型
+     * @return ResponseData实例
+     */
+    public static <T> ResponseData<T> successCode(ResponseCode responseCode, Object... params) {
+        return new ResponseData<>(null, STATE_SUCCESS, responseCode.getCode(), responseCode.getLocalizedMessage(params));
     }
 
     /**
@@ -250,6 +273,18 @@ public class ResponseData<T> {
     }
 
     /**
+     * 带结果、代码和消息的警告返回值，支持参数化消息格式。
+     * @param t 返回数据
+     * @param responseCode 响应代码对象
+     * @param params 用于格式化消息的参数（如i18n占位符替换）
+     * @param <T> 泛型类型
+     * @return ResponseData实例
+     */
+    public static <T> ResponseData<T> warn(T t, ResponseCode responseCode, Object... params) {
+        return new ResponseData<>(t, STATE_WARN, responseCode.getCode(), responseCode.getLocalizedMessage(params));
+    }
+
+    /**
      * 带代码的警告返回值。
      *
      * @param code
@@ -277,6 +312,17 @@ public class ResponseData<T> {
      */
     public static <T> ResponseData<T> warnCode(ResponseCode responseCode) {
         return new ResponseData<T>( null, STATE_WARN, responseCode.getCode(), responseCode.getLocalizedMessage() );
+    }
+
+    /**
+     * 带代码和消息的警告返回值，支持参数化消息格式。
+     * @param responseCode 响应代码对象
+     * @param params 用于格式化消息的参数（如i18n占位符替换）
+     * @param <T> 泛型类型
+     * @return ResponseData实例
+     */
+    public static <T> ResponseData<T> warnCode(ResponseCode responseCode, Object... params) {
+        return new ResponseData<>(null, STATE_WARN, responseCode.getCode(), responseCode.getLocalizedMessage(params));
     }
 
     /**
@@ -329,6 +375,18 @@ public class ResponseData<T> {
     }
 
     /**
+     * 带结果、代码和消息的失败返回值，支持参数化消息格式。
+     * @param t 返回数据
+     * @param responseCode 响应代码对象
+     * @param params 用于格式化消息的参数（如i18n占位符替换）
+     * @param <T> 泛型类型
+     * @return ResponseData实例
+     */
+    public static <T> ResponseData<T> error(T t, ResponseCode responseCode, Object... params) {
+        return new ResponseData<>(t, STATE_ERROR, responseCode.getCode(), responseCode.getLocalizedMessage(params));
+    }
+
+    /**
      * 带代码的失败返回值。
      *
      * @param code
@@ -356,6 +414,17 @@ public class ResponseData<T> {
      */
     public static <T> ResponseData<T> errorCode(ResponseCode responseCode) {
         return new ResponseData<T>( null, STATE_ERROR, responseCode.getCode(), responseCode.getLocalizedMessage() );
+    }
+
+    /**
+     * 带代码和消息的失败返回值，支持参数化消息格式。
+     * @param responseCode 响应代码对象
+     * @param params 用于格式化消息的参数（如i18n占位符替换）
+     * @param <T> 泛型类型
+     * @return ResponseData实例
+     */
+    public static <T> ResponseData<T> errorCode(ResponseCode responseCode, Object... params) {
+        return new ResponseData<>(null, STATE_ERROR, responseCode.getCode(), responseCode.getLocalizedMessage(params));
     }
 
     /**
@@ -408,6 +477,18 @@ public class ResponseData<T> {
     }
 
     /**
+     * 带结果、代码和消息的严重错误返回值，支持参数化消息格式。
+     * @param t 返回数据
+     * @param responseCode 响应代码对象
+     * @param params 用于格式化消息的参数（如i18n占位符替换）
+     * @param <T> 泛型类型
+     * @return ResponseData实例
+     */
+    public static <T> ResponseData<T> fatal(T t, ResponseCode responseCode, Object... params) {
+        return new ResponseData<>(t, STATE_FATAL, responseCode.getCode(), responseCode.getLocalizedMessage(params));
+    }
+
+    /**
      * 带代码的严重错误返回值。
      *
      * @param code
@@ -435,6 +516,17 @@ public class ResponseData<T> {
      */
     public static <T> ResponseData<T> fatalCode(ResponseCode responseCode) {
         return new ResponseData<T>( null, STATE_FATAL, responseCode.getCode(), responseCode.getLocalizedMessage() );
+    }
+
+    /**
+     * 带代码和消息的严重错误返回值，支持参数化消息格式。
+     * @param responseCode 响应代码对象
+     * @param params 用于格式化消息的参数（如i18n占位符替换）
+     * @param <T> 泛型类型
+     * @return ResponseData实例
+     */
+    public static <T> ResponseData<T> fatalCode(ResponseCode responseCode, Object... params) {
+        return new ResponseData<>(null, STATE_FATAL, responseCode.getCode(), responseCode.getLocalizedMessage(params));
     }
 
     /**

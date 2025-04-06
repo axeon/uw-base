@@ -5,6 +5,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.crypto.Cipher;
 
+/**
+ * MscUtils。
+ */
 public class MscUtils {
 
     private static final Logger log = LoggerFactory.getLogger( MscUtils.class );

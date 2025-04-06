@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import uw.common.dto.ResponseCode;
+import uw.common.util.EnumUtils;
 
 /**
  * 通用返回代码。
@@ -28,11 +29,16 @@ public enum CommonResponseCode implements ResponseCode {
     }};
 
     /**
+     * 响应码。
+     */
+    private final String code;
+    /**
      * 错误信息。
      */
     private final String message;
 
     CommonResponseCode(String message) {
+        this.code = EnumUtils.enumNameToDotCase( this.name() );
         this.message = message;
     }
 
@@ -43,9 +49,14 @@ public enum CommonResponseCode implements ResponseCode {
      */
     @Override
     public String getCode() {
-        return name();
+        return code;
     }
 
+    /**
+     * 获取错误信息
+     *
+     * @return
+     */
     @Override
     public String getMessage() {
         return message;

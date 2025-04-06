@@ -24,13 +24,14 @@ uw-app-common是基于uw框架web端的公共库。
 同时提供了对应的QueryParam和entity，方便后期查询。
 
 ## JSON配置管理
-通过JsonParamHelper和JsonParam，可以方便的将JSON配置管理到数据库中，方便后期查询。
-通过对JsonParam对参数进行定义，实际存储可使用Map结构。
+通过JsonConfigHelper和JsonConfigParam，可以方便的将JSON配置管理到数据库中，方便后期查询。
+通过对JsonConfigParam对参数进行定义，实际存储可使用Map结构。
 同时提供了配置参数读取的强类型方法，提供了强类型的校验方法。
-* JsonParamHelper: 可以方便的将JSON配置管理到数据库中，方便后期查询。
-* JsonParamBox: 封装一组配置数据到一个盒子中，提供参数校验和类型化读取方法。
-* JsonParam: Json配置参数定义类。封装了类型，变量key，变量默认值，参数名,参数描述，校验规则等信息。
-* JsonParamType: Json配置参数类型。
+* JsonConfigHelper: 可以方便的将JSON配置管理到数据库中，方便后期查询。
+* JsonConfigBox: 封装一组配置数据到一个盒子中，提供参数校验和类型化读取方法。
+* JsonConfigParam: Json配置参数定义接口。封装了类型，变量key，变量默认值，参数名,参数描述，校验规则等信息。
+* JsonConfigParam.ParamType: Json配置参数类型。
+* JsonConfigParam.ParamData: Json配置参数数据。
 
 ## i18n国际化
 针对i18n国际化，提供了uw-app-common的i18n国际化支持。

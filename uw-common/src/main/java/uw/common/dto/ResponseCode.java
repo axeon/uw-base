@@ -14,6 +14,7 @@ public interface ResponseCode {
 
     /**
      * 获取配置前缀.
+     *
      * @return
      */
     String configPrefix();
@@ -67,14 +68,19 @@ public interface ResponseCode {
         String message = getMessage();
         if (getMessageSource() != null) {
             try {
-                message = getMessageSource().getMessage( configPrefix()+'.'+getCode(), null, locale );
+                message = getMessageSource().getMessage( configPrefix() + '.' + getCode(), null, locale );
             } catch (Exception ignored) {
             }
         }
         if (params == null || params.length == 0) {
             return message;
         } else {
-            return String.format( message, params );
+            // 防止异常
+            try {
+                return String.format( message, params );
+            } catch (Exception ignored) {
+                return message;
+            }
         }
     }
 

@@ -26,23 +26,23 @@ public class AuthPermService {
     /**
      * 拒绝权限返回。
      */
-    private static final ResponseData RESPONSE_FORBIDDEN = new ResponseData( ResponseData.STATE_ERROR, AuthConstants.HTTP_FORBIDDEN_CODE, "No Permission!" );
+    private static final ResponseData RESPONSE_FORBIDDEN = new ResponseData( ResponseData.STATE_ERROR, AuthServiceConstants.HTTP_FORBIDDEN_CODE, "No Permission!" );
 
     /**
      * 服务不可用返回。
      */
-    private static final ResponseData RESPONSE_SERVICE_UNAVAILABLE = new ResponseData( ResponseData.STATE_ERROR, AuthConstants.HTTP_SERVICE_UNAVAILABLE_CODE, "Service " +
+    private static final ResponseData RESPONSE_SERVICE_UNAVAILABLE = new ResponseData( ResponseData.STATE_ERROR, AuthServiceConstants.HTTP_SERVICE_UNAVAILABLE_CODE, "Service " +
             "Unavailable!" );
 
     /**
      * 需要升级返回。
      */
-    private static final ResponseData RESPONSE_UPGRADE_REQUIRED = new ResponseData( ResponseData.STATE_WARN, AuthConstants.HTTP_UPGRADE_REQUIRED_CODE, "Upgrade Required!" );
+    private static final ResponseData RESPONSE_UPGRADE_REQUIRED = new ResponseData( ResponseData.STATE_WARN, AuthServiceConstants.HTTP_UPGRADE_REQUIRED_CODE, "Upgrade Required!" );
 
     /**
      * 需要支付返回。
      */
-    private static final ResponseData RESPONSE_PAYMENT_REQUIRED = new ResponseData( ResponseData.STATE_WARN, AuthConstants.HTTP_PAYMENT_REQUIRED_CODE, "Payment Required!" );
+    private static final ResponseData RESPONSE_PAYMENT_REQUIRED = new ResponseData( ResponseData.STATE_WARN, AuthServiceConstants.HTTP_PAYMENT_REQUIRED_CODE, "Payment Required!" );
 
     /**
      * 应用权限数据,初始化载入。
@@ -123,7 +123,7 @@ public class AuthPermService {
         //检测应用权限表。
         if (appPermMap == null) {
             logger.warn( "应用权限数据尚未初始化完成，请稍后重试!" );
-            return ResponseData.warnCode( AuthConstants.HTTP_SERVICE_UNAVAILABLE_CODE, "!!!AuthPermService is loading..." );
+            return ResponseData.warnCode( AuthServiceConstants.HTTP_SERVICE_UNAVAILABLE_CODE, "!!!AuthPermService is loading..." );
         }
         //根据用户类型进行权限验证。
         switch (permAuthType) {

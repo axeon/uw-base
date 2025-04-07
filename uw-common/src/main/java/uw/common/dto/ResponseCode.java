@@ -13,6 +13,12 @@ import java.util.Locale;
 public interface ResponseCode {
 
     /**
+     * 获取配置前缀.
+     * @return
+     */
+    String configPrefix();
+
+    /**
      * 获取响应码.
      *
      * @return
@@ -61,7 +67,7 @@ public interface ResponseCode {
         String message = getMessage();
         if (getMessageSource() != null) {
             try {
-                message = getMessageSource().getMessage( getCode(), null, locale );
+                message = getMessageSource().getMessage( configPrefix()+'.'+getCode(), null, locale );
             } catch (Exception ignored) {
             }
         }
@@ -88,7 +94,7 @@ public interface ResponseCode {
      * @return
      */
     default String getLocalizedMessage() {
-        return getLocalizedMessage( LocaleContextHolder.getLocale(), null );
+        return getLocalizedMessage( LocaleContextHolder.getLocale(), (Object) null );
     }
 
 }

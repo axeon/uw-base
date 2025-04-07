@@ -1,4 +1,4 @@
-package uw.mfa.ipblock;
+package uw.common.util.ipblock;
 
 
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package uw.mfa.ipblock;
+package uw.common.util.ipblock;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.commons.lang3.StringUtils;

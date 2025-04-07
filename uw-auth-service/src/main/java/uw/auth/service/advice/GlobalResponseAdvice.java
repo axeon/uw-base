@@ -111,7 +111,7 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
                     mscActionLog.setOpState( ResponseData.STATE_ERROR );
                     mscActionLog.setOpLog( msg );
                 }
-                return ResponseData.error( body, status, msg );
+                return ResponseData.errorCode( "http.code."+status, msg );
             }
         } else if (returnType.getParameterType().equals( String.class )) {
             //字符串类型需要单独包裹。

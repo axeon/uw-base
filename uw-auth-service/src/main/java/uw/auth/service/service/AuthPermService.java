@@ -3,10 +3,7 @@ package uw.auth.service.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.auth.service.annotation.MscPermDeclare;
-import uw.auth.service.constant.AuthConstants;
-import uw.auth.service.constant.AuthType;
-import uw.auth.service.constant.TokenType;
-import uw.auth.service.constant.UserType;
+import uw.auth.service.constant.*;
 import uw.auth.service.token.AuthTokenData;
 import uw.common.dto.ResponseData;
 
@@ -126,7 +123,7 @@ public class AuthPermService {
         //检测应用权限表。
         if (appPermMap == null) {
             logger.warn( "应用权限数据尚未初始化完成，请稍后重试!" );
-            return ResponseData.warnCode( AuthConstants.HTTP_SERVICE_UNAVAILABLE_CODE, "应用权限数据尚未初始化完成，请稍后重试!" );
+            return ResponseData.warnCode( AuthServiceResponseCode.AUTH_SERVICE_LOADING_WARN );
         }
         //根据用户类型进行权限验证。
         switch (permAuthType) {

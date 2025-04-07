@@ -12,11 +12,11 @@ import uw.common.util.EnumUtils;
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum CommonResponseCode implements ResponseCode {
 
-    COMMON_SAVE_ERROR( "数据创建失败！" ),
-    COMMON_UPDATE_ERROR( "数据更新失败！" ),
-    COMMON_EXIST_ERROR( "数据已存在！" ),
-    COMMON_NOT_FOUND_ERROR( "数据未找到！" ),
-    COMMON_STATE_ERROR( "数据状态错误！" ),
+    ENTITY_SAVE_ERROR( "数据创建失败！" ),
+    ENTITY_UPDATE_ERROR( "数据更新失败！" ),
+    ENTITY_EXIST_ERROR( "数据已存在！" ),
+    ENTITY_NOT_FOUND_ERROR( "数据未找到！" ),
+    ENTITY_STATE_ERROR( "数据状态错误！" ),
     ;
 
     /**
@@ -40,6 +40,16 @@ public enum CommonResponseCode implements ResponseCode {
     CommonResponseCode(String message) {
         this.code = EnumUtils.enumNameToDotCase( this.name() );
         this.message = message;
+    }
+
+    /**
+     * 获取配置前缀.
+     *
+     * @return
+     */
+    @Override
+    public String configPrefix() {
+        return "uw.common";
     }
 
     /**

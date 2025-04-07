@@ -6,10 +6,10 @@ import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import uw.common.dto.ResponseData;
+import uw.common.util.ipblock.IpMatchUtils;
+import uw.common.util.ipblock.IpRange;
 import uw.mfa.conf.UwMfaProperties;
 import uw.mfa.constant.MfaResponseCode;
-import uw.mfa.ipblock.IpMatchUtils;
-import uw.mfa.ipblock.IpRange;
 import uw.mfa.util.RedisKeyUtils;
 
 import java.util.List;
@@ -87,11 +87,9 @@ public class MfaIPLimitHelper {
                 int ic = Integer.parseInt( ics );
                 if (ic >= uwMfaProperties.getIpLimitErrorTimes()) {
                     long ttl = mfaRedisTemplate.getExpire( key, TimeUnit.MINUTES ) + 1;
-                    return ResponseData.errorCode( MfaResponseCode.MFA_IP_LIMIT_ERROR.getCode(), String.format( MfaResponseCode.MFA_IP_LIMIT_ERROR.getMessage(), userIp,
-                            (uwMfaProperties.getIpLimitSeconds() / 60), ic, ttl ) );
+                    return ResponseData.errorCode( MfaResponseCode.IP_LIMIT_ERROR, userIp, (uwMfaProperties.getIpLimitSeconds() / 60), ic, ttl );
                 } else if (ic >= uwMfaProperties.getIpLimitWarnTimes()) {
-                    return ResponseData.warnCode( MfaResponseCode.MFA_IP_LIMIT_WARN.getCode(), String.format( MfaResponseCode.MFA_IP_LIMIT_WARN.getMessage(), userIp,
-                            (uwMfaProperties.getIpLimitSeconds() / 60), ic ) );
+                    return ResponseData.warnCode( MfaResponseCode.IP_LIMIT_WARN, userIp, (uwMfaProperties.getIpLimitSeconds() / 60), ic );
                 }
             }
         }

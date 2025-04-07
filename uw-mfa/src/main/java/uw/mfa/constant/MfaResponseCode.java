@@ -12,48 +12,48 @@ import uw.common.util.EnumUtils;
 public enum MfaResponseCode implements ResponseCode {
 
     // ip限制
-    MFA_IP_AUTH_ERROR( "你的IP[%s]不在授权IP范围内! " ),
+    IP_AUTH_ERROR( "你的IP[%s]不在授权IP范围内! " ),
 
-    MFA_IP_LIMIT_WARN( "您的IP[%s]已经在[%s]分钟内连续[%s]次登录失败! " ),
+    IP_LIMIT_WARN( "您的IP[%s]已经在[%s]分钟内连续[%s]次登录失败! " ),
 
-    MFA_IP_LIMIT_ERROR( "您的IP[%s]已经在[%s]分钟内连续[%s]次登录失败! 请[%s]分钟后再试! " ),
+    IP_LIMIT_ERROR( "您的IP[%s]已经在[%s]分钟内连续[%s]次登录失败! 请[%s]分钟后再试! " ),
 
     // Captcha
-    MFA_CAPTCHA_FEE_ERROR( "欠费! " ),
+    CAPTCHA_FEE_ERROR( "欠费! " ),
 
-    MFA_CAPTCHA_SEND_LIMIT_ERROR( "您的IP[%s]已经在[%s]分钟内连续[%s]次发送验证图片! 请[%s]分钟后再试! " ),
+    CAPTCHA_SEND_LIMIT_ERROR( "您的IP[%s]已经在[%s]分钟内连续[%s]次发送验证图片! 请[%s]分钟后再试! " ),
 
-    MFA_CAPTCHA_GENERATE_ERROR( "图形验证码生成错误! " ),
+    CAPTCHA_GENERATE_ERROR( "图形验证码生成错误! " ),
 
-    MFA_CAPTCHA_LOST_ERROR( "图形验证码信息丢失! " ),
+    CAPTCHA_LOST_ERROR( "图形验证码信息丢失! " ),
 
-    MFA_CAPTCHA_VERIFY_ERROR( "图形识别码验证错误! " ),
+    CAPTCHA_VERIFY_ERROR( "图形识别码验证错误! " ),
 
     // 设备码
-    MFA_DEVICE_CODE_FEE_ERROR( "运营商欠费! " ),
+    DEVICE_CODE_FEE_ERROR( "运营商欠费! " ),
 
-    MFA_DEVICE_CODE_SEND_LIMIT_ERROR( "您的IP[%s]已经在[%s]分钟内连续[%s]次发送验证码! 请[%s]分钟后再试! " ),
+    DEVICE_CODE_SEND_LIMIT_ERROR( "您的IP[%s]已经在[%s]分钟内连续[%s]次发送验证码! 请[%s]分钟后再试! " ),
 
-    MFA_DEVICE_CODE_SEND_ERROR( "设备认证码发送失败! " ),
+    DEVICE_CODE_SEND_ERROR( "设备认证码发送失败! " ),
 
-    MFA_DEVICE_CODE_LOST_ERROR( "设备认证码信息丢失! " ),
+    DEVICE_CODE_LOST_ERROR( "设备认证码信息丢失! " ),
 
-    MFA_DEVICE_CODE_VERIFY_ERROR( "设备认证码验证错误! " ),
+    DEVICE_CODE_VERIFY_ERROR( "设备认证码验证错误! " ),
 
-    MFA_DEVICE_TYPE_ERROR( "设备类型错误! " ),
+    DEVICE_TYPE_ERROR( "设备类型错误! " ),
 
     // TOTP
-    MFA_TOTP_SECRET_GEN_ERROR( "TOTP密钥生成失败! " ),
+    TOTP_SECRET_GEN_ERROR( "TOTP密钥生成失败! " ),
 
-    MFA_TOTP_SECRET_MATCH_ERROR( "TOTP密钥不匹配! " ),
+    TOTP_SECRET_MATCH_ERROR( "TOTP密钥不匹配! " ),
 
-    MFA_TOTP_SECRET_LOST_ERROR( "TOTP密钥信息丢失! " ),
+    TOTP_SECRET_LOST_ERROR( "TOTP密钥信息丢失! " ),
 
-    MFA_TOTP_CODE_LOST_ERROR( "TOTP认证码信息丢失! " ),
+    TOTP_CODE_LOST_ERROR( "TOTP认证码信息丢失! " ),
 
-    MFA_TOTP_CODE_VERIFY_ERROR( "TOTP认证码验证错误! " ),
+    TOTP_CODE_VERIFY_ERROR( "TOTP认证码验证错误! " ),
 
-    MFA_TOTP_RECOVERY_CODE_VERIFY_ERROR( "TOTP恢复认证码验证错误! " ),
+    TOTP_RECOVERY_CODE_VERIFY_ERROR( "TOTP恢复认证码验证错误! " ),
 
     ;
     /**
@@ -78,6 +78,16 @@ public enum MfaResponseCode implements ResponseCode {
     MfaResponseCode(String message) {
         this.code = EnumUtils.enumNameToDotCase( this.name() );
         this.message = message;
+    }
+
+    /**
+     * 获取配置前缀.
+     *
+     * @return
+     */
+    @Override
+    public String configPrefix() {
+        return "uw.mfa";
     }
 
     /**

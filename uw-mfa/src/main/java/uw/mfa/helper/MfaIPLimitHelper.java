@@ -6,8 +6,7 @@ import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import uw.common.dto.ResponseData;
-import uw.common.util.ipblock.IpMatchUtils;
-import uw.common.util.ipblock.IpRange;
+import uw.common.util.IpMatchUtils;
 import uw.mfa.conf.UwMfaProperties;
 import uw.mfa.constant.MfaResponseCode;
 import uw.mfa.util.RedisKeyUtils;
@@ -39,7 +38,7 @@ public class MfaIPLimitHelper {
     /**
      * ip白名单。
      */
-    private static List<IpRange> ipWhiteList;
+    private static List<IpMatchUtils.IpRange> ipWhiteList;
 
     /**
      * 配置文件。

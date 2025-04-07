@@ -693,7 +693,7 @@ public class AuthServiceHelper {
      * @return
      */
     public static String getRemoteIp(HttpServletRequest request) {
-        return IpWebUtils.getTrueIp( request );
+        return IpWebUtils.getRealIpString( request );
     }
 
     /**
@@ -707,7 +707,7 @@ public class AuthServiceHelper {
             return null;
         }
         HttpServletRequest request = ((ServletRequestAttributes) attributes).getRequest();
-        return IpWebUtils.getTrueIp( request );
+        return IpWebUtils.getRealIpString( request );
     }
 
     /**

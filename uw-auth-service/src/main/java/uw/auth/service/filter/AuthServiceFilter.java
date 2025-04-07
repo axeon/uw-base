@@ -111,7 +111,7 @@ public class AuthServiceFilter implements Filter {
         //请求方法
         String method = httpServletRequest.getMethod();
         //远端IP
-        String remoteIp = IpWebUtils.getTrueIp( httpServletRequest );
+        String remoteIp = IpWebUtils.getRealIpString( httpServletRequest );
         //操作日志
         MscActionLog mscActionLog = null;
         //

@@ -53,7 +53,7 @@ public enum AuthServiceResponseCode implements ResponseCode {
      * @return
      */
     @Override
-    public String configPrefix() {
+    public String codePrefix() {
         return "uw.auth.service";
     }
 

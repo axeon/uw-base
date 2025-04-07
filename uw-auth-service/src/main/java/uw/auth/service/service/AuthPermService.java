@@ -123,7 +123,7 @@ public class AuthPermService {
         //检测应用权限表。
         if (appPermMap == null) {
             logger.warn( "应用权限数据尚未初始化完成，请稍后重试!" );
-            return ResponseData.warnCode( AuthServiceResponseCode.AUTH_SERVICE_LOADING_WARN );
+            return ResponseData.warnCode( AuthConstants.HTTP_SERVICE_UNAVAILABLE_CODE, "!!!AuthPermService is loading..." );
         }
         //根据用户类型进行权限验证。
         switch (permAuthType) {

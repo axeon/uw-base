@@ -125,7 +125,7 @@ public class AuthServiceFilter implements Filter {
             // 解析token
             ResponseData<AuthTokenData> authTokenDataResponse = AuthServiceHelper.parseRawToken( remoteIp, rawToken );
             // token异常直接抛出
-            if (!authTokenDataResponse.isNotSuccess()) {
+            if (authTokenDataResponse.isNotSuccess()) {
                 httpServletResponse.sendError( Integer.parseInt( authTokenDataResponse.getCode() ), authTokenDataResponse.getMsg() );
                 return;
             }
@@ -155,7 +155,7 @@ public class AuthServiceFilter implements Filter {
             // 权限鉴权
             ResponseData authPermResponse = authPermService.hasPerm( authTokenData, mscPermDeclare, permCode );
             // 鉴权异常直接抛出
-            if (!authPermResponse.isNotSuccess()) {
+            if (authPermResponse.isNotSuccess()) {
                 httpServletResponse.sendError( Integer.parseInt( authPermResponse.getCode() ), authPermResponse.getMsg() );
                 return;
             }

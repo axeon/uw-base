@@ -757,28 +757,28 @@ public class AuthServiceHelper {
      */
     public static ResponseData<AuthTokenData> parseRawToken(String ip, String bearerToken) {
         if (bearerToken == null) {
-            return ResponseData.errorCode( AuthServiceResponseCode.TOKEN_HEADER_ERROR );
+            return ResponseData.errorCode( AuthConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token header null." );
         }
         if (bearerToken.length() < AuthConstants.TOKEN_HEADER_PREFIX.length()) {
-            return ResponseData.errorCode( AuthServiceResponseCode.TOKEN_HEADER_ERROR, bearerToken );
+            return ResponseData.errorCode( AuthConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token header invalid. Header Data: " + bearerToken );
         }
         int tokenStart = AuthConstants.TOKEN_HEADER_PREFIX.length();
         //解析出token来
         String token = bearerToken.substring( tokenStart );
         int typeSeparator = token.indexOf( TOKEN_TYPE_SEPARATOR );
         if (typeSeparator == -1) {
-            return ResponseData.errorCode( AuthServiceResponseCode.TOKEN_ILLEGAL_ERROR, token );
+            return ResponseData.errorCode( AuthConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token parse illegal. Token: " + token );
         }
         //解析token信息。
         int userType = -1;
         try {
             userType = Integer.parseInt( token.substring( 0, typeSeparator ) );
         } catch (Exception e) {
-            return ResponseData.errorCode( AuthServiceResponseCode.TOKEN_INFO_MISMATCH_ERROR, token );
+            return ResponseData.errorCode( AuthConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token UserType parse illegal. Token: " + token );
         }
         //  检查用户类型映射
         if (!UserType.checkTypeValid( userType )) {
-            return ResponseData.errorCode( AuthServiceResponseCode.TOKEN_INFO_MISMATCH_ERROR, token );
+            return ResponseData.errorCode( AuthConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token UserType invalid. Token: " + token );
         }
         if (userType == UserType.ANYONE.getValue()) {
             return ResponseData.success( parseAnonymousToken( token.substring( typeSeparator + 1 ) ) );
@@ -786,7 +786,7 @@ public class AuthServiceHelper {
         //检查是否非法token请求，如果确认非法，则直接抛异常，引导用户重新登录。
         String invalidNotice = invalidTokenCache.getIfPresent( token );
         if (StringUtils.isNotBlank( invalidNotice )) {
-            return ResponseData.errorCode( AuthServiceResponseCode.TOKEN_INVALID_ERROR, token, invalidNotice );
+            return ResponseData.errorCode( AuthConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token[" + token + "] Invalid. Msg: " + invalidNotice );
         }
         //检查缓存中的token。
         AuthTokenData authTokenData = loadCachedTokenData( userType, token );
@@ -798,7 +798,7 @@ public class AuthServiceHelper {
                 putContextToken( ip, userType, token, authTokenData );
             } else {
                 //失败的token要缓存一下，防止有人乱试
-                invalidTokenCache.put( token, "INVALID. " + verifyResponse.getMsg() );
+                invalidTokenCache.put( token, verifyResponse.getMsg() );
                 //找不到的抛Token过期异常。
                 return verifyResponse;
             }
@@ -806,7 +806,7 @@ public class AuthServiceHelper {
         // 检查过期
         if (authTokenData.isExpired()) {
             invalidContextToken( userType, token );
-            return ResponseData.errorCode( AuthServiceResponseCode.TOKEN_EXPIRED_ERROR, token );
+            return ResponseData.errorCode( AuthConstants.HTTP_TOKEN_EXPIRED_CODE, "!Server AccessToken expired. Token: " + token );
         }
         return ResponseData.success( authTokenData );
     }

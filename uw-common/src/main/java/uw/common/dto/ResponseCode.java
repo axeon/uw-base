@@ -13,13 +13,6 @@ import java.util.Locale;
 public interface ResponseCode {
 
     /**
-     * 获取配置前缀.
-     *
-     * @return
-     */
-    String configPrefix();
-
-    /**
      * 获取响应码.
      *
      * @return
@@ -43,6 +36,15 @@ public interface ResponseCode {
     }
 
     /**
+     * 获取配置前缀.
+     *
+     * @return
+     */
+    default String codePrefix() {
+        return null;
+    }
+
+    /**
      * 获取响应消息。
      *
      * @param params 参数数组
@@ -58,6 +60,20 @@ public interface ResponseCode {
     }
 
     /**
+     * 获取完整响应码。
+     *
+     * @return
+     */
+    default String getFullCode() {
+        String code = getCode();
+        if (codePrefix() != null) {
+            return codePrefix() + '.' + code;
+        } else {
+            return code;
+        }
+    }
+
+    /**
      * 获取I18n响应消息。
      *
      * @param locale 语言环境
@@ -68,7 +84,7 @@ public interface ResponseCode {
         String message = getMessage();
         if (getMessageSource() != null) {
             try {
-                message = getMessageSource().getMessage( configPrefix() + '.' + getCode(), null, locale );
+                message = getMessageSource().getMessage( getCode(), null, locale );
             } catch (Exception ignored) {
             }
         }

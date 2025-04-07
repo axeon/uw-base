@@ -231,6 +231,9 @@ public class FusionCache {
      */
     public static <T> T get(String cacheName, Object key) {
         LoadingCache cache = getLocalCache( cacheName );
+        if (cache == null) {
+            return null;
+        }
         Object value = cache.get( key );
         if (value instanceof CacheProtectedValue failProtectValue) {
             if (failProtectValue.isExpired()) {

@@ -12,8 +12,9 @@ import uw.common.util.EnumUtils;
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum CommonResponseCode implements ResponseCode {
 
-    ENTITY_SAVE_ERROR( "数据创建失败！" ),
-    ENTITY_UPDATE_ERROR( "数据更新失败！" ),
+    ENTITY_LIST_ERROR( "数据列表获取失败！%s" ),
+    ENTITY_SAVE_ERROR( "数据创建失败！%s" ),
+    ENTITY_UPDATE_ERROR( "数据更新失败！%s" ),
     ENTITY_EXIST_ERROR( "数据已存在！" ),
     ENTITY_NOT_FOUND_ERROR( "数据未找到！" ),
     ENTITY_STATE_ERROR( "数据状态错误！" ),

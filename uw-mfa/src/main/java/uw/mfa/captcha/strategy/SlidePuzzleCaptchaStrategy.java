@@ -16,7 +16,7 @@ import java.awt.image.BufferedImage;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 滑动验证码
+ * 滑动Captcha
  */
 public class SlidePuzzleCaptchaStrategy implements CaptchaStrategy {
 
@@ -86,7 +86,7 @@ public class SlidePuzzleCaptchaStrategy implements CaptchaStrategy {
         CaptchaPoint pointResult = null;
         CaptchaPoint pointAnswer = null;
         try {
-            // 后端存储的验证码答案
+            // 后端存储的Captcha答案
             pointResult = JsonUtils.parse( captchaResult, CaptchaPoint.class );
             // 前端的回答
             pointAnswer = JsonUtils.parse( answerData, CaptchaPoint.class );

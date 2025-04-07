@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 图形验证码服务帮助类
+ * 图形Captcha服务帮助类
  */
 public class CaptchaService {
 
@@ -62,9 +62,9 @@ public class CaptchaService {
     }
 
     /**
-     * 获取验证码
+     * 生成Captcha数据。
      *
-     * @param captchaId 图形验证码id
+     * @param captchaId 图形CaptchaId
      * @return
      */
     public ResponseData<CaptchaData> generateCaptcha(String captchaId) {
@@ -91,11 +91,11 @@ public class CaptchaService {
     }
 
     /**
-     * 校验验证码
+     * 校验Captcha
      *
-     * @param captchaId     图形验证码id
-     * @param captchaSign   验证码回答
-     * @param captchaResult 验证码答案
+     * @param captchaId     图形CaptchaId
+     * @param captchaSign   Captcha回答
+     * @param captchaResult Captcha答案
      * @return
      */
     public ResponseData verifyCaptcha(String captchaId, String captchaSign, String captchaResult) {
@@ -115,7 +115,7 @@ public class CaptchaService {
         String captchaAnswerStr = CaptchaAESUtils.aesDecrypt( captchaSign, captchaId );
         // 前端回答的答案
         CaptchaAnswer captchaAnswer = JsonUtils.parse( captchaAnswerStr, CaptchaAnswer.class );
-        // 校验验证码类型是否正确
+        // 校验Captcha类型是否正确
         String captchaType = captchaAnswer.getCaptchaType();
         CaptchaStrategy captchaStrategy = getCaptchaStrategy( captchaType );
         if (captchaStrategy == null) {
@@ -137,7 +137,7 @@ public class CaptchaService {
      * @return
      */
     private static boolean humanDetect(CaptchaStrategy captchaStrategy, CaptchaAnswer captchaAnswer) {
-        // 前端识别验证码操作的时间
+        // 前端识别Captcha操作的时间
         long opTime = captchaAnswer.getOpTime();
         // 如果识别时间达不到要求使用的时间
         if (captchaStrategy.humanOpTime() > opTime) {
@@ -148,7 +148,7 @@ public class CaptchaService {
     }
 
     /**
-     * 获取验证码服务
+     * 生成Catpcha服务
      *
      * @param captchaType 验证类型
      * @return

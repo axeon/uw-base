@@ -28,9 +28,9 @@ public class RotatePuzzleCaptchaStrategy implements CaptchaStrategy {
     protected static int ROTATE_OFFSET = 10;
 
     /**
-     * 获取验证码
+     * 生成Catpcha
      *
-     * @param captchaId 行为验证码id
+     * @param captchaId
      * @return
      */
     @Override
@@ -80,7 +80,7 @@ public class RotatePuzzleCaptchaStrategy implements CaptchaStrategy {
     }
 
     /**
-     * 校验验证码
+     * 校验Captcha
      *
      * @param answerData
      * @param captchaResult

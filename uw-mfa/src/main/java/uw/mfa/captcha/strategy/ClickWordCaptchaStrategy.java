@@ -18,7 +18,7 @@ import java.awt.image.BufferedImage;
 import java.util.*;
 
 /**
- * 点选文字验证码
+ * 点选文字Captcha
  */
 public class ClickWordCaptchaStrategy implements CaptchaStrategy {
 

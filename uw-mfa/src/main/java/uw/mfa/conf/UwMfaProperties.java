@@ -17,7 +17,7 @@ public class UwMfaProperties {
     private long ipLimitSeconds = 600L;
 
     /**
-     * IP限制报警次数，默认3次才弹验证码。
+     * IP限制报警次数，默认3次才弹Captcha。
      */
     private long ipLimitWarnTimes = 3L;
 
@@ -32,7 +32,7 @@ public class UwMfaProperties {
     private String captchaStrategies = "StringCaptchaStrategy,CalculateCaptchaStrategy,SlidePuzzleCaptchaStrategy,ClickWordCaptchaStrategy,RotatePuzzleCaptchaStrategy";
 
     /**
-     * 验证码答案过期时间，默认3分钟。
+     * Captcha答案过期时间，默认3分钟。
      */
     private long captchaExpiredSeconds = 180L;
 
@@ -69,12 +69,12 @@ public class UwMfaProperties {
     /**
      * 设备识别码通知标题。
      */
-    private String deviceNotifySubject = "验证码";
+    private String deviceNotifySubject = "设备识别码";
 
     /**
      * 设备识别码通知内容。
      */
-    private String deviceNotifyContent = "验证码[$DEVICE_CODE$]，$EXPIRE_MINUTES$分钟后过期，如非本人操作，请忽略此信息。";
+    private String deviceNotifyContent = "设备识别码[$DEVICE_CODE$]，$EXPIRE_MINUTES$分钟后过期，如非本人操作，请忽略此信息。";
 
     /**
      * 设备识别码短信发送API。

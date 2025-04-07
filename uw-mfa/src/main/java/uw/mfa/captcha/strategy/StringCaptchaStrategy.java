@@ -18,7 +18,7 @@ import java.awt.image.BufferedImage;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 描述: 字符串验证码
+ * 描述: 字符串Captcha
  */
 public class StringCaptchaStrategy implements CaptchaStrategy {
 
@@ -67,9 +67,9 @@ public class StringCaptchaStrategy implements CaptchaStrategy {
     private static final char[] CHAR_ARRAY = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
 
     /**
-     * 获取验证码
+     * 生成Catpcha
      *
-     * @param captchaId 行为验证码id
+     * @param captchaId
      * @return
      */
     @Override
@@ -89,7 +89,7 @@ public class StringCaptchaStrategy implements CaptchaStrategy {
     }
 
     /**
-     * 校验验证码
+     * 校验Captcha
      *
      * @param answerData
      * @param captchaResult

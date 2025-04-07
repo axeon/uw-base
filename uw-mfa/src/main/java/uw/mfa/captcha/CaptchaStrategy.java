@@ -11,13 +11,13 @@ import uw.mfa.captcha.vo.CaptchaData;
 public interface CaptchaStrategy {
 
     /**
-     * 初始化验证码生成策略
+     * 初始化Captcha生成策略
      */
     CaptchaStrategy[] ALL_STRATEGIES = new CaptchaStrategy[]{new StringCaptchaStrategy(), new CalculateCaptchaStrategy(), new SlidePuzzleCaptchaStrategy(),
             new ClickWordCaptchaStrategy(), new RotatePuzzleCaptchaStrategy()};
 
     /***
-     * 验证码类型
+     * Captcha类型
      * @return
      */
     default String captchaType() {
@@ -25,15 +25,15 @@ public interface CaptchaStrategy {
     }
 
     /**
-     * 获取验证码
+     * 生成Catpcha
      *
-     * @param captchaId 行为验证码id
+     * @param captchaId
      * @return
      */
     ResponseData<CaptchaData> generate(String captchaId);
 
     /**
-     * 校验验证码
+     * 校验Captcha
      *
      * @param
      * @return

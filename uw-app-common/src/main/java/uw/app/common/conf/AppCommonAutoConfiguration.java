@@ -70,7 +70,7 @@ public class AppCommonAutoConfiguration implements WebMvcConfigurer {
      * @return
      */
     @Bean
-    public LocaleChangeInterceptor localeChangeInterceptor() {
+    public LocaleChangeInterceptor commonLocaleChangeInterceptor() {
         LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor();
         interceptor.setParamName( "lang" ); // 指定语言参数名
         return interceptor;
@@ -82,7 +82,7 @@ public class AppCommonAutoConfiguration implements WebMvcConfigurer {
      * @return
      */
     @Bean
-    public LocaleResolver localeResolver() {
+    public LocaleResolver commonLocaleResolver() {
         return new LocaleResolver() {
 
             @NotNull
@@ -107,7 +107,7 @@ public class AppCommonAutoConfiguration implements WebMvcConfigurer {
      */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor( localeChangeInterceptor() );
+        registry.addInterceptor( commonLocaleChangeInterceptor() );
     }
 
     /**

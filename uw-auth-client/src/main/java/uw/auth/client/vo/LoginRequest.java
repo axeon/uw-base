@@ -59,9 +59,9 @@ public class LoginRequest {
     private String captchaId;
 
     /**
-     * 验证码用户答案
+     * Captcha用户答案
      */
-    @Schema(title = "验证码用户答案", description = "验证码用户答案")
+    @Schema(title = "Captcha用户答案", description = "Captcha用户答案")
     private String captchaSign;
 
     /**

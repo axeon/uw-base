@@ -49,7 +49,7 @@ public enum CommonResponseCode implements ResponseCode {
      * @return
      */
     @Override
-    public String configPrefix() {
+    public String codePrefix() {
         return "uw.common";
     }
 

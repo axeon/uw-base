@@ -1,12 +1,11 @@
 package uw.auth.service.constant;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 
 /**
  * 常量表。
  */
-public class AuthConstants {
+public class AuthServiceConstants {
 
     /**
      * 用户名与saas_id分隔符
@@ -51,12 +50,12 @@ public class AuthConstants {
     /**
      * 402 http code。token需要付费。
      */
-    public static final String HTTP_PAYMENT_REQUIRED_CODE = String.valueOf(HttpStatus.PAYMENT_REQUIRED.value());
+    public static final String HTTP_PAYMENT_REQUIRED_CODE = String.valueOf( HttpStatus.PAYMENT_REQUIRED.value() );
 
     /**
      * 503 http code。服务不可用。
      */
-    public static final String HTTP_SERVICE_UNAVAILABLE_CODE = String.valueOf(HttpStatus.SERVICE_UNAVAILABLE.value());
+    public static final String HTTP_SERVICE_UNAVAILABLE_CODE = String.valueOf( HttpStatus.SERVICE_UNAVAILABLE.value() );
 
     /**
      * 获取用户名和SaasId
@@ -67,15 +66,15 @@ public class AuthConstants {
     public static Object[] parseUserAndSaasId(String loginId) {
         String user;
         long saasId = -1;
-        int pos = loginId.lastIndexOf(AuthConstants.ACCOUNT_SPLITTER);
-        if (pos>-1){
-            user = loginId.substring(0,pos);
+        int pos = loginId.lastIndexOf( AuthServiceConstants.ACCOUNT_SPLITTER );
+        if (pos > -1) {
+            user = loginId.substring( 0, pos );
             try {
-                saasId = Long.parseLong(loginId.substring(pos+1));
+                saasId = Long.parseLong( loginId.substring( pos + 1 ) );
             } catch (Exception e) {
                 user = loginId;
             }
-        }else{
+        } else {
             user = loginId;
         }
         return new Object[]{user, saasId};

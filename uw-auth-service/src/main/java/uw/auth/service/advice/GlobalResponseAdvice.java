@@ -16,7 +16,6 @@ import uw.auth.service.annotation.ResponseAdviceIgnore;
 import uw.auth.service.vo.MscActionLog;
 import uw.common.dto.ResponseData;
 import uw.common.util.JsonUtils;
-import uw.httpclient.json.JsonInterfaceHelper;
 
 import java.util.LinkedHashMap;
 
@@ -28,8 +27,6 @@ import java.util.LinkedHashMap;
 @RestControllerAdvice
 public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
     private static final Logger log = LoggerFactory.getLogger( GlobalResponseAdvice.class );
-
-    private static final String HTTP_OK = "200";
 
     public GlobalResponseAdvice() {
         log.info( "Init GlobalResponseAdvice." );
@@ -80,22 +77,15 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
 
         // body is null 特殊处理。
         if (body == null) {
-            body = ResponseData.warn();
+            return logResponseData( ResponseData.warn() );
         }
 
         //单独提前处理responseData类型，减少不必要的判定。
         if (body instanceof ResponseData responseData) {
-            //如果是不成功消息，则返回相关信息。
-            if (responseData.isNotSuccess()) {
-                MscActionLog mscActionLog = AuthServiceHelper.getContextLog();
-                if (mscActionLog != null) {
-                    mscActionLog.setOpState( responseData.getState() );
-                    mscActionLog.setOpLog( responseData.getMsg() );
-                }
-            }
+            logResponseData( responseData );
             //是否字符串类型要单独处理一下，否则会抛错。
             if (returnType.getParameterType().equals( String.class )) {
-                return JsonUtils.toString( body );
+                return JsonUtils.toString( responseData );
             } else {
                 return responseData;
             }
@@ -104,21 +94,32 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
         //需要处理额外未拦截到的系统报错信息。
         if (returnType.getParameterType().equals( ResponseEntity.class )) {
             if (body instanceof LinkedHashMap data) {
-                String status = String.valueOf( data.get( "status" ) );
+                String code = "http.status." + String.valueOf( data.get( "status" ) );
                 String msg = String.valueOf( data.get( "message" ) );
-                MscActionLog mscActionLog = AuthServiceHelper.getContextLog();
-                if (mscActionLog != null) {
-                    mscActionLog.setOpState( ResponseData.STATE_ERROR );
-                    mscActionLog.setOpLog( msg );
-                }
-                return ResponseData.errorCode( "http.code."+status, msg );
+                return logResponseData( ResponseData.errorCode( code, msg ) );
             }
         } else if (returnType.getParameterType().equals( String.class )) {
             //字符串类型需要单独包裹。
-            return JsonUtils.toString( ResponseData.success( body ) );
+            return JsonUtils.toString( logResponseData( ResponseData.success( body ) ) );
         }
+        //默认情况，直接返回。
+        return logResponseData( ResponseData.success( body ) );
+    }
 
-        return ResponseData.success(body);
+    /**
+     * 封装记录操作日志。
+     *
+     * @param responseData
+     * @return
+     */
+    private ResponseData<?> logResponseData(ResponseData<?> responseData) {
+        MscActionLog mscActionLog = AuthServiceHelper.getContextLog();
+        if (mscActionLog != null) {
+            mscActionLog.setResponseState( responseData.getState() );
+            mscActionLog.setResponseCode( responseData.getCode() );
+            mscActionLog.setResponseMsg( responseData.getMsg() );
+        }
+        return responseData;
     }
 
 }

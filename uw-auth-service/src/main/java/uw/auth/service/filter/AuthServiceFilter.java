@@ -15,7 +15,7 @@ import uw.auth.service.AuthServiceHelper;
 import uw.auth.service.annotation.MscPermDeclare;
 import uw.auth.service.conf.AuthServiceProperties;
 import uw.auth.service.constant.ActionLog;
-import uw.auth.service.constant.AuthConstants;
+import uw.auth.service.constant.AuthServiceConstants;
 import uw.auth.service.constant.AuthType;
 import uw.auth.service.constant.UserType;
 import uw.auth.service.log.AuthCriticalLogStorage;
@@ -121,7 +121,7 @@ public class AuthServiceFilter implements Filter {
         try {
             invokeCounter.increment();
             // 获得原始token
-            String rawToken = httpServletRequest.getHeader( AuthConstants.TOKEN_HEADER_PARAM );
+            String rawToken = httpServletRequest.getHeader( AuthServiceConstants.TOKEN_HEADER_PARAM );
             // 解析token
             ResponseData<AuthTokenData> authTokenDataResponse = AuthServiceHelper.parseRawToken( remoteIp, rawToken );
             // token异常直接抛出

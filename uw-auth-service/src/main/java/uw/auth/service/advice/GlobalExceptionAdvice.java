@@ -56,10 +56,6 @@ public class GlobalExceptionAdvice {
         } else {
             detailData = ex.getMessage();
         }
-        if (mscActionLog != null) {
-            mscActionLog.setOpState( ResponseData.STATE_ERROR );
-            mscActionLog.setException( detailData );
-        }
         return ResponseData.error( detailData, String.valueOf( response.getStatus() ), ex.getMessage() );
     }
 

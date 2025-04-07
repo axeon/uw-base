@@ -85,7 +85,7 @@ public class MfaCaptchaHelper {
         CaptchaData captchaData = captchaResData.getData();
         CaptchaQuestion captchaQuestion = captchaData.getCaptchaQuestion();
         //设置有效期
-        captchaQuestion.setCaptchaTtl( uwMfaProperties.getCaptchaExpiredSeconds() );
+        captchaQuestion.setCaptchaTTL( uwMfaProperties.getCaptchaExpiredSeconds() );
         mfaRedisOp.set( RedisKeyUtils.buildKey( REDIS_CAPTCHA_PREFIX, captchaQuestion.getCaptchaId() ), captchaData.getCaptchaResult(),
                 uwMfaProperties.getCaptchaExpiredSeconds(), TimeUnit.SECONDS );
         return ResponseData.success( captchaQuestion );

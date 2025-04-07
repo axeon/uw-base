@@ -20,7 +20,7 @@ public class CaptchaQuestion implements Serializable {
      * captcha有效期秒数。
      */
     @Schema(title = "captcha有效期", description = "captcha有效期")
-    private long captchaTtl;
+    private long captchaTTL;
 
     /**
      * captcha类型
@@ -54,12 +54,12 @@ public class CaptchaQuestion implements Serializable {
         this.captchaId = captchaId;
     }
 
-    public long getCaptchaTtl() {
-        return captchaTtl;
+    public long getCaptchaTTL() {
+        return captchaTTL;
     }
 
-    public void setCaptchaTtl(long captchaTtl) {
-        this.captchaTtl = captchaTtl;
+    public void setCaptchaTTL(long captchaTTL) {
+        this.captchaTTL = captchaTTL;
     }
 
     public String getCaptchaType() {

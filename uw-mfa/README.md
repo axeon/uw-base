@@ -38,7 +38,7 @@ private long ipLimitTimes = 10L;
 private String captchaStrategies = "StringCaptchaStrategy,CalculateCaptchaStrategy,SlidePuzzleCaptchaStrategy,ClickWordCaptchaStrategy,RotatePuzzleCaptchaStrategy";
 
 /**
- * 验证码答案过期时间，默认3分钟。
+ * Captcha答案过期时间，默认3分钟。
  */
 private long captchaExpiredSeconds = 180L;
 

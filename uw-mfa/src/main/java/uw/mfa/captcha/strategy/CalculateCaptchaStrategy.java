@@ -14,7 +14,7 @@ import java.awt.image.BufferedImage;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 描述: 计算式验证码生成策略
+ * 描述: 计算式Captcha生成策略
  */
 public class CalculateCaptchaStrategy implements CaptchaStrategy {
 
@@ -58,9 +58,9 @@ public class CalculateCaptchaStrategy implements CaptchaStrategy {
             new Font( "Wide Latin", Font.BOLD, FONT_SIZE ), new Font( "Gill " + "Sans Ultra Bold", Font.BOLD, FONT_SIZE )};
 
     /**
-     * 获取验证码
+     * 生成Catpcha
      *
-     * @param captchaId 行为验证码id
+     * @param captchaId
      * @return
      */
     @Override
@@ -82,7 +82,7 @@ public class CalculateCaptchaStrategy implements CaptchaStrategy {
     }
 
     /**
-     * 校验验证码
+     * 校验Captcha
      *
      * @param answerData
      * @param captchaResult

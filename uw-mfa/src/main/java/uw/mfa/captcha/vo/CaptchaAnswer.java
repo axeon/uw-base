@@ -5,12 +5,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 /**
  * 前端做出的回答。
  */
-@Schema(title = "验证码回答信息", description = "验证码回答信息")
+@Schema(title = "Captcha应答信息", description = "Captcha应答信息")
 public class CaptchaAnswer {
     /**
-     * 验证码类型
+     * Captcha类型
      */
-    @Schema(title = "验证码类型", description = "验证码回答信息")
+    @Schema(title = "Captcha类型", description = "Captcha回答信息")
     private String captchaType;
 
     /**

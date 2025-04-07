@@ -6,7 +6,9 @@ import org.apache.commons.lang3.RandomUtils;
 
 import java.util.UUID;
 
-
+/**
+ * 随机工具。
+ */
 public class CaptchaRandomUtils {
 
     /**

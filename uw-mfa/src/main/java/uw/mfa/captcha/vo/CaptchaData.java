@@ -1,7 +1,7 @@
 package uw.mfa.captcha.vo;
 
 /**
- * 生成的图形验证码数据。
+ * 生成的图形Captcha数据。
  *
  */
 public class CaptchaData {

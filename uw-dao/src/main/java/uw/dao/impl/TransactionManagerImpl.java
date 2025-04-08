@@ -37,11 +37,6 @@ public class TransactionManagerImpl implements TransactionManager {
     private HashMap<String, Connection> connMap = null;
 
     /**
-     * 指定的数据库连接，一旦使用，dao.config将无效.
-     */
-    private String specifyConnName = null;
-
-    /**
      * 被调用个次数.
      */
     private int invokeCount;
@@ -51,13 +46,6 @@ public class TransactionManagerImpl implements TransactionManager {
      */
     protected TransactionManagerImpl() {
 
-    }
-
-    /**
-     * 默认构造器,只能在本包内调用.
-     */
-    protected TransactionManagerImpl(String specifyConnName) {
-        this.specifyConnName = specifyConnName;
     }
 
     /**
@@ -103,9 +91,6 @@ public class TransactionManagerImpl implements TransactionManager {
      */
     public Connection getConnection(String configName) throws SQLException {
         invokeCount++;
-        if (specifyConnName != null) {
-            configName = specifyConnName;
-        }
         if (autoCommit) {
             return ConnectionManager.getConnection(configName);
         } else {
@@ -216,7 +201,7 @@ public class TransactionManagerImpl implements TransactionManager {
      */
     protected void startTransaction() {
         this.autoCommit = false;
-        connMap = new HashMap();
+        connMap = new HashMap<>();
     }
 
     /**

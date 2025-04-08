@@ -21,7 +21,7 @@ import java.util.List;
  */
 public class DaoFactoryImpl extends DaoFactory {
 
-    private static final Logger log = LoggerFactory.getLogger( DaoFactoryImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(DaoFactoryImpl.class);
 
     /**
      * 批量更新实例.
@@ -43,16 +43,6 @@ public class DaoFactoryImpl extends DaoFactory {
      */
     public DaoFactoryImpl() {
         transactionManager = new TransactionManagerImpl();
-        batchUpdateManager = new BatchUpdateManagerImpl(this);
-    }
-
-    /**
-     * 使用固定连接名获得一个DAOFactory实现.
-     *
-     * @param connName
-     */
-    public DaoFactoryImpl(String connName) {
-        transactionManager = new TransactionManagerImpl(connName);
         batchUpdateManager = new BatchUpdateManagerImpl(this);
     }
 
@@ -116,7 +106,7 @@ public class DaoFactoryImpl extends DaoFactory {
      */
     @Override
     public <T extends DataEntity> int delete(String connName, T entity) throws TransactionException {
-        return delete(connName, entity, null);
+        return EntityCommandImpl.delete(this, connName, entity, null);
     }
 
     /**
@@ -144,7 +134,7 @@ public class DaoFactoryImpl extends DaoFactory {
      */
     @Override
     public <T extends DataEntity> int delete(T entity) throws TransactionException {
-        return delete(null, entity, null);
+        return EntityCommandImpl.delete(this, null, entity, null);
     }
 
     /**
@@ -158,7 +148,7 @@ public class DaoFactoryImpl extends DaoFactory {
      */
     @Override
     public <T extends DataEntity> int delete(T entity, String tableName) throws TransactionException {
-        return delete(null, entity, tableName);
+        return EntityCommandImpl.delete(this, null, entity, tableName);
     }
 
     /**
@@ -542,6 +532,20 @@ public class DaoFactoryImpl extends DaoFactory {
     /**
      * 根据指定的映射类型，返回一个DataList列表.
      *
+     * @param entityCls      要映射的对象类型
+     * @param tableName      附加表名，在特定分表情况下。
+     * @param pageQueryParam 分页查询对象
+     * @return DataList列表
+     * @throws TransactionException 事务异常
+     */
+    @Override
+    public <T> DataList<T> list(Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) throws TransactionException {
+        return list(null, entityCls, tableName, pageQueryParam);
+    }
+
+    /**
+     * 根据指定的映射类型，返回一个DataList列表.
+     *
      * @param connName
      * @param entityCls      要映射的对象类型
      * @param tableName      附加表名，在特定分表情况下。
@@ -557,8 +561,7 @@ public class DaoFactoryImpl extends DaoFactory {
             int allSize = SQLCommandImpl.selectForSingleValue(this, connName, Integer.class, countSql, queryParamResult.getParamList());
             return new DataList<>(null, pageQueryParam.START_INDEX(), pageQueryParam.RESULT_NUM(), allSize);
         } else {
-            return EntityCommandImpl.list(this, connName, entityCls, queryParamResult.getSql().toString(), queryParamResult.getParamList(), pageQueryParam.START_INDEX(),
-                    pageQueryParam.RESULT_NUM(), pageQueryParam.CHECK_AUTO_COUNT());
+            return EntityCommandImpl.list(this, connName, entityCls, queryParamResult.getSql().toString(), queryParamResult.getParamList(), pageQueryParam.START_INDEX(), pageQueryParam.RESULT_NUM(), pageQueryParam.CHECK_AUTO_COUNT());
         }
     }
 
@@ -625,13 +628,13 @@ public class DaoFactoryImpl extends DaoFactory {
     /**
      * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
      *
-     * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
+     * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param queryParam 查询参数
      * @return DataSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String connName,QueryParam queryParam) throws TransactionException {
+    public DataSet queryForDataSet(String connName, QueryParam queryParam) throws TransactionException {
         QueryParamResult queryParamResult = QueryParamUtils.parseQueryParam(null, null, queryParam);
         int startIndex = 0;
         int resultNum = 0;
@@ -653,7 +656,7 @@ public class DaoFactoryImpl extends DaoFactory {
      */
     @Override
     public DataSet queryForDataSet(QueryParam queryParam) throws TransactionException {
-        return queryForDataSet(null,queryParam);
+        return queryForDataSet(null, queryParam);
     }
 
     /**
@@ -838,7 +841,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * 查询单个基本数值列表（多行单个字段）.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
-     * @param valueCls        要映射的基础类型，如int.class,long.class,String.class,Date.class
+     * @param valueCls   要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param queryParam 查询参数
      * @return DataSet数据列表
      * @throws TransactionException 事务异常
@@ -852,22 +855,22 @@ public class DaoFactoryImpl extends DaoFactory {
     /**
      * 查询单个基本数值列表（多行单个字段）.
      *
-     * @param valueCls        要映射的基础类型，如int.class,long.class,String.class,Date.class
+     * @param valueCls   要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param queryParam 查询参数
      * @return DataSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
     public <T> ArrayList<T> queryForSingleList(Class<T> valueCls, QueryParam queryParam) throws TransactionException {
-        return  queryForSingleList(null, valueCls,queryParam);
+        return queryForSingleList(null, valueCls, queryParam);
     }
 
     /**
      * 查询单个基本数值列表（多行单个字段）.
      *
      * @param valueCls 要映射的基础类型，如int.class,long.class,String.class,Date.class
-     * @param <T> 映射的类型
-     * @param sql 查询的SQL
+     * @param <T>      映射的类型
+     * @param sql      查询的SQL
      * @return DataSet对象
      * @throws TransactionException 事务异常
      */
@@ -879,7 +882,7 @@ public class DaoFactoryImpl extends DaoFactory {
     /**
      * 查询单个基本数值列表（多行单个字段）.
      *
-     * @param valueCls       要映射的基础类型，如int.class,long.class,String.class,Date.class
+     * @param valueCls  要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param <T>       映射的类型
      * @param sql       查询的SQL
      * @param paramList 查询SQL的参数
@@ -895,7 +898,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * 查询单个基本数值列表（多行单个字段）.
      *
      * @param connName 连接名，如设置为null，则根据sql语句或表名动态路由确定
-     * @param valueCls      要映射的基础类型，如int.class,long.class,String.class,Date.class
+     * @param valueCls 要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param <T>      映射的类型
      * @param sql      查询的SQL
      * @return 单个对象
@@ -910,7 +913,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * 查询单个基本数值列表（多行单个字段）.
      *
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
-     * @param valueCls       要映射的基础类型，如int.class,long.class,String.class,Date.class
+     * @param valueCls  要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param <T>       映射的类型
      * @param sql       查询的SQL
      * @param paramList 查询SQL的参数
@@ -1025,6 +1028,20 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
+     * 查询单个对象（单行数据）.
+     *
+     * @param entityCls  要映射的对象类型
+     * @param tableName  指定表名
+     * @param queryParam 查询参数
+     * @return 单个对象
+     * @throws TransactionException 事务异常
+     */
+    @Override
+    public <T> T queryForSingleObject(Class<T> entityCls, String tableName, QueryParam queryParam) throws TransactionException {
+        return queryForSingleObject(null, entityCls, tableName, queryParam);
+    }
+
+    /**
      * 查询单个基本数值（单个字段）.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
@@ -1049,7 +1066,8 @@ public class DaoFactoryImpl extends DaoFactory {
      */
     @Override
     public <T> T queryForSingleValue(Class<T> valueCls, QueryParam queryParam) throws TransactionException {
-        return queryForSingleValue(null, valueCls, queryParam);
+        QueryParamResult queryParamResult = QueryParamUtils.parseQueryParam(null, null, queryParam);
+        return SQLCommandImpl.selectForSingleValue(this, null, valueCls, queryParamResult.getSql().toString(), queryParamResult.getParamList());
     }
 
     /**
@@ -1178,8 +1196,8 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T extends DataEntity> List<T> batchSave(String connName, List<T> entityList) throws TransactionException {
-        return EntityCommandImpl.batchSave(this, connName, entityList, null);
+    public <T extends DataEntity> List<T> save(String connName, List<T> entityList) throws TransactionException {
+        return EntityCommandImpl.save(this, connName, entityList, null);
     }
 
     /**
@@ -1193,8 +1211,8 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T extends DataEntity> List<T> batchSave(String connName, List<T> entityList, String tableName) throws TransactionException {
-        return EntityCommandImpl.batchSave(this, connName, entityList, tableName);
+    public <T extends DataEntity> List<T> save(String connName, List<T> entityList, String tableName) throws TransactionException {
+        return EntityCommandImpl.save(this, connName, entityList, tableName);
     }
 
     /**
@@ -1206,8 +1224,8 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T extends DataEntity> List<T> batchSave(List<T> entityList) throws TransactionException {
-        return EntityCommandImpl.batchSave(this, null, entityList, null);
+    public <T extends DataEntity> List<T> save(List<T> entityList) throws TransactionException {
+        return EntityCommandImpl.save(this, null, entityList, null);
     }
 
     /**
@@ -1220,8 +1238,8 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T extends DataEntity> List<T> batchSave(List<T> entityList, String tableName) throws TransactionException {
-        return EntityCommandImpl.batchSave(this, null, entityList, tableName);
+    public <T extends DataEntity> List<T> save(List<T> entityList, String tableName) throws TransactionException {
+        return EntityCommandImpl.save(this, null, entityList, tableName);
     }
 
     /**
@@ -1290,7 +1308,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException
      */
     @Override
-    public QueryParamResult parseQueryParam(Class cls, String tableName, QueryParam queryParam) throws TransactionException {
+    public QueryParamResult parseQueryParam(Class cls, String tableName, QueryParam queryParam) {
         return QueryParamUtils.parseQueryParam(cls, tableName, queryParam);
     }
 
@@ -1303,7 +1321,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException
      */
     @Override
-    public QueryParamResult parseQueryParam(Class cls, QueryParam queryParam) throws TransactionException {
+    public QueryParamResult parseQueryParam(Class cls, QueryParam queryParam) {
         return QueryParamUtils.parseQueryParam(cls, null, queryParam);
     }
 
@@ -1315,7 +1333,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException
      */
     @Override
-    public QueryParamResult parseQueryParam(QueryParam queryParam) throws TransactionException {
+    public QueryParamResult parseQueryParam(QueryParam queryParam) {
         return QueryParamUtils.parseQueryParam(null, null, queryParam);
     }
 

@@ -22,16 +22,16 @@ public abstract class DaoFactory {
      *
      * @return DAOFactoryImpl对象
      */
-    public static final DaoFactory getInstance() {
+    public static DaoFactory getInstance() {
         return new DaoFactoryImpl();
     }
 
     /**
-     * 获取一个DAOFactory实例。 指定connName，这时候将不会使用dao来决定数据库联接.
+     * 获取一个DAOFactory实例。 指定connName，这时候将不会使用dao来决定数据库连接.
      *
      * @return DAOFactoryImpl对象
      */
-    public static final DaoFactory getInstance(String connName) {
+    public static DaoFactory getInstance(String connName) {
         return new DaoFactoryImpl(connName);
     }
 

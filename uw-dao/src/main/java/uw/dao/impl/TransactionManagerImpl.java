@@ -37,7 +37,7 @@ public class TransactionManagerImpl implements TransactionManager {
     private HashMap<String, Connection> connMap = null;
 
     /**
-     * 指定的数据库联接，一旦使用，dao.config将无效.
+     * 指定的数据库连接，一旦使用，dao.config将无效.
      */
     private String specifyConnName = null;
 

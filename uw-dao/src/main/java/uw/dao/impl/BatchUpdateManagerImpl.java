@@ -98,7 +98,7 @@ public class BatchUpdateManagerImpl implements BatchUpdateManager {
                 pstmt = conn.prepareStatement(sql);
                 pstmtMap.put(sql, new PreparedStatementWrapper(connName, connId, pstmt));
                 // 初始化返回值
-                resultMap.put(sql, new ArrayList());
+                resultMap.put(sql, new ArrayList<>());
                 bsize = 1;
             }
             // 把当前bsize更新

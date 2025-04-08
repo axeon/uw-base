@@ -141,7 +141,7 @@ public class EntityCommandImpl {
      * @throws TransactionException 事务异常
      */
     @SuppressWarnings("resource")
-    static <T extends DataEntity> List<T> batchSave(DaoFactoryImpl dao, String connName, List<T> entityList, String tableName) throws TransactionException {
+    static <T extends DataEntity> List<T> save(DaoFactoryImpl dao, String connName, List<T> entityList, String tableName) throws TransactionException {
         long start = System.currentTimeMillis();
         long connTime = 0, dbTime = 0;
         int connId = 0;

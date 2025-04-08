@@ -61,7 +61,7 @@ public class FusionSequenceFactory {
      *
      * @return
      */
-    public static long getCurrentId(Class entityCls) {
+    public static long getCurrentId(Class<?> entityCls) {
         return getCurrentId( entityCls.getSimpleName() );
     }
 
@@ -70,7 +70,7 @@ public class FusionSequenceFactory {
      *
      * @return
      */
-    public static long getSequenceId(Class entityCls) {
+    public static long getSequenceId(Class<?> entityCls) {
         return getSequenceId( entityCls.getSimpleName() );
     }
 
@@ -149,7 +149,7 @@ public class FusionSequenceFactory {
      * @param entityCls
      * @return
      */
-    public static void resetSequenceId(Class entityCls, long seqId) {
+    public static void resetSequenceId(Class<?> entityCls, long seqId) {
         resetSequenceId( entityCls.getSimpleName(), seqId );
     }
 
@@ -199,7 +199,7 @@ public class FusionSequenceFactory {
      *
      * @return
      */
-    public static long getRandomSequenceIdFromPool(Class entityCls) {
+    public static long getRandomSequenceIdFromPool(Class<?> entityCls) {
         return getRandomSequenceIdFromPool( entityCls.getSimpleName() );
     }
 
@@ -270,7 +270,7 @@ public class FusionSequenceFactory {
      *
      * @param
      */
-    public void restoreSequenceIdToPool(Class entityCls, long seqId) {
+    public void restoreSequenceIdToPool(Class<?> entityCls, long seqId) {
         restoreSequenceIdToPool( entityCls.getSimpleName(), seqId );
     }
 

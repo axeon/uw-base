@@ -45,6 +45,10 @@
             <artifactId>HikariCP</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.umtone</groupId>
+            <artifactId>uw-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations</artifactId>
         </dependency>
@@ -71,6 +75,7 @@
             <artifactId>jmh-generator-annprocess</artifactId>
             <scope>test</scope>
         </dependency>
+
 
     </dependencies>
 

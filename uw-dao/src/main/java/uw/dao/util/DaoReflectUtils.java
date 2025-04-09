@@ -5,6 +5,7 @@ import uw.dao.vo.FieldMetaInfo;
 import java.lang.reflect.Field;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Date;
 
 /**
@@ -29,8 +30,7 @@ public class DaoReflectUtils {
      * @param sequence int 次序
      * @throws Exception 异常
      */
-    public static final Object DAOLiteSaveReflect(PreparedStatement pstmt, Object entity, FieldMetaInfo fmi, int sequence)
-            throws Exception {
+    public static Object DAOLiteSaveReflect(PreparedStatement pstmt, Object entity, FieldMetaInfo fmi, int sequence) throws IllegalAccessException, SQLException {
         Field fd = fmi.getField();
         Class<?> cls = fd.getType();
         if (cls == int.class) {
@@ -65,8 +65,7 @@ public class DaoReflectUtils {
      * @param value    数值
      * @throws Exception 异常
      */
-    public static final void CommandUpdateReflect(PreparedStatement pstmt, int sequence, Object value)
-            throws Exception {
+    public static void CommandUpdateReflect(PreparedStatement pstmt, int sequence, Object value) throws SQLException {
         if (value instanceof Date date) {
             pstmt.setTimestamp(sequence, DaoValueUtils.dateToTimestamp(date));
         } else {
@@ -82,7 +81,7 @@ public class DaoReflectUtils {
      * @param fmi    FieldMetaInfo对象
      * @throws Exception 实体类
      */
-    public static final void DAOLiteLoadReflect(ResultSet rs, Object entity, FieldMetaInfo fmi) throws Exception {
+    public static void DAOLiteLoadReflect(ResultSet rs, Object entity, FieldMetaInfo fmi) throws SQLException, IllegalAccessException {
         Field fd = fmi.getField();
         Class<?> cls = fd.getType();
         if (cls == int.class) {

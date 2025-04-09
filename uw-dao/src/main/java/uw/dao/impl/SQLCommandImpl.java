@@ -14,6 +14,7 @@ import uw.dao.util.SQLUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -41,7 +42,7 @@ public class SQLCommandImpl {
      * @throws TransactionException 事务异常
      */
     @SuppressWarnings("unchecked")
-    public static final <T> T selectForSingleValue(DaoFactoryImpl dao, String connName, Class<T> cls, String selectSql, Object[] paramList) throws TransactionException {
+    public static <T> T selectForSingleValue(DaoFactoryImpl dao, String connName, Class<T> cls, String selectSql, Object[] paramList) throws TransactionException {
         long start = SystemClock.now();
         long connTime = 0, dbTime = 0;
         int connId = 0;
@@ -130,7 +131,7 @@ public class SQLCommandImpl {
      * @throws TransactionException 事务异常
      */
     @SuppressWarnings("unchecked")
-    public static final <T> ArrayList<T> selectForSingleList(DaoFactoryImpl dao, String connName, Class<T> cls, String selectSql, Object[] paramList) throws TransactionException {
+    public static <T> ArrayList<T> selectForSingleList(DaoFactoryImpl dao, String connName, Class<T> cls, String selectSql, Object[] paramList) throws TransactionException {
         long start = SystemClock.now();
         long connTime = 0, dbTime = 0;
         int connId = 0;
@@ -239,7 +240,7 @@ public class SQLCommandImpl {
      * @return 数据集合
      * @throws TransactionException 事务异常
      */
-    public static final DataSet selectForDataSet(DaoFactoryImpl dao, String connName, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+    public static DataSet selectForDataSet(DaoFactoryImpl dao, String connName, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
         long start = SystemClock.now();
         long connTime = 0, dbTime = 0;
         int connId = 0, dsSize = 0;
@@ -289,7 +290,7 @@ public class SQLCommandImpl {
             connTime = SystemClock.now() - start;
             long dbStart = SystemClock.now();
             ResultSet rs = pstmt.executeQuery();
-            dbTime = System.currentTimeMillis() - dbStart;
+            dbTime = SystemClock.now() - dbStart;
             ds = new DataSet(rs, startIndex, resultNum, allsize);
             rs.close();
             dsSize = ds.size();
@@ -311,7 +312,7 @@ public class SQLCommandImpl {
                     logger.error(e.getMessage(), e);
                 }
             }
-            long allTime = System.currentTimeMillis() - start;
+            long allTime = SystemClock.now() - start;
             dao.addSqlExecuteStats(connName, connId, selectSql, paramList, dsSize, connTime, dbTime, allTime, exception);
         }
         return ds;
@@ -327,8 +328,8 @@ public class SQLCommandImpl {
      * @return int
      * @throws TransactionException 事务异常
      */
-    public static final int executeSQL(DaoFactoryImpl dao, String connName, String executesql, Object[] paramList) throws TransactionException {
-        long start = System.currentTimeMillis();
+    public static int executeSQL(DaoFactoryImpl dao, String connName, String executesql, Object[] paramList) throws TransactionException {
+        long start = SystemClock.now();
         long connTime = 0, dbTime = 0;
         int connId = 0;
         String exception = null;
@@ -352,14 +353,14 @@ public class SQLCommandImpl {
                     DaoReflectUtils.CommandUpdateReflect(pstmt, i + 1, paramList[i]);
                 }
             }
-            connTime = System.currentTimeMillis() - start;
-            long dbStart = System.currentTimeMillis();
+            connTime = SystemClock.now() - start;
+            long dbStart = SystemClock.now();
             if (dao.getBatchUpdateController().getBatchStatus()) {
                 pstmt.addBatch();
             } else {
                 effect = pstmt.executeUpdate();
             }
-            dbTime = System.currentTimeMillis() - dbStart;
+            dbTime = SystemClock.now() - dbStart;
         } catch (Exception e) {
             exception = e.toString();
             throw new TransactionException(exception + connName + "@" + connId + ": " + executesql + "#" + Arrays.toString(paramList), e);
@@ -378,7 +379,7 @@ public class SQLCommandImpl {
                     logger.error(e.getMessage(), e);
                 }
             }
-            long allTime = System.currentTimeMillis() - start;
+            long allTime = SystemClock.now() - start;
             if (!dao.getBatchUpdateController().getBatchStatus()) {
                 dao.addSqlExecuteStats(connName, connId, executesql, paramList, effect, connTime, dbTime, allTime, exception);
             }

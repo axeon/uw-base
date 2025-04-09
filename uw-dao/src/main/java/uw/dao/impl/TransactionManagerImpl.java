@@ -75,7 +75,7 @@ public class TransactionManagerImpl implements TransactionManager {
                 }
             }
         }
-        if (errorMsg.length() > 0) {
+        if (!errorMsg.isEmpty()) {
             throw new TransactionException("TransactionException in TransactionManagerImpl.java: commit()!" + errorMsg.toString());
         }
         this.autoCommit = true;
@@ -189,7 +189,7 @@ public class TransactionManagerImpl implements TransactionManager {
                 }
             }
         }
-        if (errorMsg.length() > 0) {
+        if (!errorMsg.isEmpty()) {
             throw new TransactionException("TransactionException in TransactionManagerImpl.java: rollback()!" + errorMsg.toString());
         }
         this.autoCommit = true;

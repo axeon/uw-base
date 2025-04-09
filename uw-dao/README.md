@@ -78,17 +78,17 @@ uw:
 # 功能入口
 
 ```
-//传统异常抛出的调用方式。
-DaoFactory dao = DaoFactory.getInstance();
 //基于ResponseData返回数据，异常封装在ResponseData中。
 DaoManager dao = DaoManager.getInstance();
+//传统异常抛出的调用方式。
+DaoFactory dao = DaoFactory.getInstance();
 ```
-所有的数据库访问操作，都从dao开始。
-在不使用事务的情况下，dao线程安全，是可以共用的。
+所有的数据库访问操作，都从dao开始。在不使用事务的情况下，dao线程安全，是可以共用的。
+对新项目，建议使用DaoManager，这将会带来更好的安全性。
 
 DaoFactory VS DaoManager
 * DaoFactory 基于异常处理的传统调用办法，通过抛出TransactionException来处理异常。
-* DaoManager 基于ResponseData来返回数据，将异常封装在ResponseData中。
+* DaoManager 基于ResponseData来返回数据，将异常封装在ResponseData中，这将避免潜在攻击行为。
 
 这导致了两种不同方式的调用代码。
 * DaoFactory 可以一锅乱烩的方式在最外围层做异常处理，代码可能会简单。

@@ -671,7 +671,7 @@ public class LogService {
         public void run() {
             while (isRunning) {
                 try {
-                    long now = System.currentTimeMillis();
+                    long now = SystemClock.now();
                     if (buffer.size() > maxBytesOfBatch || now > nextScanTime) {
                         nextScanTime = now + maxFlushInMilliseconds;
                         batchExecutor.submit( new Runnable() {

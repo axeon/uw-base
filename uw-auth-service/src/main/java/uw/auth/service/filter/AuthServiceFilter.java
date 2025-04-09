@@ -27,6 +27,7 @@ import uw.auth.service.util.logging.LoggingHttpServletResponseWrapper;
 import uw.auth.service.vo.MscActionLog;
 import uw.common.dto.ResponseData;
 import uw.common.util.JsonUtils;
+import uw.common.util.SystemClock;
 import uw.log.es.LogClient;
 
 import java.io.IOException;
@@ -205,7 +206,7 @@ public class AuthServiceFilter implements Filter {
             AuthServiceHelper.destroyContextToken();
             if (mscActionLog != null) {
                 // 因为性能问题,返回大数据量时不建议记录RESPONSE
-                mscActionLog.setResponseMillis( System.currentTimeMillis() - mscActionLog.getRequestDate().getTime() );
+                mscActionLog.setResponseMillis( SystemClock.now() - mscActionLog.getRequestDate().getTime() );
                 mscActionLog.setStatusCode( ((HttpServletResponse) response).getStatus() );
                 try {
                     //保存request

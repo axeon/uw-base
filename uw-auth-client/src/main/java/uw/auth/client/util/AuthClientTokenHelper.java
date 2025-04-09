@@ -199,7 +199,7 @@ public class AuthClientTokenHelper {
                         long createAt = tokenResponse.getCreateAt();
                         // 预留5分钟缓冲。
                         expiresAt = (createAt - 300_000L) + expiresIn;
-                        if (StringUtils.isNotBlank(token) && expiresAt > System.currentTimeMillis()) {
+                        if (StringUtils.isNotBlank(token) && expiresAt > SystemClock.now()) {
                             retryTimes = 0;
                         }
                     }

@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <revision>2025.0316.1005</revision>
+        <revision>2025.0330.1000</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
@@ -24,21 +24,21 @@
         <maven.compiler.target>21</maven.compiler.target>
         <spring-cloud.version>2023.0.5</spring-cloud.version>
         <spring-cloud.alibaba.version>2023.0.1.2</spring-cloud.alibaba.version>
-        <uw-ai.version>1.0.7</uw-ai.version>
-        <uw-common-app.version>1.0.28</uw-common-app.version>
-        <uw-common.version>1.0.31</uw-common.version>
-        <uw-auth-client.version>6.0.28</uw-auth-client.version>
-        <uw-auth-service.version>6.0.150</uw-auth-service.version>
-        <uw-dao.version>5.1.50</uw-dao.version>
-        <uw-httpclient.version>2.1.118</uw-httpclient.version>
-        <uw-logback-es.version>3.0.61</uw-logback-es.version>
-        <uw-log-es.version>3.0.61</uw-log-es.version>
-        <uw-cache.version>1.1.66</uw-cache.version>
-        <uw-mfa.version>1.0.28</uw-mfa.version>
-        <uw-notify-client.version>1.0.19</uw-notify-client.version>
-        <uw-task.version>5.0.101</uw-task.version>
-        <uw-tinyurl-client.version>1.0.19</uw-tinyurl-client.version>
-        <uw-mydb-client.version>1.0.15</uw-mydb-client.version>
+        <uw-ai.version>1.0.8</uw-ai.version>
+        <uw-auth-client.version>6.1.0</uw-auth-client.version>
+        <uw-auth-service.version>6.1.0</uw-auth-service.version>
+        <uw-cache.version>1.1.80</uw-cache.version>
+        <uw-common.version>1.0.50</uw-common.version>
+        <uw-common-app.version>1.0.50</uw-common-app.version>
+        <uw-dao.version>5.2.0</uw-dao.version>
+        <uw-httpclient.version>2.1.120</uw-httpclient.version>
+        <uw-log-es.version>3.0.80</uw-log-es.version>
+        <uw-logback-es.version>3.0.80</uw-logback-es.version>
+        <uw-mfa.version>1.0.30</uw-mfa.version>
+        <uw-mydb-client.version>1.0.20</uw-mydb-client.version>
+        <uw-notify-client.version>1.0.20</uw-notify-client.version>
+        <uw-task.version>5.0.110</uw-task.version>
+        <uw-tinyurl-client.version>1.0.20</uw-tinyurl-client.version>
     </properties>
 
     <dependencyManagement>

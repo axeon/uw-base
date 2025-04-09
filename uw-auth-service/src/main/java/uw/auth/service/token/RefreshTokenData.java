@@ -1,5 +1,7 @@
 package uw.auth.service.token;
 
+import uw.common.util.SystemClock;
+
 /**
  * 用户刷新令牌数据。
  *
@@ -81,7 +83,7 @@ public class RefreshTokenData {
         return builder;
     }
     public boolean isExpired() {
-        return System.currentTimeMillis() >= expireAt;
+        return SystemClock.now() >= expireAt;
     }
     public long getExpireAt() {
         return expireAt;

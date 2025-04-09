@@ -499,8 +499,8 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
                 try {
                     //重算索引名。
                     calcIndexName();
-                    if (buffer.size() >> 10 > maxKiloBytesOfBatch || System.currentTimeMillis() > nextScanTime) {
-                        nextScanTime = System.currentTimeMillis() + maxFlushInSeconds * 1000;
+                    if (buffer.size() >> 10 > maxKiloBytesOfBatch || SystemClock.now() > nextScanTime) {
+                        nextScanTime = SystemClock.now() + maxFlushInSeconds * 1000;
                         batchExecutor.submit(new Runnable() {
                             @Override
                             public void run() {

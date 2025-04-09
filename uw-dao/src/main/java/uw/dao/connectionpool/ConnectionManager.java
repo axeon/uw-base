@@ -119,10 +119,7 @@ public final class ConnectionManager {
         if (dataSource == null) {
             return false;
         }
-        if (!dataSource.isRunning()) {
-            return false;
-        }
-        return true;
+        return dataSource.isRunning();
     }
 
     /**

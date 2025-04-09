@@ -73,7 +73,7 @@ public class BatchUpdateManagerImpl implements BatchUpdateManager {
      * @return PreparedStatement对象
      * @throws SQLException SQL异常
      */
-    public PreparedStatement prepareStatement(String connName, int connId, Connection conn, String sql) throws Exception {
+    public PreparedStatement prepareStatement(String connName, int connId, Connection conn, String sql) throws SQLException, TransactionException {
         // pstmt对象
         PreparedStatement pstmt = null;
         if (!this.isBatch) { // 非batchUpdate

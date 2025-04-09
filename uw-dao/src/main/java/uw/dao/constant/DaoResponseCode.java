@@ -1,4 +1,4 @@
-package uw.common.app.constant;
+package uw.dao.constant;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.springframework.context.MessageSource;
@@ -10,21 +10,16 @@ import uw.common.util.EnumUtils;
  * 通用返回代码。
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum CommonResponseCode implements ResponseCode {
+public enum DaoResponseCode implements ResponseCode {
 
-    ENTITY_LIST_ERROR( "数据列表获取失败！" ),
-    ENTITY_SAVE_ERROR( "数据创建失败！" ),
-    ENTITY_UPDATE_ERROR( "数据更新失败！" ),
-    ENTITY_EXISTS_ERROR( "数据已存在！" ),
-    ENTITY_NOT_FOUND_ERROR( "数据未找到！" ),
-    ENTITY_STATE_ERROR( "数据状态错误！" ),
+    TRANSACTION_ERROR( "数据库操作执行失败！" ),
     ;
 
     /**
      * 国际化信息MESSAGE_SOURCE。
      */
     private static final ResourceBundleMessageSource MESSAGE_SOURCE = new ResourceBundleMessageSource() {{
-        setBasename( "i18n/messages/uw_common" );
+        setBasename( "i18n/messages/uw_dao" );
         setDefaultEncoding( "UTF-8" );
         setCacheSeconds( 0 );
     }};
@@ -38,7 +33,7 @@ public enum CommonResponseCode implements ResponseCode {
      */
     private final String message;
 
-    CommonResponseCode(String message) {
+    DaoResponseCode(String message) {
         this.code = EnumUtils.enumNameToDotCase( this.name() );
         this.message = message;
     }
@@ -50,7 +45,7 @@ public enum CommonResponseCode implements ResponseCode {
      */
     @Override
     public String codePrefix() {
-        return "uw.common";
+        return "uw.dao";
     }
 
     /**

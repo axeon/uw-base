@@ -11,7 +11,10 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import uw.auth.service.conf.AuthServiceProperties;
-import uw.auth.service.constant.*;
+import uw.auth.service.constant.AuthServiceConstants;
+import uw.auth.service.constant.TokenInvalidType;
+import uw.auth.service.constant.TokenType;
+import uw.auth.service.constant.UserType;
 import uw.auth.service.rpc.AuthServiceRpc;
 import uw.auth.service.service.AuthPermService;
 import uw.auth.service.token.AuthTokenData;
@@ -31,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class AuthServiceHelper {
 
-    private static final Logger logger = LoggerFactory.getLogger( AuthServiceHelper.class );
+    private static final Logger logger = LoggerFactory.getLogger(AuthServiceHelper.class);
 
     /**
      * access token的用户类型分隔符。
@@ -54,12 +57,12 @@ public class AuthServiceHelper {
     private static final Expiry<String, AuthTokenData> cacheExpiryPolicy = new Expiry<>() {
         @Override
         public long expireAfterCreate(String key, AuthTokenData authToken, long currentTime) {
-            return TimeUnit.MILLISECONDS.toNanos( authToken.getExpireAt() - System.currentTimeMillis() );
+            return TimeUnit.MILLISECONDS.toNanos(authToken.getExpireAt() - System.currentTimeMillis());
         }
 
         @Override
         public long expireAfterUpdate(String key, AuthTokenData authToken, long currentTime, long currentDuration) {
-            return TimeUnit.MILLISECONDS.toNanos( authToken.getExpireAt() - System.currentTimeMillis() );
+            return TimeUnit.MILLISECONDS.toNanos(authToken.getExpireAt() - System.currentTimeMillis());
         }
 
         @Override
@@ -114,13 +117,13 @@ public class AuthServiceHelper {
         AuthServiceHelper.authPermService = authPermService;
         AuthServiceHelper.authServiceRpc = authServiceRpc;
         Map<Integer, Long> userCacheConfig = authServiceProperties.getTokenCache();
-        userRpcCache = Caffeine.newBuilder().maximumSize( userCacheConfig.getOrDefault( UserType.RPC.getValue(), 100L ) ).expireAfter( cacheExpiryPolicy ).build();
-        userRootCache = Caffeine.newBuilder().maximumSize( userCacheConfig.getOrDefault( UserType.ROOT.getValue(), 100L ) ).expireAfter( cacheExpiryPolicy ).build();
-        userOpsCache = Caffeine.newBuilder().maximumSize( userCacheConfig.getOrDefault( UserType.OPS.getValue(), 100L ) ).expireAfter( cacheExpiryPolicy ).build();
-        userAdminCache = Caffeine.newBuilder().maximumSize( userCacheConfig.getOrDefault( UserType.ADMIN.getValue(), 1000L ) ).expireAfter( cacheExpiryPolicy ).build();
-        userSaasCache = Caffeine.newBuilder().maximumSize( userCacheConfig.getOrDefault( UserType.SAAS.getValue(), 10_000L ) ).expireAfter( cacheExpiryPolicy ).build();
-        userGuestCache = Caffeine.newBuilder().maximumSize( userCacheConfig.getOrDefault( UserType.GUEST.getValue(), 100_000L ) ).expireAfter( cacheExpiryPolicy ).build();
-        invalidTokenCache = Caffeine.newBuilder().maximumSize( 10_000L ).expireAfterWrite( 20, TimeUnit.MINUTES ).build();
+        userRpcCache = Caffeine.newBuilder().maximumSize(userCacheConfig.getOrDefault(UserType.RPC.getValue(), 100L)).expireAfter(cacheExpiryPolicy).build();
+        userRootCache = Caffeine.newBuilder().maximumSize(userCacheConfig.getOrDefault(UserType.ROOT.getValue(), 100L)).expireAfter(cacheExpiryPolicy).build();
+        userOpsCache = Caffeine.newBuilder().maximumSize(userCacheConfig.getOrDefault(UserType.OPS.getValue(), 100L)).expireAfter(cacheExpiryPolicy).build();
+        userAdminCache = Caffeine.newBuilder().maximumSize(userCacheConfig.getOrDefault(UserType.ADMIN.getValue(), 1000L)).expireAfter(cacheExpiryPolicy).build();
+        userSaasCache = Caffeine.newBuilder().maximumSize(userCacheConfig.getOrDefault(UserType.SAAS.getValue(), 10_000L)).expireAfter(cacheExpiryPolicy).build();
+        userGuestCache = Caffeine.newBuilder().maximumSize(userCacheConfig.getOrDefault(UserType.GUEST.getValue(), 100_000L)).expireAfter(cacheExpiryPolicy).build();
+        invalidTokenCache = Caffeine.newBuilder().maximumSize(10_000L).expireAfterWrite(20, TimeUnit.MINUTES).build();
     }
 
     /**
@@ -210,9 +213,50 @@ public class AuthServiceHelper {
      * @param invalidToken
      */
     public static void invalidToken(InvalidTokenData invalidToken) {
-        if (invalidContextToken( invalidToken.getUserType(), invalidToken.getToken() )) {
-            invalidTokenCache.put( invalidToken.getToken(), TokenInvalidType.findByValue( invalidToken.getInvalidType() ) + ":" + invalidToken.getNotice() );
+        if (invalidContextToken(invalidToken.getUserType(), invalidToken.getToken())) {
+            invalidTokenCache.put(invalidToken.getToken(), TokenInvalidType.findByValue(invalidToken.getInvalidType()) + ":" + invalidToken.getNotice());
         }
+    }
+
+    /**
+     * 缓存中失效用户对象
+     *
+     * @param userType
+     * @param rawToken
+     */
+    private static boolean invalidContextToken(int userType, String rawToken) {
+        if (userType == UserType.RPC.getValue()) {
+            if (userRpcCache.getIfPresent(rawToken) != null) {
+                userRpcCache.invalidate(rawToken);
+                return true;
+            }
+        } else if (userType == UserType.GUEST.getValue()) {
+            if (userGuestCache.getIfPresent(rawToken) != null) {
+                userGuestCache.invalidate(rawToken);
+                return true;
+            }
+        } else if (userType == UserType.ROOT.getValue()) {
+            if (userRootCache.getIfPresent(rawToken) != null) {
+                userRootCache.invalidate(rawToken);
+                return true;
+            }
+        } else if (userType == UserType.OPS.getValue()) {
+            if (userOpsCache.getIfPresent(rawToken) != null) {
+                userOpsCache.invalidate(rawToken);
+                return true;
+            }
+        } else if (userType == UserType.ADMIN.getValue()) {
+            if (userAdminCache.getIfPresent(rawToken) != null) {
+                userAdminCache.invalidate(rawToken);
+                return true;
+            }
+        } else if (UserType.SAAS.getValue() <= userType) {
+            if (userSaasCache.getIfPresent(rawToken) != null) {
+                userSaasCache.invalidate(rawToken);
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -221,7 +265,7 @@ public class AuthServiceHelper {
      * @return
      */
     public static String genAnonymousToken(long saasId, long mchId) {
-        return String.valueOf( UserType.ANYONE.getValue() ) + TOKEN_TYPE_SEPARATOR + mchId + "!0@" + saasId;
+        return String.valueOf(UserType.ANYONE.getValue()) + TOKEN_TYPE_SEPARATOR + mchId + "!0@" + saasId;
     }
 
     /**
@@ -240,7 +284,7 @@ public class AuthServiceHelper {
      * @return
      */
     public static int getSaasUserLimit(long saasId) {
-        return authServiceRpc.getSaasUserLimit( saasId ).getData();
+        return authServiceRpc.getSaasUserLimit(saasId).getData();
     }
 
     /**
@@ -443,7 +487,7 @@ public class AuthServiceHelper {
      * @param httpHandlerLog
      */
     public static void setContextLog(MscActionLog httpHandlerLog) {
-        contextLogHolder.set( httpHandlerLog );
+        contextLogHolder.set(httpHandlerLog);
     }
 
     /**
@@ -456,235 +500,108 @@ public class AuthServiceHelper {
     /**
      * 绑定ref信息。
      *
-     * @param refType 业务类型 用户代码自行定义,不应有冲突
+     * @param bizType 业务类型 用户代码自行定义,不应有冲突
      */
-    public static MscActionLog logRef(String refType) {
-        return logInfo( refType, null, null, null );
-    }
-
-    /**
-     * 绑定ref信息
-     *
-     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
-     */
-    public static MscActionLog logRef(Class refTypeClass) {
-        return logInfo( refTypeClass.getName(), null, null, null );
-    }
-
-    /**
-     * 绑定ref信息。
-     *
-     * @param refType 业务类型 用户代码自行定义,不应有冲突
-     * @param refId   业务主键
-     */
-    public static MscActionLog logRef(String refType, Serializable refId) {
-        return logInfo( refType, refId, null, null );
-    }
-
-    /**
-     * 绑定ref信息
-     *
-     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
-     * @param refId        业务主键
-     */
-    public static MscActionLog logRef(Class refTypeClass, Serializable refId) {
-        return logInfo( refTypeClass.getName(), refId, null, null );
+    public static MscActionLog logRef(String bizType) {
+        return logInfo(bizType, null, null);
     }
 
     /**
      * 写日志信息
      *
-     * @param opLog 日志信息
+     * @param bizType 业务类 用户代码自行定义,不应有冲突
+     * @param bizId   业务主键
+     * @param bizLog  日志信息
      */
-    public static MscActionLog logInfo(String opLog) {
-        return logInfo( (String) null, null, null, opLog );
-    }
-
-    /**
-     * 写日志信息
-     *
-     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
-     * @param opLog        日志信息
-     */
-    public static MscActionLog logInfo(Class refTypeClass, String opLog) {
-        return logInfo( refTypeClass.getName(), null, null, opLog );
-    }
-
-    /**
-     * 写日志信息
-     *
-     * @param refType 业务类 用户代码自行定义,不应有冲突
-     * @param opLog   日志信息
-     */
-    public static MscActionLog logInfo(String refType, String opLog) {
-        return logInfo( refType, null, null, opLog );
-    }
-
-    /**
-     * 写日志信息
-     *
-     * @param refType 业务类 用户代码自行定义,不应有冲突
-     * @param refId   业务主键
-     * @param opLog   日志信息
-     */
-    public static MscActionLog logInfo(String refType, Serializable refId, String opLog) {
-        return logInfo( refType, refId, null, opLog );
-    }
-
-    /**
-     * 写日志信息
-     *
-     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
-     * @param refId        业务主键
-     * @param opLog        日志信息
-     */
-    public static MscActionLog logInfo(Class refTypeClass, Serializable refId, String opLog) {
-        return logInfo( refTypeClass.getName(), refId, null, opLog );
-    }
-
-    /**
-     * 写日志信息
-     *
-     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
-     * @param refId        业务主键
-     * @param opLog        日志信息
-     */
-    public static MscActionLog logInfo(Class refTypeClass, Serializable refId, String opState, String opLog) {
-        return logInfo( refTypeClass.getName(), refId, opState, opLog );
-    }
-
-    /**
-     * 写日志信息
-     *
-     * @param refType 业务类型 用户代码自行定义,不应有冲突
-     * @param refId   业务主键
-     * @param opLog   日志信息
-     */
-    public static MscActionLog logInfo(String refType, Serializable refId, String opState, String opLog) {
+    public static MscActionLog logInfo(String bizType, Serializable bizId, String bizLog) {
         MscActionLog mscActionLog = contextLogHolder.get();
         if (mscActionLog == null) {
-            logger.warn( "未设置日志属性, 请检查代码: refType={}, refId={}, opState={}, opLog={}", refType, refId, opState, opLog );
+            logger.warn("未设置日志属性, 请检查代码: bizType={}, bizId={}, bizLog={}", bizType, bizId, bizLog);
         } else {
             //允许多次设置日志信息。
-            if (refType != null) {
-                mscActionLog.setRefType( refType );
+            if (bizType != null) {
+                mscActionLog.setBizType(bizType);
             }
-            if (refId != null) {
-                mscActionLog.setRefId( refId );
+            if (bizId != null) {
+                mscActionLog.setBizId(bizId);
             }
-            if (opState != null) {
-                mscActionLog.setOpState( opState );
-            }
-            if (opLog != null) {
-                if (mscActionLog.getOpLog() != null) {
-                    opLog = mscActionLog.getOpLog() + "\n" + opLog;
+            if (bizLog != null) {
+                if (mscActionLog.getBizLog() != null) {
+                    bizLog = mscActionLog.getBizLog() + "\n" + bizLog;
                 }
-                mscActionLog.setOpLog( opLog );
+                mscActionLog.setBizLog(bizLog);
             }
         }
         return mscActionLog;
     }
 
     /**
-     * 写日志信息
+     * 绑定ref信息
      *
-     * @param opLog 日志信息
+     * @param bizTypeClass 业务类 用户代码自行定义,不应有冲突
      */
-    public static MscActionLog logWarn(String opLog) {
-        return logWarn( (String) null, null, opLog );
+    public static MscActionLog logRef(Class bizTypeClass) {
+        return logInfo(bizTypeClass.getName(), null, null);
+    }
+
+    /**
+     * 绑定ref信息。
+     *
+     * @param bizType 业务类型 用户代码自行定义,不应有冲突
+     * @param bizId   业务主键
+     */
+    public static MscActionLog logRef(String bizType, Serializable bizId) {
+        return logInfo(bizType, bizId, null);
+    }
+
+    /**
+     * 绑定ref信息
+     *
+     * @param bizTypeClass 业务类 用户代码自行定义,不应有冲突
+     * @param bizId        业务主键
+     */
+    public static MscActionLog logRef(Class bizTypeClass, Serializable bizId) {
+        return logInfo(bizTypeClass.getName(), bizId, null);
     }
 
     /**
      * 写日志信息
      *
-     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
-     * @param opLog        日志信息
+     * @param bizLog 日志信息
      */
-    public static MscActionLog logWarn(Class refTypeClass, String opLog) {
-        return logWarn( refTypeClass.getName(), null, opLog );
+    public static MscActionLog logInfo(String bizLog) {
+        return logInfo((String) null, null, bizLog);
     }
 
     /**
      * 写日志信息
      *
-     * @param refType 业务类 用户代码自行定义,不应有冲突
-     * @param opLog   日志信息
+     * @param bizTypeClass 业务类 用户代码自行定义,不应有冲突
+     * @param bizLog        日志信息
      */
-    public static MscActionLog logWarn(String refType, String opLog) {
-        return logWarn( refType, null, opLog );
+    public static MscActionLog logInfo(Class bizTypeClass, String bizLog) {
+        return logInfo(bizTypeClass.getName(), null, bizLog);
     }
 
     /**
      * 写日志信息
      *
-     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
-     * @param refId        业务主键
-     * @param opLog        日志信息
+     * @param bizType 业务类 用户代码自行定义,不应有冲突
+     * @param bizLog   日志信息
      */
-    public static MscActionLog logWarn(Class refTypeClass, Serializable refId, String opLog) {
-        return logWarn( refTypeClass.getName(), refId, opLog );
+    public static MscActionLog logInfo(String bizType, String bizLog) {
+        return logInfo(bizType, null, bizLog);
     }
 
     /**
      * 写日志信息
      *
-     * @param refType 业务类 用户代码自行定义,不应有冲突
-     * @param refId   业务主键
-     * @param opLog   日志信息
+     * @param bizTypeClass 业务类 用户代码自行定义,不应有冲突
+     * @param bizId        业务主键
+     * @param bizLog        日志信息
      */
-    public static MscActionLog logWarn(String refType, Serializable refId, String opLog) {
-        return logInfo( refType, refId, ResponseData.STATE_WARN, opLog );
-    }
-
-    /**
-     * 写日志信息
-     *
-     * @param opLog 日志信息
-     */
-    public static MscActionLog logError(String opLog) {
-        return logError( (String) null, null, opLog );
-    }
-
-    /**
-     * 写日志信息
-     *
-     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
-     * @param opLog        日志信息
-     */
-    public static MscActionLog logError(Class refTypeClass, String opLog) {
-        return logError( refTypeClass.getName(), null, opLog );
-    }
-
-    /**
-     * 写日志信息
-     *
-     * @param refType 业务类 用户代码自行定义,不应有冲突
-     * @param opLog   日志信息
-     */
-    public static MscActionLog logError(String refType, String opLog) {
-        return logError( refType, null, opLog );
-    }
-
-    /**
-     * 写日志信息
-     *
-     * @param refTypeClass 业务类 用户代码自行定义,不应有冲突
-     * @param refId        业务主键
-     * @param opLog        日志信息
-     */
-    public static MscActionLog logError(Class refTypeClass, Serializable refId, String opLog) {
-        return logError( refTypeClass.getName(), refId, opLog );
-    }
-
-    /**
-     * 写日志信息
-     *
-     * @param refType 业务类 用户代码自行定义,不应有冲突
-     * @param refId   业务主键
-     * @param opLog   日志信息
-     */
-    public static MscActionLog logError(String refType, Serializable refId, String opLog) {
-        return logInfo( refType, refId, ResponseData.STATE_ERROR, opLog );
+    public static MscActionLog logInfo(Class bizTypeClass, Serializable bizId, String bizLog) {
+        return logInfo(bizTypeClass.getName(), bizId, bizLog);
     }
 
     /**
@@ -693,7 +610,7 @@ public class AuthServiceHelper {
      * @return
      */
     public static String getRemoteIp(HttpServletRequest request) {
-        return IpWebUtils.getRealIpString( request );
+        return IpWebUtils.getRealIpString(request);
     }
 
     /**
@@ -707,7 +624,7 @@ public class AuthServiceHelper {
             return null;
         }
         HttpServletRequest request = ((ServletRequestAttributes) attributes).getRequest();
-        return IpWebUtils.getRealIpString( request );
+        return IpWebUtils.getRealIpString(request);
     }
 
     /**
@@ -723,7 +640,7 @@ public class AuthServiceHelper {
      * @param authToken
      */
     public static void setContextToken(AuthTokenData authToken) {
-        contextTokenHolder.set( authToken );
+        contextTokenHolder.set(authToken);
     }
 
     /**
@@ -757,99 +674,58 @@ public class AuthServiceHelper {
      */
     public static ResponseData<AuthTokenData> parseRawToken(String ip, String bearerToken) {
         if (bearerToken == null) {
-            return ResponseData.errorCode( AuthServiceConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token header null." );
+            return ResponseData.errorCode(AuthServiceConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token header null.");
         }
         if (bearerToken.length() < AuthServiceConstants.TOKEN_HEADER_PREFIX.length()) {
-            return ResponseData.errorCode( AuthServiceConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token header invalid. Header Data: " + bearerToken );
+            return ResponseData.errorCode(AuthServiceConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token header invalid. Header Data: " + bearerToken);
         }
         int tokenStart = AuthServiceConstants.TOKEN_HEADER_PREFIX.length();
         //解析出token来
-        String token = bearerToken.substring( tokenStart );
-        int typeSeparator = token.indexOf( TOKEN_TYPE_SEPARATOR );
+        String token = bearerToken.substring(tokenStart);
+        int typeSeparator = token.indexOf(TOKEN_TYPE_SEPARATOR);
         if (typeSeparator == -1) {
-            return ResponseData.errorCode( AuthServiceConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token parse illegal. Token: " + token );
+            return ResponseData.errorCode(AuthServiceConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token parse illegal. Token: " + token);
         }
         //解析token信息。
         int userType = -1;
         try {
-            userType = Integer.parseInt( token.substring( 0, typeSeparator ) );
+            userType = Integer.parseInt(token.substring(0, typeSeparator));
         } catch (Exception e) {
-            return ResponseData.errorCode( AuthServiceConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token UserType parse illegal. Token: " + token );
+            return ResponseData.errorCode(AuthServiceConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token UserType parse illegal. Token: " + token);
         }
         //  检查用户类型映射
-        if (!UserType.checkTypeValid( userType )) {
-            return ResponseData.errorCode( AuthServiceConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token UserType invalid. Token: " + token );
+        if (!UserType.checkTypeValid(userType)) {
+            return ResponseData.errorCode(AuthServiceConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token UserType invalid. Token: " + token);
         }
         if (userType == UserType.ANYONE.getValue()) {
-            return ResponseData.success( parseAnonymousToken( token.substring( typeSeparator + 1 ) ) );
+            return ResponseData.success(parseAnonymousToken(token.substring(typeSeparator + 1)));
         }
         //检查是否非法token请求，如果确认非法，则直接抛异常，引导用户重新登录。
-        String invalidNotice = invalidTokenCache.getIfPresent( token );
-        if (StringUtils.isNotBlank( invalidNotice )) {
-            return ResponseData.errorCode( AuthServiceConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token[" + token + "] Invalid. Msg: " + invalidNotice );
+        String invalidNotice = invalidTokenCache.getIfPresent(token);
+        if (StringUtils.isNotBlank(invalidNotice)) {
+            return ResponseData.errorCode(AuthServiceConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token[" + token + "] Invalid. Msg: " + invalidNotice);
         }
         //检查缓存中的token。
-        AuthTokenData authTokenData = loadCachedTokenData( userType, token );
+        AuthTokenData authTokenData = loadCachedTokenData(userType, token);
         //服务器端拉取缓存。
         if (authTokenData == null) {
-            ResponseData<AuthTokenData> verifyResponse = authServiceRpc.verifyToken( token );
+            ResponseData<AuthTokenData> verifyResponse = authServiceRpc.verifyToken(token);
             if (verifyResponse.isSuccess()) {
                 authTokenData = verifyResponse.getData();
-                putContextToken( ip, userType, token, authTokenData );
+                putContextToken(ip, userType, token, authTokenData);
             } else {
                 //失败的token要缓存一下，防止有人乱试
-                invalidTokenCache.put( token, verifyResponse.getMsg() );
+                invalidTokenCache.put(token, verifyResponse.getMsg());
                 //找不到的抛Token过期异常。
                 return verifyResponse;
             }
         }
         // 检查过期
         if (authTokenData.isExpired()) {
-            invalidContextToken( userType, token );
-            return ResponseData.errorCode( AuthServiceConstants.HTTP_TOKEN_EXPIRED_CODE, "!Server AccessToken expired. Token: " + token );
+            invalidContextToken(userType, token);
+            return ResponseData.errorCode(AuthServiceConstants.HTTP_TOKEN_EXPIRED_CODE, "!Server AccessToken expired. Token: " + token);
         }
-        return ResponseData.success( authTokenData );
-    }
-
-    /**
-     * 缓存中失效用户对象
-     *
-     * @param userType
-     * @param rawToken
-     */
-    private static boolean invalidContextToken(int userType, String rawToken) {
-        if (userType == UserType.RPC.getValue()) {
-            if (userRpcCache.getIfPresent( rawToken ) != null) {
-                userRpcCache.invalidate( rawToken );
-                return true;
-            }
-        } else if (userType == UserType.GUEST.getValue()) {
-            if (userGuestCache.getIfPresent( rawToken ) != null) {
-                userGuestCache.invalidate( rawToken );
-                return true;
-            }
-        } else if (userType == UserType.ROOT.getValue()) {
-            if (userRootCache.getIfPresent( rawToken ) != null) {
-                userRootCache.invalidate( rawToken );
-                return true;
-            }
-        } else if (userType == UserType.OPS.getValue()) {
-            if (userOpsCache.getIfPresent( rawToken ) != null) {
-                userOpsCache.invalidate( rawToken );
-                return true;
-            }
-        } else if (userType == UserType.ADMIN.getValue()) {
-            if (userAdminCache.getIfPresent( rawToken ) != null) {
-                userAdminCache.invalidate( rawToken );
-                return true;
-            }
-        } else if (UserType.SAAS.getValue() <= userType) {
-            if (userSaasCache.getIfPresent( rawToken ) != null) {
-                userSaasCache.invalidate( rawToken );
-                return true;
-            }
-        }
-        return false;
+        return ResponseData.success(authTokenData);
     }
 
     /**
@@ -859,15 +735,15 @@ public class AuthServiceHelper {
      */
     private static AuthTokenData parseAnonymousToken(String tokenData) {
         AuthTokenData authToken = new AuthTokenData();
-        String[] ids = tokenData.split( "!0@" );
+        String[] ids = tokenData.split("!0@");
         if (ids.length != 2) {
             //说明数据有问题，直接返回吧。
             return authToken;
         }
-        authToken.setUserType( UserType.ANYONE.getValue() );
-        authToken.setSaasId( Long.parseLong( ids[1] ) );
-        authToken.setMchId( Long.parseLong( ids[0] ) );
-        authToken.setUserId( 0 );
+        authToken.setUserType(UserType.ANYONE.getValue());
+        authToken.setSaasId(Long.parseLong(ids[1]));
+        authToken.setMchId(Long.parseLong(ids[0]));
+        authToken.setUserId(0);
         return authToken;
     }
 
@@ -882,17 +758,17 @@ public class AuthServiceHelper {
         //检查缓存。
         AuthTokenData authTokenData = null;
         if (userType == UserType.RPC.getValue()) {
-            authTokenData = userRpcCache.getIfPresent( rawToken );
+            authTokenData = userRpcCache.getIfPresent(rawToken);
         } else if (userType == UserType.GUEST.getValue()) {
-            authTokenData = userGuestCache.getIfPresent( rawToken );
+            authTokenData = userGuestCache.getIfPresent(rawToken);
         } else if (userType == UserType.ROOT.getValue()) {
-            authTokenData = userRootCache.getIfPresent( rawToken );
+            authTokenData = userRootCache.getIfPresent(rawToken);
         } else if (userType == UserType.OPS.getValue()) {
-            authTokenData = userOpsCache.getIfPresent( rawToken );
+            authTokenData = userOpsCache.getIfPresent(rawToken);
         } else if (userType == UserType.ADMIN.getValue()) {
-            authTokenData = userAdminCache.getIfPresent( rawToken );
+            authTokenData = userAdminCache.getIfPresent(rawToken);
         } else if (UserType.SAAS.getValue() <= userType) {
-            authTokenData = userSaasCache.getIfPresent( rawToken );
+            authTokenData = userSaasCache.getIfPresent(rawToken);
         }
         return authTokenData;
     }
@@ -906,17 +782,17 @@ public class AuthServiceHelper {
      */
     private static void putContextToken(String ip, int userType, String rawToken, AuthTokenData authToken) {
         if (userType == UserType.RPC.getValue()) {
-            userRpcCache.put( rawToken, authToken );
+            userRpcCache.put(rawToken, authToken);
         } else if (userType == UserType.GUEST.getValue()) {
-            userGuestCache.put( rawToken, authToken );
+            userGuestCache.put(rawToken, authToken);
         } else if (userType == UserType.ROOT.getValue()) {
-            userRootCache.put( rawToken, authToken );
+            userRootCache.put(rawToken, authToken);
         } else if (userType == UserType.OPS.getValue()) {
-            userOpsCache.put( rawToken, authToken );
+            userOpsCache.put(rawToken, authToken);
         } else if (userType == UserType.ADMIN.getValue()) {
-            userAdminCache.put( rawToken, authToken );
+            userAdminCache.put(rawToken, authToken);
         } else if (UserType.SAAS.getValue() <= userType) {
-            userSaasCache.put( rawToken, authToken );
+            userSaasCache.put(rawToken, authToken);
         }
     }
 }

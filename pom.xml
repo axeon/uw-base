@@ -25,7 +25,7 @@
         <spring-cloud.version>2023.0.5</spring-cloud.version>
         <spring-cloud.alibaba.version>2023.0.1.2</spring-cloud.alibaba.version>
         <uw-ai.version>1.0.7</uw-ai.version>
-        <uw-app-common.version>1.0.28</uw-app-common.version>
+        <uw-common-app.version>1.0.28</uw-common-app.version>
         <uw-common.version>1.0.31</uw-common.version>
         <uw-auth-client.version>6.0.28</uw-auth-client.version>
         <uw-auth-service.version>6.0.150</uw-auth-service.version>
@@ -64,8 +64,8 @@
             </dependency>
             <dependency>
                 <groupId>com.umtone</groupId>
-                <artifactId>uw-app-common</artifactId>
-                <version>${uw-app-common.version}</version>
+                <artifactId>uw-common-app</artifactId>
+                <version>${uw-common-app.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.umtone</groupId>
@@ -197,7 +197,7 @@
 
     <modules>
         <module>uw-ai</module>
-        <module>uw-app-common</module>
+        <module>uw-common-app</module>
         <module>uw-auth-client</module>
         <module>uw-auth-service</module>
         <module>uw-cache</module>

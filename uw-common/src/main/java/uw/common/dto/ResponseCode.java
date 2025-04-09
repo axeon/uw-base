@@ -116,7 +116,7 @@ public interface ResponseCode {
      * @return
      */
     default String getLocalizedMessage() {
-        return getLocalizedMessage( LocaleContextHolder.getLocale(), (Object) null );
+        return getLocalizedMessage( LocaleContextHolder.getLocale());
     }
 
 }

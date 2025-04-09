@@ -2,6 +2,7 @@ package uw.task.ser.vo;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.SystemClock;
 
 import java.time.LocalTime;
 import java.util.Map;
@@ -21,45 +22,11 @@ public class HotelPriceValue {
      * 蟾皮n
      */
     private final static int DEFAULT_RULE_NUM = -5;
-
-    public enum ChangeType {
-        STATE(0),
-        NUM_STOCK(1),
-        NUM_ALL(2),
-        PRICE_BASE(3),
-        PRICE_DIST(4),
-        PRICE_SALE(5),
-        CONFIRM_TYPE(6),
-        ALLOW_OVER_SOLD(7),
-        MIN_ADV_MINUTES(8),
-        MAX_ADV_MINUTES(9),
-        DAY_START_TIME(10),
-        DAY_END_TIME(11),
-        ARRIVAL_START_TIME(12),
-        ARRIVAL_END_TIME(13),
-        BREAKFAST_NUM(14),
-        MIN_DAYS(15),
-        MAX_DAYS(16),
-        MIN_ROOM_NUM(17),
-        MAX_ROOM_NUM(18),
-        CANCEL_TYPE(19),
-        CANCEL_POLICY_MAP(20);
-
-        public int value;
-
-        ChangeType(int value) {
-            this.value = value;
-        }
-
-
-    }
-
     /**
      * 别问了，这个时间就是我写这个代码时的时间戳！
      * 这么干，就是想节省4个字节存储。
      */
     private static final long TIMESTAMP_DIFF = 1531235689000L;
-
     /**
      * 上次更新时间。
      */
@@ -88,7 +55,6 @@ public class HotelPriceValue {
      * 零售价
      */
     private long priceSale;
-
     /**
      * 报价附带的产品信息。
      */
@@ -98,16 +64,14 @@ public class HotelPriceValue {
      * 此信息不参与序列化。
      */
     private DistributorPrice distributorPrice;
-
     /**
      * 判断规则是否改变,进行或运算
      */
     private int changeType;
 
     public HotelPriceValue() {
-        this.lastUpdate = System.currentTimeMillis() - TIMESTAMP_DIFF;
+        this.lastUpdate = SystemClock.now() - TIMESTAMP_DIFF;
     }
-
 
     public int getChangeType() {
         return changeType;
@@ -187,6 +151,38 @@ public class HotelPriceValue {
 
     public void setLastUpdate(long lastUpdate) {
         this.lastUpdate = lastUpdate - TIMESTAMP_DIFF;
+    }
+
+    public enum ChangeType {
+        STATE(0),
+        NUM_STOCK(1),
+        NUM_ALL(2),
+        PRICE_BASE(3),
+        PRICE_DIST(4),
+        PRICE_SALE(5),
+        CONFIRM_TYPE(6),
+        ALLOW_OVER_SOLD(7),
+        MIN_ADV_MINUTES(8),
+        MAX_ADV_MINUTES(9),
+        DAY_START_TIME(10),
+        DAY_END_TIME(11),
+        ARRIVAL_START_TIME(12),
+        ARRIVAL_END_TIME(13),
+        BREAKFAST_NUM(14),
+        MIN_DAYS(15),
+        MAX_DAYS(16),
+        MIN_ROOM_NUM(17),
+        MAX_ROOM_NUM(18),
+        CANCEL_TYPE(19),
+        CANCEL_POLICY_MAP(20);
+
+        public int value;
+
+        ChangeType(int value) {
+            this.value = value;
+        }
+
+
     }
 
     /**
@@ -283,6 +279,18 @@ public class HotelPriceValue {
             return ruleInfo;
         }
 
+        /**
+         * 不需要添加DEFAULT_RULE_NUM判断
+         *
+         * @return
+         */
+        @Override
+        public int hashCode() {
+            return Objects.hash(getConfirmType(), getAllowOversold(), getMinAdvMinutes(), getMaxAdvMinutes(), getDayStartTime(), getDayEndTime(),
+                    getArrivalStartTime(), getArrivalEndTime(), getBreakfastNum(), getMinDays(), getMaxDays(), getMinRoomNum(), getMaxRoomNum(),
+                    getCancelType(), getCancelPolicyMap());
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -333,18 +341,6 @@ public class HotelPriceValue {
                 result = Objects.equals(this.cancelPolicyMap, that.getCancelPolicyMap());
             }
             return result;
-        }
-
-        /**
-         * 不需要添加DEFAULT_RULE_NUM判断
-         *
-         * @return
-         */
-        @Override
-        public int hashCode() {
-            return Objects.hash(getConfirmType(), getAllowOversold(), getMinAdvMinutes(), getMaxAdvMinutes(), getDayStartTime(), getDayEndTime(),
-                    getArrivalStartTime(), getArrivalEndTime(), getBreakfastNum(), getMinDays(), getMaxDays(), getMinRoomNum(), getMaxRoomNum(),
-                    getCancelType(), getCancelPolicyMap());
         }
 
         public int getConfirmType() {
@@ -476,97 +472,46 @@ public class HotelPriceValue {
      */
     public static class DistributorPrice {
 
-        public enum OperationType {
-
-            /**
-             * 不计算
-             */
-            NONE(0, "不计算"),
-
-            /**
-             * 采购价加
-             */
-            PRICE_BASE_ADD(1, "采购价加"),
-
-            /**
-             * 采购价减
-             */
-            PRICE_BASE_SUB(2, "采购价减"),
-
-            /**
-             * 采购价乘
-             */
-            PRICE_BASE_MUL(3, "采购价乘"),
-
-            /**
-             * 分销价加
-             */
-            PRICE_DIST_ADD(5, "分销价加"),
-
-            /**
-             * 分销价减
-             */
-            PRICE_DIST_SUB(6, "分销价减"),
-
-            /**
-             * 分销价乘
-             */
-            PRICE_DIST_MUL(7, "分销价乘");
-
-            public int value;
-
-            public String label;
-
-            OperationType(int value, String label) {
-                this.value = value;
-                this.label = label;
-            }
-
-
-        }
-
         /**
          * 上次更新时间。
          * 如果上次更新时间为0，那么是动态生成的。
          */
         private long lastUpdate;
-
         /**
          * 分销价计算类型
          */
         private int distOpType;
-
         /**
          * 零售价计算类型
          */
         private int saleOpType;
-
         /**
          * 分销成本价格
          */
         private long priceCost;
-
         /**
          * 分销价格
          */
         private long priceDist;
-
         /**
          * 终端价格
          */
         private long priceSale;
-
         /**
          * 取消规则.K:提前取消小时数,V:取消需要扣的费用(分销)
          */
         private Map<Integer, Long> cancelPriceDist;
-
         /**
          * 取消规则.K:提前取消小时数,V:取消需要扣的费用(终端)
          */
         private Map<Integer, Long> cancelPriceSale;
 
         public DistributorPrice() {
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(this.distOpType, this.saleOpType, this.priceDist, this.priceSale);
         }
 
         @Override
@@ -583,12 +528,6 @@ public class HotelPriceValue {
                     this.priceDist == that.priceDist &&
                     this.priceSale == that.priceSale;
         }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(this.distOpType, this.saleOpType, this.priceDist, this.priceSale);
-        }
-
 
         public long getLastUpdate() {
             if (lastUpdate > 0) {
@@ -656,6 +595,55 @@ public class HotelPriceValue {
 
         public void setCancelPriceSale(Map<Integer, Long> cancelPriceSale) {
             this.cancelPriceSale = cancelPriceSale;
+        }
+
+        public enum OperationType {
+
+            /**
+             * 不计算
+             */
+            NONE(0, "不计算"),
+
+            /**
+             * 采购价加
+             */
+            PRICE_BASE_ADD(1, "采购价加"),
+
+            /**
+             * 采购价减
+             */
+            PRICE_BASE_SUB(2, "采购价减"),
+
+            /**
+             * 采购价乘
+             */
+            PRICE_BASE_MUL(3, "采购价乘"),
+
+            /**
+             * 分销价加
+             */
+            PRICE_DIST_ADD(5, "分销价加"),
+
+            /**
+             * 分销价减
+             */
+            PRICE_DIST_SUB(6, "分销价减"),
+
+            /**
+             * 分销价乘
+             */
+            PRICE_DIST_MUL(7, "分销价乘");
+
+            public int value;
+
+            public String label;
+
+            OperationType(int value, String label) {
+                this.value = value;
+                this.label = label;
+            }
+
+
         }
     }
 

@@ -121,7 +121,7 @@ public class NumCodeUtils {
 //        System.out.println( idDec );
     //排查编码错误
 //        System.out.println( "开始排查编码错误。" );
-//        long now = System.currentTimeMillis();
+//        long now = SystemClock.now();
 //        long numBase = 123;
 //        for (int i = 0; i < 1000; i++) {
 //            new String( confuseNum( remapNum( String.valueOf( numBase + i ).toCharArray(), NUM_ENC_MAP ) ) );
@@ -141,7 +141,7 @@ public class NumCodeUtils {
 //                System.out.println( "编码异常，原始数据："+(numBase+i));
 //            }
 //        }
-//        System.out.println( "排查编码错误结束，耗时：" + (System.currentTimeMillis() - now) );
+//        System.out.println( "排查编码错误结束，耗时：" + (SystemClock.now() - now) );
 //    }
 
     /**

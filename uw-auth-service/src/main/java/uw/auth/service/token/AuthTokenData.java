@@ -1,6 +1,7 @@
 package uw.auth.service.token;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import uw.common.util.SystemClock;
 
 import java.util.Map;
 import java.util.Set;
@@ -149,7 +150,7 @@ public class AuthTokenData {
      * @return
      */
     public boolean isExpired() {
-        return System.currentTimeMillis() >= expireAt;
+        return SystemClock.now() >= expireAt;
     }
 
     public int getTokenType() {

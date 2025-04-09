@@ -11,6 +11,7 @@ import org.apache.commons.lang3.time.FastDateFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.util.JsonUtils;
+import uw.common.util.SystemClock;
 import uw.httpclient.http.HttpConfig;
 import uw.httpclient.http.HttpData;
 import uw.httpclient.http.HttpInterface;
@@ -262,7 +263,7 @@ public class LogService {
         if (!logState) {
             return;
         }
-        long now = System.currentTimeMillis();
+        long now = SystemClock.now();
         String index = getIndex( source.getClass(), now );
         if (StringUtils.isBlank( index )) {
             log.warn( "LogClass[{}] not registry!!!", source.getClass().getName() );
@@ -310,7 +311,7 @@ public class LogService {
         }
 
         Class<? extends LogBaseVo> logClass = sourceList.getFirst().getClass();
-        long now = System.currentTimeMillis();
+        long now = SystemClock.now();
         String index = getIndex( logClass, now );
 
         if (StringUtils.isBlank( index )) {
@@ -520,7 +521,7 @@ public class LogService {
      * @param isTrueCount
      * @return
      */
-    public String translateSqlToDsl(String sql, int startIndex, int resultNum, boolean isTrueCount) throws Exception {
+    public String translateSqlToDsl(String sql, int startIndex, int resultNum, boolean isTrueCount) {
         if (StringUtils.isBlank( esServer )) {
             throw new IllegalArgumentException( "es server is blank!" );
         }

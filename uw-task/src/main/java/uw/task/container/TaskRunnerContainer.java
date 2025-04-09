@@ -2,6 +2,7 @@ package uw.task.container;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.SystemClock;
 import uw.task.TaskData;
 import uw.task.TaskFactory;
 import uw.task.TaskListenerManager;
@@ -150,8 +151,8 @@ public class TaskRunnerContainer {
                     // 全局流量限制
                     // 检查是否超过流量限制
                     // 开始进行延时等待
-                    long end = System.currentTimeMillis() + taskConfig.getRateLimitWait() * 1000;
-                    while (System.currentTimeMillis() <= end) {
+                    long end = SystemClock.now() + taskConfig.getRateLimitWait() * 1000;
+                    while (SystemClock.now() <= end) {
                         noLimitFlag = taskGlobalRateLimiter.tryAcquire( locker.toString(), taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), 1 );
                         if (noLimitFlag == 0) {
                             break;
@@ -168,7 +169,7 @@ public class TaskRunnerContainer {
         }
         // 执行任务延时设定，必须是无延时队列功能，才会执行线程延时。
         if (taskConfig.getDelayType() == TaskRunnerConfig.TYPE_DELAY_OFF && taskData.getTaskDelay() > 0 && taskData.getQueueDate() != null) {
-            long delaySleep = taskData.getTaskDelay() - (System.currentTimeMillis() - taskData.getQueueDate().getTime());
+            long delaySleep = taskData.getTaskDelay() - (SystemClock.now() - taskData.getQueueDate().getTime());
             if (delaySleep > 0) {
                 try {
                     Thread.sleep( delaySleep );

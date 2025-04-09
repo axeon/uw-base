@@ -8,6 +8,7 @@ import okhttp3.Credentials;
 import okhttp3.Request;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
+import uw.common.util.SystemClock;
 import uw.httpclient.http.HttpConfig;
 import uw.httpclient.http.HttpData;
 import uw.httpclient.http.HttpInterface;
@@ -39,7 +40,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
     /**
      * http操作接口。
      */
-    private static final HttpInterface HTTP_INTERFACE = new JsonInterfaceHelper( HttpConfig.builder().retryOnConnectionFailure( true ).connectTimeout( 10_000L ).readTimeout( 10_000L ).writeTimeout( 10_000L ).build() );
+    private static final HttpInterface HTTP_INTERFACE = new JsonInterfaceHelper(HttpConfig.builder().retryOnConnectionFailure(true).connectTimeout(10_000L).readTimeout(10_000L).writeTimeout(10_000L).build());
     /**
      * 索引格式器
      */
@@ -172,7 +173,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     @Override
     public void changeMaxFlushInSeconds(long maxFlushInSeconds) {
-        setMaxFlushInSeconds( maxFlushInSeconds );
+        setMaxFlushInSeconds(maxFlushInSeconds);
     }
 
     @Override
@@ -182,7 +183,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     @Override
     public void changeMaxBytesOfBatch(long maxKiloBytesOfBatch) {
-        setMaxKiloBytesOfBatch( maxKiloBytesOfBatch );
+        setMaxKiloBytesOfBatch(maxKiloBytesOfBatch);
     }
 
     public void setMaxKiloBytesOfBatch(long maxKiloBytesOfBatch) {
@@ -301,7 +302,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
         //先写入一个okioBuffer，减少锁时间。
         okio.Buffer okb = null;
         try {
-            okb = fillBuffer( event );
+            okb = fillBuffer(event);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -312,7 +313,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
         // SegmentPool pooling
         batchLock.lock();
         try {
-            buffer.writeAll( okb );
+            buffer.writeAll(okb);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -322,47 +323,47 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     @Override
     public void start() {
-        if (StringUtils.isBlank( esServer )) {
-            addError( "!!!No config for <esHost>!!!" );
+        if (StringUtils.isBlank(esServer)) {
+            addError("!!!No config for <esHost>!!!");
             return;
         }
-        if (StringUtils.isBlank( appInfo )) {
-            addError( "!!!No elasticsearch index was configured. !!!" );
+        if (StringUtils.isBlank(appInfo)) {
+            addError("!!!No elasticsearch index was configured. !!!");
             return;
         }
-        if (StringUtils.isBlank( esIndex )) {
+        if (StringUtils.isBlank(esIndex)) {
             esIndex = appInfo;
         }
-        if (StringUtils.isNotBlank( esIndexSuffix )) {
-            INDEX_DATE_FORMAT = FastDateFormat.getInstance( esIndexSuffix, (TimeZone) null );
+        if (StringUtils.isNotBlank(esIndexSuffix)) {
+            INDEX_DATE_FORMAT = FastDateFormat.getInstance(esIndexSuffix, (TimeZone) null);
         }
         if (maxDepthPerThrowable < 10) {
             maxDepthPerThrowable = 10;
         }
         ThrowableProxyUtils.MaxDepthPerThrowable = maxDepthPerThrowable;
-        if (StringUtils.isNotBlank( excludeThrowableKeys )) {
-            ThrowableProxyUtils.ExcludeThrowableKeys = excludeThrowableKeys.split( "," );
+        if (StringUtils.isNotBlank(excludeThrowableKeys)) {
+            ThrowableProxyUtils.ExcludeThrowableKeys = excludeThrowableKeys.split(",");
         }
         if (jmxMonitoring) {
-            String objectName = "uw.logback.es:type=ElasticsearchBatchAppender,name=ElasticsearchBatchAppender@" + System.identityHashCode( this );
+            String objectName = "uw.logback.es:type=ElasticsearchBatchAppender,name=ElasticsearchBatchAppender@" + System.identityHashCode(this);
             try {
-                registeredObjectName = mbeanServer.registerMBean( this, new ObjectName( objectName ) ).getObjectName();
+                registeredObjectName = mbeanServer.registerMBean(this, new ObjectName(objectName)).getObjectName();
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        this.needBasicAuth = StringUtils.isNotBlank( esUsername ) && StringUtils.isNotBlank( esPassword );
-        batchExecutor = new ThreadPoolExecutor( 1, maxBatchThreads, 30, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>( maxBatchQueueSize ),
-                new ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "logback-es-batch-%d" ).build(), new RejectedExecutionHandler() {
+        this.needBasicAuth = StringUtils.isNotBlank(esUsername) && StringUtils.isNotBlank(esPassword);
+        batchExecutor = new ThreadPoolExecutor(1, maxBatchThreads, 30, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(maxBatchQueueSize),
+                new ThreadFactoryBuilder().setDaemon(true).setNameFormat("logback-es-batch-%d").build(), new RejectedExecutionHandler() {
             @Override
             public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                addError( "Logback ES Batch Task " + r.toString() + " rejected from " + executor.toString() );
+                addError("Logback ES Batch Task " + r.toString() + " rejected from " + executor.toString());
             }
-        } );
+        });
 
         daemonExporter = new ElasticsearchDaemonExporter();
-        daemonExporter.setName( "logback-es-monitor" );
-        daemonExporter.setDaemon( true );
+        daemonExporter.setName("logback-es-monitor");
+        daemonExporter.setDaemon(true);
         daemonExporter.init();
         daemonExporter.start();
         super.start();
@@ -382,7 +383,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
         forceProcessLogBucket();
         if (registeredObjectName != null) {
             try {
-                mbeanServer.unregisterMBean( registeredObjectName );
+                mbeanServer.unregisterMBean(registeredObjectName);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -399,22 +400,22 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
      */
     private okio.Buffer fillBuffer(Event event) throws IOException {
         okio.Buffer okb = new okio.Buffer();
-        okb.writeUtf8( "{\"create\":{\"_index\":\"" ).writeUtf8( esIndexFullName ).writeUtf8( "\"},\"_source\":false}" ).write( EncoderUtils.LINE_SEPARATOR_BYTES );
-        okb.writeUtf8( "{\"@timestamp\":\"" ).writeUtf8( EncoderUtils.DATE_FORMAT.format( event.getTimeStamp() ) ).writeUtf8( "\"," );
-        okb.writeUtf8( "\"appName\":\"" ).writeUtf8( appInfo ).writeUtf8( "\"," );
-        okb.writeUtf8( "\"appHost\":\"" ).writeUtf8( appHost ).writeUtf8( "\"," );
-        okb.writeUtf8( "\"level\":\"" ).writeUtf8( event.getLevel().toString() ).writeUtf8( "\"," );
-        okb.writeUtf8( "\"logger\":\"" ).writeUtf8( event.getLoggerName() ).writeUtf8( "\"," );
-        okb.writeUtf8( "\"message\":\"" ).writeUtf8( EncoderUtils.escapeJSON( event.getFormattedMessage() ) ).writeUtf8( "\"," );
-        okb.writeUtf8( "\"thread\":\"" ).writeUtf8( event.getThreadName() ).writeUtf8( "\"" );
+        okb.writeUtf8("{\"create\":{\"_index\":\"").writeUtf8(esIndexFullName).writeUtf8("\"},\"_source\":false}").write(EncoderUtils.LINE_SEPARATOR_BYTES);
+        okb.writeUtf8("{\"@timestamp\":\"").writeUtf8(EncoderUtils.DATE_FORMAT.format(event.getTimeStamp())).writeUtf8("\",");
+        okb.writeUtf8("\"appName\":\"").writeUtf8(appInfo).writeUtf8("\",");
+        okb.writeUtf8("\"appHost\":\"").writeUtf8(appHost).writeUtf8("\",");
+        okb.writeUtf8("\"level\":\"").writeUtf8(event.getLevel().toString()).writeUtf8("\",");
+        okb.writeUtf8("\"logger\":\"").writeUtf8(event.getLoggerName()).writeUtf8("\",");
+        okb.writeUtf8("\"message\":\"").writeUtf8(EncoderUtils.escapeJSON(event.getFormattedMessage())).writeUtf8("\",");
+        okb.writeUtf8("\"thread\":\"").writeUtf8(event.getThreadName()).writeUtf8("\"");
         IThrowableProxy throwableProxy = event.getThrowableProxy();
         if (throwableProxy != null) {
-            okb.writeUtf8( ",\"stack_trace\":\"" );
-            ThrowableProxyUtils.writeThrowable( okb, throwableProxy );
-            okb.writeUtf8( "\"" );
+            okb.writeUtf8(",\"stack_trace\":\"");
+            ThrowableProxyUtils.writeThrowable(okb, throwableProxy);
+            okb.writeUtf8("\"");
         }
-        okb.writeUtf8( "}" );
-        okb.write( EncoderUtils.LINE_SEPARATOR_BYTES );
+        okb.writeUtf8("}");
+        okb.write(EncoderUtils.LINE_SEPARATOR_BYTES);
         return okb;
     }
 
@@ -427,7 +428,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
         if (INDEX_DATE_FORMAT == null) {
             esIndexFullName = esIndex;
         } else {
-            esIndexFullName = esIndex + '_' + INDEX_DATE_FORMAT.format( System.currentTimeMillis() );
+            esIndexFullName = esIndex + '_' + INDEX_DATE_FORMAT.format(SystemClock.now());
         }
     }
 
@@ -449,13 +450,13 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
             return;
         }
         try {
-            Request.Builder requestBuilder = new Request.Builder().url( esServer + getEsBulk() );
+            Request.Builder requestBuilder = new Request.Builder().url(esServer + getEsBulk());
             if (needBasicAuth) {
-                requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
+                requestBuilder.header("Authorization", Credentials.basic(esUsername, esPassword));
             }
-            HttpData httpData = HTTP_INTERFACE.requestForData( requestBuilder.post( BufferRequestBody.create( bufferData, MediaTypes.JSON_UTF8 ) ).build() );
+            HttpData httpData = HTTP_INTERFACE.requestForData(requestBuilder.post(BufferRequestBody.create(bufferData, MediaTypes.JSON_UTF8)).build());
             if (httpData.getStatusCode() != 200) {
-                System.err.println( "Logback ES Batch process error! code:" + httpData.getStatusCode() + ", response: " + httpData.getResponseData() );
+                System.err.println("Logback ES Batch process error! code:" + httpData.getStatusCode() + ", response: " + httpData.getResponseData());
             }
         } catch (Exception e) {
             //直接打印到控制台输出吧
@@ -500,14 +501,14 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
                     calcIndexName();
                     if (buffer.size() >> 10 > maxKiloBytesOfBatch || System.currentTimeMillis() > nextScanTime) {
                         nextScanTime = System.currentTimeMillis() + maxFlushInSeconds * 1000;
-                        batchExecutor.submit( new Runnable() {
+                        batchExecutor.submit(new Runnable() {
                             @Override
                             public void run() {
                                 processLogBucket();
                             }
-                        } );
+                        });
                     }
-                    Thread.sleep( 500 );
+                    Thread.sleep(500);
                 } catch (Exception e) {
                     //直接打印到控制台输出吧
                     e.printStackTrace();

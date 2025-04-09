@@ -75,31 +75,30 @@ uw:
       data-keep-days: 100
 ```
 
-# 所有功能入口
+# 功能入口
 
 ```
-DAOFactory dao = DAOFactory.getInstance();
+//传统异常抛出的调用方式。
+DaoFactory dao = DaoFactory.getInstance();
+//基于ResponseData返回数据，异常封装在ResponseData中。
+DaoManager dao = DaoManager.getInstance();
 ```
-
 所有的数据库访问操作，都从dao开始。
-在不使用事务的情况下，dao是可以共用的，也支持多线程访问。
+在不使用事务的情况下，dao线程安全，是可以共用的。
 
-# 实体类代码生成
+DaoFactory VS DaoManager
+* DaoFactory 基于异常处理的传统调用办法，通过抛出TransactionException来处理异常。
+* DaoManager 基于ResponseData来返回数据，将异常封装在ResponseData中。
 
-```java
-    public static void main(String[]args)throws Exception{
-        //需要生成代码的包名
-        CodeGen.PACKAGE_NAME="zentao.pms.entity";
-        //需要生成代码的位置
-        CodeGen.SOURCECODE_PATH="D:/work_zowoyoo/zentao-pms/src/";
-        //需要生成表列表，用","分割，如果留空则生成所有表。
-        CodeGen.TABLE_LIST="";
-        //指定数据库连接名，留空则使用默认连接。
-        CodeGen.CONN_NAME="pms";
-        //执行生成代码。
-        CodeGen.main(args);
-        }
-```
+这导致了两种不同方式的调用代码。
+* DaoFactory 可以一锅乱烩的方式在最外围层做异常处理，代码可能会简单。
+* DaoManager 需要处理每个异常，但是可以通过Controller层做统一异常处理，代码会更简单。
+
+基于DaoFactory的代码做DaoManager改造的注意点：
+* 对大多数代码，可以简单的增加.getData()进行适配。因为上一级调用代码一般通过判断!=null来判断是否成功。
+* DaoManager同时提供了getDaoFactory()接口直接获得DaoFactory。
+* 对于controller，一般建议返回值为ResponseData，这样代码会更简单。
+
 
 # 实体类操作
 
@@ -135,7 +134,7 @@ public abstract<T extends DataEntity> T save(String connName,T entity,String tab
  * @return Entity实例集合
  * @throws TransactionException 事务异常
  */
-public abstract<T extends DataEntity> List<T> batchSave(String connName,List<T> entityList,String tableName)
+public abstract<T extends DataEntity> List<T> save(String connName,List<T> entityList,String tableName)
         throws TransactionException;
 ```
 
@@ -253,7 +252,7 @@ private Integer[] states;
 /**
 * 应用状态1: 上线; 0: 下线 -1:删除
 */
-@QueryMeta(expr = "stateOn>=0")
+@QueryMeta(expr = "state>=0")
 @Schema(title = "应用状态 ", description = "应用状态")
 private Boolean stateOn;
 ```
@@ -342,10 +341,8 @@ public abstract int executeCommand(String connName,String sql,Object...paramList
 * DataList优于DataSet，优先使用;
 * DataSet用于兼容代码，性能略低于DataList，内存占用大。
 
-# Sequence 实现比较。
+# DaoSequenceFactory VS FusionSequenceFactory。
 SequenceFactory工厂类通过配置文件动态决定使用 DaoSequenceFactory，还是 FusionSequenceFactory。
-
-DaoSequenceFactory 和还是 FusionSequenceFactory 差异在于：
 1. FusionSequenceFactory 可以获得连续的Sequence数值，DaoSequenceFactory 集群环境下是不连续的。
 2. FusionSequenceFactory 默认配置下性能是 DaoSequenceFactory 的100、倍。
 3. DaoSequenceFactory的incrementNum=100的时候和FusionSequenceFactory性能平衡点，超过100则性能大于FusionSequenceFactory。

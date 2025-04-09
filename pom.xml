@@ -197,11 +197,11 @@
 
     <modules>
         <module>uw-ai</module>
-        <module>uw-common-app</module>
         <module>uw-auth-client</module>
         <module>uw-auth-service</module>
         <module>uw-cache</module>
         <module>uw-common</module>
+        <module>uw-common-app</module>
         <module>uw-dao</module>
         <module>uw-httpclient</module>
         <module>uw-log-es</module>

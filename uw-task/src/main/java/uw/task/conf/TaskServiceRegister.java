@@ -9,6 +9,7 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import uw.common.util.SystemClock;
 import uw.task.TaskCroner;
 import uw.task.TaskRunner;
 import uw.task.api.TaskApiClient;
@@ -114,7 +115,7 @@ public class TaskServiceRegister {
      * 注册当前所有的服务。 每隔1分钟刷新一次。
      */
     public void updateConfig() {
-        long startUpdateTimeMills = System.currentTimeMillis();
+        long startUpdateTimeMills = SystemClock.now();
         // 优先拉取runnerConfig，因为是否注册任务，都要更新系统队列。
         ConcurrentHashMap<String, TaskRunnerConfig> updatedRunnerConfigMap = updateRunnerConfig();
         if (!updateFlag) {

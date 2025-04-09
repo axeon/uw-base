@@ -1,5 +1,7 @@
 package uw.auth.service.token;
 
+import uw.common.util.SystemClock;
+
 import java.util.StringJoiner;
 
 /**
@@ -74,7 +76,7 @@ public class InvalidTokenData {
 
     public InvalidTokenData(AuthTokenData authToken, int invalidType, String notice) {
         this.invalidType = invalidType;
-        this.invalidDate = System.currentTimeMillis();
+        this.invalidDate = SystemClock.now();
         this.saasId = authToken.getSaasId();
         this.userType = authToken.getUserType();
         this.userId = authToken.getUserId();

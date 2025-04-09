@@ -54,6 +54,10 @@
             <artifactId>spring-boot-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.umtone</groupId>
+            <artifactId>uw-common</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

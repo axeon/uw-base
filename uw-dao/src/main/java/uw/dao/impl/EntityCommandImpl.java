@@ -3,6 +3,7 @@ package uw.dao.impl;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.SystemClock;
 import uw.dao.*;
 import uw.dao.conf.DaoConfigManager;
 import uw.dao.connectionpool.ConnectionManager;
@@ -46,7 +47,7 @@ public class EntityCommandImpl {
      */
     @SuppressWarnings("resource")
     static <T extends DataEntity> T save(DaoFactoryImpl dao, String connName, T entity, String tableName) throws TransactionException {
-        long start = System.currentTimeMillis();
+        long start = SystemClock.now();
         long connTime = 0, dbTime = 0;
         int connId = 0;
         String exception = null;
@@ -95,14 +96,14 @@ public class EntityCommandImpl {
                 paramList[seq] = DaoReflectUtils.DAOLiteSaveReflect(pstmt, entity, fmi, seq + 1);
                 seq++;
             }
-            connTime = System.currentTimeMillis() - start;
-            long dbStart = System.currentTimeMillis();
+            connTime = SystemClock.now() - start;
+            long dbStart = SystemClock.now();
             if (dao.getBatchUpdateController().getBatchStatus()) {
                 pstmt.addBatch();
             } else {
                 effect = pstmt.executeUpdate();
             }
-            dbTime = System.currentTimeMillis() - dbStart;
+            dbTime = SystemClock.now() - dbStart;
         } catch (Exception e) {
             exception = e.toString();
             throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + Arrays.toString(paramList), e);
@@ -121,7 +122,7 @@ public class EntityCommandImpl {
                     logger.error(e.getMessage(), e);
                 }
             }
-            long allTime = System.currentTimeMillis() - start;
+            long allTime = SystemClock.now() - start;
             if (!dao.getBatchUpdateController().getBatchStatus()) {
                 dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effect, connTime, dbTime, allTime, exception);
             }
@@ -142,7 +143,7 @@ public class EntityCommandImpl {
      */
     @SuppressWarnings("resource")
     static <T extends DataEntity> List<T> save(DaoFactoryImpl dao, String connName, List<T> entityList, String tableName) throws TransactionException {
-        long start = System.currentTimeMillis();
+        long start = SystemClock.now();
         long connTime = 0, dbTime = 0;
         int connId = 0;
         String exception = null;
@@ -202,14 +203,14 @@ public class EntityCommandImpl {
                     seq++;
                 }
             }
-            connTime = System.currentTimeMillis() - start;
-            long dbStart = System.currentTimeMillis();
+            connTime = SystemClock.now() - start;
+            long dbStart = SystemClock.now();
             if (dao.getBatchUpdateController().getBatchStatus()) {
                 pstmt.addBatch();
             } else {
                 effect = pstmt.executeUpdate();
             }
-            dbTime = System.currentTimeMillis() - dbStart;
+            dbTime = SystemClock.now() - dbStart;
         } catch (Exception e) {
             exception = e.toString();
             throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + Arrays.toString(paramList), e);
@@ -228,7 +229,7 @@ public class EntityCommandImpl {
                     logger.error(e.getMessage(), e);
                 }
             }
-            long allTime = System.currentTimeMillis() - start;
+            long allTime = SystemClock.now() - start;
             if (!dao.getBatchUpdateController().getBatchStatus()) {
                 dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effect, connTime, dbTime, allTime, exception);
             }
@@ -249,7 +250,7 @@ public class EntityCommandImpl {
      * @throws TransactionException 事务异常
      */
     static <T> T load(DaoFactoryImpl dao, String connName, Class<T> cls, String tableName, Serializable id) throws TransactionException {
-        long start = System.currentTimeMillis();
+        long start = SystemClock.now();
         long connTime = 0, dbTime = 0;
         int connId = 0, rowNum = 0;
         String exception = null;
@@ -500,7 +501,7 @@ public class EntityCommandImpl {
             exception = e.toString();
             throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + Arrays.toString(paramList), e);
         } finally {
-            if (!dao.getBatchUpdateController().getBatchStatus() && con != null) {
+            if (!dao.getBatchUpdateController().getBatchStatus() && pstmt != null) {
                 try {
                     pstmt.close();
                 } catch (Exception e) {
@@ -588,7 +589,7 @@ public class EntityCommandImpl {
             exception = e.toString();
             throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + Arrays.toString(paramList), e);
         } finally {
-            if (!dao.getBatchUpdateController().getBatchStatus() && con != null) {
+            if (!dao.getBatchUpdateController().getBatchStatus() && pstmt != null) {
                 try {
                     pstmt.close();
                 } catch (Exception e) {

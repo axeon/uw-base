@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.ValueOperations;
+import uw.common.util.SystemClock;
 
 import java.util.concurrent.TimeUnit;
 
@@ -14,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class FusionSequenceFactory {
 
-    private static final Logger log = LoggerFactory.getLogger( FusionSequenceFactory.class );
+    private static final Logger log = LoggerFactory.getLogger(FusionSequenceFactory.class);
 
     /**
      * redis key。
@@ -62,7 +63,7 @@ public class FusionSequenceFactory {
      * @return
      */
     public static long getCurrentId(Class<?> entityCls) {
-        return getCurrentId( entityCls.getSimpleName() );
+        return getCurrentId(entityCls.getSimpleName());
     }
 
     /**
@@ -71,7 +72,7 @@ public class FusionSequenceFactory {
      * @return
      */
     public static long getSequenceId(Class<?> entityCls) {
-        return getSequenceId( entityCls.getSimpleName() );
+        return getSequenceId(entityCls.getSimpleName());
     }
 
 
@@ -83,23 +84,23 @@ public class FusionSequenceFactory {
     public static long getCurrentId(String seqName) {
         for (int tryCount = 0; tryCount < MAX_RETRY_TIMES; tryCount++) {
             try {
-                Long seqId = KV_OP.get( REDIS_SEQ + seqName );
+                Long seqId = KV_OP.get(REDIS_SEQ + seqName);
                 if (seqId == null) {
                     return 0L;
                 } else {
                     return seqId;
                 }
             } catch (Throwable e) {
-                log.error( e.getMessage(), e );
+                log.error(e.getMessage(), e);
             }
-            log.warn( "WARNING: FusionSequence[{}] failed to obtain getCurrentId. Trying {} times ...", seqName, tryCount );
+            log.warn("WARNING: FusionSequence[{}] failed to obtain getCurrentId. Trying {} times ...", seqName, tryCount);
             //休眠100ms，防止过多的无效冲击。
             try {
-                Thread.sleep( 100 );
+                Thread.sleep(100);
             } catch (InterruptedException ignored) {
             }
         }
-        throw new RuntimeException( "FusionSequence[" + seqName + "] failed to obtain getCurrentId!!!" );
+        throw new RuntimeException("FusionSequence[" + seqName + "] failed to obtain getCurrentId!!!");
     }
 
     /**
@@ -110,37 +111,37 @@ public class FusionSequenceFactory {
     public static long getSequenceId(String seqName) {
         for (int tryCount = 0; tryCount < MAX_RETRY_TIMES; tryCount++) {
             try {
-                long seqId = KV_OP.increment( REDIS_SEQ + seqName, 1 );
+                long seqId = KV_OP.increment(REDIS_SEQ + seqName, 1);
                 //如果超过POOL_SIZE，需要同步到db seq库。
                 if (seqId % POOL_SIZE == 1) {
                     //此时要从数据库中读取数值。
-                    long dbSeqId = DaoSequenceFactory.allocateSequenceRange( seqName, POOL_SIZE );
+                    long dbSeqId = DaoSequenceFactory.allocateSequenceRange(seqName, POOL_SIZE);
                     if (seqId > dbSeqId) {
                         //当seq > daoSeq，需要同步到database。
-                        log.warn( "WARNING: FusionSequence[{}] redisSeq[{}] > dbSeq[{}]! 正在同步到database", seqName, seqId, dbSeqId );
+                        log.warn("WARNING: FusionSequence[{}] redisSeq[{}] > dbSeq[{}]! 正在同步到database", seqName, seqId, dbSeqId);
                         long diff = seqId - dbSeqId;
                         //必须用allocateSequenceRange确保同步。
-                        DaoSequenceFactory.allocateSequenceRange( seqName, diff + POOL_SIZE );
+                        DaoSequenceFactory.allocateSequenceRange(seqName, diff + POOL_SIZE);
                     } else if (seqId < dbSeqId) {
                         //当seq <daoSeq，需要同步到redis。
-                        log.warn( "WARNING: FusionSequence[{}] redisSeq[{}] < dbSeq[{}]! 正在同步到redis", seqName, seqId, dbSeqId );
+                        log.warn("WARNING: FusionSequence[{}] redisSeq[{}] < dbSeq[{}]! 正在同步到redis", seqName, seqId, dbSeqId);
                         long diff = dbSeqId - seqId;
-                        seqId = KV_OP.increment( REDIS_SEQ + seqName, diff );
+                        seqId = KV_OP.increment(REDIS_SEQ + seqName, diff);
                     }
 
                 }
                 return seqId;
             } catch (Throwable e) {
-                log.error( e.getMessage(), e );
+                log.error(e.getMessage(), e);
             }
-            log.warn( "WARNING: FusionSequence[{}] failed to obtain getSequenceId. Trying {} times ...", seqName, tryCount );
+            log.warn("WARNING: FusionSequence[{}] failed to obtain getSequenceId. Trying {} times ...", seqName, tryCount);
             //休眠100ms，防止过多的无效冲击。
             try {
-                Thread.sleep( 100 );
+                Thread.sleep(100);
             } catch (InterruptedException ignored) {
             }
         }
-        throw new RuntimeException( "FusionSequence[" + seqName + "] failed to obtain getSequenceId!!!" );
+        throw new RuntimeException("FusionSequence[" + seqName + "] failed to obtain getSequenceId!!!");
     }
 
     /**
@@ -150,7 +151,7 @@ public class FusionSequenceFactory {
      * @return
      */
     public static void resetSequenceId(Class<?> entityCls, long seqId) {
-        resetSequenceId( entityCls.getSimpleName(), seqId );
+        resetSequenceId(entityCls.getSimpleName(), seqId);
     }
 
     /**
@@ -167,21 +168,21 @@ public class FusionSequenceFactory {
             tryCount++;
             try {
                 //重设seqId
-                KV_OP.set( REDIS_SEQ + seqName, seqId );
+                KV_OP.set(REDIS_SEQ + seqName, seqId);
                 //先重设dao seq，有问题的话可以先抛异常，不会生效到redis。
-                DaoSequenceFactory.resetSequenceId( seqName, seqId, 100 );
+                DaoSequenceFactory.resetSequenceId(seqName, seqId, 100);
                 return;
             } catch (Throwable e) {
-                log.error( e.getMessage(), e );
+                log.error(e.getMessage(), e);
             }
-            log.warn( "WARNING: FusionSequence[{}] failed to resetSequenceId. Trying {} times...", seqName, tryCount );
+            log.warn("WARNING: FusionSequence[{}] failed to resetSequenceId. Trying {} times...", seqName, tryCount);
             //休眠100ms，防止过多的无效冲击。
             try {
-                Thread.sleep( 100 );
+                Thread.sleep(100);
             } catch (InterruptedException e) {
             }
         } while (tryCount < MAX_RETRY_TIMES);
-        throw new RuntimeException( "FusionSequence[" + seqName + "] failed to resetSequenceId!!!" );
+        throw new RuntimeException("FusionSequence[" + seqName + "] failed to resetSequenceId!!!");
     }
 
     /**
@@ -200,7 +201,7 @@ public class FusionSequenceFactory {
      * @return
      */
     public static long getRandomSequenceIdFromPool(Class<?> entityCls) {
-        return getRandomSequenceIdFromPool( entityCls.getSimpleName() );
+        return getRandomSequenceIdFromPool(entityCls.getSimpleName());
     }
 
     /**
@@ -225,43 +226,43 @@ public class FusionSequenceFactory {
             tryCount++;
             long seqId;
             try {
-                long size = SET_OP.size( redisKey );
+                long size = SET_OP.size(redisKey);
                 if (size > POOL_MIN) {
-                    seqId = SET_OP.pop( redisKey );
+                    seqId = SET_OP.pop(redisKey);
                 } else {
                     String redisLocker = redisKey + ":lock";
                     //加个一分钟的锁。
-                    if (!KV_OP.setIfAbsent( redisLocker, System.currentTimeMillis(), 10_000L, TimeUnit.MILLISECONDS )) {
+                    if (!KV_OP.setIfAbsent(redisLocker, SystemClock.now(), 10_000L, TimeUnit.MILLISECONDS)) {
                         continue;
                     }
                     //再次检查
-                    size = SET_OP.size( redisKey );
+                    size = SET_OP.size(redisKey);
                     if (size <= POOL_MIN) {
-                        long saasId = DaoSequenceFactory.allocateSequenceRange( seqName, POOL_SIZE );
+                        long saasId = DaoSequenceFactory.allocateSequenceRange(seqName, POOL_SIZE);
                         Long[] ids = new Long[1000];
                         for (int i = 0; i < 1000; i++) {
                             ids[i] = saasId + i;
                         }
-                        SET_OP.add( redisKey, ids );
+                        SET_OP.add(redisKey, ids);
                     }
-                    seqId = SET_OP.pop( redisKey );
+                    seqId = SET_OP.pop(redisKey);
                     //解锁
-                    KV_OP.getAndDelete( redisLocker );
+                    KV_OP.getAndDelete(redisLocker);
                 }
                 return seqId;
             } catch (Throwable e) {
-                log.error( e.getMessage(), e );
+                log.error(e.getMessage(), e);
             }
-            log.warn( "WARNING: FusionSequence[{}] failed to getRandomSequenceIdFromPool. Trying {} times ...", seqName, tryCount );
+            log.warn("WARNING: FusionSequence[{}] failed to getRandomSequenceIdFromPool. Trying {} times ...", seqName, tryCount);
             //休眠100ms，防止过多的无效冲击。
             try {
-                Thread.sleep( 100 );
+                Thread.sleep(100);
             } catch (InterruptedException e) {
             }
         } while (tryCount < MAX_RETRY_TIMES);
-        log.error( "ERROR: FusionSequence[{}] failed to getRandomSequenceIdFromPool. Trying {} times ...", seqName, tryCount );
+        log.error("ERROR: FusionSequence[{}] failed to getRandomSequenceIdFromPool. Trying {} times ...", seqName, tryCount);
         //如果执行到这里，直接报错吧。
-        throw new RuntimeException( "FusionSequence[" + seqName + "] failed to getRandomSequenceIdFromPool!!!" );
+        throw new RuntimeException("FusionSequence[" + seqName + "] failed to getRandomSequenceIdFromPool!!!");
     }
 
     /**
@@ -271,7 +272,7 @@ public class FusionSequenceFactory {
      * @param
      */
     public void restoreSequenceIdToPool(Class<?> entityCls, long seqId) {
-        restoreSequenceIdToPool( entityCls.getSimpleName(), seqId );
+        restoreSequenceIdToPool(entityCls.getSimpleName(), seqId);
     }
 
     /**
@@ -281,7 +282,7 @@ public class FusionSequenceFactory {
      * @param
      */
     public void restoreSequenceIdToPool(String seqName, long seqId) {
-        SET_OP.add( REDIS_SEQ_POOL + seqName, seqId );
+        SET_OP.add(REDIS_SEQ_POOL + seqName, seqId);
     }
 
 }

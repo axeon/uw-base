@@ -182,7 +182,7 @@ public class LogClient {
      * @param isTrueCount 是否需要真实的总数
      * @return
      */
-    public String translateSqlToDsl(String sql, int startIndex, int resultNum, boolean isTrueCount) throws Exception {
+    public String translateSqlToDsl(String sql, int startIndex, int resultNum, boolean isTrueCount){
         return logService.translateSqlToDsl( sql, startIndex, resultNum, isTrueCount );
     }
 

@@ -3,6 +3,7 @@ package uw.cache;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.AnnotationBeanNameGenerator;
+import uw.common.util.SystemClock;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -29,6 +30,6 @@ public class UwCacheTestListApplication {
         System.out.println( Arrays.toString(getData));
         HashSet getSet = FusionCache.get( "test","test" );
         System.out.println( getSet);
-        Thread.sleep( System.currentTimeMillis() );
+        Thread.sleep( SystemClock.now() );
     }
 }

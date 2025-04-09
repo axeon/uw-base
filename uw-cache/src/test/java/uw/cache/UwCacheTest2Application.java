@@ -3,6 +3,7 @@ package uw.cache;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.AnnotationBeanNameGenerator;
+import uw.common.util.SystemClock;
 
 @SpringBootApplication
 public class UwCacheTest2Application {
@@ -26,6 +27,6 @@ public class UwCacheTest2Application {
             }
         } );
         System.out.println((String)FusionCache.get( "fusion", 123));
-        Thread.sleep( System.currentTimeMillis() );
+        Thread.sleep( SystemClock.now() );
     }
 }

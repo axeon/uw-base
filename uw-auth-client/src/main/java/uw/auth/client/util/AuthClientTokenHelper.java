@@ -14,6 +14,7 @@ import uw.auth.client.vo.LoginRequest;
 import uw.auth.client.vo.TokenResponse;
 import uw.common.dto.ResponseData;
 import uw.common.util.JsonUtils;
+import uw.common.util.SystemClock;
 
 import java.net.URI;
 import java.util.List;
@@ -28,7 +29,7 @@ public class AuthClientTokenHelper {
      */
     private static final int MAX_RETRY_TIMES = 10;
 
-    private static final Logger log = LoggerFactory.getLogger( AuthClientTokenHelper.class );
+    private static final Logger log = LoggerFactory.getLogger(AuthClientTokenHelper.class);
 
     private final AuthClientProperties authClientProperties;
 
@@ -76,7 +77,7 @@ public class AuthClientTokenHelper {
                 }
             } else {
                 //即将过期的，进入刷新token。
-                if (expiresAt <= System.currentTimeMillis()) {
+                if (expiresAt <= SystemClock.now()) {
                     invalidate();
                     refresh();
                 }
@@ -84,7 +85,7 @@ public class AuthClientTokenHelper {
             //如果token=null，进入重试。
             if (token == null) {
                 try {
-                    Thread.sleep( 1000 );
+                    Thread.sleep(1000);
                 } catch (InterruptedException ignored) {
                 }
             }
@@ -104,31 +105,31 @@ public class AuthClientTokenHelper {
      */
     private synchronized void login() {
         if (retryTimes > 1 && retryTimes % 10 == 0) {
-            log.error( "!!!AuthClient获取token出错已超过{}次，请检查配置！", retryTimes );
+            log.error("!!!AuthClient获取token出错已超过{}次，请检查配置！", retryTimes);
         }
         //如果状态正常了，不再执行，防止重复执行。
-        if (StringUtils.isNotBlank( token )) {
+        if (StringUtils.isNotBlank(token)) {
             return;
         }
         retryTimes++;
         try {
             String loginUrl = authClientProperties.getAuthCenterHost() + authClientProperties.getLoginEntryPoint();
             LoginRequest loginRequest = new LoginRequest();
-            loginRequest.setLoginType( LoginType.USER_PASS.getValue() );
-            loginRequest.setSaasId( authClientProperties.getSaasId() );
-            loginRequest.setLoginAgent( authClientProperties.getAppName() + ":" + authClientProperties.getAppVersion() + "/" + authClientProperties.getAppHost() + ":" + authClientProperties.getAppPort() );
-            loginRequest.setUserType( authClientProperties.getUserType() );
-            loginRequest.setLoginId( authClientProperties.getLoginId() );
-            loginRequest.setLoginPass( authClientProperties.getLoginPass() );
-            loginRequest.setLoginSecret( authClientProperties.getLoginSecret() );
-            loginRequest.setForceLogin( true );
+            loginRequest.setLoginType(LoginType.USER_PASS.getValue());
+            loginRequest.setSaasId(authClientProperties.getSaasId());
+            loginRequest.setLoginAgent(authClientProperties.getAppName() + ":" + authClientProperties.getAppVersion() + "/" + authClientProperties.getAppHost() + ":" + authClientProperties.getAppPort());
+            loginRequest.setUserType(authClientProperties.getUserType());
+            loginRequest.setLoginId(authClientProperties.getLoginId());
+            loginRequest.setLoginPass(authClientProperties.getLoginPass());
+            loginRequest.setLoginSecret(authClientProperties.getLoginSecret());
+            loginRequest.setForceLogin(true);
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType( MediaType.APPLICATION_JSON );
-            String credentials = JsonUtils.toString( authClientProperties );
-            RequestEntity<String> requestEntity = new RequestEntity<>( credentials, headers, HttpMethod.POST, URI.create( loginUrl ) );
-            ResponseEntity<ResponseData<List<TokenResponse>>> loginResponseEntity = restTemplate.exchange( requestEntity,
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            String credentials = JsonUtils.toString(authClientProperties);
+            RequestEntity<String> requestEntity = new RequestEntity<>(credentials, headers, HttpMethod.POST, URI.create(loginUrl));
+            ResponseEntity<ResponseData<List<TokenResponse>>> loginResponseEntity = restTemplate.exchange(requestEntity,
                     new ParameterizedTypeReference<ResponseData<List<TokenResponse>>>() {
-            } );
+                    });
             if (loginResponseEntity.getStatusCode().value() == HttpStatus.OK.value()) {
                 ResponseData<List<TokenResponse>> loginResponse = loginResponseEntity.getBody();
                 if (loginResponse != null) {
@@ -143,7 +144,7 @@ public class AuthClientTokenHelper {
                                 long createAt = tokenResponse.getCreateAt();
                                 // 预留5分钟缓冲。
                                 expiresAt = (createAt - 300_000L) + expiresIn;
-                                if (StringUtils.isNotBlank( token ) && StringUtils.isNotBlank( refreshToken ) && expiresAt > System.currentTimeMillis()) {
+                                if (StringUtils.isNotBlank(token) && StringUtils.isNotBlank(refreshToken) && expiresAt > SystemClock.now()) {
                                     retryTimes = 0;
                                 }
                             }
@@ -151,13 +152,13 @@ public class AuthClientTokenHelper {
                     }
                 }
             }
-            if (StringUtils.isBlank( token )) {
-                log.error( "!!!AuthClient登录出错! response: {}", loginResponseEntity.toString() );
+            if (StringUtils.isBlank(token)) {
+                log.error("!!!AuthClient登录出错! response: {}", loginResponseEntity.toString());
             }
         } catch (Throwable e) {
-            log.error( "!!!AuthClient登录出错! {}", e.getMessage(), e );
+            log.error("!!!AuthClient登录出错! {}", e.getMessage(), e);
         }
-        if (StringUtils.isBlank( token )) {
+        if (StringUtils.isBlank(token)) {
             refreshToken = null;
             expiresAt = 0;
         }
@@ -168,25 +169,25 @@ public class AuthClientTokenHelper {
      */
     private synchronized void refresh() {
         if (retryTimes > 1 && retryTimes % 10 == 0) {
-            log.error( "!!!AuthClient获取token出错已超过{}次，请检查配置！", retryTimes );
+            log.error("!!!AuthClient获取token出错已超过{}次，请检查配置！", retryTimes);
         }
         //如果状态正常了，不再执行，防止重复执行。
-        if (StringUtils.isNotBlank( token )) {
+        if (StringUtils.isNotBlank(token)) {
             return;
         }
         retryTimes++;
         try {
             String refreshTokenUrl = authClientProperties.getAuthCenterHost() + authClientProperties.getRefreshEntryPoint();
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType( MediaType.APPLICATION_FORM_URLENCODED );
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
             MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-            map.add( "refreshToken", refreshToken );
-            map.add( "loginAgent",
-                    authClientProperties.getAppName() + ":" + authClientProperties.getAppVersion() + "/" + authClientProperties.getAppHost() + ":" + authClientProperties.getAppPort() );
-            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>( map, headers );
-            ResponseEntity<ResponseData<TokenResponse>> responseEntity = restTemplate.exchange( refreshTokenUrl, HttpMethod.POST, request,
+            map.add("refreshToken", refreshToken);
+            map.add("loginAgent",
+                    authClientProperties.getAppName() + ":" + authClientProperties.getAppVersion() + "/" + authClientProperties.getAppHost() + ":" + authClientProperties.getAppPort());
+            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
+            ResponseEntity<ResponseData<TokenResponse>> responseEntity = restTemplate.exchange(refreshTokenUrl, HttpMethod.POST, request,
                     new ParameterizedTypeReference<ResponseData<TokenResponse>>() {
-                    } );
+                    });
             //刷新token成功以后，更新token
             if (responseEntity.getStatusCode().value() == HttpStatus.OK.value()) {
                 ResponseData<TokenResponse> responseBody = responseEntity.getBody();
@@ -198,19 +199,19 @@ public class AuthClientTokenHelper {
                         long createAt = tokenResponse.getCreateAt();
                         // 预留5分钟缓冲。
                         expiresAt = (createAt - 300_000L) + expiresIn;
-                        if (StringUtils.isNotBlank( token ) && expiresAt > System.currentTimeMillis()) {
+                        if (StringUtils.isNotBlank(token) && expiresAt > System.currentTimeMillis()) {
                             retryTimes = 0;
                         }
                     }
                 }
             }
-            if (StringUtils.isBlank( token )) {
-                log.error( "!!!AuthClient刷新token出错! response: {}", responseEntity.toString() );
+            if (StringUtils.isBlank(token)) {
+                log.error("!!!AuthClient刷新token出错! response: {}", responseEntity.toString());
             }
         } catch (Throwable e) {
-            log.error( "!!!AuthClient刷新token出错! {}", e.getMessage(), e );
+            log.error("!!!AuthClient刷新token出错! {}", e.getMessage(), e);
         }
-        if (StringUtils.isBlank( token )) {
+        if (StringUtils.isBlank(token)) {
             refreshToken = null;
             expiresAt = 0;
         }

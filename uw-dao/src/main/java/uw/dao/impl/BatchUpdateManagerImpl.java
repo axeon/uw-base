@@ -2,6 +2,7 @@ package uw.dao.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.SystemClock;
 import uw.dao.BatchUpdateManager;
 import uw.dao.TransactionException;
 
@@ -176,7 +177,7 @@ public class BatchUpdateManagerImpl implements BatchUpdateManager {
      * @throws TransactionException
      */
     private int[] executeBatch(String connName, int connId, String sql, PreparedStatement pstmt) throws TransactionException {
-        long start = System.currentTimeMillis();
+        long start = SystemClock.now();
         int[] effects;
         String exception = "";
         try {
@@ -185,7 +186,7 @@ public class BatchUpdateManagerImpl implements BatchUpdateManager {
             exception = e.toString();
             throw new TransactionException(exception + connName + "@" + connId + ": " + sql + "#" + batchSize, e);
         }
-        dao.addSqlExecuteStats(connName, connId, sql, null, batchSize, 0, 0, System.currentTimeMillis() - start, exception);
+        dao.addSqlExecuteStats(connName, connId, sql, null, batchSize, 0, 0, SystemClock.now() - start, exception);
         return effects;
     }
 

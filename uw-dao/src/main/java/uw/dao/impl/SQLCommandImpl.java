@@ -3,6 +3,7 @@ package uw.dao.impl;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.SystemClock;
 import uw.dao.DataSet;
 import uw.dao.TransactionException;
 import uw.dao.connectionpool.ConnectionManager;
@@ -41,7 +42,7 @@ public class SQLCommandImpl {
      */
     @SuppressWarnings("unchecked")
     public static final <T> T selectForSingleValue(DaoFactoryImpl dao, String connName, Class<T> cls, String selectSql, Object[] paramList) throws TransactionException {
-        long start = System.currentTimeMillis();
+        long start = SystemClock.now();
         long connTime = 0, dbTime = 0;
         int connId = 0;
         String exception = null;
@@ -64,10 +65,10 @@ public class SQLCommandImpl {
                     DaoReflectUtils.CommandUpdateReflect(pstmt, i + 1, paramList[i]);
                 }
             }
-            connTime = System.currentTimeMillis() - start;
-            long dbStart = System.currentTimeMillis();
+            connTime = SystemClock.now() - start;
+            long dbStart = SystemClock.now();
             ResultSet rs = pstmt.executeQuery();
-            dbTime = System.currentTimeMillis() - dbStart;
+            dbTime = SystemClock.now() - dbStart;
             if (rs.next()) {
                 if (cls == int.class || cls == Integer.class) {
                     value = rs.getInt(1);
@@ -110,7 +111,7 @@ public class SQLCommandImpl {
                     logger.error(e.getMessage(), e);
                 }
             }
-            long allTime = System.currentTimeMillis() - start;
+            long allTime = SystemClock.now() - start;
             dao.addSqlExecuteStats(connName, connId, selectSql, paramList, value == null ? 0 : 1, connTime, dbTime, allTime, exception);
         }
         return (T) value;
@@ -130,7 +131,7 @@ public class SQLCommandImpl {
      */
     @SuppressWarnings("unchecked")
     public static final <T> ArrayList<T> selectForSingleList(DaoFactoryImpl dao, String connName, Class<T> cls, String selectSql, Object[] paramList) throws TransactionException {
-        long start = System.currentTimeMillis();
+        long start = SystemClock.now();
         long connTime = 0, dbTime = 0;
         int connId = 0;
         String exception = null;
@@ -154,10 +155,10 @@ public class SQLCommandImpl {
                     DaoReflectUtils.CommandUpdateReflect(pstmt, i + 1, paramList[i]);
                 }
             }
-            connTime = System.currentTimeMillis() - start;
-            long dbStart = System.currentTimeMillis();
+            connTime = SystemClock.now() - start;
+            long dbStart = SystemClock.now();
             ResultSet rs = pstmt.executeQuery();
-            dbTime = System.currentTimeMillis() - dbStart;
+            dbTime = SystemClock.now() - dbStart;
 
             if (cls == int.class || cls == Integer.class) {
                 while (rs.next()) {
@@ -219,7 +220,7 @@ public class SQLCommandImpl {
                     logger.error(e.getMessage(), e);
                 }
             }
-            long allTime = System.currentTimeMillis() - start;
+            long allTime = SystemClock.now() - start;
             dao.addSqlExecuteStats(connName, connId, selectSql, paramList, list.size(), connTime, dbTime, allTime, exception);
         }
         return (ArrayList<T>) list;
@@ -239,7 +240,7 @@ public class SQLCommandImpl {
      * @throws TransactionException 事务异常
      */
     public static final DataSet selectForDataSet(DaoFactoryImpl dao, String connName, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
-        long start = System.currentTimeMillis();
+        long start = SystemClock.now();
         long connTime = 0, dbTime = 0;
         int connId = 0, dsSize = 0;
         String exception = null;
@@ -285,8 +286,8 @@ public class SQLCommandImpl {
                 pstmt.setInt(seq + 1, (Integer) paramList[seq]);
                 pstmt.setInt(seq + 2, (Integer) paramList[seq + 1]);
             }
-            connTime = System.currentTimeMillis() - start;
-            long dbStart = System.currentTimeMillis();
+            connTime = SystemClock.now() - start;
+            long dbStart = SystemClock.now();
             ResultSet rs = pstmt.executeQuery();
             dbTime = System.currentTimeMillis() - dbStart;
             ds = new DataSet(rs, startIndex, resultNum, allsize);

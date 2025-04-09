@@ -1,5 +1,7 @@
 package uw.cache.vo;
 
+import uw.common.util.SystemClock;
+
 /**
  * 失败保护数值。
  * 原本可以在expiry中设置null类型的保护时间，caffeine开expiry检测后性能下降200倍。
@@ -16,7 +18,7 @@ public class CacheProtectedValue {
     }
 
     public CacheProtectedValue(long ttl) {
-        expiredMillis = System.currentTimeMillis() + ttl;
+        expiredMillis = SystemClock.now() + ttl;
     }
 
     /**
@@ -25,6 +27,6 @@ public class CacheProtectedValue {
      * @return
      */
     public boolean isExpired() {
-        return System.currentTimeMillis() > expiredMillis;
+        return SystemClock.now() > expiredMillis;
     }
 }

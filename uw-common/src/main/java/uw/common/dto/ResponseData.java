@@ -3,6 +3,7 @@ package uw.common.dto;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import uw.common.util.JsonUtils;
+import uw.common.util.SystemClock;
 
 /**
  * ResponseData是一个基于泛型的响应数据对象，封装了响应数据，以及响应状态码。
@@ -37,7 +38,10 @@ public class ResponseData<T> {
      * 未知状态值
      */
     public static final String STATE_UNKNOWN = "unknown";
-
+    /**
+     * 没有响应数据的代码值。
+     */
+    public static final String CODE_DATA_EMPTY_WARN = "uw.common.data.empty.warn";
     /**
      * 成功常量，不带时间戳。
      */
@@ -91,7 +95,7 @@ public class ResponseData<T> {
      * @param msg
      */
     public ResponseData(T data, String state, String code, String msg) {
-        this.time = System.currentTimeMillis();
+        this.time = SystemClock.now();
         this.state = state;
         this.msg = msg;
         this.code = code;
@@ -116,6 +120,91 @@ public class ResponseData<T> {
      * 默认构造器，主要为json序列化使用。
      */
     public ResponseData() {
+    }
+
+    /**
+     * 带结果数据值的数据值。
+     * 如果数据不是null，则返回成功。
+     * 如果数据是null，则返回警告。
+     * @param t
+     * @return
+     * @param <T>
+     */
+    public static <T> ResponseData<T> data(T t) {
+        if (t!=null) {
+            return new ResponseData<T>(t, STATE_SUCCESS, null, null);
+        }else{
+            return new ResponseData<T>(t, STATE_WARN, CODE_DATA_EMPTY_WARN, null);
+        }
+    }
+
+    /**
+     * 带结果、代码和消息的数据值。
+     * 如果数据不是null，则返回成功。
+     * 如果数据是null，则返回警告。
+     * @param t
+     * @param responseCode
+     * @return
+     * @param <T>
+     */
+    public static <T> ResponseData<T> data(T t, ResponseCode responseCode) {
+        if (t!=null) {
+            return new ResponseData<T>(t, STATE_SUCCESS, responseCode.getFullCode(), responseCode.getLocalizedMessage());
+        }else{
+            return new ResponseData<T>(t, STATE_WARN, responseCode.getFullCode(), responseCode.getLocalizedMessage());
+        }
+    }
+
+    /**
+     * 带结果、代码和消息的数据值。
+     * 如果数据不是null，则返回成功。
+     * 如果数据是null，则返回警告。
+     * @param t
+     * @param responseCode
+     * @return
+     * @param <T>
+     */
+    public static <T> ResponseData<T> data(T t, ResponseCode responseCode,Object... params) {
+        if (t!=null) {
+            return new ResponseData<T>(t, STATE_SUCCESS, responseCode.getFullCode(), responseCode.getLocalizedMessage(params));
+        }else{
+            return new ResponseData<T>(t, STATE_WARN, responseCode.getFullCode(), responseCode.getLocalizedMessage(params));
+        }
+    }
+
+    /**
+     * 带结果、代码和消息的数据值。
+     * 如果数据不是null，则返回成功。
+     * 如果数据是null，则返回警告。
+     * @param t
+     * @param code
+     * @return
+     * @param <T>
+     */
+    public static <T> ResponseData<T> data(T t, String code) {
+        if (t!=null) {
+            return new ResponseData<T>(t, STATE_SUCCESS, code, null);
+        }else{
+            return new ResponseData<T>(t, STATE_WARN, code, null);
+        }
+    }
+
+    /**
+     * 带结果、代码和消息的数据值。
+     * 如果数据不是null，则返回成功。
+     * 如果数据是null，则返回警告。
+     * @param t
+     * @param code
+     * @param msg
+     * @return
+     * @param <T>
+     */
+    public static <T> ResponseData<T> data(T t, String code, String msg) {
+        if (t!=null) {
+            return new ResponseData<T>(t, STATE_SUCCESS, code, msg);
+        }else{
+            return new ResponseData<T>(t, STATE_WARN, code, msg);
+        }
     }
 
     /**

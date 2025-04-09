@@ -54,6 +54,13 @@ public class DaoManager {
         return new DaoManager(DaoFactory.getInstance());
     }
 
+    /**
+     * 获取一个DaoFactory实例.
+     * @return
+     */
+    public DaoFactory getDaoFactory(){
+        return daoFactory;
+    }
 
     /**
      * 获得一个java.sql.Connection连接。 请注意，这是一个原生的Connection对象，需确保手工关闭.
@@ -152,7 +159,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<T> save(T entity) {
         try {
-            return ResponseData.success(daoFactory.save(entity));
+            return ResponseData.data(daoFactory.save(entity));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -168,7 +175,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<T> save(String connName, T entity) {
         try {
-            return ResponseData.success(daoFactory.save(connName, entity));
+            return ResponseData.data(daoFactory.save(connName, entity));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -184,7 +191,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<T> save(T entity, String tableName) {
         try {
-            return ResponseData.success(daoFactory.save(entity, tableName));
+            return ResponseData.data(daoFactory.save(entity, tableName));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -201,7 +208,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<T> save(String connName, T entity, String tableName) {
         try {
-            return ResponseData.success(daoFactory.save(connName, entity, tableName));
+            return ResponseData.data(daoFactory.save(connName, entity, tableName));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -216,7 +223,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<List<T>> save(List<T> entityList) {
         try {
-            return ResponseData.success(daoFactory.save(entityList));
+            return ResponseData.data(daoFactory.save(entityList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -232,7 +239,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<List<T>> save(String connName, List<T> entityList) {
         try {
-            return ResponseData.success(daoFactory.save(connName, entityList));
+            return ResponseData.data(daoFactory.save(connName, entityList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -248,7 +255,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<List<T>> save(List<T> entityList, String tableName) {
         try {
-            return ResponseData.success(daoFactory.save(entityList, tableName));
+            return ResponseData.data(daoFactory.save(entityList, tableName));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -265,7 +272,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<List<T>> save(String connName, List<T> entityList, String tableName) {
         try {
-            return ResponseData.success(daoFactory.save(connName, entityList, tableName));
+            return ResponseData.data(daoFactory.save(connName, entityList, tableName));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -282,7 +289,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> update(T entity) {
         try {
-            return ResponseData.success(daoFactory.update(entity));
+            return ResponseData.data(daoFactory.update(entity));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -298,7 +305,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> update(String connName, T entity) {
         try {
-            return ResponseData.success(daoFactory.update(connName, entity));
+            return ResponseData.data(daoFactory.update(connName, entity));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -314,7 +321,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> update(T entity, String tableName) {
         try {
-            return ResponseData.success(daoFactory.update(entity, tableName));
+            return ResponseData.data(daoFactory.update(entity, tableName));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -331,7 +338,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> update(String connName, T entity, String tableName) {
         try {
-            return ResponseData.success(daoFactory.update(connName, entity, tableName));
+            return ResponseData.data(daoFactory.update(connName, entity, tableName));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -348,7 +355,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> delete(T entity) {
         try {
-            return ResponseData.success(daoFactory.delete(entity));
+            return ResponseData.data(daoFactory.delete(entity));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -364,7 +371,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> delete(String connName, T entity) {
         try {
-            return ResponseData.success(daoFactory.delete(connName, entity));
+            return ResponseData.data(daoFactory.delete(connName, entity));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -380,7 +387,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> delete(T entity, String tableName) {
         try {
-            return ResponseData.success(daoFactory.delete(entity, tableName));
+            return ResponseData.data(daoFactory.delete(entity, tableName));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -397,7 +404,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> delete(String connName, T entity, String tableName) {
         try {
-            return ResponseData.success(daoFactory.delete(connName, entity, tableName));
+            return ResponseData.data(daoFactory.delete(connName, entity, tableName));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -415,7 +422,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> load(Class<T> entityCls, Serializable id) {
         try {
-            return ResponseData.success(daoFactory.load(entityCls, id));
+            return ResponseData.data(daoFactory.load(entityCls, id));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -432,7 +439,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> load(String connName, Class<T> entityCls, Serializable id) {
         try {
-            return ResponseData.success(daoFactory.load(connName, entityCls, id));
+            return ResponseData.data(daoFactory.load(connName, entityCls, id));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -449,7 +456,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> load(Class<T> entityCls, String tableName, Serializable id) {
         try {
-            return ResponseData.success(daoFactory.load(entityCls, tableName, id));
+            return ResponseData.data(daoFactory.load(entityCls, tableName, id));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -467,7 +474,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> load(String connName, Class<T> entityCls, String tableName, Serializable id) {
         try {
-            return ResponseData.success(daoFactory.load(connName, entityCls, tableName, id));
+            return ResponseData.data(daoFactory.load(connName, entityCls, tableName, id));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -485,7 +492,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String selectSql) {
         try {
-            return ResponseData.success(daoFactory.list(entityCls, selectSql));
+            return ResponseData.data(daoFactory.list(entityCls, selectSql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -503,7 +510,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String selectSql, int startIndex, int resultNum) {
         try {
-            return ResponseData.success(daoFactory.list(entityCls, selectSql, startIndex, resultNum));
+            return ResponseData.data(daoFactory.list(entityCls, selectSql, startIndex, resultNum));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -535,7 +542,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String selectSql) {
         try {
-            return ResponseData.success(daoFactory.list(connName, entityCls, selectSql));
+            return ResponseData.data(daoFactory.list(connName, entityCls, selectSql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -554,7 +561,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum) {
         try {
-            return ResponseData.success(daoFactory.list(connName, entityCls, selectSql, startIndex, resultNum));
+            return ResponseData.data(daoFactory.list(connName, entityCls, selectSql, startIndex, resultNum));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -587,7 +594,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String selectSql, Object[] paramList) {
         try {
-            return ResponseData.success(daoFactory.list(entityCls, selectSql, paramList));
+            return ResponseData.data(daoFactory.list(entityCls, selectSql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -605,7 +612,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList) {
         try {
-            return ResponseData.success(daoFactory.list(connName, entityCls, selectSql, paramList));
+            return ResponseData.data(daoFactory.list(connName, entityCls, selectSql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -624,7 +631,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) {
         try {
-            return ResponseData.success(daoFactory.list(entityCls, selectSql, paramList, startIndex, resultNum));
+            return ResponseData.data(daoFactory.list(entityCls, selectSql, paramList, startIndex, resultNum));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -644,7 +651,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) {
         try {
-            return ResponseData.success(daoFactory.list(connName, entityCls, selectSql, paramList, startIndex, resultNum));
+            return ResponseData.data(daoFactory.list(connName, entityCls, selectSql, paramList, startIndex, resultNum));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -664,7 +671,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
         try {
-            return ResponseData.success(daoFactory.list(entityCls, selectSql, paramList, startIndex, resultNum, autoCount));
+            return ResponseData.data(daoFactory.list(entityCls, selectSql, paramList, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -685,7 +692,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
         try {
-            return ResponseData.success(daoFactory.list(connName, entityCls, selectSql, paramList, startIndex, resultNum, autoCount));
+            return ResponseData.data(daoFactory.list(connName, entityCls, selectSql, paramList, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -701,7 +708,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(Class<T> entityCls, PageQueryParam pageQueryParam) {
         try {
-            return ResponseData.success(daoFactory.list(entityCls, pageQueryParam));
+            return ResponseData.data(daoFactory.list(entityCls, pageQueryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -731,7 +738,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, PageQueryParam pageQueryParam) {
         try {
-            return ResponseData.success(daoFactory.list(connName, entityCls, pageQueryParam));
+            return ResponseData.data(daoFactory.list(connName, entityCls, pageQueryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -749,7 +756,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) {
         try {
-            return ResponseData.success(daoFactory.list(connName, entityCls, tableName, pageQueryParam));
+            return ResponseData.data(daoFactory.list(connName, entityCls, tableName, pageQueryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -767,7 +774,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleValue(Class<T> cls, String sql) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleValue(cls, sql));
+            return ResponseData.data(daoFactory.queryForSingleValue(cls, sql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -784,7 +791,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleValue(String connName, Class<T> cls, String sql) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleValue(connName, cls, sql));
+            return ResponseData.data(daoFactory.queryForSingleValue(connName, cls, sql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -801,7 +808,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleValue(Class<T> cls, String sql, Object[] paramList) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleValue(cls, sql, paramList));
+            return ResponseData.data(daoFactory.queryForSingleValue(cls, sql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -819,7 +826,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleValue(String connName, Class<T> cls, String sql, Object[] paramList) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleValue(connName, cls, sql, paramList));
+            return ResponseData.data(daoFactory.queryForSingleValue(connName, cls, sql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -835,7 +842,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleValue(Class<T> valueCls, QueryParam queryParam) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleValue(valueCls, queryParam));
+            return ResponseData.data(daoFactory.queryForSingleValue(valueCls, queryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -852,7 +859,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleValue(String connName, Class<T> valueCls, QueryParam queryParam) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleValue(connName, valueCls, queryParam));
+            return ResponseData.data(daoFactory.queryForSingleValue(connName, valueCls, queryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -868,7 +875,7 @@ public class DaoManager {
      */
     public <T> ResponseData<ArrayList<T>> queryForSingleList(Class<T> valueCls, String sql) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleList(valueCls, sql));
+            return ResponseData.data(daoFactory.queryForSingleList(valueCls, sql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -885,7 +892,7 @@ public class DaoManager {
      */
     public <T> ResponseData<ArrayList<T>> queryForSingleList(String connName, Class<T> valueCls, String sql) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleList(connName, valueCls, sql));
+            return ResponseData.data(daoFactory.queryForSingleList(connName, valueCls, sql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -901,7 +908,7 @@ public class DaoManager {
      */
     public <T> ResponseData<ArrayList<T>> queryForSingleList(Class<T> valueCls, QueryParam queryParam) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleList(valueCls, queryParam));
+            return ResponseData.data(daoFactory.queryForSingleList(valueCls, queryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -932,7 +939,7 @@ public class DaoManager {
      */
     public <T> ResponseData<ArrayList<T>> queryForSingleList(String connName, Class<T> valueCls, String sql, Object[] paramList) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleList(connName, valueCls, sql, paramList));
+            return ResponseData.data(daoFactory.queryForSingleList(connName, valueCls, sql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -949,7 +956,7 @@ public class DaoManager {
      */
     public <T> ResponseData<ArrayList<T>> queryForSingleList(Class<T> valueCls, String sql, Object[] paramList) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleList(valueCls, sql, paramList));
+            return ResponseData.data(daoFactory.queryForSingleList(valueCls, sql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -965,7 +972,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleObject(Class<T> entityCls, String selectSql) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleObject(entityCls, selectSql));
+            return ResponseData.data(daoFactory.queryForSingleObject(entityCls, selectSql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -982,7 +989,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleObject(String connName, Class<T> entityCls, String selectSql) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleObject(connName, entityCls, selectSql));
+            return ResponseData.data(daoFactory.queryForSingleObject(connName, entityCls, selectSql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -998,7 +1005,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleObject(Class<T> entityCls, QueryParam queryParam) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleObject(entityCls, queryParam));
+            return ResponseData.data(daoFactory.queryForSingleObject(entityCls, queryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1028,7 +1035,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleObject(String connName, Class<T> entityCls, QueryParam queryParam) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleObject(connName, entityCls, queryParam));
+            return ResponseData.data(daoFactory.queryForSingleObject(connName, entityCls, queryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1045,7 +1052,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleObject(Class<T> entityCls, String selectSql, Object[] paramList) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleObject(entityCls, selectSql, paramList));
+            return ResponseData.data(daoFactory.queryForSingleObject(entityCls, selectSql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1063,7 +1070,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleObject(String connName, Class<T> entityCls, String selectSql, Object[] paramList) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleObject(connName, entityCls, selectSql, paramList));
+            return ResponseData.data(daoFactory.queryForSingleObject(connName, entityCls, selectSql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1081,7 +1088,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleObject(String connName, Class<T> entityCls, String tableName, QueryParam queryParam) {
         try {
-            return ResponseData.success(daoFactory.queryForSingleObject(connName, entityCls, tableName, queryParam));
+            return ResponseData.data(daoFactory.queryForSingleObject(connName, entityCls, tableName, queryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1096,7 +1103,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String selectSql) {
         try {
-            return ResponseData.success(daoFactory.queryForDataSet(selectSql));
+            return ResponseData.data(daoFactory.queryForDataSet(selectSql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1112,7 +1119,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String connName, String selectSql) {
         try {
-            return ResponseData.success(daoFactory.queryForDataSet(connName, selectSql));
+            return ResponseData.data(daoFactory.queryForDataSet(connName, selectSql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1129,7 +1136,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String selectSql, int startIndex, int resultNum) {
         try {
-            return ResponseData.success(daoFactory.queryForDataSet(selectSql, startIndex, resultNum));
+            return ResponseData.data(daoFactory.queryForDataSet(selectSql, startIndex, resultNum));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1145,7 +1152,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String selectSql, Object[] paramList) {
         try {
-            return ResponseData.success(daoFactory.queryForDataSet(selectSql, paramList));
+            return ResponseData.data(daoFactory.queryForDataSet(selectSql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1163,7 +1170,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String connName, String selectSql, int startIndex, int resultNum) {
         try {
-            return ResponseData.success(daoFactory.queryForDataSet(connName, selectSql, startIndex, resultNum));
+            return ResponseData.data(daoFactory.queryForDataSet(connName, selectSql, startIndex, resultNum));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1195,7 +1202,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String connName, String selectSql, Object[] paramList) {
         try {
-            return ResponseData.success(daoFactory.queryForDataSet(connName, selectSql, paramList));
+            return ResponseData.data(daoFactory.queryForDataSet(connName, selectSql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1228,7 +1235,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String selectSql, Object[] paramList, int startIndex, int resultNum) {
         try {
-            return ResponseData.success(daoFactory.queryForDataSet(selectSql, paramList, startIndex, resultNum));
+            return ResponseData.data(daoFactory.queryForDataSet(selectSql, paramList, startIndex, resultNum));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1261,7 +1268,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String selectSql, int startIndex, int resultNum, boolean autoCount) {
         try {
-            return ResponseData.success(daoFactory.queryForDataSet(selectSql, startIndex, resultNum, autoCount));
+            return ResponseData.data(daoFactory.queryForDataSet(selectSql, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1281,7 +1288,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
         try {
-            return ResponseData.success(daoFactory.queryForDataSet(connName, selectSql, paramList, startIndex, resultNum, autoCount));
+            return ResponseData.data(daoFactory.queryForDataSet(connName, selectSql, paramList, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1297,7 +1304,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String connName, QueryParam queryParam) {
         try {
-            return ResponseData.success(daoFactory.queryForDataSet(connName, queryParam));
+            return ResponseData.data(daoFactory.queryForDataSet(connName, queryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1312,7 +1319,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(QueryParam queryParam) {
         try {
-            return ResponseData.success(daoFactory.queryForDataSet(queryParam));
+            return ResponseData.data(daoFactory.queryForDataSet(queryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1329,7 +1336,7 @@ public class DaoManager {
      */
     public ResponseData<Integer> executeCommand(String sql) {
         try {
-            return ResponseData.success(daoFactory.executeCommand(sql));
+            return ResponseData.data(daoFactory.executeCommand(sql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1345,7 +1352,7 @@ public class DaoManager {
      */
     public ResponseData<Integer> executeCommand(String connName, String sql) {
         try {
-            return ResponseData.success(daoFactory.executeCommand(connName, sql));
+            return ResponseData.data(daoFactory.executeCommand(connName, sql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1361,7 +1368,7 @@ public class DaoManager {
      */
     public ResponseData<Integer> executeCommand(String sql, Object[] paramList) {
         try {
-            return ResponseData.success(daoFactory.executeCommand(sql, paramList));
+            return ResponseData.data(daoFactory.executeCommand(sql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());
@@ -1378,7 +1385,7 @@ public class DaoManager {
      */
     public ResponseData<Integer> executeCommand(String connName, String sql, Object[] paramList) {
         try {
-            return ResponseData.success(daoFactory.executeCommand(connName, sql, paramList));
+            return ResponseData.data(daoFactory.executeCommand(connName, sql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(COMMON_ERROR_CODE, e.getMessage());

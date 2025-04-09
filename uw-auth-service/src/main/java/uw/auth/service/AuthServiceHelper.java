@@ -22,6 +22,7 @@ import uw.auth.service.token.InvalidTokenData;
 import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.vo.MscActionLog;
 import uw.common.dto.ResponseData;
+import uw.common.util.SystemClock;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -57,12 +58,12 @@ public class AuthServiceHelper {
     private static final Expiry<String, AuthTokenData> cacheExpiryPolicy = new Expiry<>() {
         @Override
         public long expireAfterCreate(String key, AuthTokenData authToken, long currentTime) {
-            return TimeUnit.MILLISECONDS.toNanos(authToken.getExpireAt() - System.currentTimeMillis());
+            return TimeUnit.MILLISECONDS.toNanos(authToken.getExpireAt() - SystemClock.now());
         }
 
         @Override
         public long expireAfterUpdate(String key, AuthTokenData authToken, long currentTime, long currentDuration) {
-            return TimeUnit.MILLISECONDS.toNanos(authToken.getExpireAt() - System.currentTimeMillis());
+            return TimeUnit.MILLISECONDS.toNanos(authToken.getExpireAt() - SystemClock.now());
         }
 
         @Override
@@ -577,7 +578,7 @@ public class AuthServiceHelper {
      * 写日志信息
      *
      * @param bizTypeClass 业务类 用户代码自行定义,不应有冲突
-     * @param bizLog        日志信息
+     * @param bizLog       日志信息
      */
     public static MscActionLog logInfo(Class bizTypeClass, String bizLog) {
         return logInfo(bizTypeClass.getName(), null, bizLog);
@@ -587,7 +588,7 @@ public class AuthServiceHelper {
      * 写日志信息
      *
      * @param bizType 业务类 用户代码自行定义,不应有冲突
-     * @param bizLog   日志信息
+     * @param bizLog  日志信息
      */
     public static MscActionLog logInfo(String bizType, String bizLog) {
         return logInfo(bizType, null, bizLog);
@@ -598,7 +599,7 @@ public class AuthServiceHelper {
      *
      * @param bizTypeClass 业务类 用户代码自行定义,不应有冲突
      * @param bizId        业务主键
-     * @param bizLog        日志信息
+     * @param bizLog       日志信息
      */
     public static MscActionLog logInfo(Class bizTypeClass, Serializable bizId, String bizLog) {
         return logInfo(bizTypeClass.getName(), bizId, bizLog);

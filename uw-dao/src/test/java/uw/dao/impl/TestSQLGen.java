@@ -2,6 +2,7 @@ package uw.dao.impl;
 
 import org.apache.commons.lang3.StringUtils;
 import org.openjdk.jmh.annotations.*;
+import uw.common.util.SystemClock;
 import uw.dao.util.QueryParamUtils;
 import uw.dao.vo.QueryParamResult;
 
@@ -52,7 +53,7 @@ public class TestSQLGen {
         stateList.add(1);
         stateList.add(2);
         queryParam.setAppInfo("%test%");
-        queryParam.setCreateDate(new Date[]{new Date(System.currentTimeMillis()-86400000),new Date()});
+        queryParam.setCreateDate(new Date[]{new Date(SystemClock.now()-86400000),new Date()});
         queryParam.setStateList(stateList);
         queryParam.setStateOn(true);
         queryParam.ADD_EXT_PARAM("test>?",1);

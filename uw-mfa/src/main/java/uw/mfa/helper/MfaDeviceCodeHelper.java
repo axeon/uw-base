@@ -9,6 +9,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.web.client.RestTemplate;
 import uw.common.dto.ResponseData;
+import uw.common.util.SystemClock;
 import uw.mfa.conf.UwMfaProperties;
 import uw.mfa.constant.MfaDeviceType;
 import uw.mfa.constant.MfaResponseCode;
@@ -36,7 +37,7 @@ public class MfaDeviceCodeHelper {
     /**
      * 随机生成器
      */
-    private static final Random RANDOM = new Random( System.currentTimeMillis() );
+    private static final Random RANDOM = new Random( SystemClock.now() );
     /**
      * ASCII
      */

@@ -33,12 +33,12 @@ import java.util.Locale;
 @Configuration
 @AutoConfigureAfter(AuthServiceAutoConfiguration.class)
 @EnableConfigurationProperties({CommonAppProperties.class})
-public class AppCommonAutoConfiguration implements WebMvcConfigurer {
+public class CommonAppAutoConfiguration {
 
     /**
      * 日志.
      */
-    private static final Logger logger = LoggerFactory.getLogger( AppCommonAutoConfiguration.class );
+    private static final Logger logger = LoggerFactory.getLogger( CommonAppAutoConfiguration.class );
     /**
      * 语言列表.
      */
@@ -65,15 +65,18 @@ public class AppCommonAutoConfiguration implements WebMvcConfigurer {
     } );
 
     /**
-     * 语言切换拦截器.
-     *
-     * @return
+     * 默认拦截器 其中lang表示切换语言的参数名
      */
     @Bean
-    public LocaleChangeInterceptor commonLocaleChangeInterceptor() {
-        LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor();
-        interceptor.setParamName( "lang" ); // 指定语言参数名
-        return interceptor;
+    public WebMvcConfigurer localeInterceptor() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addInterceptors(InterceptorRegistry registry) {
+                LocaleChangeInterceptor localeInterceptor = new LocaleChangeInterceptor();
+                localeInterceptor.setParamName("lang");
+                registry.addInterceptor(localeInterceptor);
+            }
+        };
     }
 
     /**
@@ -82,7 +85,9 @@ public class AppCommonAutoConfiguration implements WebMvcConfigurer {
      * @return
      */
     @Bean
+    @Primary
     public LocaleResolver commonLocaleResolver() {
+        logger.info("CommonLocaleResolver Bean initialized");
         return new LocaleResolver() {
 
             @NotNull
@@ -98,16 +103,6 @@ public class AppCommonAutoConfiguration implements WebMvcConfigurer {
 
             }
         };
-    }
-
-    /**
-     * 拦截器注册.
-     *
-     * @param registry
-     */
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor( commonLocaleChangeInterceptor() );
     }
 
     /**

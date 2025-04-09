@@ -31,8 +31,7 @@ public class AuthPermService {
     /**
      * 服务不可用返回。
      */
-    private static final ResponseData RESPONSE_SERVICE_UNAVAILABLE = new ResponseData( ResponseData.STATE_ERROR, AuthServiceConstants.HTTP_SERVICE_UNAVAILABLE_CODE, "Service " +
-            "Unavailable!" );
+    private static final ResponseData RESPONSE_SERVICE_UNAVAILABLE = new ResponseData( ResponseData.STATE_ERROR, AuthServiceConstants.HTTP_SERVICE_UNAVAILABLE_CODE, "Service Starting..." );
 
     /**
      * 需要升级返回。
@@ -123,7 +122,7 @@ public class AuthPermService {
         //检测应用权限表。
         if (appPermMap == null) {
             logger.warn( "应用权限数据尚未初始化完成，请稍后重试!" );
-            return ResponseData.warnCode( AuthServiceConstants.HTTP_SERVICE_UNAVAILABLE_CODE, "!!!AuthPermService is loading..." );
+            return RESPONSE_SERVICE_UNAVAILABLE;
         }
         //根据用户类型进行权限验证。
         switch (permAuthType) {

@@ -11,12 +11,35 @@ import java.util.Date;
  */
 public class MscActionLog extends LogBaseVo implements Serializable {
 
+    /**
+     * 运营商Id
+     */
+    @Schema(title = "运营商Id", description = "运营商Id" )
+    private long saasId;
+
+    /**
+     * 商户Id
+     */
+    @Schema(title = "商户Id", description = "商户Id" )
+    private long mchId;
 
     /**
      * 用户Id
      */
     @Schema(title = "用户Id", description = "用户Id" )
     private long userId;
+
+    /**
+     * 用户类型 ==> msc_user_type.type_code
+     */
+    @Schema(title = "用户类型", description = "用户类型" )
+    private int userType;
+
+    /**
+     * 用户组Id。
+     */
+    @Schema(title = "用户组Id", description = "用户组Id" )
+    private long groupId;
 
     /**
      * 用户信息。
@@ -35,30 +58,6 @@ public class MscActionLog extends LogBaseVo implements Serializable {
      */
     @Schema(title = "真实姓名", description = "真实姓名" )
     private String realName;
-
-    /**
-     * 运营商Id
-     */
-    @Schema(title = "运营商Id", description = "运营商Id" )
-    private long saasId;
-
-    /**
-     * 商户Id
-     */
-    @Schema(title = "商户Id", description = "商户Id" )
-    private long mchId;
-
-    /**
-     * 用户组Id。
-     */
-    @Schema(title = "用户组Id", description = "用户组Id" )
-    private long groupId;
-
-    /**
-     * 用户类型 ==> msc_user_type.type_code
-     */
-    @Schema(title = "用户类型", description = "用户类型" )
-    private int userType;
 
     /**
      * 用户IP
@@ -82,13 +81,19 @@ public class MscActionLog extends LogBaseVo implements Serializable {
      * 业务类型,用于查询
      */
     @Schema(title = "业务类型", description = "业务类型" )
-    private String refType;
+    private String bizType;
 
     /**
      * 业务Id,用于查询
      */
     @Schema(title = "业务Id", description = "业务Id" )
-    private Serializable refId;
+    private Serializable bizId;
+
+    /**
+     * 业务日志
+     */
+    @Schema(title = "业务日志", description = "业务日志" )
+    private String bizLog;
 
     /**
      * 请求参数
@@ -226,20 +231,28 @@ public class MscActionLog extends LogBaseVo implements Serializable {
         this.apiName = apiName;
     }
 
-    public String getRefType() {
-        return refType;
+    public String getBizType() {
+        return bizType;
     }
 
-    public void setRefType(String refType) {
-        this.refType = refType;
+    public void setBizType(String bizType) {
+        this.bizType = bizType;
     }
 
-    public Serializable getRefId() {
-        return refId;
+    public Serializable getBizId() {
+        return bizId;
     }
 
-    public void setRefId(Serializable refId) {
-        this.refId = refId;
+    public void setBizId(Serializable bizId) {
+        this.bizId = bizId;
+    }
+
+    public String getBizLog() {
+        return bizLog;
+    }
+
+    public void setBizLog(String bizLog) {
+        this.bizLog = bizLog;
     }
 
     public String getRequestBody() {

@@ -14,11 +14,11 @@ import java.io.IOException;
 /**
  * HTTP请求拦截器，用于添加token认证所需头信息
  */
-public class TokenHeaderInterceptor implements ClientHttpRequestInterceptor {
+public class AuthTokenHeaderInterceptor implements ClientHttpRequestInterceptor {
 
     private final AuthClientTokenHelper authClientTokenHelper;
 
-    public TokenHeaderInterceptor(final AuthClientTokenHelper authClientTokenHelper) {
+    public AuthTokenHeaderInterceptor(final AuthClientTokenHelper authClientTokenHelper) {
         this.authClientTokenHelper = authClientTokenHelper;
     }
 

@@ -34,6 +34,7 @@ import java.util.Locale;
  */
 @Configuration
 @AutoConfigureBefore({WebMvcAutoConfiguration.class})
+@AutoConfigureAfter(AuthServiceAutoConfiguration.class)
 @EnableConfigurationProperties({CommonAppProperties.class})
 public class CommonAppAutoConfiguration {
 
@@ -51,6 +52,7 @@ public class CommonAppAutoConfiguration {
      * 语言列表.
      */
     private final List<Locale> LOCALE_LIST = List.of(Locale.getAvailableLocales());
+
     /**
      * 缓存语言对象.
      */

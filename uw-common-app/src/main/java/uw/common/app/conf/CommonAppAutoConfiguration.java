@@ -73,7 +73,7 @@ public class CommonAppAutoConfiguration {
                     return locale;
                 }
             } catch (Exception e) {
-                logger.error(e.getMessage(), e);
+                logger.error("解析Accept-Language[{}]报错！{}", language, e.getMessage());
             }
             return DEFAULT_LOCALE;
         }

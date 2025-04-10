@@ -4,10 +4,17 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingPathVariableException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
@@ -30,27 +37,17 @@ public class GlobalExceptionAdvice {
 
     @ExceptionHandler({Throwable.class})
     public ResponseData<String> exceptionHandle(Throwable ex, HttpServletRequest request, HttpServletResponse response) {
-        MscActionLog mscActionLog = AuthServiceHelper.getContextLog();
-        Class<?> exceptionClass = ex.getClass();
-        String detailData;
-        if (exceptionClass.equals( HttpMediaTypeNotAcceptableException.class )) {
-            response.setStatus( HttpStatus.NOT_ACCEPTABLE.value() );
-        } else if (exceptionClass.equals( HttpMediaTypeNotSupportedException.class )) {
-            response.setStatus( HttpStatus.UNSUPPORTED_MEDIA_TYPE.value() );
-        } else if (exceptionClass.equals( HttpRequestMethodNotSupportedException.class )) {
-            response.setStatus( HttpStatus.METHOD_NOT_ALLOWED.value() );
-        } else if (exceptionClass.equals( NoResourceFoundException.class )) {
-            //找不到页面
-            response.setStatus( HttpStatus.NOT_FOUND.value() );
+        // 针对ErrorResponse异常，设置不同的状态码。
+        if (ex instanceof ErrorResponse errorResponse) {
+            response.setStatus( errorResponse.getStatusCode().value() );
             log.warn( ex.getMessage() );
-        }else if (exceptionClass.equals( AsyncRequestTimeoutException.class )) {
-            return null;
         } else {
             response.setStatus( HttpStatus.INTERNAL_SERVER_ERROR.value() );
             //500类异常，要打印到日志里。
             log.error( ex.getMessage(), ex );
         }
         //针对不同类型异常，设置不同的详细消息。
+        String detailData;
         if (response.getStatus() == HttpStatus.INTERNAL_SERVER_ERROR.value()) {
             detailData = MscUtils.exceptionToString( ex );
         } else {

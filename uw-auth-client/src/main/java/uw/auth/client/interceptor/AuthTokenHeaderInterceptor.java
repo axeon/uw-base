@@ -7,7 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
-import uw.auth.client.util.AuthClientTokenHelper;
+import uw.auth.client.helper.AuthClientTokenHelper;
 
 import java.io.IOException;
 

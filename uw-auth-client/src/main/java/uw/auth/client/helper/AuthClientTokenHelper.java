@@ -1,4 +1,4 @@
-package uw.auth.client.util;
+package uw.auth.client.helper;
 
 import io.micrometer.common.util.StringUtils;
 import org.slf4j.Logger;
@@ -125,7 +125,7 @@ public class AuthClientTokenHelper {
             loginRequest.setForceLogin(true);
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            String credentials = JsonUtils.toString(authClientProperties);
+            String credentials = JsonUtils.toString(loginRequest);
             RequestEntity<String> requestEntity = new RequestEntity<>(credentials, headers, HttpMethod.POST, URI.create(loginUrl));
             ResponseEntity<ResponseData<List<TokenResponse>>> loginResponseEntity = restTemplate.exchange(requestEntity,
                     new ParameterizedTypeReference<ResponseData<List<TokenResponse>>>() {

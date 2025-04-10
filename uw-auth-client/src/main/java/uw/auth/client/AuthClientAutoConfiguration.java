@@ -25,7 +25,7 @@ import org.springframework.http.converter.support.AllEncompassingFormHttpMessage
 import org.springframework.http.converter.xml.SourceHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import uw.auth.client.interceptor.AuthTokenHeaderInterceptor;
-import uw.auth.client.util.AuthClientTokenHelper;
+import uw.auth.client.helper.AuthClientTokenHelper;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -2,6 +2,7 @@ package uw.dao.conf;
 
 import io.lettuce.core.resource.ClientResources;
 import jakarta.annotation.PreDestroy;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +10,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisPassword;
@@ -44,21 +46,39 @@ public class DaoAutoConfiguration {
     private static final Logger log = LoggerFactory.getLogger( DaoAutoConfiguration.class );
 
 
-    public DaoAutoConfiguration(DaoConfig daoConfig, final ClientResources clientResources) {
-        init( daoConfig, clientResources );
+    public DaoAutoConfiguration(ApplicationContext context, DaoConfig daoConfig, final ClientResources clientResources) {
+        init( context, daoConfig, clientResources );
     }
 
     /**
      * 配置初始化。
      * 初始化代码放入构造器，是考虑到初始化阶段可能有数据库操作。
      */
-    public void init(DaoConfig daoConfig, final ClientResources clientResources) {
+    public void init(ApplicationContext context, DaoConfig daoConfig, final ClientResources clientResources) {
 
         log.info( "uw-dao start auto configuration..." );
 
         if (daoConfig == null) {
             log.warn( "uw-dao start failed, because the config missing!!! " );
             return;
+        }
+        // 检测环境
+        String[] activeProfiles = context.getEnvironment().getActiveProfiles();
+        for (String profile : activeProfiles) {
+            log.info("uw-dao detecting profile: {}", profile);
+            if (StringUtils.isNotBlank( profile)) {
+                profile = profile.trim().toLowerCase();
+                for (String prodProfile : daoConfig.getProdProfiles()) {
+                    if (profile.startsWith(prodProfile)){
+                        daoConfig.setProdProfile( true );
+                        log.info("uw-dao detected prod profile: {}", profile);
+                        break;
+                    }
+                }
+                if (daoConfig.isProdProfile()) {
+                    break;
+                }
+            }
         }
 
         //如果root配置没有，直接返回吧。

@@ -2,9 +2,8 @@ package uw.dao.conf;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.Set;
 
 /**
  * dao配置表.
@@ -38,6 +37,15 @@ public class DaoConfig {
      * Redis配置
      */
     private RedisProperties redis = null;
+    /**
+     * 生产环境命名列表
+     */
+    private Set<String> prodProfiles = Set.of("prod", "stab", "prd", "stb");
+
+    /**
+     * 是否生产环境.
+     */
+    private boolean isProdProfile = false;
 
     public ConnPool getConnPool() {
         return connPool;
@@ -77,6 +85,22 @@ public class DaoConfig {
 
     public void setRedis(RedisProperties redis) {
         this.redis = redis;
+    }
+
+    public Set<String> getProdProfiles() {
+        return prodProfiles;
+    }
+
+    public void setProdProfiles(Set<String> prodProfiles) {
+        this.prodProfiles = prodProfiles;
+    }
+
+    public boolean isProdProfile() {
+        return isProdProfile;
+    }
+
+    public void setProdProfile(boolean prodProfile) {
+        isProdProfile = prodProfile;
     }
 
     public static class RedisProperties extends org.springframework.boot.autoconfigure.data.redis.RedisProperties {
@@ -313,18 +337,18 @@ public class DaoConfig {
 
         /**
          * 获取合适的写入连接池。
-         * @return
-         */
-        public String getFitWritePool() {
-            return writePools[writePos ++ % writePools.length];
-        }
-
-        /**
          *
          * @return
          */
+        public String getFitWritePool() {
+            return writePools[writePos++ % writePools.length];
+        }
+
+        /**
+         * @return
+         */
         public String getFitReadPool() {
-            return readPools[readPos ++ % readPools.length];
+            return readPools[readPos++ % readPools.length];
         }
 
         public String[] getWritePools() {

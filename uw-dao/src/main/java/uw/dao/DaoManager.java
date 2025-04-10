@@ -1373,7 +1373,7 @@ public class DaoManager {
         if (data == null) {
             return ResponseData.errorCode(DaoResponseCode.DATA_NOT_FOUND_WARN);
         } else {
-            return responseData(data);
+            return ResponseData.success(data);
         }
     }
 

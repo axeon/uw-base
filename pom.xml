@@ -30,7 +30,7 @@
         <uw-cache.version>1.1.80</uw-cache.version>
         <uw-common.version>1.0.51</uw-common.version>
         <uw-common-app.version>1.0.51</uw-common-app.version>
-        <uw-dao.version>5.2.1</uw-dao.version>
+        <uw-dao.version>5.2.2</uw-dao.version>
         <uw-httpclient.version>2.1.120</uw-httpclient.version>
         <uw-log-es.version>3.0.80</uw-log-es.version>
         <uw-logback-es.version>3.0.80</uw-logback-es.version>

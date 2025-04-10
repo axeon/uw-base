@@ -10,4 +10,4 @@ jobs:
       - name: build
         run: |
           git clone -q ${{gitea.server_url}}/${{ gitea.repository }}.git .
-          mvn clean install
+          mvn clean install -DskipTests

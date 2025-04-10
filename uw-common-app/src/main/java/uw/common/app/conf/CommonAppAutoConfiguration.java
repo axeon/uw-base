@@ -34,7 +34,6 @@ import java.util.Locale;
  */
 @Configuration
 @AutoConfigureBefore({WebMvcAutoConfiguration.class})
-@AutoConfigureAfter(AuthServiceAutoConfiguration.class)
 @EnableConfigurationProperties({CommonAppProperties.class})
 public class CommonAppAutoConfiguration {
 

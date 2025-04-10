@@ -1,10 +1,10 @@
 package uw.auth.service.rpc;
 
+import uw.auth.client.vo.TokenResponse;
 import uw.auth.service.token.AuthTokenData;
 import uw.auth.service.vo.MscUserGroupVo;
 import uw.auth.service.vo.MscUserRegister;
 import uw.auth.service.vo.MscUserVo;
-import uw.auth.client.vo.TokenResponse;
 import uw.common.dto.ResponseData;
 
 import java.util.Date;
@@ -45,8 +45,7 @@ public interface AuthServiceRpc {
      * @return
      * @throws Exception
      */
-    TokenResponse genGuestToken(String loginAgent, String clientAgent, int loginType, String loginId, long saasId, long mchId, long userId, String userName, String nickName,
-                                String realName, String userIp, String remark, boolean checkDoubleLogin);
+    TokenResponse genGuestToken(String loginAgent, String clientAgent, int loginType, String loginId, long saasId, long mchId, long userId, String userName, String nickName, String realName, String mobile, String email, String userIp, String remark, boolean checkDoubleLogin);
 
     /**
      * 通知guest登录失败。
@@ -59,8 +58,7 @@ public interface AuthServiceRpc {
      * @return
      * @throws Exception
      */
-    ResponseData notifyGuestLoginFail(String loginAgent, String clientAgent, int loginType, String loginId, long saasId, long mchId, long userId, String userName,
-                                      String nickName, String realName, String userIp, String remark);
+    ResponseData notifyGuestLoginFail(String loginAgent, String clientAgent, int loginType, String loginId, long saasId, long mchId, long userId, String userName, String nickName, String realName, String mobile, String email, String userIp, String remark);
 
     /**
      * 踢出Guest用户。
@@ -165,10 +163,8 @@ public interface AuthServiceRpc {
      * @param realName
      * @param mobile
      * @param email
-     * @param wxId
      */
-    ResponseData<List<MscUserVo>> getUserList(long saasId, int userType, long mchId, long groupId, long userId, String userName, String nickName, String realName, String mobile,
-                                              String email, String wxId);
+    ResponseData<List<MscUserVo>> getUserList(long saasId, int userType, long mchId, long groupId, long userId, String userName, String nickName, String realName, String mobile, String email);
 
     /**
      * 获得saas用户组列表。

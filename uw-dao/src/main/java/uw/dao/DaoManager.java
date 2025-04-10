@@ -1388,7 +1388,7 @@ public class DaoManager {
         logger.error(e.getMessage(), e);
         // 生产环境，只返回错误码，不返回错误信息，防止攻击者获取到敏感信息
         if (DaoConfigManager.isProdProfile()) {
-            return responseError(e);
+            return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
         } else {
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR.getFullCode(), DaoResponseCode.TRANSACTION_ERROR.getLocalizedMessage() + e.getMessage());
         }

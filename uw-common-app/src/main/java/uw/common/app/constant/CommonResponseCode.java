@@ -12,12 +12,14 @@ import uw.common.util.EnumUtils;
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum CommonResponseCode implements ResponseCode {
 
-    ENTITY_LIST_ERROR( "数据列表获取失败！" ),
-    ENTITY_SAVE_ERROR( "数据创建失败！" ),
-    ENTITY_UPDATE_ERROR( "数据更新失败！" ),
-    ENTITY_EXISTS_ERROR( "数据已存在！" ),
-    ENTITY_NOT_FOUND_ERROR( "数据未找到！" ),
-    ENTITY_STATE_ERROR( "数据状态错误！" ),
+    ENTITY_LIST_ERROR( "entity.list.error" ),
+    ENTITY_LOAD_ERROR( "entity.load.error" ),
+    ENTITY_SAVE_ERROR( "entity.save.error" ),
+    ENTITY_UPDATE_ERROR( "entity.update.error" ),
+    ENTITY_DELETE_ERROR( "entity.delete.error" ),
+    ENTITY_EXISTS_ERROR( "entity.exists.error" ),
+    ENTITY_NOT_FOUND_ERROR( "entity.not.found.error" ),
+    ENTITY_STATE_ERROR( "entity.state.error" ),
     ;
 
     /**
@@ -36,11 +38,11 @@ public enum CommonResponseCode implements ResponseCode {
     /**
      * 错误信息。
      */
-    private final String message;
+    private final String messageKey;
 
-    CommonResponseCode(String message) {
+    CommonResponseCode(String messageKey) {
         this.code = EnumUtils.enumNameToDotCase( this.name() );
-        this.message = message;
+        this.messageKey = messageKey;
     }
 
     /**
@@ -70,7 +72,7 @@ public enum CommonResponseCode implements ResponseCode {
      */
     @Override
     public String getMessage() {
-        return message;
+        return getMessageSource().getMessage(messageKey, null, messageKey, null);
     }
 
     /**
@@ -85,4 +87,3 @@ public enum CommonResponseCode implements ResponseCode {
 
 
 }
-

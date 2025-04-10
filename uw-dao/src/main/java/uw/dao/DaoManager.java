@@ -52,9 +52,10 @@ public class DaoManager {
 
     /**
      * 获取一个DaoFactory实例.
+     *
      * @return
      */
-    public DaoFactory getDaoFactory(){
+    public DaoFactory getDaoFactory() {
         return daoFactory;
     }
 
@@ -155,7 +156,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<T> save(T entity) {
         try {
-            return ResponseData.data(daoFactory.save(entity));
+            return responseData(daoFactory.save(entity));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -171,7 +172,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<T> save(String connName, T entity) {
         try {
-            return ResponseData.data(daoFactory.save(connName, entity));
+            return responseData(daoFactory.save(connName, entity));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -187,7 +188,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<T> save(T entity, String tableName) {
         try {
-            return ResponseData.data(daoFactory.save(entity, tableName));
+            return responseData(daoFactory.save(entity, tableName));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -204,7 +205,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<T> save(String connName, T entity, String tableName) {
         try {
-            return ResponseData.data(daoFactory.save(connName, entity, tableName));
+            return responseData(daoFactory.save(connName, entity, tableName));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -219,7 +220,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<List<T>> save(List<T> entityList) {
         try {
-            return ResponseData.data(daoFactory.save(entityList));
+            return responseData(daoFactory.save(entityList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -235,7 +236,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<List<T>> save(String connName, List<T> entityList) {
         try {
-            return ResponseData.data(daoFactory.save(connName, entityList));
+            return responseData(daoFactory.save(connName, entityList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -251,7 +252,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<List<T>> save(List<T> entityList, String tableName) {
         try {
-            return ResponseData.data(daoFactory.save(entityList, tableName));
+            return responseData(daoFactory.save(entityList, tableName));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -268,7 +269,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<List<T>> save(String connName, List<T> entityList, String tableName) {
         try {
-            return ResponseData.data(daoFactory.save(connName, entityList, tableName));
+            return responseData(daoFactory.save(connName, entityList, tableName));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -285,7 +286,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> update(T entity) {
         try {
-            return ResponseData.data(daoFactory.update(entity));
+            return responseData(daoFactory.update(entity));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -301,7 +302,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> update(String connName, T entity) {
         try {
-            return ResponseData.data(daoFactory.update(connName, entity));
+            return responseData(daoFactory.update(connName, entity));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -317,7 +318,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> update(T entity, String tableName) {
         try {
-            return ResponseData.data(daoFactory.update(entity, tableName));
+            return responseData(daoFactory.update(entity, tableName));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -334,7 +335,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> update(String connName, T entity, String tableName) {
         try {
-            return ResponseData.data(daoFactory.update(connName, entity, tableName));
+            return responseData(daoFactory.update(connName, entity, tableName));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -351,7 +352,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> delete(T entity) {
         try {
-            return ResponseData.data(daoFactory.delete(entity));
+            return responseData(daoFactory.delete(entity));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -367,7 +368,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> delete(String connName, T entity) {
         try {
-            return ResponseData.data(daoFactory.delete(connName, entity));
+            return responseData(daoFactory.delete(connName, entity));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -383,7 +384,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> delete(T entity, String tableName) {
         try {
-            return ResponseData.data(daoFactory.delete(entity, tableName));
+            return responseData(daoFactory.delete(entity, tableName));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -400,7 +401,7 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> delete(String connName, T entity, String tableName) {
         try {
-            return ResponseData.data(daoFactory.delete(connName, entity, tableName));
+            return responseData(daoFactory.delete(connName, entity, tableName));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -418,7 +419,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> load(Class<T> entityCls, Serializable id) {
         try {
-            return ResponseData.data(daoFactory.load(entityCls, id));
+            return responseData(daoFactory.load(entityCls, id));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -435,7 +436,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> load(String connName, Class<T> entityCls, Serializable id) {
         try {
-            return ResponseData.data(daoFactory.load(connName, entityCls, id));
+            return responseData(daoFactory.load(connName, entityCls, id));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -452,7 +453,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> load(Class<T> entityCls, String tableName, Serializable id) {
         try {
-            return ResponseData.data(daoFactory.load(entityCls, tableName, id));
+            return responseData(daoFactory.load(entityCls, tableName, id));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -470,7 +471,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> load(String connName, Class<T> entityCls, String tableName, Serializable id) {
         try {
-            return ResponseData.data(daoFactory.load(connName, entityCls, tableName, id));
+            return responseData(daoFactory.load(connName, entityCls, tableName, id));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -488,7 +489,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String selectSql) {
         try {
-            return ResponseData.data(daoFactory.list(entityCls, selectSql));
+            return responseData(daoFactory.list(entityCls, selectSql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -506,7 +507,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String selectSql, int startIndex, int resultNum) {
         try {
-            return ResponseData.data(daoFactory.list(entityCls, selectSql, startIndex, resultNum));
+            return responseData(daoFactory.list(entityCls, selectSql, startIndex, resultNum));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -538,7 +539,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String selectSql) {
         try {
-            return ResponseData.data(daoFactory.list(connName, entityCls, selectSql));
+            return responseData(daoFactory.list(connName, entityCls, selectSql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -557,7 +558,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum) {
         try {
-            return ResponseData.data(daoFactory.list(connName, entityCls, selectSql, startIndex, resultNum));
+            return responseData(daoFactory.list(connName, entityCls, selectSql, startIndex, resultNum));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -590,7 +591,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String selectSql, Object[] paramList) {
         try {
-            return ResponseData.data(daoFactory.list(entityCls, selectSql, paramList));
+            return responseData(daoFactory.list(entityCls, selectSql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -608,7 +609,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList) {
         try {
-            return ResponseData.data(daoFactory.list(connName, entityCls, selectSql, paramList));
+            return responseData(daoFactory.list(connName, entityCls, selectSql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -627,7 +628,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) {
         try {
-            return ResponseData.data(daoFactory.list(entityCls, selectSql, paramList, startIndex, resultNum));
+            return responseData(daoFactory.list(entityCls, selectSql, paramList, startIndex, resultNum));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -647,7 +648,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) {
         try {
-            return ResponseData.data(daoFactory.list(connName, entityCls, selectSql, paramList, startIndex, resultNum));
+            return responseData(daoFactory.list(connName, entityCls, selectSql, paramList, startIndex, resultNum));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -667,7 +668,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
         try {
-            return ResponseData.data(daoFactory.list(entityCls, selectSql, paramList, startIndex, resultNum, autoCount));
+            return responseData(daoFactory.list(entityCls, selectSql, paramList, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -688,7 +689,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
         try {
-            return ResponseData.data(daoFactory.list(connName, entityCls, selectSql, paramList, startIndex, resultNum, autoCount));
+            return responseData(daoFactory.list(connName, entityCls, selectSql, paramList, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -704,7 +705,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(Class<T> entityCls, PageQueryParam pageQueryParam) {
         try {
-            return ResponseData.data(daoFactory.list(entityCls, pageQueryParam));
+            return responseData(daoFactory.list(entityCls, pageQueryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -734,7 +735,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, PageQueryParam pageQueryParam) {
         try {
-            return ResponseData.data(daoFactory.list(connName, entityCls, pageQueryParam));
+            return responseData(daoFactory.list(connName, entityCls, pageQueryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -752,7 +753,7 @@ public class DaoManager {
      */
     public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) {
         try {
-            return ResponseData.data(daoFactory.list(connName, entityCls, tableName, pageQueryParam));
+            return responseData(daoFactory.list(connName, entityCls, tableName, pageQueryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -770,7 +771,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleValue(Class<T> cls, String sql) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleValue(cls, sql));
+            return responseData(daoFactory.queryForSingleValue(cls, sql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -787,7 +788,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleValue(String connName, Class<T> cls, String sql) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleValue(connName, cls, sql));
+            return responseData(daoFactory.queryForSingleValue(connName, cls, sql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -804,7 +805,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleValue(Class<T> cls, String sql, Object[] paramList) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleValue(cls, sql, paramList));
+            return responseData(daoFactory.queryForSingleValue(cls, sql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -822,7 +823,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleValue(String connName, Class<T> cls, String sql, Object[] paramList) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleValue(connName, cls, sql, paramList));
+            return responseData(daoFactory.queryForSingleValue(connName, cls, sql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -838,7 +839,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleValue(Class<T> valueCls, QueryParam queryParam) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleValue(valueCls, queryParam));
+            return responseData(daoFactory.queryForSingleValue(valueCls, queryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -855,7 +856,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleValue(String connName, Class<T> valueCls, QueryParam queryParam) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleValue(connName, valueCls, queryParam));
+            return responseData(daoFactory.queryForSingleValue(connName, valueCls, queryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -871,7 +872,7 @@ public class DaoManager {
      */
     public <T> ResponseData<ArrayList<T>> queryForSingleList(Class<T> valueCls, String sql) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleList(valueCls, sql));
+            return responseData(daoFactory.queryForSingleList(valueCls, sql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -888,7 +889,7 @@ public class DaoManager {
      */
     public <T> ResponseData<ArrayList<T>> queryForSingleList(String connName, Class<T> valueCls, String sql) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleList(connName, valueCls, sql));
+            return responseData(daoFactory.queryForSingleList(connName, valueCls, sql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -904,7 +905,7 @@ public class DaoManager {
      */
     public <T> ResponseData<ArrayList<T>> queryForSingleList(Class<T> valueCls, QueryParam queryParam) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleList(valueCls, queryParam));
+            return responseData(daoFactory.queryForSingleList(valueCls, queryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -935,7 +936,7 @@ public class DaoManager {
      */
     public <T> ResponseData<ArrayList<T>> queryForSingleList(String connName, Class<T> valueCls, String sql, Object[] paramList) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleList(connName, valueCls, sql, paramList));
+            return responseData(daoFactory.queryForSingleList(connName, valueCls, sql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -952,7 +953,7 @@ public class DaoManager {
      */
     public <T> ResponseData<ArrayList<T>> queryForSingleList(Class<T> valueCls, String sql, Object[] paramList) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleList(valueCls, sql, paramList));
+            return responseData(daoFactory.queryForSingleList(valueCls, sql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -968,7 +969,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleObject(Class<T> entityCls, String selectSql) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleObject(entityCls, selectSql));
+            return responseData(daoFactory.queryForSingleObject(entityCls, selectSql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -985,7 +986,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleObject(String connName, Class<T> entityCls, String selectSql) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleObject(connName, entityCls, selectSql));
+            return responseData(daoFactory.queryForSingleObject(connName, entityCls, selectSql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1001,7 +1002,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleObject(Class<T> entityCls, QueryParam queryParam) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleObject(entityCls, queryParam));
+            return responseData(daoFactory.queryForSingleObject(entityCls, queryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1031,7 +1032,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleObject(String connName, Class<T> entityCls, QueryParam queryParam) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleObject(connName, entityCls, queryParam));
+            return responseData(daoFactory.queryForSingleObject(connName, entityCls, queryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1048,7 +1049,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleObject(Class<T> entityCls, String selectSql, Object[] paramList) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleObject(entityCls, selectSql, paramList));
+            return responseData(daoFactory.queryForSingleObject(entityCls, selectSql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1066,7 +1067,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleObject(String connName, Class<T> entityCls, String selectSql, Object[] paramList) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleObject(connName, entityCls, selectSql, paramList));
+            return responseData(daoFactory.queryForSingleObject(connName, entityCls, selectSql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1084,7 +1085,7 @@ public class DaoManager {
      */
     public <T> ResponseData<T> queryForSingleObject(String connName, Class<T> entityCls, String tableName, QueryParam queryParam) {
         try {
-            return ResponseData.data(daoFactory.queryForSingleObject(connName, entityCls, tableName, queryParam));
+            return responseData(daoFactory.queryForSingleObject(connName, entityCls, tableName, queryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1099,7 +1100,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String selectSql) {
         try {
-            return ResponseData.data(daoFactory.queryForDataSet(selectSql));
+            return responseData(daoFactory.queryForDataSet(selectSql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1115,7 +1116,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String connName, String selectSql) {
         try {
-            return ResponseData.data(daoFactory.queryForDataSet(connName, selectSql));
+            return responseData(daoFactory.queryForDataSet(connName, selectSql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1132,7 +1133,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String selectSql, int startIndex, int resultNum) {
         try {
-            return ResponseData.data(daoFactory.queryForDataSet(selectSql, startIndex, resultNum));
+            return responseData(daoFactory.queryForDataSet(selectSql, startIndex, resultNum));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1148,7 +1149,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String selectSql, Object[] paramList) {
         try {
-            return ResponseData.data(daoFactory.queryForDataSet(selectSql, paramList));
+            return responseData(daoFactory.queryForDataSet(selectSql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1166,7 +1167,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String connName, String selectSql, int startIndex, int resultNum) {
         try {
-            return ResponseData.data(daoFactory.queryForDataSet(connName, selectSql, startIndex, resultNum));
+            return responseData(daoFactory.queryForDataSet(connName, selectSql, startIndex, resultNum));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1198,7 +1199,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String connName, String selectSql, Object[] paramList) {
         try {
-            return ResponseData.data(daoFactory.queryForDataSet(connName, selectSql, paramList));
+            return responseData(daoFactory.queryForDataSet(connName, selectSql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1231,7 +1232,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String selectSql, Object[] paramList, int startIndex, int resultNum) {
         try {
-            return ResponseData.data(daoFactory.queryForDataSet(selectSql, paramList, startIndex, resultNum));
+            return responseData(daoFactory.queryForDataSet(selectSql, paramList, startIndex, resultNum));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1264,7 +1265,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String selectSql, int startIndex, int resultNum, boolean autoCount) {
         try {
-            return ResponseData.data(daoFactory.queryForDataSet(selectSql, startIndex, resultNum, autoCount));
+            return responseData(daoFactory.queryForDataSet(selectSql, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1284,7 +1285,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
         try {
-            return ResponseData.data(daoFactory.queryForDataSet(connName, selectSql, paramList, startIndex, resultNum, autoCount));
+            return responseData(daoFactory.queryForDataSet(connName, selectSql, paramList, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1300,7 +1301,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(String connName, QueryParam queryParam) {
         try {
-            return ResponseData.data(daoFactory.queryForDataSet(connName, queryParam));
+            return responseData(daoFactory.queryForDataSet(connName, queryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1315,7 +1316,7 @@ public class DaoManager {
      */
     public ResponseData<DataSet> queryForDataSet(QueryParam queryParam) {
         try {
-            return ResponseData.data(daoFactory.queryForDataSet(queryParam));
+            return responseData(daoFactory.queryForDataSet(queryParam));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1332,7 +1333,7 @@ public class DaoManager {
      */
     public ResponseData<Integer> executeCommand(String sql) {
         try {
-            return ResponseData.data(daoFactory.executeCommand(sql));
+            return responseData(daoFactory.executeCommand(sql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1348,7 +1349,7 @@ public class DaoManager {
      */
     public ResponseData<Integer> executeCommand(String connName, String sql) {
         try {
-            return ResponseData.data(daoFactory.executeCommand(connName, sql));
+            return responseData(daoFactory.executeCommand(connName, sql));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1364,12 +1365,13 @@ public class DaoManager {
      */
     public ResponseData<Integer> executeCommand(String sql, Object[] paramList) {
         try {
-            return ResponseData.data(daoFactory.executeCommand(sql, paramList));
+            return responseData(daoFactory.executeCommand(sql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
         }
     }
+
 
     /**
      * 执行一条SQL语句.
@@ -1381,7 +1383,7 @@ public class DaoManager {
      */
     public ResponseData<Integer> executeCommand(String connName, String sql, Object[] paramList) {
         try {
-            return ResponseData.data(daoFactory.executeCommand(connName, sql, paramList));
+            return responseData(daoFactory.executeCommand(connName, sql, paramList));
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);
             return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
@@ -1422,6 +1424,22 @@ public class DaoManager {
      */
     public QueryParamResult parseQueryParam(Class cls, String tableName, QueryParam queryParam) {
         return daoFactory.parseQueryParam(cls, tableName, queryParam);
+    }
+
+
+    /**
+     * 把data封装成ResponseData。
+     *
+     * @param data
+     * @param <T>
+     * @return
+     */
+    private <T> ResponseData<T> responseData(T data) {
+        if (data == null) {
+            return ResponseData.errorCode(DaoResponseCode.DATA_NOT_FOUND_WARN);
+        } else {
+            return responseData(data);
+        }
     }
 
 }

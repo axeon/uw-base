@@ -270,7 +270,6 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
      * @param realName
      * @param mobile
      * @param email
-     * @param wxId
      */
     @Override
     public ResponseData<List<MscUserVo>> getUserList(long saasId, int userType, long mchId, long groupId, long userId, String userName, String nickName, String realName, String mobile, String email) {

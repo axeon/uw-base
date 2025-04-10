@@ -13,6 +13,7 @@ import uw.common.util.EnumUtils;
 public enum DaoResponseCode implements ResponseCode {
 
     TRANSACTION_ERROR( "数据库操作执行失败！" ),
+    DATA_NOT_FOUND_WARN( "数据未找到！" ),
     ;
 
     /**

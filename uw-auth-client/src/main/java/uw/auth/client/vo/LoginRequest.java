@@ -55,7 +55,7 @@ public class LoginRequest {
     /**
      * 验证码Id
      */
-    @Schema(title = "验证码Id", description = "验证码Id")
+    @Schema(title = "CaptchaId", description = "CaptchaId")
     private String captchaId;
 
     /**

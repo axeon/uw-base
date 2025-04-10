@@ -42,40 +42,51 @@ public class CommonAppAutoConfiguration {
      * 日志.
      */
     private static final Logger logger = LoggerFactory.getLogger(CommonAppAutoConfiguration.class);
+
+    /**
+     * 默认语言.
+     */
+    private final Locale DEFAULT_LOCALE;
+
     /**
      * 语言列表.
      */
-    private static final List<Locale> LOCALE_LIST = List.of(Locale.getAvailableLocales());
+    private final List<Locale> LOCALE_LIST = List.of(Locale.getAvailableLocales());
     /**
      * 缓存语言对象.
      */
-    private static final LoadingCache<String, Locale> LOCALE_CACHE = Caffeine.newBuilder().maximumSize(1000).build(new CacheLoader<>() {
+    private final LoadingCache<String, Locale> LOCALE_CACHE = Caffeine.newBuilder().maximumSize(1000).build(new CacheLoader<>() {
 
         @Override
         public @Nullable Locale load(String language) {
-            if (StringUtils.isNotBlank(language)) {
-                try {
-                    // 创建一个语言范围列表
-                    List<Locale.LanguageRange> languageRanges = List.of(new Locale.LanguageRange(language));
-                    // 创建 Locale 对象
-                    Locale locale = Locale.lookup(languageRanges, LOCALE_LIST);
-                    // 如果找不到匹配的语言范围，则返回默认语言
-                    if (locale == null) {
-                        locale = Locale.getDefault();
-                    }
+            try {
+                // 创建一个语言范围列表
+                List<Locale.LanguageRange> languageRanges = List.of(new Locale.LanguageRange(language));
+                // 创建 Locale 对象
+                Locale locale = Locale.lookup(languageRanges, LOCALE_LIST);
+                // 对 Locale做特殊处理
+                if (locale != null) {
                     //对于香港地区单独处理成中文繁体。
                     if (locale.toLanguageTag().equals("zh-HK")) {
                         locale = Locale.TRADITIONAL_CHINESE;
                     }
                     return locale;
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
                 }
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
             }
-            return Locale.getDefault();
+            return DEFAULT_LOCALE;
         }
     });
 
+    /**
+     * 构造函数.
+     *
+     * @param commonAppProperties
+     */
+    public CommonAppAutoConfiguration(CommonAppProperties commonAppProperties) {
+        this.DEFAULT_LOCALE = commonAppProperties.getDefaultLocale();
+    }
 
     /**
      * 语言解析器.
@@ -93,7 +104,11 @@ public class CommonAppAutoConfiguration {
             public Locale resolveLocale(@NotNull HttpServletRequest request) {
                 // 获取请求来的语言方式
                 String language = request.getHeader(CommonConstants.ACCEPT_LANG);
-                return LOCALE_CACHE.get(language);
+                if (StringUtils.isNotBlank(language)) {
+                    return LOCALE_CACHE.get(language);
+                }
+                // 最后给兜底默认语言。
+                return DEFAULT_LOCALE;
             }
 
             @Override

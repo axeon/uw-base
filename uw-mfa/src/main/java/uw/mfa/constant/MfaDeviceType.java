@@ -29,9 +29,9 @@ public enum MfaDeviceType {
     EMAIL_CODE( 22, "Email验证码登录" ),
 
     /**
-     * 手机号验证码登录
+     * 手机验证码登录
      */
-    MOBILE_CODE( 23, "手机号验证码登录" );
+    MOBILE_CODE( 23, "手机验证码登录" );
 
     /**
      * 参数值

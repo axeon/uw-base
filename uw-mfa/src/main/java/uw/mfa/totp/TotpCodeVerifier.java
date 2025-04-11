@@ -66,10 +66,10 @@ public class TotpCodeVerifier {
      */
     public ResponseData verifyCode(String secret, String code) {
         if (StringUtils.isBlank( secret)){
-            return ResponseData.errorCode( MfaResponseCode.TOTP_SECRET_LOST_ERROR.getCode(), MfaResponseCode.TOTP_SECRET_LOST_ERROR.getMessage() );
+            return ResponseData.errorCode( MfaResponseCode.TOTP_SECRET_LOST_ERROR );
         }
         if (StringUtils.isBlank( code )) {
-            return ResponseData.errorCode( MfaResponseCode.TOTP_CODE_LOST_ERROR.getCode(), MfaResponseCode.TOTP_CODE_LOST_ERROR.getMessage() );
+            return ResponseData.errorCode( MfaResponseCode.TOTP_CODE_LOST_ERROR );
         }
         // 获取当前时间戳，并计算已过的周期数。
         long currentBucket = Math.floorDiv( Instant.now().getEpochSecond(), timePeriod );
@@ -81,7 +81,7 @@ public class TotpCodeVerifier {
             success = checkCode( secret, currentBucket + i, code ) || success;
         }
         if (!success) {
-            return ResponseData.errorCode( MfaResponseCode.TOTP_CODE_VERIFY_ERROR.getCode(), MfaResponseCode.TOTP_CODE_VERIFY_ERROR.getMessage() );
+            return ResponseData.errorCode( MfaResponseCode.TOTP_CODE_VERIFY_ERROR );
         }else{
             return ResponseData.success();
         }

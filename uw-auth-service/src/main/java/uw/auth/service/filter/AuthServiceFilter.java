@@ -143,6 +143,8 @@ public class AuthServiceFilter implements Filter {
                 if (uri.startsWith(ipProtectedPath)) {
                     if (!IpMatchUtils.matches(ipWhiteList, userIp)) {
                         httpServletResponse.sendError(HttpStatus.FORBIDDEN.value(), "IP protected.");
+                    } else {
+                        break;
                     }
                 }
             }

@@ -26,7 +26,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class TotpSecretDataGenerator {
 
-    private static final Logger logger = LoggerFactory.getLogger( TotpSecretDataGenerator.class );
+    private static final Logger logger = LoggerFactory.getLogger(TotpSecretDataGenerator.class);
     /**
      * 二维码生成器。
      */
@@ -94,26 +94,26 @@ public class TotpSecretDataGenerator {
      * @return
      */
     public ResponseData<TotpSecretData> issue(String label, String issuer, int qrSize) {
-        if (StringUtils.isNotBlank(issuer)){
+        if (StringUtils.isNotBlank(issuer)) {
             issuer = this.issuer;
         }
-        if (qrSize<100){
+        if (qrSize < 100) {
             qrSize = this.qrSize;
         }
-        String secret = generateSecret( secretLength );
-        String totpUri = getTotpUri( issuer, label, secret, hashingAlgorithm.getLabel(), codeLength, timePeriod );
+        String secret = generateSecret(secretLength);
+        String totpUri = getTotpUri(issuer, label, secret, hashingAlgorithm.getLabel(), codeLength, timePeriod);
         // 不生成二维码则直接返回，让前端生成。
         if (!enableGenQr) {
-            return ResponseData.success( new TotpSecretData( secret, totpUri, null ) );
+            return ResponseData.success(new TotpSecretData(secret, totpUri, null));
         } else {
             try {
-                BitMatrix bitMatrix = writer.encode( totpUri, BarcodeFormat.QR_CODE, qrSize, qrSize );
+                BitMatrix bitMatrix = writer.encode(totpUri, BarcodeFormat.QR_CODE, qrSize, qrSize);
                 ByteArrayOutputStream pngOutputStream = new ByteArrayOutputStream();
-                MatrixToImageWriter.writeToStream( bitMatrix, "PNG", pngOutputStream );
-                return ResponseData.success( new TotpSecretData( secret, totpUri, Base64.getEncoder().encodeToString( pngOutputStream.toByteArray() ) ) );
+                MatrixToImageWriter.writeToStream(bitMatrix, "PNG", pngOutputStream);
+                return ResponseData.success(new TotpSecretData(secret, totpUri, Base64.getEncoder().encodeToString(pngOutputStream.toByteArray())));
             } catch (Exception e) {
-                logger.error( e.getMessage(), e );
-                return ResponseData.errorCode( MfaResponseCode.TOTP_SECRET_GEN_ERROR.getCode(), MfaResponseCode.TOTP_SECRET_GEN_ERROR.getMessage() + e.getMessage() );
+                logger.error(e.getMessage(), e);
+                return ResponseData.errorCode(MfaResponseCode.TOTP_SECRET_GEN_ERROR, e.getMessage());
             }
         }
     }
@@ -126,10 +126,10 @@ public class TotpSecretDataGenerator {
      */
     private String getTotpUri(String issuer, String label, String secret, String algorithm, int digits, int period) {
         return "otpauth://totp/" +
-                uriEncode( label ) + "?" +
-                "secret=" + uriEncode( secret ) +
-                "&issuer=" + uriEncode( issuer ) +
-                "&algorithm=" + uriEncode( algorithm ) +
+                uriEncode(label) + "?" +
+                "secret=" + uriEncode(secret) +
+                "&issuer=" + uriEncode(issuer) +
+                "&algorithm=" + uriEncode(algorithm) +
                 "&digits=" + digits +
                 "&period=" + period;
     }
@@ -142,8 +142,8 @@ public class TotpSecretDataGenerator {
     private String generateSecret(int secretLength) {
         // 5 bits per char in base32
         byte[] bytes = new byte[(secretLength * 5) / 8];
-        randomBytes.nextBytes( bytes );
-        return new String( encoder.encode( bytes ) );
+        randomBytes.nextBytes(bytes);
+        return new String(encoder.encode(bytes));
     }
 
     /**
@@ -156,6 +156,6 @@ public class TotpSecretDataGenerator {
         if (text == null) {
             return "";
         }
-        return URLEncoder.encode( text, StandardCharsets.UTF_8 ).replaceAll( "\\+", "%20" );
+        return URLEncoder.encode(text, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
     }
 }

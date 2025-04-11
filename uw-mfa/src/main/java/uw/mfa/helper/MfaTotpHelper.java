@@ -66,12 +66,12 @@ public class MfaTotpHelper {
     /**
      * 验证Totp密钥数据。
      *
-     * @param secret 密钥
-     * @param code   验证码
+     * @param totpSecret 密钥
+     * @param totpCode   验证码
      * @return
      */
-    public static ResponseData verifyCode(String secret, String code) {
-        return totpCodeVerifier.verifyCode( secret, code );
+    public static ResponseData verifyCode(String totpSecret, String totpCode) {
+        return totpCodeVerifier.verifyCode( totpSecret, totpCode );
     }
 
     /**

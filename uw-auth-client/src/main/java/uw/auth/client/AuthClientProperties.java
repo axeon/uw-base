@@ -71,7 +71,7 @@ public class AuthClientProperties {
     /**
      * 用户类型，默认为RPC用户
      */
-    private int userType = 1;
+    private int userType = 10;
 
     /**
      * SaasId.

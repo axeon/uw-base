@@ -21,7 +21,7 @@ public class MfaFusionHelper {
      * @return
      */
     public static boolean checkIpWhiteList(String ip) {
-        return MfaIPLimitHelper.checkIpWhiteList( ip );
+        return MfaIPLimitHelper.checkIpWhiteList(ip);
     }
 
     /**
@@ -33,7 +33,7 @@ public class MfaFusionHelper {
      * @return
      */
     public static ResponseData checkIpErrorLimit(String ip) {
-        return MfaIPLimitHelper.checkIpErrorLimit( ip );
+        return MfaIPLimitHelper.checkIpErrorLimit(ip);
     }
 
     /**
@@ -43,7 +43,7 @@ public class MfaFusionHelper {
      * @param ip
      */
     public static void incrementIpErrorTimes(String ip, String remark) {
-        MfaIPLimitHelper.incrementIpErrorTimes( ip, remark );
+        MfaIPLimitHelper.incrementIpErrorTimes(ip, remark);
     }
 
     /**
@@ -52,7 +52,7 @@ public class MfaFusionHelper {
      * @param ip
      */
     public static void clearIpErrorLimit(String ip) {
-        MfaIPLimitHelper.clearIpErrorLimit( ip );
+        MfaIPLimitHelper.clearIpErrorLimit(ip);
     }
 
     /**
@@ -71,11 +71,11 @@ public class MfaFusionHelper {
      * @param captchaId
      */
     public static ResponseData<CaptchaQuestion> generateCaptcha(String userIp, String captchaId) {
-        ResponseData checkData = MfaIPLimitHelper.checkIpErrorLimit( userIp );
+        ResponseData checkData = MfaIPLimitHelper.checkIpErrorLimit(userIp);
         if (checkData.isWarn()) {
-            ResponseData<CaptchaQuestion> captchaData = MfaCaptchaHelper.generateCaptcha( userIp, captchaId );
+            ResponseData<CaptchaQuestion> captchaData = MfaCaptchaHelper.generateCaptcha(userIp, captchaId);
             if (captchaData.isSuccess()) {
-                return ResponseData.warn( captchaData.getData(), checkData.getCode(), checkData.getMsg() );
+                return ResponseData.warn(captchaData.getData(), checkData.getCode(), checkData.getMsg());
             } else {
                 return captchaData;
             }
@@ -93,10 +93,10 @@ public class MfaFusionHelper {
      */
     public static ResponseData verifyCaptcha(String userIp, String captchaId, String captchaSign) {
         //检查IP限制。
-        ResponseData checkData = MfaIPLimitHelper.checkIpErrorLimit( userIp );
+        ResponseData checkData = MfaIPLimitHelper.checkIpErrorLimit(userIp);
         if (checkData.isWarn()) {
             // 检查captcha。
-            checkData = MfaCaptchaHelper.verifyCaptcha( userIp, captchaId, captchaSign );
+            checkData = MfaCaptchaHelper.verifyCaptcha(userIp, captchaId, captchaSign);
         }
         return checkData;
     }
@@ -109,7 +109,7 @@ public class MfaFusionHelper {
      * @param deviceId
      */
     public static ResponseData sendDeviceCode(String userIp, long saasId, int deviceType, String deviceId, String captchaId, String captchaSign) {
-        return sendDeviceCode( userIp, saasId, deviceType, deviceId, captchaId, captchaSign, 0, null, null );
+        return sendDeviceCode(userIp, saasId, deviceType, deviceId, captchaId, captchaSign, 0, null, null);
     }
 
     /**
@@ -120,7 +120,7 @@ public class MfaFusionHelper {
      * @param deviceId
      */
     public static ResponseData sendDeviceCode(String userIp, long saasId, int deviceType, String deviceId, String captchaId, String captchaSign, int codeLen) {
-        return sendDeviceCode( userIp, saasId, deviceType, deviceId, captchaId, captchaSign, codeLen, null, null );
+        return sendDeviceCode(userIp, saasId, deviceType, deviceId, captchaId, captchaSign, codeLen, null, null);
     }
 
     /**
@@ -133,17 +133,17 @@ public class MfaFusionHelper {
     public static ResponseData sendDeviceCode(String userIp, long saasId, int deviceType, String deviceId, String captchaId, String captchaSign, int codeLen,
                                               String notifySubject, String notifyContent) {
         //检查IP限制。
-        ResponseData checkData = MfaIPLimitHelper.checkIpErrorLimit( userIp );
+        ResponseData checkData = MfaIPLimitHelper.checkIpErrorLimit(userIp);
         if (checkData.isError()) {
             return checkData;
         } else if (checkData.isWarn()) {
             // 先检查captcha。
-            checkData = MfaCaptchaHelper.verifyCaptcha( userIp, captchaId, captchaSign );
+            checkData = MfaCaptchaHelper.verifyCaptcha(userIp, captchaId, captchaSign);
             if (checkData.isNotSuccess()) {
                 return checkData;
             }
         }
-        return MfaDeviceCodeHelper.sendDeviceCode( userIp, saasId, deviceType, deviceId, codeLen, notifySubject, notifyContent );
+        return MfaDeviceCodeHelper.sendDeviceCode(userIp, saasId, deviceType, deviceId, codeLen, notifySubject, notifyContent);
     }
 
 
@@ -155,12 +155,12 @@ public class MfaFusionHelper {
      */
     public static ResponseData verifyDeviceCode(String userIp, int deviceType, String deviceId, String deviceCode) {
         //检查IP限制。
-        ResponseData checkData = MfaIPLimitHelper.checkIpErrorLimit( userIp );
+        ResponseData checkData = MfaIPLimitHelper.checkIpErrorLimit(userIp);
         if (!checkData.isError()) {
             // 检查captcha。
-            checkData = MfaDeviceCodeHelper.verifyDeviceCode( userIp, deviceType, deviceId, deviceCode );
+            checkData = MfaDeviceCodeHelper.verifyDeviceCode(userIp, deviceType, deviceId, deviceCode);
             if (checkData.isNotSuccess()) {
-                MfaIPLimitHelper.incrementIpErrorTimes( userIp, checkData.getCode() );
+                MfaIPLimitHelper.incrementIpErrorTimes(userIp, checkData.getCode());
             }
         }
         return checkData;
@@ -173,7 +173,7 @@ public class MfaFusionHelper {
      * @return
      */
     public static ResponseData<TotpSecretData> issueTotpSecret(String label) {
-        return MfaTotpHelper.issue( label);
+        return MfaTotpHelper.issue(label);
     }
 
     /**
@@ -185,18 +185,27 @@ public class MfaFusionHelper {
      * @return
      */
     public static ResponseData<TotpSecretData> issueTotpSecret(String label, String issuer, int qrSize) {
-        return MfaTotpHelper.issue( label, issuer, qrSize );
+        return MfaTotpHelper.issue(label, issuer, qrSize);
     }
 
     /**
      * 验证totp密钥。
      *
-     * @param secret
-     * @param code
+     * @param totpSecret
+     * @param totpCode
      * @return
      */
-    public static ResponseData verifyTotpCode(String secret, String code) {
-        return MfaTotpHelper.verifyCode( secret, code );
+    public static ResponseData verifyTotpCode(String userIp, String totpSecret, String totpCode) {
+        //检查IP限制。
+        ResponseData checkData = MfaIPLimitHelper.checkIpErrorLimit(userIp);
+        if (!checkData.isError()) {
+            // 检查captcha。
+            checkData = MfaTotpHelper.verifyCode(totpSecret, totpCode);
+            if (checkData.isNotSuccess()) {
+                MfaIPLimitHelper.incrementIpErrorTimes(userIp, checkData.getCode());
+            }
+        }
+        return checkData;
     }
 
     /**
@@ -206,7 +215,7 @@ public class MfaFusionHelper {
      * @return
      */
     public static String[] generateRecoveryCode(int amount) {
-        return MfaTotpHelper.generateRecoveryCode( amount );
+        return MfaTotpHelper.generateRecoveryCode(amount);
     }
 
 }

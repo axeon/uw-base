@@ -55,7 +55,7 @@ public interface ResponseCode {
         if (params == null || params.length == 0) {
             return message;
         } else {
-            return String.format( message, params );
+            return String.format(message, params);
         }
     }
 
@@ -65,7 +65,15 @@ public interface ResponseCode {
      * @return
      */
     default String getFullCode() {
-        String code = getCode();
+        return getFullCode(getCode());
+    }
+
+    /**
+     * 获取完整响应码。
+     *
+     * @return
+     */
+    default String getFullCode(String code) {
         if (codePrefix() != null) {
             return codePrefix() + '.' + code;
         } else {
@@ -84,7 +92,7 @@ public interface ResponseCode {
         String message = getMessage();
         if (getMessageSource() != null) {
             try {
-                message = getMessageSource().getMessage( getCode(), null, locale );
+                message = getMessageSource().getMessage(getCode(), null, locale);
             } catch (Exception ignored) {
             }
         }
@@ -93,7 +101,7 @@ public interface ResponseCode {
         } else {
             // 防止异常
             try {
-                return String.format( message, params );
+                return String.format(message, params);
             } catch (Exception ignored) {
                 return message;
             }
@@ -107,7 +115,7 @@ public interface ResponseCode {
      * @return
      */
     default String getLocalizedMessage(Object... params) {
-        return getLocalizedMessage( LocaleContextHolder.getLocale(), params );
+        return getLocalizedMessage(LocaleContextHolder.getLocale(), params);
     }
 
     /**
@@ -116,7 +124,7 @@ public interface ResponseCode {
      * @return
      */
     default String getLocalizedMessage() {
-        return getLocalizedMessage( LocaleContextHolder.getLocale());
+        return getLocalizedMessage(LocaleContextHolder.getLocale());
     }
 
 }

@@ -46,13 +46,13 @@ public @interface MscPermDeclare {
      *
      * @return
      */
-    AuthType auth() default AuthType.PERM;
+    AuthType auth() default AuthType.USER;
 
     /**
      * 记录日志类型,默认不记录
      *
      * @return
      */
-    ActionLog log() default ActionLog.BASE;
+    ActionLog log() default ActionLog.NONE;
 
 }

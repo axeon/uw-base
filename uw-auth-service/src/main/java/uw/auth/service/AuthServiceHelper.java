@@ -615,7 +615,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得远端IP.
+     * 获得用户IP.
      *
      * @return
      */

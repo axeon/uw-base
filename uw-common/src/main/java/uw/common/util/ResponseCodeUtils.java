@@ -13,7 +13,7 @@ public class ResponseCodeUtils {
 
     /**
      * 将实现 {@link ResponseCode} 接口的枚举类的所有枚举项转换为 Properties。
-     * Key为 {@link ResponseCode#getCode()}，Value为 {@link ResponseCode#getMessage()}。
+     * Key为 {@link ResponseCode#getFullCode()}，Value为 {@link ResponseCode#getMessage()}。
      *
      * @param <E>       枚举类型，必须实现 ResponseCode 接口
      * @param enumClass 枚举类的 Class 对象
@@ -35,7 +35,7 @@ public class ResponseCodeUtils {
         Properties properties = new Properties();
         // 遍历枚举类的所有枚举常量
         for (E enumConstant : enumClass.getEnumConstants()) {
-            String code = enumConstant.getCode();
+            String code = enumConstant.getFullCode();
             String message = enumConstant.getMessage();
             if (code == null || message == null) {
                 throw new IllegalArgumentException("枚举项 " + enumConstant.name() + " 的 code 或 message 不能为空");
@@ -47,7 +47,7 @@ public class ResponseCodeUtils {
 
     /**
      * 将实现 {@link ResponseCode} 接口的枚举类的所有枚举项转换为 Properties。
-     * Key为 {@link ResponseCode#getCode()}，Value为 {@link ResponseCode#getMessage()}。
+     * Key为 {@link ResponseCode#getFullCode()}，Value为 {@link ResponseCode#getMessage()}。
      * 然后输出到一个String中。
      * @param enumClass
      * @return

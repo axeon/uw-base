@@ -43,7 +43,7 @@ public enum MfaResponseCode implements ResponseCode {
     DEVICE_TYPE_ERROR( "设备类型错误! " ),
 
     // TOTP
-    TOTP_SECRET_GEN_ERROR( "TOTP密钥生成失败! " ),
+    TOTP_SECRET_GEN_ERROR( "TOTP密钥生成失败! %s" ),
 
     TOTP_SECRET_MATCH_ERROR( "TOTP密钥不匹配! " ),
 

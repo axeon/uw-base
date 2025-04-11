@@ -271,7 +271,7 @@ public class IpMatchUtils {
         public InetAddress getStartAddress() {
             try {
                 return InetAddress.getByAddress(start);
-            } catch (UnknownHostException e) {
+            } catch (Exception e) {
                 throw new IllegalArgumentException("非法的IP数据！");
             }
         }
@@ -286,7 +286,7 @@ public class IpMatchUtils {
         public InetAddress getEndAddress() {
             try {
                 return InetAddress.getByAddress(end);
-            } catch (UnknownHostException e) {
+            } catch (Exception e) {
                 throw new IllegalArgumentException("非法的IP数据！");
             }
         }

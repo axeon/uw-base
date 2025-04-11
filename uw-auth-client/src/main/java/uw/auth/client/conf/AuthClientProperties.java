@@ -1,4 +1,4 @@
-package uw.auth.client;
+package uw.auth.client.conf;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;

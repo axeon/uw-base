@@ -1,4 +1,4 @@
-package uw.auth.client;
+package uw.auth.client.conf;
 
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -24,8 +24,8 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.http.converter.support.AllEncompassingFormHttpMessageConverter;
 import org.springframework.http.converter.xml.SourceHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
-import uw.auth.client.interceptor.AuthTokenHeaderInterceptor;
 import uw.auth.client.helper.AuthClientTokenHelper;
+import uw.auth.client.interceptor.AuthTokenHeaderInterceptor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -84,14 +84,14 @@ public class AuthClientAutoConfiguration {
 
     /**
      * 认证Token的拦截器。
+     *
      * @param authClientProperties
      * @param restTemplate
      * @return
      */
     @Bean
-    public AuthTokenHeaderInterceptor authTokenHeaderInterceptor(final AuthClientProperties authClientProperties,
-                                                                 @Qualifier("baseAuthClientRestTemplate") final RestTemplate restTemplate) {
-        return new AuthTokenHeaderInterceptor(new AuthClientTokenHelper(authClientProperties, restTemplate));
+    public AuthClientTokenHelper authClientTokenHelper(final AuthClientProperties authClientProperties, @Qualifier("baseAuthClientRestTemplate") final RestTemplate restTemplate) {
+        return new AuthClientTokenHelper(authClientProperties, restTemplate);
     }
 
     /**
@@ -104,9 +104,9 @@ public class AuthClientAutoConfiguration {
     @Bean("authRestTemplate")
     @Primary
     @ConditionalOnProperty(prefix = "uw.auth.client", name = "enable-spring-cloud", havingValue = "true", matchIfMissing = true)
-    public RestTemplate lbAuthRestTemplate(final ClientHttpRequestFactory authClientHttpRequestFactory, final AuthTokenHeaderInterceptor authTokenHeaderInterceptor) {
+    public RestTemplate lbAuthRestTemplate(final ClientHttpRequestFactory authClientHttpRequestFactory, final AuthClientTokenHelper authClientTokenHelper) {
         RestTemplate authRestTemplate = new RestTemplate(authClientHttpRequestFactory);
-        authRestTemplate.setInterceptors(Collections.singletonList(authTokenHeaderInterceptor));
+        authRestTemplate.setInterceptors(Collections.singletonList(new AuthTokenHeaderInterceptor(authClientTokenHelper)));
         authRestTemplate.setMessageConverters(messageConverters);
         return authRestTemplate;
     }
@@ -120,9 +120,9 @@ public class AuthClientAutoConfiguration {
     @Bean("authRestTemplate")
     @Primary
     @ConditionalOnProperty(prefix = "uw.auth.client", name = "enable-spring-cloud", havingValue = "false")
-    public RestTemplate authRestTemplate(final ClientHttpRequestFactory authClientHttpRequestFactory, final AuthTokenHeaderInterceptor authTokenHeaderInterceptor) {
+    public RestTemplate authRestTemplate(final ClientHttpRequestFactory authClientHttpRequestFactory, final AuthClientTokenHelper authClientTokenHelper) {
         RestTemplate authRestTemplate = new RestTemplate(authClientHttpRequestFactory);
-        authRestTemplate.setInterceptors(Collections.singletonList(authTokenHeaderInterceptor));
+        authRestTemplate.setInterceptors(Collections.singletonList(new AuthTokenHeaderInterceptor(authClientTokenHelper)));
         authRestTemplate.setMessageConverters(messageConverters);
         return authRestTemplate;
     }
@@ -138,12 +138,8 @@ public class AuthClientAutoConfiguration {
         PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
         connectionManager.setMaxTotal(authClientProperties.getHttpPool().getMaxTotal());
         connectionManager.setDefaultMaxPerRoute(authClientProperties.getHttpPool().getDefaultMaxPerRoute());
-        RequestConfig config = RequestConfig.custom()
-                .setConnectTimeout(authClientProperties.getHttpPool().getConnectTimeout(), TimeUnit.MILLISECONDS)
-                .setConnectionRequestTimeout(authClientProperties.getHttpPool().getConnectionRequestTimeout(), TimeUnit.MILLISECONDS)
-                .build();
-        CloseableHttpClient httpClient = HttpClientBuilder.create().setConnectionManager(connectionManager).setDefaultRequestConfig(config).setKeepAliveStrategy((response,
-                                                                                                                                                                  context) -> {
+        RequestConfig config = RequestConfig.custom().setConnectTimeout(authClientProperties.getHttpPool().getConnectTimeout(), TimeUnit.MILLISECONDS).setConnectionRequestTimeout(authClientProperties.getHttpPool().getConnectionRequestTimeout(), TimeUnit.MILLISECONDS).build();
+        CloseableHttpClient httpClient = HttpClientBuilder.create().setConnectionManager(connectionManager).setDefaultRequestConfig(config).setKeepAliveStrategy((response, context) -> {
             BasicHeaderElementIterator iterator = new BasicHeaderElementIterator(response.headerIterator("Keep-Alive"));
             while (iterator.hasNext()) {
                 HeaderElement he = iterator.next();

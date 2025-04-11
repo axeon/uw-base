@@ -8,7 +8,7 @@ import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-import uw.auth.client.AuthClientProperties;
+import uw.auth.client.conf.AuthClientProperties;
 import uw.auth.client.constant.LoginType;
 import uw.auth.client.vo.LoginRequest;
 import uw.auth.client.vo.TokenResponse;
@@ -29,10 +29,19 @@ public class AuthClientTokenHelper {
      */
     private static final int MAX_RETRY_TIMES = 10;
 
+    /**
+     * 日志记录。
+     */
     private static final Logger log = LoggerFactory.getLogger(AuthClientTokenHelper.class);
 
+    /**
+     * 认证客户端配置。
+     */
     private final AuthClientProperties authClientProperties;
 
+    /**
+     * RestTemplate。
+     */
     private final RestTemplate restTemplate;
 
     /**

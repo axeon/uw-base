@@ -1,11 +1,11 @@
-# 2025.0330.1010版本升级说明
-本版本是一个较大升级，需要同步升级包括uw-auth-center和uw-gateway，请不要
+# 2025.0330.1011版本升级说明
+本版本是一个较大升级，需要同步升级包括uw-auth-center和uw-gateway。
 
 ## 安全升级：
-1. 全面支持IPV6。
+1. 全面支持IPV6校验。
 2. 全面支持MFA，包括手机、邮件验证码，TOTP认证。
 3. 密码策略管理，可针对用户类型设定不同的密码策略。可设置密码重置策略，过期策略，复杂性策略，token生命周期等。
-4. MscPermDeclare默认值策略改进，减少配置复杂度，增加安全性。
+4. MscPermDeclare默认值策略优化，用户类型默认为ANYONE,校验类型默认为USER，日志默认不记录。
 5. token类型增加TEMP_TOKEN，PAID_TOKEN,SUDO_TOKEN，提升更多场景应用的可能。
 
 ## 功能改进
@@ -19,3 +19,5 @@
 3. UserType.ANONYMOUS变更为UserType.ANYONE，并作为默认值，表示任意用户类型。
 4. SysCritLog的refType,refId变更为bizType,bizId。
 5. uw-dao的batchSave()方法变更为save()。
+6. ResponseData的prototype()方法变更为raw()。
+7. auth-client中的注入的bean:tokenRestTemplate变更为authRestTemplate。

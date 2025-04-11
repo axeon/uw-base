@@ -2,11 +2,11 @@ package uw.auth.client.interceptor;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
+import uw.auth.client.constant.AuthClientConstants;
 import uw.auth.client.helper.AuthClientTokenHelper;
 
 import java.io.IOException;
@@ -30,7 +30,7 @@ public class AuthTokenHeaderInterceptor implements ClientHttpRequestInterceptor 
         ClientHttpResponse response = execution.execute(request, body);
         //如果是无法验证的状态，则直接作废token。
         int code = response.getStatusCode().value();
-        if (code == HttpStatus.UNAUTHORIZED.value() || code == HttpStatus.LOCKED.value()) {
+        if (code == AuthClientConstants.HTTP_UNAUTHORIZED_CODE || code == AuthClientConstants.HTTP_TOKEN_EXPIRED_CODE) {
             authClientTokenHelper.invalidate();
             //再次重试
             headers.set("Authorization", "Bearer " + authClientTokenHelper.getToken());

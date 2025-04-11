@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import uw.common.util.JsonUtils;
 import uw.common.util.SystemClock;
 
+import java.util.function.Function;
+
 /**
  * ResponseData是一个基于泛型的响应数据对象，封装了响应数据，以及响应状态码。
  * 在整个项目中，所有响应数据都使用ResponseData进行封装，包括返回给前端的数据，以及返回给后端的数据。
@@ -45,19 +47,19 @@ public class ResponseData<T> {
     /**
      * 成功常量，不带时间戳。
      */
-    public static final ResponseData SUCCESS = new ResponseData( STATE_SUCCESS, null, null );
+    public static final ResponseData SUCCESS = new ResponseData(STATE_SUCCESS, null, null);
     /**
      * 警告常量，不带时间戳。
      */
-    public static final ResponseData WARN = new ResponseData( STATE_WARN, null, null );
+    public static final ResponseData WARN = new ResponseData(STATE_WARN, null, null);
     /**
      * 失败常量，不带时间戳。
      */
-    public static final ResponseData ERROR = new ResponseData( STATE_ERROR, null, null );
+    public static final ResponseData ERROR = new ResponseData(STATE_ERROR, null, null);
     /**
      * 严重错误常量，不带时间戳。
      */
-    public static final ResponseData FATAL = new ResponseData( STATE_FATAL, null, null );
+    public static final ResponseData FATAL = new ResponseData(STATE_FATAL, null, null);
     /**
      * 响应时间
      */
@@ -126,14 +128,15 @@ public class ResponseData<T> {
      * 带结果数据值的数据值。
      * 如果数据不是null，则返回成功。
      * 如果数据是null，则返回警告。
+     *
      * @param t
-     * @return
      * @param <T>
+     * @return
      */
     public static <T> ResponseData<T> data(T t) {
-        if (t!=null) {
+        if (t != null) {
             return new ResponseData<T>(t, STATE_SUCCESS, null, null);
-        }else{
+        } else {
             return new ResponseData<T>(t, STATE_WARN, CODE_DATA_EMPTY_WARN, null);
         }
     }
@@ -144,7 +147,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> success() {
-        return new ResponseData<T>( null, STATE_SUCCESS, null, null );
+        return new ResponseData<T>(null, STATE_SUCCESS, null, null);
     }
 
     /**
@@ -153,7 +156,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> success(T t) {
-        return new ResponseData<T>( t, STATE_SUCCESS, null, null );
+        return new ResponseData<T>(t, STATE_SUCCESS, null, null);
     }
 
     /**
@@ -162,7 +165,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> success(T t, String code) {
-        return new ResponseData<T>( t, STATE_SUCCESS, code, null );
+        return new ResponseData<T>(t, STATE_SUCCESS, code, null);
     }
 
     /**
@@ -171,7 +174,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> success(T t, String code, String msg) {
-        return new ResponseData<T>( t, STATE_SUCCESS, code, msg );
+        return new ResponseData<T>(t, STATE_SUCCESS, code, msg);
     }
 
     /**
@@ -180,15 +183,16 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> success(T t, ResponseCode responseCode) {
-        return new ResponseData<T>( t, STATE_SUCCESS, responseCode.getFullCode(), responseCode.getLocalizedMessage() );
+        return new ResponseData<T>(t, STATE_SUCCESS, responseCode.getFullCode(), responseCode.getLocalizedMessage());
     }
 
     /**
      * 带结果、代码和消息的成功返回值，支持参数化消息格式。
-     * @param t 返回数据
+     *
+     * @param t            返回数据
      * @param responseCode 响应代码对象
-     * @param params 用于格式化消息的参数（如i18n占位符替换）
-     * @param <T> 泛型类型
+     * @param params       用于格式化消息的参数（如i18n占位符替换）
+     * @param <T>          泛型类型
      * @return ResponseData实例
      */
     public static <T> ResponseData<T> success(T t, ResponseCode responseCode, Object... params) {
@@ -202,7 +206,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> successCode(String code) {
-        return new ResponseData<T>( null, STATE_SUCCESS, code, null );
+        return new ResponseData<T>(null, STATE_SUCCESS, code, null);
     }
 
     /**
@@ -212,7 +216,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> successCode(String code, String msg) {
-        return new ResponseData<T>( null, STATE_SUCCESS, code, msg );
+        return new ResponseData<T>(null, STATE_SUCCESS, code, msg);
     }
 
     /**
@@ -221,14 +225,15 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> successCode(ResponseCode responseCode) {
-        return new ResponseData<T>( null, STATE_SUCCESS, responseCode.getFullCode(), responseCode.getLocalizedMessage() );
+        return new ResponseData<T>(null, STATE_SUCCESS, responseCode.getFullCode(), responseCode.getLocalizedMessage());
     }
 
     /**
      * 带代码和消息的成功返回值，支持参数化消息格式。
+     *
      * @param responseCode 响应代码对象
-     * @param params 用于格式化消息的参数（如i18n占位符替换）
-     * @param <T> 泛型类型
+     * @param params       用于格式化消息的参数（如i18n占位符替换）
+     * @param <T>          泛型类型
      * @return ResponseData实例
      */
     public static <T> ResponseData<T> successCode(ResponseCode responseCode, Object... params) {
@@ -242,7 +247,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> successMsg(String msg) {
-        return new ResponseData<T>( null, STATE_SUCCESS, null, msg );
+        return new ResponseData<T>(null, STATE_SUCCESS, null, msg);
     }
 
     /**
@@ -251,7 +256,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> warn() {
-        return new ResponseData<T>( null, STATE_WARN, null, null );
+        return new ResponseData<T>(null, STATE_WARN, null, null);
     }
 
     /**
@@ -260,7 +265,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> warn(T t) {
-        return new ResponseData<T>( t, STATE_WARN, null, null );
+        return new ResponseData<T>(t, STATE_WARN, null, null);
     }
 
     /**
@@ -269,7 +274,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> warn(T t, String code) {
-        return new ResponseData<T>( t, STATE_WARN, code, null );
+        return new ResponseData<T>(t, STATE_WARN, code, null);
     }
 
     /**
@@ -278,26 +283,28 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> warn(T t, String code, String msg) {
-        return new ResponseData<T>( t, STATE_WARN, code, msg );
+        return new ResponseData<T>(t, STATE_WARN, code, msg);
     }
 
     /**
      * 带结果、代码和消息的警告返回值。
+     *
      * @param t
      * @param responseCode
-     * @return
      * @param <T>
+     * @return
      */
     public static <T> ResponseData<T> warn(T t, ResponseCode responseCode) {
-        return new ResponseData<T>( t, STATE_WARN, responseCode.getFullCode(), responseCode.getLocalizedMessage() );
+        return new ResponseData<T>(t, STATE_WARN, responseCode.getFullCode(), responseCode.getLocalizedMessage());
     }
 
     /**
      * 带结果、代码和消息的警告返回值，支持参数化消息格式。
-     * @param t 返回数据
+     *
+     * @param t            返回数据
      * @param responseCode 响应代码对象
-     * @param params 用于格式化消息的参数（如i18n占位符替换）
-     * @param <T> 泛型类型
+     * @param params       用于格式化消息的参数（如i18n占位符替换）
+     * @param <T>          泛型类型
      * @return ResponseData实例
      */
     public static <T> ResponseData<T> warn(T t, ResponseCode responseCode, Object... params) {
@@ -311,7 +318,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> warnCode(String code) {
-        return new ResponseData<T>( null, STATE_WARN, code, null );
+        return new ResponseData<T>(null, STATE_WARN, code, null);
     }
 
     /**
@@ -321,24 +328,26 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> warnCode(String code, String msg) {
-        return new ResponseData<T>( null, STATE_WARN, code, msg );
+        return new ResponseData<T>(null, STATE_WARN, code, msg);
     }
 
     /**
      * 带代码和消息的警告返回值。
+     *
      * @param responseCode
-     * @return
      * @param <T>
+     * @return
      */
     public static <T> ResponseData<T> warnCode(ResponseCode responseCode) {
-        return new ResponseData<T>( null, STATE_WARN, responseCode.getFullCode(), responseCode.getLocalizedMessage() );
+        return new ResponseData<T>(null, STATE_WARN, responseCode.getFullCode(), responseCode.getLocalizedMessage());
     }
 
     /**
      * 带代码和消息的警告返回值，支持参数化消息格式。
+     *
      * @param responseCode 响应代码对象
-     * @param params 用于格式化消息的参数（如i18n占位符替换）
-     * @param <T> 泛型类型
+     * @param params       用于格式化消息的参数（如i18n占位符替换）
+     * @param <T>          泛型类型
      * @return ResponseData实例
      */
     public static <T> ResponseData<T> warnCode(ResponseCode responseCode, Object... params) {
@@ -352,7 +361,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> warnMsg(String msg) {
-        return new ResponseData<T>( null, STATE_WARN, null, msg );
+        return new ResponseData<T>(null, STATE_WARN, null, msg);
     }
 
     /**
@@ -361,7 +370,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> error() {
-        return new ResponseData<T>( null, STATE_ERROR, null, null );
+        return new ResponseData<T>(null, STATE_ERROR, null, null);
     }
 
     /**
@@ -371,7 +380,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> error(T t, String code) {
-        return new ResponseData<T>( t, STATE_ERROR, code, null );
+        return new ResponseData<T>(t, STATE_ERROR, code, null);
     }
 
     /**
@@ -380,26 +389,28 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> error(T t, String code, String msg) {
-        return new ResponseData<T>( t, STATE_ERROR, code, msg );
+        return new ResponseData<T>(t, STATE_ERROR, code, msg);
     }
 
     /**
      * 带结果、代码和消息的失败返回值。
+     *
      * @param t
      * @param responseCode
-     * @return
      * @param <T>
+     * @return
      */
     public static <T> ResponseData<T> error(T t, ResponseCode responseCode) {
-        return new ResponseData<T>( t, STATE_ERROR, responseCode.getFullCode(), responseCode.getLocalizedMessage() );
+        return new ResponseData<T>(t, STATE_ERROR, responseCode.getFullCode(), responseCode.getLocalizedMessage());
     }
 
     /**
      * 带结果、代码和消息的失败返回值，支持参数化消息格式。
-     * @param t 返回数据
+     *
+     * @param t            返回数据
      * @param responseCode 响应代码对象
-     * @param params 用于格式化消息的参数（如i18n占位符替换）
-     * @param <T> 泛型类型
+     * @param params       用于格式化消息的参数（如i18n占位符替换）
+     * @param <T>          泛型类型
      * @return ResponseData实例
      */
     public static <T> ResponseData<T> error(T t, ResponseCode responseCode, Object... params) {
@@ -413,7 +424,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> errorCode(String code) {
-        return new ResponseData<T>( null, STATE_ERROR, code, null );
+        return new ResponseData<T>(null, STATE_ERROR, code, null);
     }
 
     /**
@@ -423,24 +434,26 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> errorCode(String code, String msg) {
-        return new ResponseData<T>( null, STATE_ERROR, code, msg );
+        return new ResponseData<T>(null, STATE_ERROR, code, msg);
     }
 
     /**
      * 带代码和消息的失败返回值。
+     *
      * @param responseCode
-     * @return
      * @param <T>
+     * @return
      */
     public static <T> ResponseData<T> errorCode(ResponseCode responseCode) {
-        return new ResponseData<T>( null, STATE_ERROR, responseCode.getFullCode(), responseCode.getLocalizedMessage() );
+        return new ResponseData<T>(null, STATE_ERROR, responseCode.getFullCode(), responseCode.getLocalizedMessage());
     }
 
     /**
      * 带代码和消息的失败返回值，支持参数化消息格式。
+     *
      * @param responseCode 响应代码对象
-     * @param params 用于格式化消息的参数（如i18n占位符替换）
-     * @param <T> 泛型类型
+     * @param params       用于格式化消息的参数（如i18n占位符替换）
+     * @param <T>          泛型类型
      * @return ResponseData实例
      */
     public static <T> ResponseData<T> errorCode(ResponseCode responseCode, Object... params) {
@@ -454,7 +467,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> errorMsg(String msg) {
-        return new ResponseData<T>( null, STATE_ERROR, null, msg );
+        return new ResponseData<T>(null, STATE_ERROR, null, msg);
     }
 
     /**
@@ -463,7 +476,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> fatal() {
-        return new ResponseData<T>( null, STATE_FATAL, null, null );
+        return new ResponseData<T>(null, STATE_FATAL, null, null);
     }
 
     /**
@@ -473,7 +486,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> fatal(T t, String code) {
-        return new ResponseData<T>( t, STATE_FATAL, code, null );
+        return new ResponseData<T>(t, STATE_FATAL, code, null);
     }
 
     /**
@@ -482,26 +495,28 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> fatal(T t, String code, String msg) {
-        return new ResponseData<T>( t, STATE_FATAL, code, msg );
+        return new ResponseData<T>(t, STATE_FATAL, code, msg);
     }
 
     /**
      * 带结果、代码和消息的严重错误返回值。
+     *
      * @param t
      * @param responseCode
-     * @return
      * @param <T>
+     * @return
      */
     public static <T> ResponseData<T> fatal(T t, ResponseCode responseCode) {
-        return new ResponseData<T>( t, STATE_FATAL, responseCode.getFullCode(), responseCode.getLocalizedMessage() );
+        return new ResponseData<T>(t, STATE_FATAL, responseCode.getFullCode(), responseCode.getLocalizedMessage());
     }
 
     /**
      * 带结果、代码和消息的严重错误返回值，支持参数化消息格式。
-     * @param t 返回数据
+     *
+     * @param t            返回数据
      * @param responseCode 响应代码对象
-     * @param params 用于格式化消息的参数（如i18n占位符替换）
-     * @param <T> 泛型类型
+     * @param params       用于格式化消息的参数（如i18n占位符替换）
+     * @param <T>          泛型类型
      * @return ResponseData实例
      */
     public static <T> ResponseData<T> fatal(T t, ResponseCode responseCode, Object... params) {
@@ -515,7 +530,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> fatalCode(String code) {
-        return new ResponseData<T>( null, STATE_FATAL, code, null );
+        return new ResponseData<T>(null, STATE_FATAL, code, null);
     }
 
     /**
@@ -525,24 +540,26 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> fatalCode(String code, String msg) {
-        return new ResponseData<T>( null, STATE_FATAL, code, msg );
+        return new ResponseData<T>(null, STATE_FATAL, code, msg);
     }
 
     /**
      * 带代码和消息的严重错误返回值。
+     *
      * @param responseCode
-     * @return
      * @param <T>
+     * @return
      */
     public static <T> ResponseData<T> fatalCode(ResponseCode responseCode) {
-        return new ResponseData<T>( null, STATE_FATAL, responseCode.getFullCode(), responseCode.getLocalizedMessage() );
+        return new ResponseData<T>(null, STATE_FATAL, responseCode.getFullCode(), responseCode.getLocalizedMessage());
     }
 
     /**
      * 带代码和消息的严重错误返回值，支持参数化消息格式。
+     *
      * @param responseCode 响应代码对象
-     * @param params 用于格式化消息的参数（如i18n占位符替换）
-     * @param <T> 泛型类型
+     * @param params       用于格式化消息的参数（如i18n占位符替换）
+     * @param <T>          泛型类型
      * @return ResponseData实例
      */
     public static <T> ResponseData<T> fatalCode(ResponseCode responseCode, Object... params) {
@@ -556,7 +573,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> fatalMsg(String msg) {
-        return new ResponseData<T>( null, STATE_FATAL, null, msg );
+        return new ResponseData<T>(null, STATE_FATAL, null, msg);
     }
 
     /**
@@ -566,7 +583,22 @@ public class ResponseData<T> {
      */
     @JsonIgnore
     public boolean isSuccess() {
-        return STATE_SUCCESS.equals( this.state );
+        return STATE_SUCCESS.equals(this.state);
+    }
+
+    /**
+     * 成功时执行。
+     *
+     * @param function
+     * @param <R>
+     * @return
+     */
+    @JsonIgnore
+    public <R> ResponseData<R> onSuccess(Function<T, ResponseData<R>> function) {
+        if (isSuccess()) {
+            return function.apply(data);
+        }
+        return this.raw();
     }
 
     /**
@@ -576,7 +608,7 @@ public class ResponseData<T> {
      */
     @JsonIgnore
     public boolean isNotSuccess() {
-        return !STATE_SUCCESS.equals( this.state );
+        return !STATE_SUCCESS.equals(this.state);
     }
 
     /**
@@ -586,7 +618,22 @@ public class ResponseData<T> {
      */
     @JsonIgnore
     public boolean isWarn() {
-        return STATE_WARN.equals( this.state );
+        return STATE_WARN.equals(this.state);
+    }
+
+    /**
+     * 警告时执行。
+     *
+     * @param function
+     * @param <R>
+     * @return
+     */
+    @JsonIgnore
+    public <R> ResponseData<R> onWarn(Function<T, ResponseData<R>> function) {
+        if (isWarn()) {
+            return function.apply(data);
+        }
+        return this.raw();
     }
 
     /**
@@ -596,7 +643,22 @@ public class ResponseData<T> {
      */
     @JsonIgnore
     public boolean isError() {
-        return STATE_ERROR.equals( this.state )|| STATE_FATAL.equals( this.state );
+        return STATE_ERROR.equals(this.state) || STATE_FATAL.equals(this.state);
+    }
+
+    /**
+     * 错误时执行。
+     *
+     * @param function
+     * @param <R>
+     * @return
+     */
+    @JsonIgnore
+    public <R> ResponseData<R> onError(Function<T, ResponseData<R>> function) {
+        if (isError()) {
+            return function.apply(data);
+        }
+        return this.raw();
     }
 
     /**
@@ -606,7 +668,22 @@ public class ResponseData<T> {
      */
     @JsonIgnore
     public boolean isFatal() {
-        return STATE_FATAL.equals( this.state );
+        return STATE_FATAL.equals(this.state);
+    }
+
+    /**
+     * 严重错误时执行。
+     *
+     * @param function
+     * @param <R>
+     * @return
+     */
+    @JsonIgnore
+    public <R> ResponseData<R> onFatal(Function<T, ResponseData<R>> function) {
+        if (isFatal()) {
+            return function.apply(data);
+        }
+        return this.raw();
     }
 
     /**
@@ -616,7 +693,7 @@ public class ResponseData<T> {
      */
     @JsonIgnore
     public boolean isNotError() {
-        return !STATE_ERROR.equals( this.state ) && !STATE_FATAL.equals( this.state );
+        return !STATE_ERROR.equals(this.state) && !STATE_FATAL.equals(this.state);
     }
 
     /**
@@ -633,11 +710,12 @@ public class ResponseData<T> {
 
     /**
      * 转换为字符串。
+     *
      * @return
      */
     @Override
     public String toString() {
-        return JsonUtils.toString( this );
+        return JsonUtils.toString(this);
     }
 
     /**

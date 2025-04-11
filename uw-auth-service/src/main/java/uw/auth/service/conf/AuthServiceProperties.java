@@ -15,14 +15,34 @@ import java.util.Map;
 public class AuthServiceProperties {
 
     /**
-     * Token认证入口 即受保护的资源，多个请用英文逗号分隔
+     * 是否启用网关。
      */
-    private String authEntryPoint = "/rpc/*,/root/*,/ops/*,/admin/*,/saas/*,/mch/*,/guest/*,/user/*,/api/*";
+    private boolean enableGateway = true;
 
     /**
-     * 权限中心服务地址
+     * 认证中心服务地址。
      */
     private String authCenterHost = "http://uw-auth-center";
+
+    /**
+     * 认证注解扫描基础包
+     */
+    private String authBasePackage;
+
+    /**
+     * 认证保护路径。 即受保护的资源，多个请用英文逗号分隔。
+     */
+    private String authProtectedPaths = "/rpc/*,/root/*,/ops/*,/admin/*,/saas/*,/mch/*,/guest/*,/user/*,/api/*";
+
+    /**
+     * IP保护路径。 即受保护的资源，多个请用英文逗号分隔。
+     */
+    private String ipProtectedPaths = "/rpc/*,/agent/*";
+
+    /**
+     * IP白名单列表。
+     */
+    private String ipWhiteList = "127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fe80::/10,FC00::/7";
 
     /**
      * 应用Id,统一由auth-center分配，一般不需要指派。
@@ -59,16 +79,6 @@ public class AuthServiceProperties {
     private int appPort;
 
     /**
-     * 权限注解扫描基础包
-     */
-    private String authBasePackage;
-
-    /**
-     * 用户登录成功重定向url
-     */
-    private String redirectUrl;
-
-    /**
      * 跨域配置
      */
     private CORSProperties cors = new CORSProperties();
@@ -78,20 +88,12 @@ public class AuthServiceProperties {
      */
     private Map<Integer, Long> tokenCache = new HashMap<>();
 
-    public String getAuthEntryPoint() {
-        return authEntryPoint;
+    public boolean isEnableGateway() {
+        return enableGateway;
     }
 
-    public void setAuthEntryPoint(String authEntryPoint) {
-        this.authEntryPoint = authEntryPoint;
-    }
-
-    public String getAppLabel() {
-        return appLabel;
-    }
-
-    public void setAppLabel(String appLabel) {
-        this.appLabel = appLabel;
+    public void setEnableGateway(boolean enableGateway) {
+        this.enableGateway = enableGateway;
     }
 
     public String getAuthCenterHost() {
@@ -100,6 +102,38 @@ public class AuthServiceProperties {
 
     public void setAuthCenterHost(String authCenterHost) {
         this.authCenterHost = authCenterHost;
+    }
+
+    public String getAuthBasePackage() {
+        return authBasePackage;
+    }
+
+    public void setAuthBasePackage(String authBasePackage) {
+        this.authBasePackage = authBasePackage;
+    }
+
+    public String getAuthProtectedPaths() {
+        return authProtectedPaths;
+    }
+
+    public void setAuthProtectedPaths(String authProtectedPaths) {
+        this.authProtectedPaths = authProtectedPaths;
+    }
+
+    public String getIpProtectedPaths() {
+        return ipProtectedPaths;
+    }
+
+    public void setIpProtectedPaths(String ipProtectedPaths) {
+        this.ipProtectedPaths = ipProtectedPaths;
+    }
+
+    public String getIpWhiteList() {
+        return ipWhiteList;
+    }
+
+    public void setIpWhiteList(String ipWhiteList) {
+        this.ipWhiteList = ipWhiteList;
     }
 
     public long getAppId() {
@@ -116,6 +150,14 @@ public class AuthServiceProperties {
 
     public void setAppName(String appName) {
         this.appName = appName;
+    }
+
+    public String getAppLabel() {
+        return appLabel;
+    }
+
+    public void setAppLabel(String appLabel) {
+        this.appLabel = appLabel;
     }
 
     public String getAppVersion() {
@@ -142,22 +184,6 @@ public class AuthServiceProperties {
         this.appPort = appPort;
     }
 
-    public String getAuthBasePackage() {
-        return authBasePackage;
-    }
-
-    public void setAuthBasePackage(String authBasePackage) {
-        this.authBasePackage = authBasePackage;
-    }
-
-    public String getRedirectUrl() {
-        return redirectUrl;
-    }
-
-    public void setRedirectUrl(String redirectUrl) {
-        this.redirectUrl = redirectUrl;
-    }
-
     public CORSProperties getCors() {
         return cors;
     }
@@ -173,7 +199,6 @@ public class AuthServiceProperties {
     public void setTokenCache(Map<Integer, Long> tokenCache) {
         this.tokenCache = tokenCache;
     }
-
 
     public static class CORSProperties {
         /**
@@ -202,7 +227,6 @@ public class AuthServiceProperties {
          */
         private String allowedHeaders = "Origin, No-Cache, X-Requested-With, If-Modified-Since, Pragma, Last-Modified, Cache-Control, Expires, Content-Type, X-E4M-With, " +
                 "Language, Authorization, Accept";
-
         /**
          * 允许的源
          */

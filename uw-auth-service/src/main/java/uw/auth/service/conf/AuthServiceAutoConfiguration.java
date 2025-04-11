@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -48,7 +50,7 @@ import java.util.Arrays;
 @AutoConfigureAfter({RedisAutoConfiguration.class})
 public class AuthServiceAutoConfiguration {
 
-    private static final Logger log = LoggerFactory.getLogger( AuthServiceAutoConfiguration.class );
+    private static final Logger log = LoggerFactory.getLogger(AuthServiceAutoConfiguration.class);
 
     private static final int TOKEN_FILTER_ORDER = 999;
 
@@ -66,7 +68,7 @@ public class AuthServiceAutoConfiguration {
      */
     @Bean
     public AuthServiceHelper authServerHelper(final AuthServiceProperties authServiceProperties, final AuthPermService authPermService, final AuthServiceRpc authServiceRpc) {
-        return new AuthServiceHelper( authServiceProperties, authPermService, authServiceRpc );
+        return new AuthServiceHelper(authServiceProperties, authPermService, authServiceRpc);
     }
 
     /**
@@ -83,13 +85,13 @@ public class AuthServiceAutoConfiguration {
                                                                        final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthPermService authPermService,
                                                                        final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage) {
         FilterRegistrationBean<AuthServiceFilter> registrationBean = new FilterRegistrationBean<AuthServiceFilter>();
-        AuthServiceFilter authServiceFilter = new AuthServiceFilter( authServiceProperties, requestMappingHandlerMapping, authPermService, logClient,
-                authCriticalLogStorage );
-        registrationBean.setFilter( authServiceFilter );
-        registrationBean.setName( "AuthServiceFilter" );
-        registrationBean.setOrder( TOKEN_FILTER_ORDER );
-        if (StringUtils.isNotBlank( authServiceProperties.getAuthEntryPoint() )) {
-            registrationBean.setUrlPatterns( Splitter.on( "," ).trimResults().omitEmptyStrings().splitToList( authServiceProperties.getAuthEntryPoint() ) );
+        AuthServiceFilter authServiceFilter = new AuthServiceFilter(authServiceProperties, requestMappingHandlerMapping, authPermService, logClient,
+                authCriticalLogStorage);
+        registrationBean.setFilter(authServiceFilter);
+        registrationBean.setName("AuthServiceFilter");
+        registrationBean.setOrder(TOKEN_FILTER_ORDER);
+        if (StringUtils.isNotBlank(authServiceProperties.getAuthProtectedPaths())) {
+            registrationBean.setUrlPatterns(Splitter.on(",").trimResults().omitEmptyStrings().splitToList(authServiceProperties.getAuthProtectedPaths()));
         }
         return registrationBean;
     }
@@ -104,11 +106,11 @@ public class AuthServiceAutoConfiguration {
     public CommandLineRunner configAuthLogClient(final LogClient logClient) {
         return args -> {
             // 登录日志查询
-            logClient.regLogObjectWithIndexName( MscLoginLog.class, "uw.auth.login.log" );
+            logClient.regLogObjectWithIndexName(MscLoginLog.class, "uw.auth.login.log");
             // 操作日志
-            logClient.regLogObjectWithIndexName( MscActionLog.class, "uw.auth.action.log" );
+            logClient.regLogObjectWithIndexName(MscActionLog.class, "uw.auth.action.log");
             // 客户登录日志查询
-            logClient.regLogObjectWithIndexName( MscGuestLoginLog.class, "uw.auth.guest.login.log" );
+            logClient.regLogObjectWithIndexName(MscGuestLoginLog.class, "uw.auth.guest.login.log");
         };
     }
 
@@ -118,37 +120,38 @@ public class AuthServiceAutoConfiguration {
      * @return
      */
     @Bean
+    @ConditionalOnMissingBean
     public AuthCriticalLogStorage authCriticalLogStorage() {
         return new AuthCriticalLogNoneStorage();
     }
 
     /**
-     * 引入gateway网关、auth服务不需要配置cors、保留代码
+     * 如果引入gateway网关、auth服务不需要配置cors。
      * corsFilter
      *
      * @param authServiceProperties
      * @return
      */
-//    @Bean 网关已做统一跨域处理 不用在各个服务做跨域处理 此处放开会导致双跨域问题
+    @Bean
+    @ConditionalOnProperty(prefix = "uw.auth.service", name = "enable-gateway", havingValue = "false")
     public FilterRegistrationBean<CorsFilter> corsFilter(final AuthServiceProperties authServiceProperties) {
         FilterRegistrationBean<CorsFilter> registrationBean = new FilterRegistrationBean<CorsFilter>();
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins( Arrays.asList( authServiceProperties.getCors().getAllowedOrigins().split( "\\s*,\\s*" ) ) );
-        configuration.setAllowedMethods( Arrays.asList( authServiceProperties.getCors().getAllowedMethods().split( "\\s*,\\s*" ) ) );
-        configuration.setAllowedHeaders( Arrays.asList( authServiceProperties.getCors().getAllowedHeaders().split( "\\s*,\\s*" ) ) );
-        configuration.setAllowedOriginPatterns( Arrays.asList( authServiceProperties.getCors().getAllowedOriginPattern().split( "\\s*,\\s*" ) ) );
-        configuration.setAllowCredentials( authServiceProperties.getCors().getAllowCredentials() );
-        configuration.setMaxAge( authServiceProperties.getCors().getMaxAge() );
-        source.registerCorsConfiguration( authServiceProperties.getCors().getMapping(), configuration );
-        CorsFilter corsFilter = new CorsFilter( source );
-        registrationBean.setFilter( corsFilter );
-        registrationBean.setName( "CorsFilter" );
-        registrationBean.setOrder( TOKEN_FILTER_ORDER - 1 );
-        registrationBean.addUrlPatterns( "/*" );
+        configuration.setAllowedOrigins(Arrays.asList(authServiceProperties.getCors().getAllowedOrigins().split("\\s*,\\s*")));
+        configuration.setAllowedMethods(Arrays.asList(authServiceProperties.getCors().getAllowedMethods().split("\\s*,\\s*")));
+        configuration.setAllowedHeaders(Arrays.asList(authServiceProperties.getCors().getAllowedHeaders().split("\\s*,\\s*")));
+        configuration.setAllowedOriginPatterns(Arrays.asList(authServiceProperties.getCors().getAllowedOriginPattern().split("\\s*,\\s*")));
+        configuration.setAllowCredentials(authServiceProperties.getCors().getAllowCredentials());
+        configuration.setMaxAge(authServiceProperties.getCors().getMaxAge());
+        source.registerCorsConfiguration(authServiceProperties.getCors().getMapping(), configuration);
+        CorsFilter corsFilter = new CorsFilter(source);
+        registrationBean.setFilter(corsFilter);
+        registrationBean.setName("CorsFilter");
+        registrationBean.setOrder(TOKEN_FILTER_ORDER - 1);
+        registrationBean.addUrlPatterns("/*");
         return registrationBean;
     }
-
 
     /**
      * App更新服务
@@ -162,7 +165,7 @@ public class AuthServiceAutoConfiguration {
     @Bean
     public AppUpdateService appUpdateService(final AuthServiceProperties authServiceProperties, final AuthAppRpc authAppRpc, final AuthPermService authPermService,
                                              final RequestMappingHandlerMapping requestMappingHandlerMapping) {
-        appUpdateService = new AppUpdateService( authServiceProperties, authAppRpc, authPermService, requestMappingHandlerMapping );
+        appUpdateService = new AppUpdateService(authServiceProperties, authAppRpc, authPermService, requestMappingHandlerMapping);
         return appUpdateService;
     }
 
@@ -175,7 +178,7 @@ public class AuthServiceAutoConfiguration {
      */
     @Bean
     public AuthAppRpc authAppRpc(final AuthServiceProperties authServiceProperties, @Qualifier("authRestTemplate") final RestTemplate authRestTemplate) {
-        return new AuthAppRpcImpl( authServiceProperties, authRestTemplate );
+        return new AuthAppRpcImpl(authServiceProperties, authRestTemplate);
     }
 
 
@@ -188,7 +191,7 @@ public class AuthServiceAutoConfiguration {
      */
     @Bean
     public AuthServiceRpc authServiceRpc(final AuthServiceProperties authServiceProperties, @Qualifier("authRestTemplate") final RestTemplate authRestTemplate) {
-        return new AuthServiceRpcImpl( authServiceProperties, authRestTemplate );
+        return new AuthServiceRpcImpl(authServiceProperties, authRestTemplate);
     }
 
     /**

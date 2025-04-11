@@ -611,7 +611,7 @@ public class AuthServiceHelper {
      * @return
      */
     public static String getRemoteIp(HttpServletRequest request) {
-        return IpWebUtils.getRealIpString(request);
+        return IpWebUtils.getRealIp(request);
     }
 
     /**
@@ -625,7 +625,7 @@ public class AuthServiceHelper {
             return null;
         }
         HttpServletRequest request = ((ServletRequestAttributes) attributes).getRequest();
-        return IpWebUtils.getRealIpString(request);
+        return IpWebUtils.getRealIp(request);
     }
 
     /**

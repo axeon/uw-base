@@ -136,7 +136,7 @@ public class AuthServiceFilter implements Filter {
         //请求方法
         String method = httpServletRequest.getMethod();
         //远端IP
-        String userIp = IpWebUtils.getRealIpString(httpServletRequest);
+        String userIp = IpWebUtils.getRealIp(httpServletRequest);
         //执行IP保护。
         if (ipProtectedPaths != null && ipWhiteList != null) {
             for (String ipProtectedPath : ipProtectedPaths) {

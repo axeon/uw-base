@@ -29,9 +29,9 @@ public class IpWebUtils {
      * @param request HTTP请求对象
      * @return 客户端真实IP地址字符串，如果无法获取返回 {@code null}
      */
-    public static String getRealIpString(HttpServletRequest request) {
+    public static String getRealIp(HttpServletRequest request) {
         // 1. 获取代理前的IP
-        String proxiedIp = getProxiedIpString( request );
+        String proxiedIp = getProxiedIp( request );
 
         // 2. 获取代理前的IP
         if (proxiedIp != null) {
@@ -51,7 +51,7 @@ public class IpWebUtils {
      */
     public static InetAddress getRealIpAddress(HttpServletRequest request) {
         try {
-            return InetAddress.getByName( getRealIpString( request ) );
+            return InetAddress.getByName( getRealIp( request ) );
         } catch (UnknownHostException e) {
             logger.error( e.getMessage(), e );
             return null;
@@ -64,7 +64,7 @@ public class IpWebUtils {
      * @param request
      * @return
      */
-    private static String getProxiedIpString(HttpServletRequest request) {
+    private static String getProxiedIp(HttpServletRequest request) {
         // 1. 检查 X-Forwarded-For（优先级最高）
         String ip = request.getHeader( HEADER_X_FORWARDED_FOR );
         if (isValidIp( ip )) {

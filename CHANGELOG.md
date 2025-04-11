@@ -1,0 +1,20 @@
+# 2025.0330.1010版本升级说明
+
+## 安全升级：
+1. 全面支持IPV6。
+2. 全面支持MFA，包括手机、邮件验证码，TOTP认证。
+3. 密码策略管理，可针对用户类型设定不同的密码策略。可设置密码重置策略，过期策略，复杂性策略，token生命周期等。
+4. MscPermDeclare默认值策略改进，减少配置复杂度，增加安全性。
+5. token类型增加TEMP_TOKEN，PAID_TOKEN,SUDO_TOKEN，提升更多场景应用的可能。
+
+## 功能改进
+1. uw-dao新增DaoManager，通过ResponseData来统一返回结果集和错误信息，结合controller完善了异常管理。
+2. 底层支持i18n，通过ResponseCode结合ResponseData支持从enum到i18n多语言资源文件自动生成。
+3. JsonConfigHelper类库组合，统一了数据库中json配置文件格式，支持前后端协同的动态强类型配置管理。
+
+## 升级注意点
+1. 原有的uw-app-common组件更名为uw-common-app，对应的包名从uw.app.common变更为uw.common.app。
+2. uw-common-app的StateCommon枚举更名为CommonState。
+3. UserType.ANONYMOUS变更为UserType.ANYONE，并作为默认值，表示任意用户类型。
+4. SysCritLog的refType,refId变更为bizType,bizId。
+5. uw-dao的batchSave()方法变更为save()。

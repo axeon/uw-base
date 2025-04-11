@@ -122,8 +122,8 @@ public class AuthServiceHelper {
         userRootCache = Caffeine.newBuilder().maximumSize(userCacheConfig.getOrDefault(UserType.ROOT.getValue(), 100L)).expireAfter(cacheExpiryPolicy).build();
         userOpsCache = Caffeine.newBuilder().maximumSize(userCacheConfig.getOrDefault(UserType.OPS.getValue(), 100L)).expireAfter(cacheExpiryPolicy).build();
         userAdminCache = Caffeine.newBuilder().maximumSize(userCacheConfig.getOrDefault(UserType.ADMIN.getValue(), 1000L)).expireAfter(cacheExpiryPolicy).build();
-        userSaasCache = Caffeine.newBuilder().maximumSize(userCacheConfig.getOrDefault(UserType.SAAS.getValue(), 10_000L)).expireAfter(cacheExpiryPolicy).build();
-        userGuestCache = Caffeine.newBuilder().maximumSize(userCacheConfig.getOrDefault(UserType.GUEST.getValue(), 100_000L)).expireAfter(cacheExpiryPolicy).build();
+        userSaasCache = Caffeine.newBuilder().maximumSize(userCacheConfig.getOrDefault(UserType.SAAS.getValue(), 100_000L)).expireAfter(cacheExpiryPolicy).build();
+        userGuestCache = Caffeine.newBuilder().maximumSize(userCacheConfig.getOrDefault(UserType.GUEST.getValue(), 1000_000L)).expireAfter(cacheExpiryPolicy).build();
         invalidTokenCache = Caffeine.newBuilder().maximumSize(10_000L).expireAfterWrite(20, TimeUnit.MINUTES).build();
     }
 
@@ -251,7 +251,7 @@ public class AuthServiceHelper {
                 userAdminCache.invalidate(rawToken);
                 return true;
             }
-        } else if (UserType.SAAS.getValue() <= userType) {
+        } else if (userType >= UserType.SAAS.getValue()) {
             if (userSaasCache.getIfPresent(rawToken) != null) {
                 userSaasCache.invalidate(rawToken);
                 return true;
@@ -768,7 +768,7 @@ public class AuthServiceHelper {
             authTokenData = userOpsCache.getIfPresent(rawToken);
         } else if (userType == UserType.ADMIN.getValue()) {
             authTokenData = userAdminCache.getIfPresent(rawToken);
-        } else if (UserType.SAAS.getValue() <= userType) {
+        } else if (userType >= UserType.SAAS.getValue()) {
             authTokenData = userSaasCache.getIfPresent(rawToken);
         }
         return authTokenData;
@@ -792,7 +792,7 @@ public class AuthServiceHelper {
             userOpsCache.put(rawToken, authToken);
         } else if (userType == UserType.ADMIN.getValue()) {
             userAdminCache.put(rawToken, authToken);
-        } else if (UserType.SAAS.getValue() <= userType) {
+        } else if (userType >= UserType.SAAS.getValue()) {
             userSaasCache.put(rawToken, authToken);
         }
     }

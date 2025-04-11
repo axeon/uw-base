@@ -9,7 +9,7 @@ public class UwMfaProperties {
     /**
      * ip白名单。在白名单的IP不受登录限制影响。
      */
-    private String ipWhiteList = "127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16";
+    private String ipWhiteList = "127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fe80::/10,FC00::/7";
 
     /**
      * 错误检查过期时间 10min

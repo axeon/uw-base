@@ -31,6 +31,16 @@ public class QueryParamUtils {
 
     /**
      * 解析queryParam。
+     * 一般用于update和delete的where条件构造。
+     * @param queryParam 查询参数。
+     * @return
+     */
+    public static QueryParamResult parseQueryParam(QueryParam queryParam) {
+        return parseQueryParam( null, null, queryParam );
+    }
+
+    /**
+     * 解析queryParam。
      *
      * @param cls        entityBean
      * @param tableName  附加表名，在分表情况下。

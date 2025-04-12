@@ -1,17 +1,23 @@
 package uw.dao.impl;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.util.SystemClock;
-import uw.dao.*;
+import uw.dao.DataEntity;
+import uw.dao.DataList;
+import uw.dao.QueryParam;
+import uw.dao.TransactionException;
 import uw.dao.conf.DaoConfigManager;
 import uw.dao.connectionpool.ConnectionManager;
 import uw.dao.dialect.Dialect;
 import uw.dao.util.DaoReflectUtils;
 import uw.dao.util.EntityMetaUtils;
+import uw.dao.util.QueryParamUtils;
 import uw.dao.util.SQLUtils;
 import uw.dao.vo.FieldMetaInfo;
+import uw.dao.vo.QueryParamResult;
 import uw.dao.vo.TableMetaInfo;
 
 import java.io.Serializable;
@@ -19,7 +25,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 /**
  * 实体类命令实现.
@@ -64,7 +73,7 @@ public class EntityCommandImpl {
         }
         StringBuilder sb = new StringBuilder();
         // 写入所有的列
-        ArrayList<String> cols = new ArrayList<>(emi.getColumnMap().keySet());
+        Set<String> cols = emi.getColumnMap().keySet();
         //参数列表。
         Object[] paramList = new Object[cols.size()];
         if (cols.size() > 0) {
@@ -162,7 +171,7 @@ public class EntityCommandImpl {
         }
         StringBuilder sb = new StringBuilder();
         // 写入所有的列
-        ArrayList<String> cols = new ArrayList<>(emi.getColumnMap().keySet());
+        Set<String> cols = emi.getColumnMap().keySet();
         //参数列表。 输出日志和统计使用
         Object[] paramList = new Object[cols.size() * entityList.size()];
         if (cols.size() > 0) {
@@ -415,6 +424,7 @@ public class EntityCommandImpl {
         return entity;
     }
 
+
     /**
      * 保存一个实体.
      *
@@ -517,6 +527,55 @@ public class EntityCommandImpl {
             }
         }
         return effect;
+    }
+
+
+    /**
+     * 保存一个实体.
+     *
+     * @param dao       DAOFactoryImpl对象
+     * @param connName  连接名
+     * @param entity    实体类
+     * @param tableName 表名
+     * @return 实体类
+     * @throws TransactionException 事务异常
+     */
+    static int update(DaoFactoryImpl dao, String connName, DataEntity entity, String tableName, QueryParam queryParam) throws TransactionException {
+        // 有时候从数据库中load数据，并无实质更新，此时直接返回-1.
+        if (entity.GET_UPDATED_COLUMN() == null) {
+            return 0;
+        }
+        // 解析查询参数。
+        QueryParamResult queryParamResult = QueryParamUtils.parseQueryParam(queryParam);
+        // 获取TableMetaInfo。
+        TableMetaInfo emi = EntityMetaUtils.loadEntityMetaInfo(entity.getClass());
+        if (emi == null) {
+            throw new TransactionException("TableMetaInfo[" + entity.getClass() + "] not found! ");
+        }
+        if (StringUtils.isBlank(tableName)) {
+            tableName = emi.getTableName();
+        }
+        if (StringUtils.isBlank(connName)) {
+            connName = DaoConfigManager.getRouteMapping(tableName, "write");
+        }
+        StringBuilder sb = new StringBuilder(256);
+        Set<String> cols = entity.GET_UPDATED_COLUMN();
+        //参数列表。
+        Object[] paramList = new Object[cols.size()];
+        try {
+            sb.append("update ").append(tableName).append(" set ");
+            int pos = 0;
+            for (String col : cols) {
+                sb.append(col).append("=?,");
+                paramList[pos++] = emi.getFieldMetaInfo(col).getField().get(entity);
+            }
+            sb.deleteCharAt(sb.length() - 1);
+        } catch (Exception e) {
+            throw new TransactionException("FieldMetaInfo@[" + entity.getClass() + "] get error! " + e.toString(), e);
+        }
+        sb.append(queryParamResult.getSql());
+        Object[] allParamList = ArrayUtils.addAll(paramList, queryParamResult.getParamList());
+        return SQLCommandImpl.executeSQL(dao, connName, sb.toString(), allParamList);
     }
 
     /**

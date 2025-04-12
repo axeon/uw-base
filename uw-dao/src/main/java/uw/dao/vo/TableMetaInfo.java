@@ -30,12 +30,12 @@ public class TableMetaInfo {
     /**
      * 主键列表.
      */
-    private final List<FieldMetaInfo> pkList = new ArrayList<FieldMetaInfo>();
+    private final ArrayList<FieldMetaInfo> pkList = new ArrayList<FieldMetaInfo>();
 
     /**
      * 列名列表. key=column.
      */
-    private final Map<String, FieldMetaInfo> columnMap = new LinkedHashMap<String, FieldMetaInfo>();
+    private final LinkedHashMap<String, FieldMetaInfo> columnMap = new LinkedHashMap<String, FieldMetaInfo>();
 
     /**
      * @return the tableName
@@ -71,7 +71,7 @@ public class TableMetaInfo {
     /**
      * @return the pklist
      */
-    public List<FieldMetaInfo> getPkList() {
+    public ArrayList<FieldMetaInfo> getPkList() {
         return pkList;
     }
 
@@ -85,7 +85,7 @@ public class TableMetaInfo {
     /**
      * @return the columnMap
      */
-    public Map<String, FieldMetaInfo> getColumnMap() {
+    public LinkedHashMap<String, FieldMetaInfo> getColumnMap() {
         return columnMap;
     }
 

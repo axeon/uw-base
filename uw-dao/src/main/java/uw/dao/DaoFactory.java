@@ -242,6 +242,39 @@ public abstract class DaoFactory {
     public abstract <T extends DataEntity> int update(String connName, T entity, String tableName) throws TransactionException;
 
     /**
+     * 根据QueryParam更新一个Entity实例，等效于update.
+     *
+     * @param entity
+     * @param queryParam
+     * @param <T>
+     * @return
+     */
+    public abstract <T extends DataEntity> int update(T entity, QueryParam queryParam) throws TransactionException;
+
+    /**
+     * 根据QueryParam更新一个Entity实例，等效于update.
+     *
+     * @param connName
+     * @param entity
+     * @param queryParam
+     * @param <T>
+     * @return
+     */
+    public abstract <T extends DataEntity> int update(String connName, T entity, QueryParam queryParam) throws TransactionException;
+
+    /**
+     * 根据QueryParam更新一个Entity实例，等效于update.
+     *
+     * @param connName
+     * @param entity
+     * @param tableName
+     * @param queryParam
+     * @return
+     */
+    public abstract <T extends DataEntity> int update(String connName, T entity, String tableName, QueryParam queryParam) throws TransactionException;
+
+
+    /**
      * 根据主键删除一个Entity实例，等效于delete.
      *
      * @param entity 要更新的对象
@@ -284,6 +317,35 @@ public abstract class DaoFactory {
      * @throws TransactionException 事务异常
      */
     public abstract <T extends DataEntity> int delete(String connName, T entity, String tableName) throws TransactionException;
+
+    /**
+     * 根据QueryParam删除信息，等效于delete.
+     *
+     * @param queryParam
+     * @param <T>
+     * @return
+     */
+    public abstract <T extends DataEntity> int delete(Class<T> entityCls, QueryParam queryParam) throws TransactionException;
+
+    /**
+     * 根据QueryParam删除信息，等效于delete.
+     *
+     * @param connName
+     * @param queryParam
+     * @param <T>
+     * @return
+     */
+    public abstract <T extends DataEntity> int delete(String connName, Class<T> entityCls, QueryParam queryParam) throws TransactionException;
+
+    /**
+     * 根据QueryParam删除信息，等效于delete.
+     *
+     * @param connName
+     * @param queryParam
+     * @param <T>
+     * @return
+     */
+    public abstract <T extends DataEntity> int delete(String connName, Class<T> entityCls, String tableName, QueryParam queryParam) throws TransactionException;
 
     /**
      * 根据指定的主键ID载入一个Entity实例.
@@ -518,7 +580,7 @@ public abstract class DaoFactory {
      * @return DataList列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> DataList<T> list(Class<T> entityCls,String tableName, PageQueryParam pageQueryParam) throws TransactionException;
+    public abstract <T> DataList<T> list(Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) throws TransactionException;
 
 
     /**

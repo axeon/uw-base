@@ -33,28 +33,29 @@ public class DaoReflectUtils {
     public static Object DAOLiteSaveReflect(PreparedStatement pstmt, Object entity, FieldMetaInfo fmi, int sequence) throws IllegalAccessException, SQLException {
         Field fd = fmi.getField();
         Class<?> cls = fd.getType();
+        Object value = fd.get(entity);
         if (cls == int.class) {
-            pstmt.setInt(sequence, fd.getInt(entity));
+            pstmt.setInt(sequence, (Integer) value);
         } else if (cls == String.class) {
-            pstmt.setObject(sequence, fd.get(entity));
-        } else if (cls == long.class) {
-            pstmt.setLong(sequence, fd.getLong(entity));
+            pstmt.setObject(sequence, value);
         } else if (cls == Date.class) {
-            pstmt.setTimestamp(sequence, DaoValueUtils.dateToTimestamp((Date) fd.get(entity)));
+            pstmt.setTimestamp(sequence, DaoValueUtils.dateToTimestamp((Date) value));
+        } else if (cls == long.class) {
+            pstmt.setLong(sequence, (Long) value);
         } else if (cls == double.class) {
-            pstmt.setDouble(sequence, fd.getDouble(entity));
+            pstmt.setDouble(sequence, (Double) value);
         } else if (cls == float.class) {
-            pstmt.setFloat(sequence, fd.getFloat(entity));
+            pstmt.setFloat(sequence, (Float) value);
         } else if (cls == short.class) {
-            pstmt.setShort(sequence, fd.getShort(entity));
+            pstmt.setShort(sequence, (Short) value);
         } else if (cls == byte.class) {
-            pstmt.setByte(sequence, fd.getByte(entity));
+            pstmt.setByte(sequence, (Byte) value);
         } else if (cls == boolean.class) {
-            pstmt.setBoolean(sequence, fd.getBoolean(entity));
+            pstmt.setBoolean(sequence, (Boolean) value);
         } else {
-            pstmt.setObject(sequence, fd.get(entity));
+            pstmt.setObject(sequence, value);
         }
-        return fd.get(entity);
+        return value;
     }
 
     /**

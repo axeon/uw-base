@@ -277,9 +277,14 @@ public class DaoManager {
      * @param entity 要更新的对象
      * @return Entity实例
      */
-    public <T extends DataEntity> ResponseData<Integer> update(T entity) {
+    public <T extends DataEntity> ResponseData<T> update(T entity) {
         try {
-            return responseData(daoFactory.update(entity));
+            int effectedNum = daoFactory.update(entity);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(entity);
+            }
         } catch (TransactionException e) {
             return responseError(e);
         }
@@ -292,9 +297,14 @@ public class DaoManager {
      * @param entity   要更新的对象
      * @return Entity实例
      */
-    public <T extends DataEntity> ResponseData<Integer> update(String connName, T entity) {
+    public <T extends DataEntity> ResponseData<T> update(String connName, T entity) {
         try {
-            return responseData(daoFactory.update(connName, entity));
+            int effectedNum = daoFactory.update(connName, entity);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(entity);
+            }
         } catch (TransactionException e) {
             return responseError(e);
         }
@@ -307,9 +317,14 @@ public class DaoManager {
      * @param tableName 指定表名
      * @return Entity实例
      */
-    public <T extends DataEntity> ResponseData<Integer> update(T entity, String tableName) {
+    public <T extends DataEntity> ResponseData<T> update(T entity, String tableName) {
         try {
-            return responseData(daoFactory.update(entity, tableName));
+            int effectedNum = daoFactory.update(entity, tableName);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(entity);
+            }
         } catch (TransactionException e) {
             return responseError(e);
         }
@@ -323,9 +338,76 @@ public class DaoManager {
      * @param tableName 指定表名
      * @return Entity实例
      */
-    public <T extends DataEntity> ResponseData<Integer> update(String connName, T entity, String tableName) {
+    public <T extends DataEntity> ResponseData<T> update(String connName, T entity, String tableName) {
         try {
-            return responseData(daoFactory.update(connName, entity, tableName));
+            int effectedNum = daoFactory.update(connName, entity, tableName);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(entity);
+            }
+        } catch (TransactionException e) {
+            return responseError(e);
+        }
+    }
+
+    /**
+     * 根据QueryParam更新一个Entity实例，等效于update.
+     *
+     * @param entity
+     * @param queryParam
+     * @return
+     */
+    public <T extends DataEntity> ResponseData<Integer> update(T entity, QueryParam queryParam) {
+        try {
+            int effectedNum = daoFactory.update(entity, queryParam);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(effectedNum);
+            }
+        } catch (TransactionException e) {
+            return responseError(e);
+        }
+    }
+
+    /**
+     * 根据QueryParam更新一个Entity实例，等效于update.
+     *
+     * @param entity     要更新的对象
+     * @param queryParam 查询条件
+     * @return int
+     */
+    public <T extends DataEntity> ResponseData<Integer> update(String connName, T entity, QueryParam queryParam) {
+        try {
+            int effectedNum = daoFactory.update(connName, entity, queryParam);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(effectedNum);
+            }
+        } catch (TransactionException e) {
+            return responseError(e);
+        }
+    }
+
+    /**
+     * 根据QueryParam更新一个Entity实例，等效于update.
+     *
+     * @param connName
+     * @param entity
+     * @param tableName
+     * @param queryParam
+     * @return
+     */
+    public <T extends DataEntity> ResponseData<Integer> update(String connName, T entity, String tableName, QueryParam queryParam) {
+        try {
+            int effectedNum = daoFactory.update(connName, entity, tableName, queryParam);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(effectedNum);
+            }
         } catch (TransactionException e) {
             return responseError(e);
         }
@@ -341,7 +423,12 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> delete(T entity) {
         try {
-            return responseData(daoFactory.delete(entity));
+            int effectedNum = daoFactory.delete(entity);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(effectedNum);
+            }
         } catch (TransactionException e) {
             return responseError(e);
         }
@@ -356,7 +443,12 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> delete(String connName, T entity) {
         try {
-            return responseData(daoFactory.delete(connName, entity));
+            int effectedNum = daoFactory.delete(connName, entity);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(effectedNum);
+            }
         } catch (TransactionException e) {
             return responseError(e);
         }
@@ -371,7 +463,12 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> delete(T entity, String tableName) {
         try {
-            return responseData(daoFactory.delete(entity, tableName));
+            int effectedNum = daoFactory.delete(entity, tableName);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(effectedNum);
+            }
         } catch (TransactionException e) {
             return responseError(e);
         }
@@ -387,7 +484,75 @@ public class DaoManager {
      */
     public <T extends DataEntity> ResponseData<Integer> delete(String connName, T entity, String tableName) {
         try {
-            return responseData(daoFactory.delete(connName, entity, tableName));
+            int effectedNum = daoFactory.delete(connName, entity, tableName);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(effectedNum);
+            }
+        } catch (TransactionException e) {
+            return responseError(e);
+        }
+    }
+
+    /**
+     * 根据QueryParam删除信息，等效于delete.
+     *
+     * @param entityCls
+     * @param queryParam
+     * @return
+     */
+    public <T extends DataEntity> ResponseData<Integer> delete(Class<T> entityCls, QueryParam queryParam) {
+        try {
+            int effectedNum = daoFactory.delete(entityCls, queryParam);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(effectedNum);
+            }
+        } catch (TransactionException e) {
+            return responseError(e);
+        }
+    }
+
+    /**
+     * 根据QueryParam删除信息，等效于delete.
+     *
+     * @param connName
+     * @param entityCls
+     * @param queryParam
+     * @return
+     */
+    public <T extends DataEntity> ResponseData<Integer> delete(String connName, Class<T> entityCls, QueryParam queryParam) {
+        try {
+            int effectedNum = daoFactory.delete(connName, entityCls, queryParam);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(effectedNum);
+            }
+        } catch (TransactionException e) {
+            return responseError(e);
+        }
+    }
+
+    /**
+     * 根据QueryParam删除信息，等效于delete.
+     *
+     * @param connName
+     * @param entityCls
+     * @param tableName
+     * @param queryParam
+     * @return
+     */
+    public <T extends DataEntity> ResponseData<Integer> delete(String connName, Class<T> entityCls, String tableName, QueryParam queryParam) {
+        try {
+            int effectedNum = daoFactory.delete(connName, entityCls, tableName, queryParam);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(effectedNum);
+            }
         } catch (TransactionException e) {
             return responseError(e);
         }
@@ -504,8 +669,12 @@ public class DaoManager {
      * @return DataList列表
      * @throws TransactionException 事务异常
      */
-    public <T> DataList<T> list(Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
-        return daoFactory.list(entityCls, selectSql, startIndex, resultNum, autoCount);
+    public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) {
+        try {
+            return responseData(daoFactory.list(entityCls, selectSql, startIndex, resultNum, autoCount));
+        } catch (TransactionException e) {
+            return responseError(e);
+        }
     }
 
     /**
@@ -554,8 +723,12 @@ public class DaoManager {
      * @return DataList列表
      * @throws TransactionException 事务异常
      */
-    public <T> DataList<T> list(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
-        return daoFactory.list(connName, entityCls, selectSql, startIndex, resultNum, autoCount);
+    public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) {
+        try {
+            return responseData(daoFactory.list(connName, entityCls, selectSql, startIndex, resultNum, autoCount));
+        } catch (TransactionException e) {
+            return responseError(e);
+        }
     }
 
     /**
@@ -691,8 +864,12 @@ public class DaoManager {
      * @return DataList列表
      * @throws TransactionException 事务异常
      */
-    public <T> DataList<T> list(Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) throws TransactionException {
-        return daoFactory.list(entityCls, tableName, pageQueryParam);
+    public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) {
+        try {
+            return responseData(daoFactory.list(entityCls, tableName, pageQueryParam));
+        } catch (TransactionException e) {
+            return responseError(e);
+        }
     }
 
     /**
@@ -880,8 +1057,12 @@ public class DaoManager {
      * @return DataSet数据列表
      * @throws TransactionException 事务异常
      */
-    public <T> ArrayList<T> queryForSingleList(String connName, Class<T> valueCls, QueryParam queryParam) throws TransactionException {
-        return daoFactory.queryForSingleList(connName, valueCls, queryParam);
+    public <T> ResponseData<ArrayList<T>> queryForSingleList(String connName, Class<T> valueCls, QueryParam queryParam) {
+        try {
+            return responseData(daoFactory.queryForSingleList(connName, valueCls, queryParam));
+        } catch (TransactionException e) {
+            return responseError(e);
+        }
     }
 
     /**
@@ -972,8 +1153,12 @@ public class DaoManager {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public <T> T queryForSingleObject(Class<T> entityCls, String tableName, QueryParam queryParam) throws TransactionException {
-        return daoFactory.queryForSingleObject(entityCls, tableName, queryParam);
+    public <T> ResponseData<T> queryForSingleObject(Class<T> entityCls, String tableName, QueryParam queryParam) {
+        try {
+            return responseData(daoFactory.queryForSingleObject(entityCls, tableName, queryParam));
+        } catch (TransactionException e) {
+            return responseError(e);
+        }
     }
 
     /**
@@ -1130,8 +1315,12 @@ public class DaoManager {
      * @return DataSet数据列表
      * @throws TransactionException 事务异常
      */
-    public DataSet queryForDataSet(String connName, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
-        return daoFactory.queryForDataSet(connName, selectSql, startIndex, resultNum, autoCount);
+    public ResponseData<DataSet> queryForDataSet(String connName, String selectSql, int startIndex, int resultNum, boolean autoCount) {
+        try {
+            return responseData(daoFactory.queryForDataSet(connName, selectSql, startIndex, resultNum, autoCount));
+        } catch (TransactionException e) {
+            return responseError(e);
+        }
     }
 
     /**
@@ -1161,8 +1350,12 @@ public class DaoManager {
      * @return DataSet数据列表
      * @throws TransactionException 事务异常
      */
-    public DataSet queryForDataSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException {
-        return daoFactory.queryForDataSet(connName, selectSql, paramList, startIndex, resultNum);
+    public ResponseData<DataSet> queryForDataSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum) {
+        try {
+            return responseData(daoFactory.queryForDataSet(connName, selectSql, paramList, startIndex, resultNum));
+        } catch (TransactionException e) {
+            return responseError(e);
+        }
     }
 
     /**
@@ -1193,8 +1386,12 @@ public class DaoManager {
      * @return DataSet数据列表
      * @throws TransactionException 事务异常
      */
-    public DataSet queryForDataSet(String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
-        return daoFactory.queryForDataSet(selectSql, paramList, startIndex, resultNum, autoCount);
+    public ResponseData<DataSet> queryForDataSet(String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
+        try {
+            return responseData(daoFactory.queryForDataSet(selectSql, paramList, startIndex, resultNum, autoCount));
+        } catch (TransactionException e) {
+            return responseError(e);
+        }
     }
 
     /**
@@ -1272,7 +1469,12 @@ public class DaoManager {
      */
     public ResponseData<Integer> executeCommand(String sql) {
         try {
-            return responseData(daoFactory.executeCommand(sql));
+            int effectedNum = daoFactory.executeCommand(sql);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(effectedNum);
+            }
         } catch (TransactionException e) {
             return responseError(e);
         }
@@ -1287,7 +1489,12 @@ public class DaoManager {
      */
     public ResponseData<Integer> executeCommand(String connName, String sql) {
         try {
-            return responseData(daoFactory.executeCommand(connName, sql));
+            int effectedNum = daoFactory.executeCommand(connName, sql);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(effectedNum);
+            }
         } catch (TransactionException e) {
             return responseError(e);
         }
@@ -1302,7 +1509,12 @@ public class DaoManager {
      */
     public ResponseData<Integer> executeCommand(String sql, Object[] paramList) {
         try {
-            return responseData(daoFactory.executeCommand(sql, paramList));
+            int effectedNum = daoFactory.executeCommand(sql, paramList);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(effectedNum);
+            }
         } catch (TransactionException e) {
             return responseError(e);
         }
@@ -1319,7 +1531,12 @@ public class DaoManager {
      */
     public ResponseData<Integer> executeCommand(String connName, String sql, Object[] paramList) {
         try {
-            return responseData(daoFactory.executeCommand(connName, sql, paramList));
+            int effectedNum = daoFactory.executeCommand(connName, sql, paramList);
+            if (effectedNum < 1) {
+                return responseData(null);
+            } else {
+                return responseData(effectedNum);
+            }
         } catch (TransactionException e) {
             return responseError(e);
         }

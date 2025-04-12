@@ -122,7 +122,18 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      */
     @Override
     public Map<String, String> ALLOWED_SORT_PROPERTY() {
-        return Map.of( "id", "id" );
+        return Map.of("id", "id");
+    }
+
+    /**
+     * 当前QueryParam填入当前用户的saasId。
+     */
+    public AuthIdStateQueryParam bindSaasId() {
+        AuthTokenData tokenData = getAuthToken();
+        if (tokenData.getUserType() < UserType.RPC.getValue() || tokenData.getUserType() > UserType.ADMIN.getValue()) {
+            setSaasId(tokenData.getSaasId());
+        }
+        return this;
     }
 
     /**
@@ -130,7 +141,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      */
     public AuthIdStateQueryParam bindUserId() {
         AuthTokenData tokenData = getAuthToken();
-        setUserId( tokenData.getUserId() );
+        setUserId(tokenData.getUserId());
         return this;
     }
 
@@ -139,7 +150,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      */
     public AuthIdStateQueryParam bindMchId() {
         AuthTokenData tokenData = getAuthToken();
-        setMchId( tokenData.getMchId() );
+        setMchId(tokenData.getMchId());
         return this;
     }
 
@@ -148,7 +159,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      */
     public AuthIdStateQueryParam bindUserType() {
         AuthTokenData tokenData = getAuthToken();
-        setUserType( tokenData.getUserType() );
+        setUserType(tokenData.getUserType());
         return this;
     }
 
@@ -355,16 +366,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
         return this;
     }
 
-    /**
-     * 当前QueryParam填入当前用户的saasId。
-     */
-    private AuthIdStateQueryParam bindSaasId() {
-        AuthTokenData tokenData = getAuthToken();
-        if (tokenData.getUserType() < UserType.RPC.getValue() || tokenData.getUserType() > UserType.ADMIN.getValue()) {
-            setSaasId( tokenData.getSaasId() );
-        }
-        return this;
-    }
+
 
     /**
      * 获得AuthToken。
@@ -374,7 +376,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
     private AuthTokenData getAuthToken() {
         AuthTokenData authToken = AuthServiceHelper.getContextToken();
         if (authToken == null) {
-            throw new UnsupportedOperationException( "AuthServiceHelper must be run in auth-service web environment!" );
+            throw new UnsupportedOperationException("AuthServiceHelper must be run in auth-service web environment!");
         }
         return authToken;
     }

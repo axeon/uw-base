@@ -82,6 +82,16 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
         this.id = id;
         this.saasId = saasId;
     }
+    /**
+     * 当前QueryParam填入当前用户的saasId。
+     */
+    public AuthIdQueryParam bindSaasId() {
+        AuthTokenData tokenData = getAuthToken();
+        if (tokenData.getUserType() < UserType.RPC.getValue() || tokenData.getUserType() > UserType.ADMIN.getValue()) {
+            setSaasId(tokenData.getSaasId());
+        }
+        return this;
+    }
 
     /**
      * 当前QueryParam填入当前用户的userId。
@@ -245,17 +255,6 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
      */
     public AuthIdQueryParam userType(Integer userType) {
         this.userType = userType;
-        return this;
-    }
-
-    /**
-     * 当前QueryParam填入当前用户的saasId。
-     */
-    private AuthIdQueryParam bindSaasId() {
-        AuthTokenData tokenData = getAuthToken();
-        if (tokenData.getUserType() < UserType.RPC.getValue() || tokenData.getUserType() > UserType.ADMIN.getValue()) {
-            setSaasId(tokenData.getSaasId());
-        }
         return this;
     }
 

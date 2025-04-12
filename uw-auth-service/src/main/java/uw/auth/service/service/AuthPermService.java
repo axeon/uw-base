@@ -3,7 +3,10 @@ package uw.auth.service.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.auth.service.annotation.MscPermDeclare;
-import uw.auth.service.constant.*;
+import uw.auth.service.constant.AuthServiceConstants;
+import uw.auth.service.constant.AuthType;
+import uw.auth.service.constant.TokenType;
+import uw.auth.service.constant.UserType;
 import uw.auth.service.token.AuthTokenData;
 import uw.common.dto.ResponseData;
 
@@ -16,7 +19,7 @@ import java.util.Set;
  */
 public class AuthPermService {
 
-    private static final Logger logger = LoggerFactory.getLogger( AuthPermService.class );
+    private static final Logger logger = LoggerFactory.getLogger(AuthPermService.class);
 
     /**
      * 默认成功返回。
@@ -26,22 +29,22 @@ public class AuthPermService {
     /**
      * 拒绝权限返回。
      */
-    private static final ResponseData RESPONSE_FORBIDDEN = new ResponseData( ResponseData.STATE_ERROR, AuthServiceConstants.HTTP_FORBIDDEN_CODE, "No Permission!" );
+    private static final ResponseData RESPONSE_FORBIDDEN = ResponseData.of(0, null, ResponseData.STATE_ERROR, AuthServiceConstants.HTTP_FORBIDDEN_CODE, "No Permission!");
 
     /**
      * 服务不可用返回。
      */
-    private static final ResponseData RESPONSE_SERVICE_UNAVAILABLE = new ResponseData( ResponseData.STATE_ERROR, AuthServiceConstants.HTTP_SERVICE_UNAVAILABLE_CODE, "Service Starting..." );
+    private static final ResponseData RESPONSE_SERVICE_UNAVAILABLE = ResponseData.of(0, null, ResponseData.STATE_ERROR, AuthServiceConstants.HTTP_SERVICE_UNAVAILABLE_CODE, "Service Starting...");
 
     /**
      * 需要升级返回。
      */
-    private static final ResponseData RESPONSE_UPGRADE_REQUIRED = new ResponseData( ResponseData.STATE_WARN, AuthServiceConstants.HTTP_UPGRADE_REQUIRED_CODE, "Upgrade Required!" );
+    private static final ResponseData RESPONSE_UPGRADE_REQUIRED = ResponseData.of(0, null, ResponseData.STATE_WARN, AuthServiceConstants.HTTP_UPGRADE_REQUIRED_CODE, "Upgrade Required!");
 
     /**
      * 需要支付返回。
      */
-    private static final ResponseData RESPONSE_PAYMENT_REQUIRED = new ResponseData( ResponseData.STATE_WARN, AuthServiceConstants.HTTP_PAYMENT_REQUIRED_CODE, "Payment Required!" );
+    private static final ResponseData RESPONSE_PAYMENT_REQUIRED = ResponseData.of(0, null, ResponseData.STATE_WARN, AuthServiceConstants.HTTP_PAYMENT_REQUIRED_CODE, "Payment Required!");
 
     /**
      * 应用权限数据,初始化载入。
@@ -121,7 +124,7 @@ public class AuthPermService {
         }
         //检测应用权限表。
         if (appPermMap == null) {
-            logger.warn( "应用权限数据尚未初始化完成，请稍后重试!" );
+            logger.warn("应用权限数据尚未初始化完成，请稍后重试!");
             return RESPONSE_SERVICE_UNAVAILABLE;
         }
         //根据用户类型进行权限验证。
@@ -142,14 +145,14 @@ public class AuthPermService {
                 }
             case PERM:
                 //权限验证需要确认标准Token类型和权限集合。
-                if (authTokenData.getTokenType() >= TokenType.COMMON.getValue() && checkTokenPermSet( authTokenData.getPermSet(), uri )) {
+                if (authTokenData.getTokenType() >= TokenType.COMMON.getValue() && checkTokenPermSet(authTokenData.getPermSet(), uri)) {
                     return RESPONSE_SUCCESS;
                 } else {
                     return RESPONSE_FORBIDDEN;
                 }
             case SUDO:
                 //超级用户权限需要确认超级Token类型和权限集合。
-                if (!checkTokenPermSet( authTokenData.getPermSet(), uri )) {
+                if (!checkTokenPermSet(authTokenData.getPermSet(), uri)) {
                     return RESPONSE_FORBIDDEN;
                 }
                 if (authTokenData.getTokenType() < TokenType.SUDO.getValue()) {
@@ -173,7 +176,7 @@ public class AuthPermService {
         this.appId = appId;
         this.regState = regState;
         this.appPermMap = appPermMap != null
-                ? Collections.unmodifiableMap( appPermMap )
+                ? Collections.unmodifiableMap(appPermMap)
                 : Collections.emptyMap();
     }
 
@@ -185,8 +188,8 @@ public class AuthPermService {
      * @return
      */
     private boolean checkTokenPermSet(Set<Integer> permSet, String uri) {
-        Integer permId = appPermMap.get( uri );
-        return permId != null && permSet.contains( permId );
+        Integer permId = appPermMap.get(uri);
+        return permId != null && permSet.contains(permId);
     }
 
 }

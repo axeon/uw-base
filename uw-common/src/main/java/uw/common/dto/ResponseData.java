@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import uw.common.util.JsonUtils;
 import uw.common.util.SystemClock;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -41,25 +42,21 @@ public class ResponseData<T> {
      */
     public static final String STATE_UNKNOWN = "unknown";
     /**
-     * 没有响应数据的代码值。
-     */
-    public static final String CODE_DATA_EMPTY_WARN = "uw.common.data.empty.warn";
-    /**
      * 成功常量，不带时间戳。
      */
-    public static final ResponseData SUCCESS = new ResponseData(STATE_SUCCESS, null, null);
+    public static final ResponseData SUCCESS = new ResponseData(0, null, STATE_SUCCESS, null, null);
     /**
      * 警告常量，不带时间戳。
      */
-    public static final ResponseData WARN = new ResponseData(STATE_WARN, null, null);
+    public static final ResponseData WARN = new ResponseData(0, STATE_WARN, null, null);
     /**
      * 失败常量，不带时间戳。
      */
-    public static final ResponseData ERROR = new ResponseData(STATE_ERROR, null, null);
+    public static final ResponseData ERROR = new ResponseData(0, STATE_ERROR, null, null);
     /**
      * 严重错误常量，不带时间戳。
      */
-    public static final ResponseData FATAL = new ResponseData(STATE_FATAL, null, null);
+    public static final ResponseData FATAL = new ResponseData(0, STATE_FATAL, null, null);
     /**
      * 响应时间
      */
@@ -96,8 +93,8 @@ public class ResponseData<T> {
      * @param code
      * @param msg
      */
-    public ResponseData(T data, String state, String code, String msg) {
-        this.time = SystemClock.now();
+    private ResponseData(long time, T data, String state, String code, String msg) {
+        this.time = time;
         this.state = state;
         this.msg = msg;
         this.code = code;
@@ -106,16 +103,19 @@ public class ResponseData<T> {
 
     /**
      * 构造器。
-     * 此构造器不初始化时间。
+     * 默认带当前时间。
      *
+     * @param data
      * @param state
      * @param code
      * @param msg
      */
-    public ResponseData(String state, String code, String msg) {
+    private ResponseData(T data, String state, String code, String msg) {
+        this.time = SystemClock.now();
         this.state = state;
         this.msg = msg;
         this.code = code;
+        this.data = data;
     }
 
     /**
@@ -125,20 +125,42 @@ public class ResponseData<T> {
     }
 
     /**
-     * 带结果数据值的数据值。
-     * 如果数据不是null，则返回成功。
-     * 如果数据是null，则返回警告。
+     * 静态构造器。
      *
-     * @param t
+     * @param data
+     * @param state
+     * @param code
+     * @param msg
+     */
+    public static <T> ResponseData<T> of(long time, T data, String state, String code, String msg) {
+        return new ResponseData<T>(time, data, state, code, msg);
+    }
+
+    /**
+     * 静态构造器。
+     *
+     * @param data
+     * @param state
+     * @param code
+     * @param msg
      * @param <T>
      * @return
      */
-    public static <T> ResponseData<T> data(T t) {
-        if (t != null) {
-            return new ResponseData<T>(t, STATE_SUCCESS, null, null);
-        } else {
-            return new ResponseData<T>(t, STATE_WARN, CODE_DATA_EMPTY_WARN, null);
-        }
+    public static <T> ResponseData<T> of(T data, String state, String code, String msg) {
+        return new ResponseData<T>(SystemClock.now(), data, state, code, msg);
+    }
+
+    /**
+     * 静态构造器。
+     *
+     * @param state
+     * @param code
+     * @param msg
+     * @param <T>
+     * @return
+     */
+    public static <T> ResponseData<T> of(String state, String code, String msg) {
+        return new ResponseData<T>(SystemClock.now(), null, state, code, msg);
     }
 
     /**
@@ -175,6 +197,15 @@ public class ResponseData<T> {
      */
     public static <T> ResponseData<T> success(T t, String code, String msg) {
         return new ResponseData<T>(t, STATE_SUCCESS, code, msg);
+    }
+
+    /**
+     * 带结果、代码和消息的成功返回值。
+     *
+     * @return
+     */
+    public static <T> ResponseData<T> success(T t, ResponseData responseData) {
+        return new ResponseData<T>(t, STATE_SUCCESS, responseData.getCode(), responseData.getMsg());
     }
 
     /**
@@ -241,6 +272,15 @@ public class ResponseData<T> {
     }
 
     /**
+     * 带代码和消息的成功返回值。
+     *
+     * @return
+     */
+    public static <T> ResponseData<T> successCode(ResponseData responseData) {
+        return new ResponseData<T>(null, STATE_SUCCESS, responseData.getCode(), responseData.getMsg());
+    }
+
+    /**
      * 消息的成功返回值。
      *
      * @param msg
@@ -290,6 +330,18 @@ public class ResponseData<T> {
      * 带结果、代码和消息的警告返回值。
      *
      * @param t
+     * @param responseData
+     * @param <T>
+     * @return
+     */
+    public static <T> ResponseData<T> warn(T t, ResponseData responseData) {
+        return new ResponseData<T>(t, STATE_WARN, responseData.getCode(), responseData.getMsg());
+    }
+
+    /**
+     * 带结果、代码和消息的警告返回值。
+     *
+     * @param t
      * @param responseCode
      * @param <T>
      * @return
@@ -329,6 +381,17 @@ public class ResponseData<T> {
      */
     public static <T> ResponseData<T> warnCode(String code, String msg) {
         return new ResponseData<T>(null, STATE_WARN, code, msg);
+    }
+
+    /**
+     * 带结果、代码和消息的警告返回值。
+     *
+     * @param responseData
+     * @param <T>
+     * @return
+     */
+    public static <T> ResponseData<T> warnCode(ResponseData responseData) {
+        return new ResponseData<T>(null, STATE_WARN, responseData.getCode(), responseData.getMsg());
     }
 
     /**
@@ -395,6 +458,17 @@ public class ResponseData<T> {
     /**
      * 带结果、代码和消息的失败返回值。
      *
+     * @param responseData
+     * @param <T>
+     * @return
+     */
+    public static <T> ResponseData<T> error(T t, ResponseData responseData) {
+        return new ResponseData<T>(t, STATE_ERROR, responseData.getCode(), responseData.getMsg());
+    }
+
+    /**
+     * 带结果、代码和消息的失败返回值。
+     *
      * @param t
      * @param responseCode
      * @param <T>
@@ -436,6 +510,18 @@ public class ResponseData<T> {
     public static <T> ResponseData<T> errorCode(String code, String msg) {
         return new ResponseData<T>(null, STATE_ERROR, code, msg);
     }
+
+    /**
+     * 带代码，消息的失败返回值。
+     *
+     * @param responseData
+     * @param <T>
+     * @return
+     */
+    public static <T> ResponseData<T> errorCode(ResponseData responseData) {
+        return new ResponseData<T>(null, STATE_ERROR, responseData.getCode(), responseData.getMsg());
+    }
+
 
     /**
      * 带代码和消息的失败返回值。
@@ -499,6 +585,17 @@ public class ResponseData<T> {
     }
 
     /**
+     * 带结果、代码和消息的严重失败返回值。
+     *
+     * @param responseData
+     * @param <T>
+     * @return
+     */
+    public static <T> ResponseData<T> fatal(T t, ResponseData responseData) {
+        return new ResponseData<T>(t, STATE_ERROR, responseData.getCode(), responseData.getMsg());
+    }
+
+    /**
      * 带结果、代码和消息的严重错误返回值。
      *
      * @param t
@@ -541,6 +638,17 @@ public class ResponseData<T> {
      */
     public static <T> ResponseData<T> fatalCode(String code, String msg) {
         return new ResponseData<T>(null, STATE_FATAL, code, msg);
+    }
+
+    /**
+     * 带代码，消息的严重错误返回值。
+     *
+     * @param responseData
+     * @param <T>
+     * @return
+     */
+    public static <T> ResponseData<T> fatalCode(ResponseData responseData) {
+        return new ResponseData<T>(null, STATE_FATAL, responseData.getCode(), responseData.getMsg());
     }
 
     /**
@@ -602,6 +710,20 @@ public class ResponseData<T> {
     }
 
     /**
+     * 成功时执行。
+     *
+     * @param consumer
+     * @return
+     */
+    @JsonIgnore
+    public ResponseData<T> onSuccess(Consumer<T> consumer) {
+        if (isSuccess()) {
+            consumer.accept(data);
+        }
+        return this.raw();
+    }
+
+    /**
      * 是否不成功。
      *
      * @return
@@ -637,6 +759,21 @@ public class ResponseData<T> {
     }
 
     /**
+     * 警告时执行。
+     *
+     * @param consumer
+     * @return
+     */
+    @JsonIgnore
+    public ResponseData<T> onWarn(Consumer<T> consumer) {
+        if (isSuccess()) {
+            consumer.accept(data);
+        }
+        return this.raw();
+    }
+
+
+    /**
      * 是否有错误
      *
      * @return
@@ -660,6 +797,21 @@ public class ResponseData<T> {
         }
         return this.raw();
     }
+
+    /**
+     * 错误时执行。
+     *
+     * @param consumer
+     * @return
+     */
+    @JsonIgnore
+    public ResponseData<T> onError(Consumer<T> consumer) {
+        if (isSuccess()) {
+            consumer.accept(data);
+        }
+        return this.raw();
+    }
+
 
     /**
      * 是否严重错误
@@ -687,6 +839,20 @@ public class ResponseData<T> {
     }
 
     /**
+     * 严重错误时执行。
+     *
+     * @param consumer
+     * @return
+     */
+    @JsonIgnore
+    public ResponseData<T> onFatal(Consumer<T> consumer) {
+        if (isSuccess()) {
+            consumer.accept(data);
+        }
+        return this.raw();
+    }
+
+    /**
      * 判断是否既非错误状态也非严重错误状态
      *
      * @return
@@ -707,7 +873,6 @@ public class ResponseData<T> {
         return this;
     }
 
-
     /**
      * 转换为字符串。
      *
@@ -717,6 +882,26 @@ public class ResponseData<T> {
     public String toString() {
         return JsonUtils.toString(this);
     }
+
+
+    /**
+     * 获得状态。
+     *
+     * @return
+     */
+    public String getState() {
+        return state;
+    }
+
+    /**
+     * 设置状态。
+     *
+     * @param state
+     */
+    public void setState(String state) {
+        this.state = state;
+    }
+
 
     /**
      * 获得数据。
@@ -734,6 +919,48 @@ public class ResponseData<T> {
      */
     public void setData(T data) {
         this.data = data;
+    }
+
+    /**
+     * 设置数据。
+     *
+     * @param data
+     * @return
+     */
+    @JsonIgnore
+    public ResponseData<T> data(T data) {
+        this.data = data;
+        return this;
+    }
+
+    /**
+     * 获得代码。
+     *
+     * @return
+     */
+    public String getCode() {
+        return code;
+    }
+
+    /**
+     * 设置代码。
+     *
+     * @param code
+     */
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    /**
+     * 设置代码。
+     *
+     * @param code
+     * @return
+     */
+    @JsonIgnore
+    public ResponseData<T> code(String code) {
+        this.code = code;
+        return this;
     }
 
     /**
@@ -755,39 +982,13 @@ public class ResponseData<T> {
     }
 
     /**
-     * 获得状态。
-     *
+     * @param msg
      * @return
      */
-    public String getState() {
-        return state;
-    }
-
-    /**
-     * 设置状态。
-     *
-     * @param state
-     */
-    public void setState(String state) {
-        this.state = state;
-    }
-
-    /**
-     * 获得代码。
-     *
-     * @return
-     */
-    public String getCode() {
-        return code;
-    }
-
-    /**
-     * 设置代码。
-     *
-     * @param code
-     */
-    public void setCode(String code) {
-        this.code = code;
+    @JsonIgnore
+    public ResponseData<T> msg(String msg) {
+        this.msg = msg;
+        return this;
     }
 
     /**

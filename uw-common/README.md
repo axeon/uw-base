@@ -22,6 +22,7 @@ uw-common 通用组件。
 * 同时，ResponseData和i18n的结合，使得处理国际化的工作更加简单和方便。
 * ResponseCode定义了响应状态码和消息的统一接口，通过继承关系，可以定义各种状态码和消息，使得代码更加清晰和可读。
 * ResponseData通过传入ResponseCode，简化调用代码，同时更简单的支持多语言。
+* ResponseData支持基于onSuccess,onError,onFatal等方法实现函数链式调用，简化代码。
 
 ### ResponseData 封装结构
 * time 时间戳

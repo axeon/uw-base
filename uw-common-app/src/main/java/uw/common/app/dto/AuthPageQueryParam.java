@@ -14,7 +14,6 @@ import uw.dao.annotation.QueryMeta;
 @Schema(title = "带验证的页面查询参数", description = "带验证的页面查询参数")
 public class AuthPageQueryParam extends PageQueryParam {
 
-
     /**
      * saasId。
      */

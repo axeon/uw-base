@@ -54,13 +54,13 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
     @JsonIgnore
     private StringBuilder EXT_WHERE_SQL;
     /**
-     * 附加的参数组，使用and连接。
-     * key: 带转义的sql，比如"and id=?"
+     * 附加的where条件参数组，使用and连接。
+     * key: 带转义的sql expr，比如"and id=?"
      * value: 参数值。
      * 网络禁止从参数传入！
      */
     @JsonIgnore
-    private Map<String, Object> EXT_PARAM_MAP;
+    private Map<String, Object> EXT_WHERE_COND_MAP;
     /**
      * 排序名称。
      */
@@ -200,7 +200,6 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
         return (P) this;
     }
 
-
     /**
      * 设置额外的参数对。
      * 可以多次调用执行。
@@ -208,31 +207,47 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * @return
      */
     @JsonIgnore
-    public Map<String, Object> EXT_PARAM_MAP() {
-        return EXT_PARAM_MAP;
+    public Map<String, Object> EXT_WHERE_COND_MAP() {
+        return EXT_WHERE_COND_MAP;
     }
 
     /**
      * 清除额外的参数对。
      */
     @JsonIgnore
-    public P CLEAR_EXT_PARAM_MAP() {
-        this.EXT_PARAM_MAP = null;
+    public P CLEAR_EXT_WHERE_COND_MAP() {
+        this.EXT_WHERE_COND_MAP = null;
         return (P) this;
     }
 
     /**
-     * 增加额外的参数。
+     * 增加额外的where条件。
      *
-     * @param paramCond
+     * @param condExpr
+     * @param condValue
+     */
+    @JsonIgnore
+    public P ADD_EXT_WHERE_COND(String condExpr, Object condValue) {
+        if (EXT_WHERE_COND_MAP == null) {
+            EXT_WHERE_COND_MAP = new LinkedHashMap<>();
+        }
+        this.EXT_WHERE_COND_MAP.put( condExpr, condValue );
+        return (P) this;
+    }
+
+    /**
+     * 增加额外的where参数。
+     * 对于参数，默认使用=?来强制匹配。
+     *
+     * @param paramExpr
      * @param paramValue
      */
     @JsonIgnore
-    public P ADD_EXT_PARAM(String paramCond, Object paramValue) {
-        if (EXT_PARAM_MAP == null) {
-            EXT_PARAM_MAP = new LinkedHashMap<>();
+    public P ADD_EXT_WHERE_PARAM(String paramExpr, Object paramValue) {
+        if (EXT_WHERE_COND_MAP == null) {
+            EXT_WHERE_COND_MAP = new LinkedHashMap<>();
         }
-        this.EXT_PARAM_MAP.put( paramCond, paramValue );
+        this.EXT_WHERE_COND_MAP.put( paramExpr+"=?", paramValue );
         return (P) this;
     }
 

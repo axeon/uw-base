@@ -33,9 +33,9 @@ public class QueryParamUtils {
      * 解析queryParam。
      * 一般用于update和delete的where条件构造。
      * @param queryParam 查询参数。
-     * @return
+     * @return 转换结果
      */
-    public static QueryParamResult parseQueryParam(QueryParam queryParam) {
+    public static QueryParamResult parseQueryParam(QueryParam<?> queryParam) {
         return parseQueryParam( null, null, queryParam );
     }
 
@@ -45,10 +45,9 @@ public class QueryParamUtils {
      * @param cls        entityBean
      * @param tableName  附加表名，在分表情况下。
      * @param queryParam 查询参数。
-     * @return
-     * @throws IllegalAccessException
+     * @return 转换结果
      */
-    public static QueryParamResult parseQueryParam(Class cls, String tableName, QueryParam queryParam) {
+    public static QueryParamResult parseQueryParam(Class<?> cls, String tableName, QueryParam<?> queryParam) {
         StringBuilder sqlBuilder = new StringBuilder( 256 );
         ArrayList<Object> paramValueList = new ArrayList<>();
         try {
@@ -86,7 +85,7 @@ public class QueryParamUtils {
                 }
             }
             //合并附加参数
-            Map<String, Object> extParamMap = queryParam.EXT_PARAM_MAP();
+            Map<String, Object> extParamMap = queryParam.EXT_WHERE_COND_MAP();
             if (extParamMap != null) {
                 for (Map.Entry<String, Object> kv : extParamMap.entrySet()) {
                     paramMap.put( "and " + kv.getKey(), kv.getValue() );
@@ -109,7 +108,7 @@ public class QueryParamUtils {
                             for (int i = 0; i < paramValueSize; i++) {
                                 paramValueList.add( Array.get( paramValue, i ) );
                             }
-                        } else if (paramValue instanceof List list) {
+                        } else if (paramValue instanceof List<?> list) {
                             paramValueSize = list.size();
                             paramValueList.addAll( list );
                         } else {
@@ -181,13 +180,13 @@ public class QueryParamUtils {
     /**
      * 加载读取QueryParam的meta信息。
      *
-     * @param paramCls
-     * @return
+     * @param queryParamCls QueryParam类型
+     * @return List<QueryMetaInfo>
      */
-    private static List<QueryMetaInfo> loadQueryParamMetaInfo(Class<?> paramCls) {
-        return queryMetaCache.computeIfAbsent( paramCls.getName(), (key) -> {
+    private static List<QueryMetaInfo> loadQueryParamMetaInfo(Class<?> queryParamCls) {
+        return queryMetaCache.computeIfAbsent( queryParamCls.getName(), (key) -> {
             List<QueryMetaInfo> list = new ArrayList<>();
-            Class<?> clazz = paramCls;
+            Class<?> clazz = queryParamCls;
             for (int i = 0; clazz != Object.class && i < EntityMetaUtils.MAX_ENTITY_CLASS_EXTEND_LEVEL; clazz = clazz.getSuperclass(), i++) {
                 Field[] fields = clazz.getDeclaredFields();
                 for (Field field : fields) {

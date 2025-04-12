@@ -4,7 +4,6 @@ import uw.dao.annotation.QueryMeta;
 import uw.dao.annotation.TableMeta;
 import uw.dao.vo.QueryParamResult;
 
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -22,7 +21,7 @@ public class QueryMetaTest {
         a.name = URLEncoder.encode( "JTR" , StandardCharsets.UTF_8);
         a.stateGte = 1;
         a.date = Arrays.asList( new Date[]{new Date(1), new Date()} );
-        a.ADD_EXT_PARAM( "create_date>?" ,new Date());
+        a.ADD_EXT_WHERE_COND( "create_date>?" ,new Date());
         a.ADD_EXT_WHERE_SQL( " x>0" );
 //        a.LIKE_QUERY_ENABLE(false);
         QueryParamResult queryParamResult = DaoFactory.getInstance().parseQueryParam(EntityA.class, a);

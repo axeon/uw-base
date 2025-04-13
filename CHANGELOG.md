@@ -21,4 +21,4 @@
 5. uw-dao的batchSave()方法变更为save()。
 6. ResponseData的prototype()方法变更为raw()。
 7. auth-client中的注入的bean:tokenRestTemplate变更为authRestTemplate。
-8. QueryParam的ADD_EXT_PARAM=>ADD_EXT_WHERE_COND，新增ADD_EXT_WHERE_PARAM用于直接参数赋值。
+8. QueryParam的EXT_WHERE_SQL=>EXT_COND_SQL，ADD_EXT_PARAM=>ADD_EXT_COND，新增ADD_EXT_COND_PARAM用于直接参数赋值。

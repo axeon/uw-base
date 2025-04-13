@@ -129,9 +129,12 @@ public class AuthPermService {
         }
         //根据用户类型进行权限验证。
         switch (permAuthType) {
+            case NONE:
+                //无验证直接返回成功。
+                return RESPONSE_SUCCESS;
             case TEMP:
                 //临时用户验证需要仅确认临时Token类型。
-                if (authTokenData.getTokenType() == TokenType.TEMP.getValue()) {
+                if (authTokenData.getTokenType() >= TokenType.TEMP.getValue()) {
                     return RESPONSE_SUCCESS;
                 } else {
                     return RESPONSE_FORBIDDEN;

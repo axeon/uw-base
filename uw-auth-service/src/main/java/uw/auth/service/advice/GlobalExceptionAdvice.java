@@ -53,7 +53,7 @@ public class GlobalExceptionAdvice {
         } else {
             detailData = ex.getMessage();
         }
-        return ResponseData.error( detailData, String.valueOf( response.getStatus() ), ex.getMessage() );
+        return ResponseData.error( detailData, "http.status." + String.valueOf( response.getStatus() ), ex.getMessage() );
     }
 
 }

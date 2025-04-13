@@ -23,14 +23,9 @@ public enum TokenType {
     COMMON(1, "标准Token"),
 
     /**
-     * 付费Token。（预留）
-     */
-    PAID(2, "付费Token"),
-
-    /**
      * 超级Token。
      */
-    SUDO(3, "超级Token");
+    SUDO(6, "超级Token");
 
     /**
      * 参数值

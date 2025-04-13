@@ -52,7 +52,7 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * 网络禁止从参数传入！
      */
     @JsonIgnore
-    private StringBuilder EXT_WHERE_SQL;
+    private StringBuilder EXT_COND_SQL;
     /**
      * 附加的where条件参数组，使用and连接。
      * key: 带转义的sql expr，比如"and id=?"
@@ -60,7 +60,7 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * 网络禁止从参数传入！
      */
     @JsonIgnore
-    private Map<String, Object> EXT_WHERE_COND_MAP;
+    private Map<String, Object> EXT_COND_MAP;
     /**
      * 排序名称。
      */
@@ -168,9 +168,9 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * @return
      */
     @JsonIgnore
-    public String EXT_WHERE_SQL() {
-        if (EXT_WHERE_SQL != null) {
-            return EXT_WHERE_SQL.toString();
+    public String EXT_COND_SQL() {
+        if (EXT_COND_SQL != null) {
+            return EXT_COND_SQL.toString();
         } else {
             return null;
         }
@@ -180,8 +180,8 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * 清除附加的where sql。
      */
     @JsonIgnore
-    public P CLEAR_EXT_WHERE_SQL() {
-        this.EXT_WHERE_SQL = null;
+    public P CLEAR_EXT_COND_SQL() {
+        this.EXT_COND_SQL = null;
         return (P) this;
     }
 
@@ -189,14 +189,14 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * 增加附加的where sql。
      * 可以多次调用执行。
      *
-     * @param ADD_WHERE_SQL
+     * @param ADD_COND_SQL
      */
     @JsonIgnore
-    public P ADD_EXT_WHERE_SQL(String ADD_WHERE_SQL) {
-        if (this.EXT_WHERE_SQL == null) {
-            this.EXT_WHERE_SQL = new StringBuilder( 512 );
+    public P ADD_EXT_COND_SQL(String ADD_COND_SQL) {
+        if (this.EXT_COND_SQL == null) {
+            this.EXT_COND_SQL = new StringBuilder( 512 );
         }
-        this.EXT_WHERE_SQL.append( ADD_WHERE_SQL );
+        this.EXT_COND_SQL.append( ADD_COND_SQL );
         return (P) this;
     }
 
@@ -207,16 +207,16 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * @return
      */
     @JsonIgnore
-    public Map<String, Object> EXT_WHERE_COND_MAP() {
-        return EXT_WHERE_COND_MAP;
+    public Map<String, Object> EXT_COND_MAP() {
+        return EXT_COND_MAP;
     }
 
     /**
      * 清除额外的参数对。
      */
     @JsonIgnore
-    public P CLEAR_EXT_WHERE_COND_MAP() {
-        this.EXT_WHERE_COND_MAP = null;
+    public P CLEAR_EXT_COND_MAP() {
+        this.EXT_COND_MAP = null;
         return (P) this;
     }
 
@@ -227,11 +227,11 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * @param condValue
      */
     @JsonIgnore
-    public P ADD_EXT_WHERE_COND(String condExpr, Object condValue) {
-        if (EXT_WHERE_COND_MAP == null) {
-            EXT_WHERE_COND_MAP = new LinkedHashMap<>();
+    public P ADD_EXT_COND(String condExpr, Object condValue) {
+        if (EXT_COND_MAP == null) {
+            EXT_COND_MAP = new LinkedHashMap<>();
         }
-        this.EXT_WHERE_COND_MAP.put( condExpr, condValue );
+        this.EXT_COND_MAP.put( condExpr, condValue );
         return (P) this;
     }
 
@@ -243,11 +243,11 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * @param paramValue
      */
     @JsonIgnore
-    public P ADD_EXT_WHERE_PARAM(String paramExpr, Object paramValue) {
-        if (EXT_WHERE_COND_MAP == null) {
-            EXT_WHERE_COND_MAP = new LinkedHashMap<>();
+    public P ADD_EXT_COND_PARAM(String paramExpr, Object paramValue) {
+        if (EXT_COND_MAP == null) {
+            EXT_COND_MAP = new LinkedHashMap<>();
         }
-        this.EXT_WHERE_COND_MAP.put( paramExpr+"=?", paramValue );
+        this.EXT_COND_MAP.put( paramExpr+"=?", paramValue );
         return (P) this;
     }
 

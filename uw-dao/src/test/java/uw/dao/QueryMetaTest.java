@@ -21,8 +21,8 @@ public class QueryMetaTest {
         a.name = URLEncoder.encode( "JTR" , StandardCharsets.UTF_8);
         a.stateGte = 1;
         a.date = Arrays.asList( new Date[]{new Date(1), new Date()} );
-        a.ADD_EXT_WHERE_COND( "create_date>?" ,new Date());
-        a.ADD_EXT_WHERE_SQL( " x>0" );
+        a.ADD_EXT_COND( "create_date>?" ,new Date());
+        a.ADD_EXT_COND_SQL( " x>0" );
 //        a.LIKE_QUERY_ENABLE(false);
         QueryParamResult queryParamResult = DaoFactory.getInstance().parseQueryParam(EntityA.class, a);
         System.out.println(queryParamResult.getSql().toString());

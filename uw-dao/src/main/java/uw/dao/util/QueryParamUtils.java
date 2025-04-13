@@ -85,7 +85,7 @@ public class QueryParamUtils {
                 }
             }
             //合并附加参数
-            Map<String, Object> extParamMap = queryParam.EXT_WHERE_COND_MAP();
+            Map<String, Object> extParamMap = queryParam.EXT_COND_MAP();
             if (extParamMap != null) {
                 for (Map.Entry<String, Object> kv : extParamMap.entrySet()) {
                     paramMap.put( "and " + kv.getKey(), kv.getValue() );
@@ -163,8 +163,8 @@ public class QueryParamUtils {
             }
 
             //最后附加where sql。
-            if (StringUtils.isNotBlank( queryParam.EXT_WHERE_SQL() )) {
-                sqlBuilder.append( " and " ).append( queryParam.EXT_WHERE_SQL() );
+            if (StringUtils.isNotBlank( queryParam.EXT_COND_SQL() )) {
+                sqlBuilder.append( " and " ).append( queryParam.EXT_COND_SQL() );
             }
 
         } catch (Throwable e) {

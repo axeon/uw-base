@@ -32,6 +32,20 @@ public class IdStateQueryParam extends QueryParam<IdStateQueryParam> {
     private Integer[] states;
 
     /**
+     * 大于等于状态值: -1: 删除 0: 冻结 1: 正常。
+     */
+    @QueryMeta(expr = "state>=?")
+    @Schema(title = "大于等于状态值: -1: 删除 0: 冻结 1: 正常", description = "大于等于状态值: -1: 删除 0: 冻结 1: 正常")
+    private Integer stateGte;
+
+    /**
+     * 小于等于状态值: -1: 删除 0: 冻结 1: 正常。
+     */
+    @QueryMeta(expr = "state<=?")
+    @Schema(title = "小于等于状态值: -1: 删除 0: 冻结 1: 正常", description = "小于等于状态值: -1: 删除 0: 冻结 1: 正常")
+    private Integer stateLte;
+
+    /**
      * 指定id,state的构造器。
      * 如果不在web环境下运行，将会抛错。
      *
@@ -152,4 +166,47 @@ public class IdStateQueryParam extends QueryParam<IdStateQueryParam> {
         return this;
     }
 
+    /**
+     * 获取大于等于-1: 删除; 0: 冻结; 1: 启用。
+     */
+    public Integer getStateGte(){
+        return this.stateGte;
+    }
+
+    /**
+     * 设置大于等于-1: 删除; 0: 冻结; 1: 启用。
+     */
+    public void setStateGte(Integer stateGte){
+        this.stateGte = stateGte;
+    }
+
+    /**
+     * 设置大于等于-1: 删除; 0: 冻结; 1: 启用链式调用。
+     */
+    public IdStateQueryParam stateGte(Integer stateGte) {
+        setStateGte(stateGte);
+        return this;
+    }
+
+    /**
+     * 获取小于等于-1: 删除; 0: 冻结; 1: 启用。
+     */
+    public Integer getStateLte(){
+        return this.stateLte;
+    }
+
+    /**
+     * 获取小于等于-1: 删除; 0: 冻结; 1: 启用。
+     */
+    public void setStateLte(Integer stateLte){
+        this.stateLte = stateLte;
+    }
+
+    /**
+     * 获取小于等于-1: 删除; 0: 冻结; 1: 启用链式调用。
+     */
+    public IdStateQueryParam stateLte(Integer stateLte) {
+        setStateLte(stateLte);
+        return this;
+    }
 }

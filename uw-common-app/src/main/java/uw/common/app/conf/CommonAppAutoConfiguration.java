@@ -51,7 +51,7 @@ public class CommonAppAutoConfiguration {
     /**
      * 语言列表.
      */
-    private final List<Locale> LOCALE_LIST = List.of(Locale.getAvailableLocales());
+    private final List<Locale> LOCALE_LIST;
 
     /**
      * 缓存语言对象.
@@ -62,7 +62,7 @@ public class CommonAppAutoConfiguration {
         public @Nullable Locale load(String language) {
             try {
                 // 创建一个语言范围列表
-                List<Locale.LanguageRange> languageRanges = List.of(new Locale.LanguageRange(language));
+                List<Locale.LanguageRange> languageRanges = Locale.LanguageRange.parse(language);
                 // 创建 Locale 对象
                 Locale locale = Locale.lookup(languageRanges, LOCALE_LIST);
                 // 对 Locale做特殊处理
@@ -86,7 +86,8 @@ public class CommonAppAutoConfiguration {
      * @param commonAppProperties
      */
     public CommonAppAutoConfiguration(CommonAppProperties commonAppProperties) {
-        this.DEFAULT_LOCALE = commonAppProperties.getDefaultLocale();
+        this.DEFAULT_LOCALE = commonAppProperties.getLocaleDefault();
+        this.LOCALE_LIST = commonAppProperties.getLocaleList();
     }
 
     /**

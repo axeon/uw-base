@@ -19,7 +19,7 @@ import uw.auth.service.constant.AuthServiceConstants;
 import uw.auth.service.constant.AuthType;
 import uw.auth.service.constant.UserType;
 import uw.auth.service.log.AuthCriticalLogStorage;
-import uw.auth.service.service.AuthPermService;
+import uw.auth.service.service.MscAuthPermService;
 import uw.auth.service.token.AuthTokenData;
 import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.util.logging.LoggingHttpServletRequestWrapper;
@@ -65,7 +65,7 @@ public class AuthServiceFilter implements Filter {
     /**
      * 权限服务。
      */
-    private final AuthPermService authPermService;
+    private final MscAuthPermService authPermService;
     /**
      * 日志客户端。
      */
@@ -85,7 +85,7 @@ public class AuthServiceFilter implements Filter {
     private String[] ipProtectedPaths;
 
     public AuthServiceFilter(final AuthServiceProperties authServerProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping,
-                             final AuthPermService authPermService, final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage) {
+                             final MscAuthPermService authPermService, final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage) {
         this.authServerProperties = authServerProperties;
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.authPermService = authPermService;

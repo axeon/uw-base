@@ -17,9 +17,9 @@ import java.util.Set;
 /**
  * 用户信息服务接口
  */
-public class AuthPermService {
+public class MscAuthPermService {
 
-    private static final Logger logger = LoggerFactory.getLogger(AuthPermService.class);
+    private static final Logger logger = LoggerFactory.getLogger(MscAuthPermService.class);
 
     /**
      * 默认成功返回。
@@ -64,7 +64,7 @@ public class AuthPermService {
     private int regState;
 
 
-    public AuthPermService() {
+    public MscAuthPermService() {
     }
 
     /**

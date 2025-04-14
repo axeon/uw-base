@@ -41,8 +41,8 @@ public class AuthAppRpcImpl implements AuthAppRpc {
      * @return
      */
     @Override
-    public AppRegResponse regApp(AppRegRequest appRegRequest) {
-        return authRestTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/app/regApp", appRegRequest, AppRegResponse.class );
+    public MscAppRegResponse regApp(MscAppRegRequest appRegRequest) {
+        return authRestTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/app/regApp", appRegRequest, MscAppRegResponse.class );
     }
 
     /**

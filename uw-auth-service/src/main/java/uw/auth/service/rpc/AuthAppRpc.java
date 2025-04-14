@@ -17,7 +17,7 @@ public interface AuthAppRpc {
      * @param appRegRequest
      * @return
      */
-    AppRegResponse regApp(AppRegRequest appRegRequest);
+    MscAppRegResponse regApp(MscAppRegRequest appRegRequest);
 
     /**
      * 报告状态，同时拉取非法TokenData。

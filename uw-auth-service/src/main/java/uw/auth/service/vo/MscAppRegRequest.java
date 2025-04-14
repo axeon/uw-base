@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * app注册请求信息。
  */
-public class AppRegRequest implements Serializable {
+public class MscAppRegRequest implements Serializable {
 
     /**
      * 应用服务名称

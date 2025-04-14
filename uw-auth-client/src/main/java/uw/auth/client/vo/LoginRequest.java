@@ -46,6 +46,13 @@ public class LoginRequest {
     @Schema(title = "saasId", description = "saasId")
     private long saasId = -1;
 
+
+    /**
+     * userId
+     */
+    @Schema(title = "userId", description = "userId")
+    private long userId = -1;
+
     /**
      * 用户类型
      */
@@ -116,6 +123,14 @@ public class LoginRequest {
 
     public void setSaasId(long saasId) {
         this.saasId = saasId;
+    }
+
+    public long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(long userId) {
+        this.userId = userId;
     }
 
     public int getUserType() {

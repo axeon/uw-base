@@ -34,7 +34,10 @@ import uw.auth.service.vo.MscAppReportResponse;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -47,7 +50,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class AppUpdateService {
 
-    private static final Logger logger = LoggerFactory.getLogger( AppUpdateService.class );
+    private static final Logger logger = LoggerFactory.getLogger(AppUpdateService.class);
 
     /**
      * 相关配置
@@ -96,10 +99,26 @@ public class AppUpdateService {
     }
 
     /**
+     * 匹配 / 在API URI出现的次数。
+     *
+     * @param apiUri
+     * @return
+     */
+    private static int countLevel(String apiUri) {
+        int count = 0;
+        int index = 1;
+        while ((index = apiUri.indexOf('/', index)) > -1) {
+            index = index + 1;
+            count++;
+        }
+        return count;
+    }
+
+    /**
      * 初始化服务。
      */
     public void init() {
-        logger.info( "uw-auth-service registry started!" );
+        logger.info("uw-auth-service registry started!");
         boolean regSuccess = false;
         for (int i = 0; i < 20; i++) {
             if (regSuccess) {
@@ -107,23 +126,23 @@ public class AppUpdateService {
             }
             try {
                 registry();
-                logger.info( "uw-auth-service registry success!" );
+                logger.info("uw-auth-service registry success!");
                 regSuccess = true;
             } catch (Exception e) {
-                logger.error( e.getMessage(), e );
-                logger.warn( "uw-auth-service registry failed {} times! will retry after 5 seconds.", i );
+                logger.error(e.getMessage(), e);
+                logger.warn("uw-auth-service registry failed {} times! will retry after 5 seconds.", i);
                 try {
-                    Thread.sleep( 5000 );
+                    Thread.sleep(5000);
                 } catch (InterruptedException ignored) {
                 }
             }
         }
         if (!regSuccess) {
-            logger.error( "uw-auth-service will shutdown application!" );
-            System.exit( -1 );
+            logger.error("uw-auth-service will shutdown application!");
+            System.exit(-1);
         }
-        scheduledExecutorService = Executors.newScheduledThreadPool( 1, new ThreadFactoryBuilder().setDaemon( true ).build() );
-        scheduledExecutorService.scheduleAtFixedRate( () -> reportStatus(), 0, 1, TimeUnit.MINUTES );
+        scheduledExecutorService = Executors.newScheduledThreadPool(1, new ThreadFactoryBuilder().setDaemon(true).build());
+        scheduledExecutorService.scheduleAtFixedRate(() -> reportStatus(), 0, 1, TimeUnit.MINUTES);
     }
 
     /**
@@ -132,23 +151,27 @@ public class AppUpdateService {
     public void registry() {
         //不管3721，先提交注册。
         AppRegRequest appRegRequest = new AppRegRequest();
-        appRegRequest.setAppName( authServiceProperties.getAppName() );
-        appRegRequest.setAppLabel( authServiceProperties.getAppLabel() );
-        appRegRequest.setAppVersion( authServiceProperties.getAppVersion() );
-        AppRegResponse appRegResponse = authAppRpc.regApp( appRegRequest );
+        appRegRequest.setAppName(authServiceProperties.getAppName());
+        appRegRequest.setAppLabel(authServiceProperties.getAppLabel());
+        appRegRequest.setAppVersion(authServiceProperties.getAppVersion());
+        AppRegResponse appRegResponse = authAppRpc.regApp(appRegRequest);
         if (appRegResponse.getState() == AppRegResponse.STATE_INIT) {
             //此时需要补充上传权限注册信息。
-            logger.info( "AuthService scaning@RequestMapping annotations in @Controller HandlerMethod " );
-            List<AppRegRequest.PermVo> permVoList = new ArrayList<>( 200 );
-            // 先扫Package,Class注解
-            if (StringUtils.isNotBlank( authServiceProperties.getAuthBasePackage() )) {
+            logger.info("AuthService scaning@RequestMapping annotations in @Controller HandlerMethod ");
+            List<AppRegRequest.PermVo> allVoList = new ArrayList<>(500);
+            //扫描菜单。
+            List<AppRegRequest.PermVo> menuVoList = new ArrayList<>(100);
+            //扫描权限。
+            List<AppRegRequest.PermVo> permVoList = new ArrayList<>(500);
+            // 先扫Package,Class的菜单注解。
+            if (StringUtils.isNotBlank(authServiceProperties.getAuthBasePackage())) {
                 Reflections reflections =
-                        new Reflections( new ConfigurationBuilder().setUrls( ClasspathHelper.forPackage( authServiceProperties.getAuthBasePackage() ) ).setScanners( Scanners.TypesAnnotated, Scanners.SubTypes ) );
-                Set<Class<?>> mscPermDeclareSet = reflections.getTypesAnnotatedWith( MscPermDeclare.class );
+                        new Reflections(new ConfigurationBuilder().setUrls(ClasspathHelper.forPackage(authServiceProperties.getAuthBasePackage())).setScanners(Scanners.TypesAnnotated, Scanners.SubTypes));
+                Set<Class<?>> mscPermDeclareSet = reflections.getTypesAnnotatedWith(MscPermDeclare.class);
                 for (Class<?> aClass : mscPermDeclareSet) {
-                    MscPermDeclare mscPermDeclare = aClass.getAnnotation( MscPermDeclare.class );
-                    RequestMapping requestMapping = aClass.getAnnotation( RequestMapping.class );
-                    Tag tag = aClass.getAnnotation( Tag.class );
+                    MscPermDeclare mscPermDeclare = aClass.getAnnotation(MscPermDeclare.class);
+                    RequestMapping requestMapping = aClass.getAnnotation(RequestMapping.class);
+                    Tag tag = aClass.getAnnotation(Tag.class);
                     String permName = mscPermDeclare.name();
                     String permDesc = mscPermDeclare.description();
                     String permUri = mscPermDeclare.uri();
@@ -156,46 +179,41 @@ public class AppUpdateService {
                     int userType = mscPermDeclare.user().getValue();
                     AuthType authType = mscPermDeclare.auth();
 
-                    //必须是authType=perm的，才给过，否则不用加入权限了。
-                    if (authType != AuthType.PERM) {
-                        continue;
-                    }
-
                     //只做root后用户的权限记录，其他不做。
                     if (userType < UserType.ROOT.getValue()) {
                         continue;
                     }
 
-                    if (StringUtils.isBlank( permName ) && tag != null) {
+                    if (StringUtils.isBlank(permName) && tag != null) {
                         permName = tag.name();
                     }
 
-                    if (StringUtils.isBlank( permDesc ) && tag != null) {
+                    if (StringUtils.isBlank(permDesc) && tag != null) {
                         permDesc = tag.description();
                     }
-                    if (StringUtils.isBlank( permUri ) && requestMapping != null) {
+                    if (StringUtils.isBlank(permUri) && requestMapping != null) {
                         // 注解在Controller上,只取第一个
                         permUri = requestMapping.value()[0];
                     }
-                    if (StringUtils.isBlank( permName ) || StringUtils.isBlank( permUri )) {
-                        logger.warn( "AuthService scan warn: package/class [{}] annotation name or uri is blank!!!", aClass.getName() );
+                    if (StringUtils.isBlank(permName) || StringUtils.isBlank(permUri)) {
+                        logger.warn("AuthService scan warn: package/class [{}] annotation name or uri is blank!!!", aClass.getName());
                     }
                     AppRegRequest.PermVo permVo = new AppRegRequest.PermVo();
-                    permVo.setName( permName );
-                    permVo.setDesc( permDesc );
-                    permVo.setUser( mscPermDeclare.user().getValue() );
-                    permVo.setCode( permUri );
-                    permVoList.add( permVo );
+                    permVo.setName(permName);
+                    permVo.setDesc(permDesc);
+                    permVo.setUser(mscPermDeclare.user().getValue());
+                    permVo.setCode(permUri);
+                    menuVoList.add(permVo);
                 }
             }
-            // 扫描方法注解
+            // 扫描方法权限注解
             Map<RequestMappingInfo, HandlerMethod> map = requestMappingHandlerMapping.getHandlerMethods();
             if (!map.isEmpty()) {
                 // 按照URI排序
                 for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : map.entrySet()) {
                     HandlerMethod method = entry.getValue();
-                    MscPermDeclare mscPermDeclare = method.getMethodAnnotation( MscPermDeclare.class );
-                    Operation operation = method.getMethodAnnotation( Operation.class );
+                    MscPermDeclare mscPermDeclare = method.getMethodAnnotation(MscPermDeclare.class);
+                    Operation operation = method.getMethodAnnotation(Operation.class);
                     if (mscPermDeclare != null) {
                         String permName = mscPermDeclare.name();
                         String permDesc = mscPermDeclare.description();
@@ -212,62 +230,61 @@ public class AppUpdateService {
                             continue;
                         }
                         //如果没有配置name和desc，则使用swagger注解。
-                        if (StringUtils.isBlank( permName ) && operation != null) {
+                        if (StringUtils.isBlank(permName) && operation != null) {
                             permName = operation.summary();
                         }
 
-                        if (StringUtils.isBlank( permDesc ) && operation != null) {
+                        if (StringUtils.isBlank(permDesc) && operation != null) {
                             permDesc = operation.description();
                         }
                         RequestMappingInfo info = entry.getKey();
                         Set<RequestMethod> requestMethods = info.getMethodsCondition().getMethods();
                         if (requestMethods.isEmpty()) {
-                            logger.warn( "http method: {} no explicit @RequestMapping Method mapping ", method.getMethod().toString() );
+                            logger.warn("http method: {} no explicit @RequestMapping Method mapping ", method.getMethod().toString());
                         } else {
                             // 映射多个方法或者多个URI
                             Set<PathPattern> patterns = info.getPathPatternsCondition().getPatterns();
                             for (PathPattern pattern : patterns) {
                                 for (RequestMethod requestMethod : requestMethods) {
                                     AppRegRequest.PermVo permVo = new AppRegRequest.PermVo();
-                                    String permPath = MscUtils.sanitizeUrl( pattern.getPatternString() );
+                                    String permPath = MscUtils.sanitizeUrl(pattern.getPatternString());
                                     //解决$PackageInfo$的问题。
-                                    if (countLevel( permPath ) < 3) {
-                                        permVo.setCode( permPath );
+                                    if (countLevel(permPath) < 3) {
+                                        permVo.setCode(permPath);
                                     } else {
-                                        permVo.setCode( permPath + ":" + requestMethodToString( requestMethod ) );
+                                        permVo.setCode(permPath + ":" + requestMethodToString(requestMethod));
                                     }
-                                    permVo.setName( permName );
-                                    permVo.setDesc( permDesc );
-                                    permVo.setUser( userType );
-                                    permVoList.add( permVo );
+                                    permVo.setName(permName);
+                                    permVo.setDesc(permDesc);
+                                    permVo.setUser(userType);
+                                    permVoList.add(permVo);
                                 }
                             }
                         }
                     }
                 }
             }
-            Set<String> uriFilterSet = new HashSet<>();
-            List<AppRegRequest.PermVo> uniqueUriMscPermList = new ArrayList<>();
-            for (AppRegRequest.PermVo permVo : permVoList) {
-                String uri = permVo.getCode();
-                // 用 uri 来标识是否重复
-                if (StringUtils.isNotBlank( uri )) {
-                    if (!uriFilterSet.contains( uri )) {
-                        uriFilterSet.add( uri );
-                        uniqueUriMscPermList.add( permVo );
+            //过滤menu,保留perm的menu。
+            for (AppRegRequest.PermVo menuVo : menuVoList) {
+                for (AppRegRequest.PermVo permVo : permVoList) {
+                    if (permVo.getCode().startsWith(menuVo.getCode())) {
+                        allVoList.add(menuVo);
+                        break;
                     }
                 }
             }
-            appRegRequest.setPerms( uniqueUriMscPermList );
-            appRegResponse = authAppRpc.regApp( appRegRequest );
+            // 合并menu和perm
+            allVoList.addAll(permVoList);
+            appRegRequest.setPerms(allVoList);
+            appRegResponse = authAppRpc.regApp(appRegRequest);
         }
-        logger.info( "AuthService RegApp: {}, version: {}, auth-center response state: {}, msg: {}", authServiceProperties.getAppName(), authServiceProperties.getAppVersion(),
-                appRegResponse.getState(), appRegResponse.getMsg() );
+        logger.info("AuthService RegApp: {}, version: {}, auth-center response state: {}, msg: {}", authServiceProperties.getAppName(), authServiceProperties.getAppVersion(),
+                appRegResponse.getState(), appRegResponse.getMsg());
         if (appRegResponse.getState() == AppRegResponse.STATE_FAIL) {
-            throw new RuntimeException( "AuthService RegApp failed: " + appRegResponse.getMsg() );
+            throw new RuntimeException("AuthService RegApp failed: " + appRegResponse.getMsg());
         }
-        authServiceProperties.setAppId( appRegResponse.getAppId() );
-        authPermService.initAppPerm( appRegResponse.getAppId(), appRegResponse.getAppPerm(), appRegResponse.getState() );
+        authServiceProperties.setAppId(appRegResponse.getAppId());
+        authPermService.initAppPerm(appRegResponse.getAppId(), appRegResponse.getAppPerm(), appRegResponse.getState());
     }
 
     @PreDestroy
@@ -278,63 +295,47 @@ public class AppUpdateService {
     }
 
     /**
-     * 匹配 / 在API URI出现的次数。
-     *
-     * @param apiUri
-     * @return
-     */
-    private static int countLevel(String apiUri) {
-        int count = 0;
-        int index = 1;
-        while ((index = apiUri.indexOf( '/', index )) > -1) {
-            index = index + 1;
-            count++;
-        }
-        return count;
-    }
-
-    /**
      * 报告状态。
      */
     private void reportStatus() {
         try {
             MscAppReportRequest request = new MscAppReportRequest();
-            request.setId( appHostId );
-            request.setAppId( authServiceProperties.getAppId() );
-            request.setAppName( authServiceProperties.getAppName() );
-            request.setAppVersion( authServiceProperties.getAppVersion() );
-            request.setAppHost( authServiceProperties.getAppHost() );
-            request.setAppPort( authServiceProperties.getAppPort() );
-            request.setAccessCount( AuthServiceFilter.invokeCounter.longValue() );
+            request.setId(appHostId);
+            request.setAppId(authServiceProperties.getAppId());
+            request.setAppName(authServiceProperties.getAppName());
+            request.setAppVersion(authServiceProperties.getAppVersion());
+            request.setAppHost(authServiceProperties.getAppHost());
+            request.setAppPort(authServiceProperties.getAppPort());
+            request.setAccessCount(AuthServiceFilter.invokeCounter.longValue());
             //设置内存和线程信息。
             Runtime runtime = Runtime.getRuntime();
-            request.setJvmMemMax( runtime.maxMemory() );
-            request.setJvmMemTotal( runtime.totalMemory() );
-            request.setJvmMemFree( runtime.freeMemory() );
+            request.setJvmMemMax(runtime.maxMemory());
+            request.setJvmMemTotal(runtime.totalMemory());
+            request.setJvmMemFree(runtime.freeMemory());
             ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-            request.setThreadActive( threadMXBean.getThreadCount() );
-            request.setThreadDaemon( threadMXBean.getDaemonThreadCount() );
-            request.setThreadPeak( threadMXBean.getPeakThreadCount() );
-            request.setThreadStarted( threadMXBean.getTotalStartedThreadCount() );
-            request.setUserRootNum( AuthServiceHelper.getActiveUserNum( UserType.ROOT.getValue() ) );
-            request.setUserRpcNum( AuthServiceHelper.getActiveUserNum( UserType.RPC.getValue() ) );
-            request.setUserOpsNum( AuthServiceHelper.getActiveUserNum( UserType.OPS.getValue() ) );
-            request.setUserAdminNum( AuthServiceHelper.getActiveUserNum( UserType.ADMIN.getValue() ) );
-            request.setUserSaasNum( AuthServiceHelper.getActiveUserNum( UserType.SAAS.getValue() ) );
-            request.setUserGuestNum( AuthServiceHelper.getActiveUserNum( UserType.GUEST.getValue() ) );
-            MscAppReportResponse response = authAppRpc.reportStatus( request );
+            request.setThreadActive(threadMXBean.getThreadCount());
+            request.setThreadDaemon(threadMXBean.getDaemonThreadCount());
+            request.setThreadPeak(threadMXBean.getPeakThreadCount());
+            request.setThreadStarted(threadMXBean.getTotalStartedThreadCount());
+            request.setUserRootNum(AuthServiceHelper.getActiveUserNum(UserType.ROOT.getValue()));
+            request.setUserRpcNum(AuthServiceHelper.getActiveUserNum(UserType.RPC.getValue()));
+            request.setUserOpsNum(AuthServiceHelper.getActiveUserNum(UserType.OPS.getValue()));
+            request.setUserAdminNum(AuthServiceHelper.getActiveUserNum(UserType.ADMIN.getValue()));
+            request.setUserSaasNum(AuthServiceHelper.getActiveUserNum(UserType.SAAS.getValue()));
+            request.setUserGuestNum(AuthServiceHelper.getActiveUserNum(UserType.GUEST.getValue()));
+            MscAppReportResponse response = authAppRpc.reportStatus(request);
             //处理返回结果。
             if (response != null) {
                 appHostId = response.getId();
                 List<InvalidTokenData> list = response.getInvalidTokenDataList();
                 if (list != null) {
                     for (InvalidTokenData invalidTokenData : list) {
-                        AuthServiceHelper.invalidToken( invalidTokenData );
+                        AuthServiceHelper.invalidToken(invalidTokenData);
                     }
                 }
             }
         } catch (Throwable e) {
-            logger.error( "reportStatus exception: {}", e.getMessage(), e );
+            logger.error("reportStatus exception: {}", e.getMessage(), e);
         }
     }
 

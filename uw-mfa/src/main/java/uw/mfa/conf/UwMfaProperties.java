@@ -89,7 +89,7 @@ public class UwMfaProperties {
     /**
      * TOTP算法，默认SHA256。
      */
-    private HmacAlgorithm totpAlgorithm = HmacAlgorithm.SHA256;
+    private HmacAlgorithm totpAlgorithm = HmacAlgorithm.SHA1;
 
     /**
      * TOTP密钥默认长度，默认32位。
@@ -109,7 +109,7 @@ public class UwMfaProperties {
     /**
      * TOTP验证时间窗口偏移量
      */
-    private int totpTimePeriodDiscrepancy = 3;
+    private int totpTimePeriodDiscrepancy = 2;
 
     /**
      * TOTP是否生成二维码，默认生成。

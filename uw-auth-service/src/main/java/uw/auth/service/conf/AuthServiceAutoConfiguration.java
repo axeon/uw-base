@@ -33,8 +33,8 @@ import uw.auth.service.rpc.AuthAppRpc;
 import uw.auth.service.rpc.AuthServiceRpc;
 import uw.auth.service.rpc.impl.AuthAppRpcImpl;
 import uw.auth.service.rpc.impl.AuthServiceRpcImpl;
-import uw.auth.service.service.AppUpdateService;
-import uw.auth.service.service.AuthPermService;
+import uw.auth.service.service.MscAppUpdateService;
+import uw.auth.service.service.MscAuthPermService;
 import uw.auth.service.vo.MscActionLog;
 import uw.auth.service.vo.MscGuestLoginLog;
 import uw.auth.service.vo.MscLoginLog;
@@ -58,7 +58,7 @@ public class AuthServiceAutoConfiguration {
     /**
      * 应用更新服务
      */
-    private AppUpdateService appUpdateService;
+    private MscAppUpdateService appUpdateService;
 
 
     /**
@@ -68,7 +68,7 @@ public class AuthServiceAutoConfiguration {
      * @return
      */
     @Bean
-    public AuthServiceHelper authServerHelper(final AuthServiceProperties authServiceProperties, final AuthPermService authPermService, final AuthServiceRpc authServiceRpc) {
+    public AuthServiceHelper authServerHelper(final AuthServiceProperties authServiceProperties, final MscAuthPermService authPermService, final AuthServiceRpc authServiceRpc) {
         return new AuthServiceHelper(authServiceProperties, authPermService, authServiceRpc);
     }
 
@@ -82,7 +82,7 @@ public class AuthServiceAutoConfiguration {
      * @return
      */
     @Bean
-    public FilterRegistrationBean<AuthServiceFilter> authServiceFilter(final AuthServiceProperties authServiceProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthPermService authPermService, final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage) {
+    public FilterRegistrationBean<AuthServiceFilter> authServiceFilter(final AuthServiceProperties authServiceProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping, final MscAuthPermService authPermService, final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage) {
         FilterRegistrationBean<AuthServiceFilter> registrationBean = new FilterRegistrationBean<AuthServiceFilter>();
         AuthServiceFilter authServiceFilter = new AuthServiceFilter(authServiceProperties, requestMappingHandlerMapping, authPermService, logClient, authCriticalLogStorage);
         registrationBean.setFilter(authServiceFilter);
@@ -161,8 +161,8 @@ public class AuthServiceAutoConfiguration {
      * @return
      */
     @Bean
-    public AppUpdateService appUpdateService(final ApplicationContext applicationContext, final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthServiceProperties authServiceProperties, final AuthAppRpc authAppRpc, final AuthPermService authPermService) {
-        appUpdateService = new AppUpdateService(applicationContext, requestMappingHandlerMapping, authServiceProperties, authAppRpc, authPermService);
+    public MscAppUpdateService appUpdateService(final ApplicationContext applicationContext, final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthServiceProperties authServiceProperties, final AuthAppRpc authAppRpc, final MscAuthPermService authPermService) {
+        appUpdateService = new MscAppUpdateService(applicationContext, requestMappingHandlerMapping, authServiceProperties, authAppRpc, authPermService);
         return appUpdateService;
     }
 
@@ -197,8 +197,8 @@ public class AuthServiceAutoConfiguration {
      * @return
      */
     @Bean
-    public AuthPermService authPermService() {
-        return new AuthPermService();
+    public MscAuthPermService authPermService() {
+        return new MscAuthPermService();
     }
 
     /**

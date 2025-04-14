@@ -5,7 +5,7 @@ import java.util.Map;
 /**
  * App注册响应
  */
-public class AppRegResponse {
+public class MscAppRegResponse {
 
     /**
      * 初始状态，或者待更新状态。

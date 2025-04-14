@@ -25,8 +25,8 @@ import uw.auth.service.filter.AuthServiceFilter;
 import uw.auth.service.rpc.AuthAppRpc;
 import uw.auth.service.token.InvalidTokenData;
 import uw.auth.service.util.MscUtils;
-import uw.auth.service.vo.AppRegRequest;
-import uw.auth.service.vo.AppRegResponse;
+import uw.auth.service.vo.MscAppRegRequest;
+import uw.auth.service.vo.MscAppRegResponse;
 import uw.auth.service.vo.MscAppReportRequest;
 import uw.auth.service.vo.MscAppReportResponse;
 
@@ -46,9 +46,9 @@ import java.util.concurrent.TimeUnit;
  * @author axeon
  * @since 2017/11/29
  */
-public class AppUpdateService {
+public class MscAppUpdateService {
 
-    private static final Logger logger = LoggerFactory.getLogger(AppUpdateService.class);
+    private static final Logger logger = LoggerFactory.getLogger(MscAppUpdateService.class);
 
     /**
      * 相关配置
@@ -63,7 +63,7 @@ public class AppUpdateService {
     /**
      * 用户权限接口服务
      */
-    private final AuthPermService authPermService;
+    private final MscAuthPermService authPermService;
 
     /**
      * spring上下文.
@@ -93,7 +93,7 @@ public class AppUpdateService {
      * @param authAppRpc
      * @param authPermService
      */
-    public AppUpdateService(final ApplicationContext applicationContext, final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthServiceProperties authServiceProperties, final AuthAppRpc authAppRpc, final AuthPermService authPermService) {
+    public MscAppUpdateService(final ApplicationContext applicationContext, final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthServiceProperties authServiceProperties, final AuthAppRpc authAppRpc, final MscAuthPermService authPermService) {
         this.authServiceProperties = authServiceProperties;
         this.authAppRpc = authAppRpc;
         this.authPermService = authPermService;
@@ -153,16 +153,16 @@ public class AppUpdateService {
      */
     public void registry() {
         //不管3721，先提交注册。
-        AppRegRequest appRegRequest = new AppRegRequest();
+        MscAppRegRequest appRegRequest = new MscAppRegRequest();
         appRegRequest.setAppName(authServiceProperties.getAppName());
         appRegRequest.setAppLabel(authServiceProperties.getAppLabel());
         appRegRequest.setAppVersion(authServiceProperties.getAppVersion());
-        AppRegResponse appRegResponse = authAppRpc.regApp(appRegRequest);
-        if (appRegResponse.getState() == AppRegResponse.STATE_INIT) {
+        MscAppRegResponse appRegResponse = authAppRpc.regApp(appRegRequest);
+        if (appRegResponse.getState() == MscAppRegResponse.STATE_INIT) {
             //此时需要补充上传权限注册信息。
             logger.info("AuthService scaning@RequestMapping annotations in @Controller HandlerMethod ");
             //扫描权限。
-            List<AppRegRequest.PermVo> permVoList = new ArrayList<>(1000);
+            List<MscAppRegRequest.PermVo> permVoList = new ArrayList<>(1000);
             // 先扫Class的菜单注解。
             Map<String, Object> restControllerBeans = applicationContext.getBeansWithAnnotation(Controller.class);
             if (!restControllerBeans.isEmpty()) {
@@ -199,7 +199,7 @@ public class AppUpdateService {
                     if (StringUtils.isBlank(permName) || StringUtils.isBlank(permUri)) {
                         logger.warn("AuthService scan warn: package/class [{}] annotation name or uri is blank!!!", controllerClass.getName());
                     }
-                    AppRegRequest.PermVo permVo = new AppRegRequest.PermVo();
+                    MscAppRegRequest.PermVo permVo = new MscAppRegRequest.PermVo();
                     permVo.setName(permName);
                     permVo.setDesc(permDesc);
                     permVo.setUser(mscPermDeclare.user().getValue());
@@ -245,7 +245,7 @@ public class AppUpdateService {
                         Set<PathPattern> patterns = info.getPathPatternsCondition().getPatterns();
                         for (PathPattern pattern : patterns) {
                             for (RequestMethod requestMethod : requestMethods) {
-                                AppRegRequest.PermVo permVo = new AppRegRequest.PermVo();
+                                MscAppRegRequest.PermVo permVo = new MscAppRegRequest.PermVo();
                                 String permPath = MscUtils.sanitizeUrl(pattern.getPatternString());
                                 int permLevel = countLevel(permPath);
                                 //解决$PackageInfo$的问题。
@@ -268,7 +268,7 @@ public class AppUpdateService {
         }
         logger.info("AuthService RegApp: {}, version: {}, auth-center response state: {}, msg: {}", authServiceProperties.getAppName(), authServiceProperties.getAppVersion(),
                 appRegResponse.getState(), appRegResponse.getMsg());
-        if (appRegResponse.getState() == AppRegResponse.STATE_FAIL) {
+        if (appRegResponse.getState() == MscAppRegResponse.STATE_FAIL) {
             throw new RuntimeException("AuthService RegApp failed: " + appRegResponse.getMsg());
         }
         authServiceProperties.setAppId(appRegResponse.getAppId());

@@ -16,7 +16,7 @@ import uw.auth.service.constant.TokenInvalidType;
 import uw.auth.service.constant.TokenType;
 import uw.auth.service.constant.UserType;
 import uw.auth.service.rpc.AuthServiceRpc;
-import uw.auth.service.service.AuthPermService;
+import uw.auth.service.service.MscAuthPermService;
 import uw.auth.service.token.AuthTokenData;
 import uw.auth.service.token.InvalidTokenData;
 import uw.auth.service.util.IpWebUtils;
@@ -111,9 +111,9 @@ public class AuthServiceHelper {
     /**
      * authPermService。
      */
-    private static AuthPermService authPermService;
+    private static MscAuthPermService authPermService;
 
-    public AuthServiceHelper(final AuthServiceProperties authServiceProperties, final AuthPermService authPermService, final AuthServiceRpc authServiceRpc) {
+    public AuthServiceHelper(final AuthServiceProperties authServiceProperties, final MscAuthPermService authPermService, final AuthServiceRpc authServiceRpc) {
         AuthServiceHelper.authServiceProperties = authServiceProperties;
         AuthServiceHelper.authPermService = authPermService;
         AuthServiceHelper.authServiceRpc = authServiceRpc;

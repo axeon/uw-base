@@ -13,6 +13,7 @@ import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -81,12 +82,9 @@ public class AuthServiceAutoConfiguration {
      * @return
      */
     @Bean
-    public FilterRegistrationBean<AuthServiceFilter> authServiceFilter(final AuthServiceProperties authServiceProperties,
-                                                                       final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthPermService authPermService,
-                                                                       final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage) {
+    public FilterRegistrationBean<AuthServiceFilter> authServiceFilter(final AuthServiceProperties authServiceProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthPermService authPermService, final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage) {
         FilterRegistrationBean<AuthServiceFilter> registrationBean = new FilterRegistrationBean<AuthServiceFilter>();
-        AuthServiceFilter authServiceFilter = new AuthServiceFilter(authServiceProperties, requestMappingHandlerMapping, authPermService, logClient,
-                authCriticalLogStorage);
+        AuthServiceFilter authServiceFilter = new AuthServiceFilter(authServiceProperties, requestMappingHandlerMapping, authPermService, logClient, authCriticalLogStorage);
         registrationBean.setFilter(authServiceFilter);
         registrationBean.setName("AuthServiceFilter");
         registrationBean.setOrder(TOKEN_FILTER_ORDER);
@@ -156,16 +154,15 @@ public class AuthServiceAutoConfiguration {
     /**
      * App更新服务
      *
+     * @param requestMappingHandlerMapping
      * @param authServiceProperties
      * @param authAppRpc
      * @param authPermService
-     * @param requestMappingHandlerMapping
      * @return
      */
     @Bean
-    public AppUpdateService appUpdateService(final AuthServiceProperties authServiceProperties, final AuthAppRpc authAppRpc, final AuthPermService authPermService,
-                                             final RequestMappingHandlerMapping requestMappingHandlerMapping) {
-        appUpdateService = new AppUpdateService(authServiceProperties, authAppRpc, authPermService, requestMappingHandlerMapping);
+    public AppUpdateService appUpdateService(final ApplicationContext applicationContext, final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthServiceProperties authServiceProperties, final AuthAppRpc authAppRpc, final AuthPermService authPermService) {
+        appUpdateService = new AppUpdateService(applicationContext, requestMappingHandlerMapping, authServiceProperties, authAppRpc, authPermService);
         return appUpdateService;
     }
 

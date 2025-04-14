@@ -25,11 +25,6 @@ public class AuthServiceProperties {
     private String authCenterHost = "http://uw-auth-center";
 
     /**
-     * 认证注解扫描基础包
-     */
-    private String authBasePackage;
-
-    /**
      * 认证保护路径。 即受保护的资源，多个请用英文逗号分隔。
      */
     private String authProtectedPaths = "/rpc/*,/root/*,/ops/*,/admin/*,/saas/*,/mch/*,/guest/*,/user/*,/api/*";
@@ -102,14 +97,6 @@ public class AuthServiceProperties {
 
     public void setAuthCenterHost(String authCenterHost) {
         this.authCenterHost = authCenterHost;
-    }
-
-    public String getAuthBasePackage() {
-        return authBasePackage;
-    }
-
-    public void setAuthBasePackage(String authBasePackage) {
-        this.authBasePackage = authBasePackage;
     }
 
     public String getAuthProtectedPaths() {

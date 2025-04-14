@@ -6,12 +6,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.PreDestroy;
 import org.apache.commons.lang3.StringUtils;
-import org.reflections.Reflections;
-import org.reflections.scanners.Scanners;
-import org.reflections.util.ClasspathHelper;
-import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.method.HandlerMethod;
@@ -68,6 +66,11 @@ public class AppUpdateService {
     private final AuthPermService authPermService;
 
     /**
+     * spring上下文.
+     */
+    private final ApplicationContext applicationContext;
+
+    /**
      * spring-mvc HandleMapping
      */
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
@@ -85,17 +88,17 @@ public class AppUpdateService {
     /**
      * ctor
      *
+     * @param requestMappingHandlerMapping
      * @param authServiceProperties
      * @param authAppRpc
      * @param authPermService
-     * @param requestMappingHandlerMapping
      */
-    public AppUpdateService(final AuthServiceProperties authServiceProperties, final AuthAppRpc authAppRpc, final AuthPermService authPermService,
-                            final RequestMappingHandlerMapping requestMappingHandlerMapping) {
+    public AppUpdateService(final ApplicationContext applicationContext, final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthServiceProperties authServiceProperties, final AuthAppRpc authAppRpc, final AuthPermService authPermService) {
         this.authServiceProperties = authServiceProperties;
         this.authAppRpc = authAppRpc;
         this.authPermService = authPermService;
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
+        this.applicationContext = applicationContext;
     }
 
     /**
@@ -158,32 +161,30 @@ public class AppUpdateService {
         if (appRegResponse.getState() == AppRegResponse.STATE_INIT) {
             //此时需要补充上传权限注册信息。
             logger.info("AuthService scaning@RequestMapping annotations in @Controller HandlerMethod ");
-            List<AppRegRequest.PermVo> allVoList = new ArrayList<>(500);
-            //扫描菜单。
-            List<AppRegRequest.PermVo> menuVoList = new ArrayList<>(100);
             //扫描权限。
-            List<AppRegRequest.PermVo> permVoList = new ArrayList<>(500);
-            // 先扫Package,Class的菜单注解。
-            if (StringUtils.isNotBlank(authServiceProperties.getAuthBasePackage())) {
-                Reflections reflections =
-                        new Reflections(new ConfigurationBuilder().setUrls(ClasspathHelper.forPackage(authServiceProperties.getAuthBasePackage())).setScanners(Scanners.TypesAnnotated, Scanners.SubTypes));
-                Set<Class<?>> mscPermDeclareSet = reflections.getTypesAnnotatedWith(MscPermDeclare.class);
-                for (Class<?> aClass : mscPermDeclareSet) {
-                    MscPermDeclare mscPermDeclare = aClass.getAnnotation(MscPermDeclare.class);
-                    RequestMapping requestMapping = aClass.getAnnotation(RequestMapping.class);
-                    Tag tag = aClass.getAnnotation(Tag.class);
+            List<AppRegRequest.PermVo> permVoList = new ArrayList<>(1000);
+            // 先扫Class的菜单注解。
+            Map<String, Object> restControllerBeans = applicationContext.getBeansWithAnnotation(Controller.class);
+            if (!restControllerBeans.isEmpty()) {
+                for (Map.Entry<String, Object> kv : restControllerBeans.entrySet()) {
+                    Class<?> controllerClass = kv.getValue().getClass();
+                    MscPermDeclare mscPermDeclare = controllerClass.getAnnotation(MscPermDeclare.class);
+                    RequestMapping requestMapping = controllerClass.getAnnotation(RequestMapping.class);
+                    Tag tag = controllerClass.getAnnotation(Tag.class);
+                    if (mscPermDeclare == null) {
+                        continue;
+                    }
+
                     String permName = mscPermDeclare.name();
                     String permDesc = mscPermDeclare.description();
                     String permUri = mscPermDeclare.uri();
-
                     int userType = mscPermDeclare.user().getValue();
-                    AuthType authType = mscPermDeclare.auth();
+                    int authType = mscPermDeclare.auth().getValue();
 
                     //只做root后用户的权限记录，其他不做。
                     if (userType < UserType.ROOT.getValue()) {
                         continue;
                     }
-
                     if (StringUtils.isBlank(permName) && tag != null) {
                         permName = tag.name();
                     }
@@ -196,16 +197,17 @@ public class AppUpdateService {
                         permUri = requestMapping.value()[0];
                     }
                     if (StringUtils.isBlank(permName) || StringUtils.isBlank(permUri)) {
-                        logger.warn("AuthService scan warn: package/class [{}] annotation name or uri is blank!!!", aClass.getName());
+                        logger.warn("AuthService scan warn: package/class [{}] annotation name or uri is blank!!!", controllerClass.getName());
                     }
                     AppRegRequest.PermVo permVo = new AppRegRequest.PermVo();
                     permVo.setName(permName);
                     permVo.setDesc(permDesc);
                     permVo.setUser(mscPermDeclare.user().getValue());
                     permVo.setCode(permUri);
-                    menuVoList.add(permVo);
+                    permVoList.add(permVo);
                 }
             }
+
             // 扫描方法权限注解
             Map<RequestMappingInfo, HandlerMethod> map = requestMappingHandlerMapping.getHandlerMethods();
             if (!map.isEmpty()) {
@@ -214,68 +216,54 @@ public class AppUpdateService {
                     HandlerMethod method = entry.getValue();
                     MscPermDeclare mscPermDeclare = method.getMethodAnnotation(MscPermDeclare.class);
                     Operation operation = method.getMethodAnnotation(Operation.class);
-                    if (mscPermDeclare != null) {
-                        String permName = mscPermDeclare.name();
-                        String permDesc = mscPermDeclare.description();
+                    if (mscPermDeclare == null) {
+                        continue;
+                    }
+                    String permName = mscPermDeclare.name();
+                    String permDesc = mscPermDeclare.description();
 
-                        int userType = mscPermDeclare.user().getValue();
-                        AuthType authType = mscPermDeclare.auth();
+                    int userType = mscPermDeclare.user().getValue();
+                    int authType = mscPermDeclare.auth().getValue();
+                    //只做root后用户的权限记录，其他不做。
+                    if (userType < UserType.ROOT.getValue()) {
+                        continue;
+                    }
+                    //如果没有配置name和desc，则使用swagger注解。
+                    if (StringUtils.isBlank(permName) && operation != null) {
+                        permName = operation.summary();
+                    }
 
-                        //必须是authType=perm的，才给过，否则不用加入权限了。
-                        if (authType != AuthType.PERM) {
-                            continue;
-                        }
-                        //只做root后用户的权限记录，其他不做。
-                        if (userType < UserType.ROOT.getValue()) {
-                            continue;
-                        }
-                        //如果没有配置name和desc，则使用swagger注解。
-                        if (StringUtils.isBlank(permName) && operation != null) {
-                            permName = operation.summary();
-                        }
-
-                        if (StringUtils.isBlank(permDesc) && operation != null) {
-                            permDesc = operation.description();
-                        }
-                        RequestMappingInfo info = entry.getKey();
-                        Set<RequestMethod> requestMethods = info.getMethodsCondition().getMethods();
-                        if (requestMethods.isEmpty()) {
-                            logger.warn("http method: {} no explicit @RequestMapping Method mapping ", method.getMethod().toString());
-                        } else {
-                            // 映射多个方法或者多个URI
-                            Set<PathPattern> patterns = info.getPathPatternsCondition().getPatterns();
-                            for (PathPattern pattern : patterns) {
-                                for (RequestMethod requestMethod : requestMethods) {
-                                    AppRegRequest.PermVo permVo = new AppRegRequest.PermVo();
-                                    String permPath = MscUtils.sanitizeUrl(pattern.getPatternString());
-                                    //解决$PackageInfo$的问题。
-                                    if (countLevel(permPath) < 3) {
-                                        permVo.setCode(permPath);
-                                    } else {
-                                        permVo.setCode(permPath + ":" + requestMethodToString(requestMethod));
-                                    }
-                                    permVo.setName(permName);
-                                    permVo.setDesc(permDesc);
-                                    permVo.setUser(userType);
-                                    permVoList.add(permVo);
+                    if (StringUtils.isBlank(permDesc) && operation != null) {
+                        permDesc = operation.description();
+                    }
+                    RequestMappingInfo info = entry.getKey();
+                    Set<RequestMethod> requestMethods = info.getMethodsCondition().getMethods();
+                    if (requestMethods.isEmpty()) {
+                        logger.warn("http method: {} no explicit @RequestMapping Method mapping ", method.getMethod().toString());
+                    } else {
+                        // 映射多个方法或者多个URI
+                        Set<PathPattern> patterns = info.getPathPatternsCondition().getPatterns();
+                        for (PathPattern pattern : patterns) {
+                            for (RequestMethod requestMethod : requestMethods) {
+                                AppRegRequest.PermVo permVo = new AppRegRequest.PermVo();
+                                String permPath = MscUtils.sanitizeUrl(pattern.getPatternString());
+                                int permLevel = countLevel(permPath);
+                                //解决$PackageInfo$的问题。
+                                if (permLevel < 3) {
+                                    permVo.setCode(permPath);
+                                } else if (authType >= AuthType.PERM.getValue()) {
+                                    permVo.setCode(permPath + ":" + requestMethodToString(requestMethod));
                                 }
+                                permVo.setName(permName);
+                                permVo.setDesc(permDesc);
+                                permVo.setUser(userType);
+                                permVoList.add(permVo);
                             }
                         }
                     }
                 }
             }
-            //过滤menu,保留perm的menu。
-            for (AppRegRequest.PermVo menuVo : menuVoList) {
-                for (AppRegRequest.PermVo permVo : permVoList) {
-                    if (permVo.getCode().startsWith(menuVo.getCode())) {
-                        allVoList.add(menuVo);
-                        break;
-                    }
-                }
-            }
-            // 合并menu和perm
-            allVoList.addAll(permVoList);
-            appRegRequest.setPerms(allVoList);
+            appRegRequest.setPerms(permVoList);
             appRegResponse = authAppRpc.regApp(appRegRequest);
         }
         logger.info("AuthService RegApp: {}, version: {}, auth-center response state: {}, msg: {}", authServiceProperties.getAppName(), authServiceProperties.getAppVersion(),

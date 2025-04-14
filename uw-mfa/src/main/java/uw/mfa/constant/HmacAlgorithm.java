@@ -12,9 +12,9 @@ public enum HmacAlgorithm {
     private final String value;
     private final String label;
 
-    HmacAlgorithm(String value, String friendlyName) {
+    HmacAlgorithm(String value, String label) {
         this.value = value;
-        this.label = friendlyName;
+        this.label = label;
     }
 
     public String getValue() {

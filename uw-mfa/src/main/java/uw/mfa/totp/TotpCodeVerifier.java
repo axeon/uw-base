@@ -78,7 +78,10 @@ public class TotpCodeVerifier {
         // 即使提前匹配到一个有效代码，也要继续计算和比较所有有效时间周期的代码，以避免定时攻击。
         boolean success = false;
         for (int i = -allowedTimePeriodDiscrepancy; i <= allowedTimePeriodDiscrepancy; i++) {
-            success = checkCode( secret, currentBucket + i, code ) || success;
+            success = checkCode( secret, currentBucket + i, code );
+            if (success) {
+                break;
+            }
         }
         if (!success) {
             return ResponseData.errorCode( MfaResponseCode.TOTP_CODE_VERIFY_ERROR );

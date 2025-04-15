@@ -4,6 +4,7 @@ import jakarta.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.MethodParameter;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -94,8 +95,15 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
         //需要处理额外未拦截到的系统报错信息。
         if (returnType.getParameterType().equals( ResponseEntity.class )) {
             if (body instanceof LinkedHashMap data) {
-                String code = "http.status." + String.valueOf( data.get( "status" ) );
-                String msg = String.valueOf( data.get( "message" ) );
+                String status = String.valueOf( data.get( "status" ) );
+                int statusCode = 500;
+                try {
+                    statusCode = Integer.parseInt(status);
+                } catch (NumberFormatException ignored) {
+                }
+                response.setStatusCode(HttpStatusCode.valueOf( statusCode));
+                String code = "http.status." + statusCode ;
+                String msg = "path: "+String.valueOf(data.get( "path" ))+", msg: " +String.valueOf( data.get( "message" ) );
                 return logResponseData( ResponseData.errorCode( code, msg ) );
             }
         } else if (returnType.getParameterType().equals( String.class )) {

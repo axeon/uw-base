@@ -62,9 +62,9 @@ public class UwMfaProperties {
     private long deviceCodeExpiredSeconds = 300L;
 
     /**
-     * 设备识别码默认长度，默认4。
+     * 设备识别码默认长度，默认6。
      */
-    private int deviceCodeDefaultLength = 4;
+    private int deviceCodeDefaultLength = 6;
 
     /**
      * 设备识别码通知标题。

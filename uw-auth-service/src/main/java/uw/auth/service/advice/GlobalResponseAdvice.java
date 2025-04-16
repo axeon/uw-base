@@ -82,7 +82,7 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
 
         //单独提前处理responseData类型，减少不必要的判定。
         if (body instanceof ResponseData responseData) {
-            logResponseData(returnType, responseData);
+            return logResponseData(returnType, responseData);
         }
         //需要处理额外未拦截到的系统报错信息。
         if (returnType.getParameterType().equals(ResponseEntity.class)) {

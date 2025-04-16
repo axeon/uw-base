@@ -27,10 +27,10 @@ import java.util.LinkedHashMap;
  */
 @RestControllerAdvice
 public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
-    private static final Logger log = LoggerFactory.getLogger( GlobalResponseAdvice.class );
+    private static final Logger log = LoggerFactory.getLogger(GlobalResponseAdvice.class);
 
     public GlobalResponseAdvice() {
-        log.info( "Init GlobalResponseAdvice." );
+        log.info("Init GlobalResponseAdvice.");
     }
 
     /**
@@ -45,14 +45,14 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
     public boolean supports(MethodParameter methodParameter, Class<? extends HttpMessageConverter<?>> aClass) {
         Class<?> declaringClass = methodParameter.getDeclaringClass();
         // 检查注解是否存在
-        if (declaringClass.isAnnotationPresent( ResponseAdviceIgnore.class )) {
+        if (declaringClass.isAnnotationPresent(ResponseAdviceIgnore.class)) {
             return false;
         }
-        if (methodParameter.getMethod().isAnnotationPresent( ResponseAdviceIgnore.class )) {
+        if (methodParameter.getMethod().isAnnotationPresent(ResponseAdviceIgnore.class)) {
             return false;
         }
         // 适配swagger的接口文档
-        if (declaringClass.getPackageName().contains( "org.springdoc" )) {
+        if (declaringClass.getPackageName().contains("org.springdoc")) {
             return false;
         }
 
@@ -73,45 +73,34 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
     @Nullable
     @Override
     @SuppressWarnings("all")
-    public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType, Class<? extends HttpMessageConverter<?>> selectedConverterType,
-                                  ServerHttpRequest request, ServerHttpResponse response) {
+    public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType, Class<? extends HttpMessageConverter<?>> selectedConverterType, ServerHttpRequest request, ServerHttpResponse response) {
 
         // body is null 特殊处理。
         if (body == null) {
-            return logResponseData( ResponseData.warn() );
+            return logResponseData(returnType, ResponseData.warn());
         }
 
         //单独提前处理responseData类型，减少不必要的判定。
         if (body instanceof ResponseData responseData) {
-            logResponseData( responseData );
-            //是否字符串类型要单独处理一下，否则会抛错。
-            if (returnType.getParameterType().equals( String.class )) {
-                return JsonUtils.toString( responseData );
-            } else {
-                return responseData;
-            }
+            logResponseData(returnType, responseData);
         }
-
         //需要处理额外未拦截到的系统报错信息。
-        if (returnType.getParameterType().equals( ResponseEntity.class )) {
+        if (returnType.getParameterType().equals(ResponseEntity.class)) {
             if (body instanceof LinkedHashMap data) {
-                String status = String.valueOf( data.get( "status" ) );
+                String status = String.valueOf(data.get("status"));
                 int statusCode = 500;
                 try {
                     statusCode = Integer.parseInt(status);
                 } catch (NumberFormatException ignored) {
                 }
-                response.setStatusCode(HttpStatusCode.valueOf( statusCode));
-                String code = "http.status." + statusCode ;
-                String msg = "Path: "+String.valueOf(data.get( "path" ))+", Msg: " +String.valueOf( data.get( "message" ) );
-                return logResponseData( ResponseData.errorCode( code, msg ) );
+                response.setStatusCode(HttpStatusCode.valueOf(statusCode));
+                String code = "http.status." + statusCode;
+                String msg = "Path: " + String.valueOf(data.get("path")) + ", Msg: " + String.valueOf(data.get("message"));
+                return logResponseData(returnType, ResponseData.errorCode(code, msg));
             }
-        } else if (returnType.getParameterType().equals( String.class )) {
-            //字符串类型需要单独包裹。
-            return JsonUtils.toString( logResponseData( ResponseData.success( body ) ) );
         }
         //默认情况，直接返回。
-        return logResponseData( ResponseData.success( body ) );
+        return logResponseData(returnType, ResponseData.success(body));
     }
 
     /**
@@ -120,14 +109,18 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
      * @param responseData
      * @return
      */
-    private ResponseData<?> logResponseData(ResponseData<?> responseData) {
+    private Object logResponseData(MethodParameter returnType, ResponseData<?> responseData) {
         MscActionLog mscActionLog = AuthServiceHelper.getContextLog();
         if (mscActionLog != null) {
-            mscActionLog.setResponseState( responseData.getState() );
-            mscActionLog.setResponseCode( responseData.getCode() );
-            mscActionLog.setResponseMsg( responseData.getMsg() );
+            mscActionLog.setResponseState(responseData.getState());
+            mscActionLog.setResponseCode(responseData.getCode());
+            mscActionLog.setResponseMsg(responseData.getMsg());
         }
-        return responseData;
+        if (returnType.getParameterType().equals(String.class)) {
+            return JsonUtils.toString(responseData);
+        } else {
+            return responseData;
+        }
     }
 
 }

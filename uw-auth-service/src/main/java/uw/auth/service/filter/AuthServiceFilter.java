@@ -33,6 +33,7 @@ import uw.log.es.LogClient;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +58,7 @@ public class AuthServiceFilter implements Filter {
     /**
      * AuthService配置文件。
      */
-    private final AuthServiceProperties authServerProperties;
+    private final AuthServiceProperties authServiceProperties;
     /**
      * 请求映射处理器。
      */
@@ -84,20 +85,20 @@ public class AuthServiceFilter implements Filter {
      */
     private String[] ipProtectedPaths;
 
-    public AuthServiceFilter(final AuthServiceProperties authServerProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping,
+    public AuthServiceFilter(final AuthServiceProperties authServiceProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping,
                              final MscAuthPermService authPermService, final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage) {
-        this.authServerProperties = authServerProperties;
+        this.authServiceProperties = authServiceProperties;
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.authPermService = authPermService;
         this.logClient = logClient;
         this.authCriticalLogStorage = authCriticalLogStorage;
         // 初始化白名单列表
-        if (StringUtils.isNotBlank(authServerProperties.getIpWhiteList())) {
-            ipWhiteList = IpMatchUtils.sortList(authServerProperties.getIpWhiteList().split(","));
+        if (StringUtils.isNotBlank(authServiceProperties.getIpWhiteList())) {
+            ipWhiteList = IpMatchUtils.sortList(authServiceProperties.getIpWhiteList().split(","));
         }
         // 初始化IP受保护路径
-        if (StringUtils.isNotBlank(authServerProperties.getIpProtectedPaths())) {
-            ipProtectedPaths = authServerProperties.getIpProtectedPaths().split(",");
+        if (StringUtils.isNotBlank(authServiceProperties.getIpProtectedPaths())) {
+            ipProtectedPaths = authServiceProperties.getIpProtectedPaths().split(",");
             for (int i = 0; i < ipProtectedPaths.length; i++) {
                 // 去除末尾的*，直接使用startWith判断降低损耗。
                 ipProtectedPaths[i] = StringUtils.stripEnd(ipProtectedPaths[i].trim(), "*");
@@ -211,8 +212,8 @@ public class AuthServiceFilter implements Filter {
                     }
                 }
                 mscActionLog = new MscActionLog();
-                mscActionLog.setAppInfo(authServerProperties.getAppName() + ":" + authServerProperties.getAppVersion());
-                mscActionLog.setAppHost(authServerProperties.getAppHost() + ":" + authServerProperties.getAppPort());
+                mscActionLog.setAppInfo(authServiceProperties.getAppName() + ":" + authServiceProperties.getAppVersion());
+                mscActionLog.setAppHost(authServiceProperties.getAppHost() + ":" + authServiceProperties.getAppPort());
                 mscActionLog.setLogLevel(permLogType.getValue());
                 mscActionLog.setUserId(authTokenData.getUserId());
                 mscActionLog.setUserName(authTokenData.getUserName());
@@ -246,7 +247,7 @@ public class AuthServiceFilter implements Filter {
                 mscActionLog.setStatusCode(((HttpServletResponse) response).getStatus());
                 try {
                     //保存request
-                    if (permLogType == ActionLog.REQUEST || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT ) {
+                    if (permLogType == ActionLog.REQUEST || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT) {
                         LoggingHttpServletRequestWrapper requestWrapper = (LoggingHttpServletRequestWrapper) request;
                         StringBuilder sb = new StringBuilder(1280);
                         sb.append("{");
@@ -256,7 +257,7 @@ public class AuthServiceFilter implements Filter {
                         }
                         byte[] requestContentBytes = requestWrapper.getContentAsByteArray();
                         if (requestContentBytes.length > 0) {
-                            sb.append("\"body\":").append(new String(requestContentBytes, requestWrapper.getCharacterEncoding()));
+                            sb.append("\"body\":").append(new String(requestContentBytes, StandardCharsets.UTF_8));
                         }
                         if (sb.length() > 1) {
                             if (sb.charAt(sb.length() - 1) == ',') {
@@ -267,9 +268,9 @@ public class AuthServiceFilter implements Filter {
                         }
                     }
                     //保存response
-                    if (permLogType == ActionLog.RESPONSE || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT ) {
+                    if (permLogType == ActionLog.RESPONSE || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT) {
                         LoggingHttpServletResponseWrapper responseWrapper = (LoggingHttpServletResponseWrapper) response;
-                        mscActionLog.setResponseBody(new String(responseWrapper.getContentAsByteArray(), responseWrapper.getCharacterEncoding()));
+                        mscActionLog.setResponseBody(new String(responseWrapper.getContentAsByteArray(), StandardCharsets.UTF_8));
                         responseWrapper.copyBodyToResponse();
                     }
                     //如果是crit数据，保存数据库。

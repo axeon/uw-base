@@ -246,7 +246,7 @@ public class AuthServiceFilter implements Filter {
                 mscActionLog.setStatusCode(((HttpServletResponse) response).getStatus());
                 try {
                     //保存request
-                    if (permLogType == ActionLog.REQUEST || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT || permAuthType == AuthType.SUDO) {
+                    if (permLogType == ActionLog.REQUEST || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT ) {
                         LoggingHttpServletRequestWrapper requestWrapper = (LoggingHttpServletRequestWrapper) request;
                         StringBuilder sb = new StringBuilder(1280);
                         sb.append("{");
@@ -267,7 +267,7 @@ public class AuthServiceFilter implements Filter {
                         }
                     }
                     //保存response
-                    if (permLogType == ActionLog.RESPONSE || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT || permAuthType == AuthType.SUDO) {
+                    if (permLogType == ActionLog.RESPONSE || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT ) {
                         LoggingHttpServletResponseWrapper responseWrapper = (LoggingHttpServletResponseWrapper) response;
                         mscActionLog.setResponseBody(new String(responseWrapper.getContentAsByteArray(), responseWrapper.getCharacterEncoding()));
                         responseWrapper.copyBodyToResponse();

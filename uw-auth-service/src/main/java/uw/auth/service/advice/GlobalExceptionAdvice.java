@@ -24,21 +24,21 @@ public class GlobalExceptionAdvice {
 
     @ExceptionHandler({Throwable.class})
     public ResponseData<String> exceptionHandle(Throwable ex, HttpServletRequest request, HttpServletResponse response) {
+        //针对不同类型异常，设置不同的详细消息。
+        String msg = "Path: " + request.getRequestURI() + ", Msg: " + ex.toString();
+        String data = null;
         // 针对ErrorResponse异常，设置不同的状态码。
         if (ex instanceof ErrorResponse errorResponse) {
             response.setStatus(errorResponse.getStatusCode().value());
-        }
-        //针对不同类型异常，设置不同的详细消息。
-        String detailData = null;
-        if (response.getStatus() == HttpStatus.INTERNAL_SERVER_ERROR.value()) {
-            //500类异常，要打印到日志里。
-            log.error(ex.getMessage(), ex);
-            detailData = MscUtils.exceptionToString(ex);
+            log.warn(msg);
         } else {
-            //非500类异常，直接打印消息就OK。
-            log.warn(ex.getMessage());
+            //其它错误都当做500类异常。
+            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            //500类异常，要打印到日志里。
+            log.error(msg, ex);
+            data = MscUtils.exceptionToString(ex);
         }
-        return ResponseData.error(detailData, "http.status." + response.getStatus(), ex.getMessage());
+        return ResponseData.error(data, "http.status." + response.getStatus(), msg);
     }
 
 }

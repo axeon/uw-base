@@ -11,10 +11,7 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import uw.auth.service.conf.AuthServiceProperties;
-import uw.auth.service.constant.AuthServiceConstants;
-import uw.auth.service.constant.TokenInvalidType;
-import uw.auth.service.constant.TokenType;
-import uw.auth.service.constant.UserType;
+import uw.auth.service.constant.*;
 import uw.auth.service.rpc.AuthServiceRpc;
 import uw.auth.service.service.MscAuthPermService;
 import uw.auth.service.token.AuthTokenData;
@@ -23,8 +20,10 @@ import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.vo.MscActionLog;
 import uw.common.dto.ResponseData;
 import uw.common.util.SystemClock;
+import uw.log.es.LogClient;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -499,6 +498,116 @@ public class AuthServiceHelper {
     }
 
     /**
+     * 写系统日志信息。
+     * 主要用于系统后台操作调用，此操作不需要web环境依赖。
+     *
+     * @param apiCode      接口编码，会记录在apiUrl中。
+     * @param apiName      接口名称，会记录在apiName中。
+     * @param apiIp        接口来源IP，会记录在userIp中。
+     * @param saasId       操作对应的SaasId。
+     * @param bizTypeClass 业务类型类，会记录在bizType中。
+     * @param bizId        业务主键，会记录在bizId中。
+     * @param bizLog       业务日志，会记录在bizLog中。
+     * @param responseData 业务响应数据，一般已记录和第三方系统交互的响应数据。
+     */
+    public static void logSysInfo(String apiCode, String apiName, String apiIp, long saasId, Class<?> bizTypeClass, Serializable bizId, String bizLog, ResponseData<?> responseData) {
+        logSysInfo(apiCode, apiName, apiIp, saasId, bizTypeClass, bizId, bizLog, null, null, responseData);
+    }
+
+
+    /**
+     * 写系统日志信息。
+     * 主要用于系统后台操作调用，此操作不需要web环境依赖。
+     *
+     * @param apiCode      接口编码，会记录在apiUrl中。
+     * @param apiName      接口名称，会记录在apiName中。
+     * @param apiIp        接口来源IP，会记录在userIp中。
+     * @param saasId       操作对应的SaasId。
+     * @param bizType      业务类型，会记录在bizType中。
+     * @param bizId        业务主键，会记录在bizId中。
+     * @param bizLog       业务日志，会记录在bizLog中。
+     * @param responseData 业务响应数据，一般已记录和第三方系统交互的响应数据。
+     */
+    public static void logSysInfo(String apiCode, String apiName, String apiIp, long saasId, String bizType, Serializable bizId, String bizLog, ResponseData<?> responseData) {
+        logSysInfo(apiCode, apiName, apiIp, saasId, bizType, bizId, bizLog, null, null, responseData);
+    }
+
+    /**
+     * 写系统日志信息。
+     * 主要用于系统后台操作调用，此操作不需要web环境依赖。
+     *
+     * @param apiCode      接口编码，会记录在apiUrl中。
+     * @param apiName      接口名称，会记录在apiName中。
+     * @param apiIp        接口来源IP，会记录在userIp中。
+     * @param saasId       操作对应的SaasId。
+     * @param bizTypeClass 业务类型类，会记录在bizType中。
+     * @param bizId        业务主键，会记录在bizId中。
+     * @param bizLog       业务日志，会记录在bizLog中。
+     * @param requestBody  业务请求Body，一般已记录和第三方系统交互的请求报文。
+     * @param responseBody 业务响应Body，一般已记录和第三方系统交互的响应报文。
+     * @param responseData 业务响应数据，一般已记录和第三方系统交互的响应数据。
+     */
+    public static void logSysInfo(String apiCode, String apiName, String apiIp, long saasId, Class<?> bizTypeClass, Serializable bizId, String bizLog, String requestBody, String responseBody, ResponseData<?> responseData) {
+        logSysInfo(apiCode, apiName, apiIp, saasId, bizTypeClass.getName(), bizId, bizLog, requestBody, responseBody, responseData);
+    }
+
+    /**
+     * 写系统日志信息。
+     * 主要用于系统后台操作调用，此操作不需要web环境依赖。
+     *
+     * @param apiCode      接口编码，会记录在apiUrl中。
+     * @param apiName      接口名称，会记录在apiName中。
+     * @param apiIp        接口来源IP，会记录在userIp中。
+     * @param saasId       操作对应的SaasId。
+     * @param bizType      业务类型，会记录在bizType中。
+     * @param bizId        业务主键，会记录在bizId中。
+     * @param bizLog       业务日志，会记录在bizLog中。
+     * @param requestBody  业务请求Body，一般已记录和第三方系统交互的请求报文。
+     * @param responseBody 业务响应Body，一般已记录和第三方系统交互的响应报文。
+     * @param responseData 业务响应数据，一般已记录和第三方系统交互的响应数据。
+     */
+    public static void logSysInfo(String apiCode, String apiName, String apiIp, long saasId, String bizType, Serializable bizId, String bizLog, String requestBody, String responseBody, ResponseData<?> responseData) {
+        MscActionLog mscActionLog = new MscActionLog();
+        mscActionLog.setAppInfo(authServiceProperties.getAppName() + ":" + authServiceProperties.getAppVersion());
+        mscActionLog.setAppHost(authServiceProperties.getAppHost() + ":" + authServiceProperties.getAppPort());
+        mscActionLog.setLogLevel(ActionLog.CRIT.getValue());
+        mscActionLog.setUserId(0);
+        mscActionLog.setUserName("system");
+        mscActionLog.setNickName("system");
+        mscActionLog.setRealName("system");
+        mscActionLog.setSaasId(saasId);
+        mscActionLog.setMchId(0);
+        mscActionLog.setGroupId(0);
+        mscActionLog.setUserType(UserType.RPC.getValue());
+        mscActionLog.setApiUri(apiCode);
+        mscActionLog.setApiName(apiName);
+        mscActionLog.setUserIp(apiIp);
+        mscActionLog.setRequestDate(new Date());
+        mscActionLog.setRequestBody(requestBody);
+        mscActionLog.setResponseBody(responseBody);
+        mscActionLog.setResponseState(responseData.getState());
+        mscActionLog.setResponseCode(responseData.getCode());
+        mscActionLog.setResponseMsg(responseData.getMsg());
+        mscActionLog.setResponseMillis(0);
+        mscActionLog.setStatusCode(0);
+        //允许多次设置日志信息。
+        if (bizType != null) {
+            mscActionLog.setBizType(bizType);
+        }
+        if (bizId != null) {
+            mscActionLog.setBizId(bizId);
+        }
+        if (bizLog != null) {
+            if (mscActionLog.getBizLog() != null) {
+                bizLog = mscActionLog.getBizLog() + "\n" + bizLog;
+            }
+            mscActionLog.setBizLog(bizLog);
+        }
+        LogClient.getInstance().log(mscActionLog);
+    }
+
+
+    /**
      * 绑定ref信息。
      *
      * @param bizType 业务类型 用户代码自行定义,不应有冲突
@@ -536,12 +645,13 @@ public class AuthServiceHelper {
         return mscActionLog;
     }
 
+
     /**
      * 绑定ref信息
      *
      * @param bizTypeClass 业务类 用户代码自行定义,不应有冲突
      */
-    public static MscActionLog logRef(Class bizTypeClass) {
+    public static MscActionLog logRef(Class<?> bizTypeClass) {
         return logInfo(bizTypeClass.getName(), null, null);
     }
 
@@ -561,7 +671,7 @@ public class AuthServiceHelper {
      * @param bizTypeClass 业务类 用户代码自行定义,不应有冲突
      * @param bizId        业务主键
      */
-    public static MscActionLog logRef(Class bizTypeClass, Serializable bizId) {
+    public static MscActionLog logRef(Class<?> bizTypeClass, Serializable bizId) {
         return logInfo(bizTypeClass.getName(), bizId, null);
     }
 
@@ -580,7 +690,7 @@ public class AuthServiceHelper {
      * @param bizTypeClass 业务类 用户代码自行定义,不应有冲突
      * @param bizLog       日志信息
      */
-    public static MscActionLog logInfo(Class bizTypeClass, String bizLog) {
+    public static MscActionLog logInfo(Class<?> bizTypeClass, String bizLog) {
         return logInfo(bizTypeClass.getName(), null, bizLog);
     }
 
@@ -601,7 +711,7 @@ public class AuthServiceHelper {
      * @param bizId        业务主键
      * @param bizLog       日志信息
      */
-    public static MscActionLog logInfo(Class bizTypeClass, Serializable bizId, String bizLog) {
+    public static MscActionLog logInfo(Class<?> bizTypeClass, Serializable bizId, String bizLog) {
         return logInfo(bizTypeClass.getName(), bizId, bizLog);
     }
 

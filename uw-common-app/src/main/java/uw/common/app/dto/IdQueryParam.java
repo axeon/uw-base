@@ -1,5 +1,6 @@
 package uw.common.app.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import uw.dao.QueryParam;
 import uw.dao.annotation.QueryMeta;
 
@@ -11,10 +12,25 @@ import java.util.Map;
 public class IdQueryParam extends QueryParam<IdQueryParam> {
 
     /**
-     * id匹配。
+     * ID。
      */
     @QueryMeta(expr = "id=?")
+    @Schema(title="ID", description = "ID")
     private Long id;
+
+
+    /**
+     * 数组ID。
+     */
+    @QueryMeta(expr = "id in (?)")
+    @Schema(title="ID数组", description = "ID数组，可同时匹配多个。")
+    private Long[] ids;
+
+    /**
+     * 构造器。
+     */
+    public IdQueryParam() {
+    }
 
     /**
      * 指定id构造器。
@@ -23,6 +39,15 @@ public class IdQueryParam extends QueryParam<IdQueryParam> {
      */
     public IdQueryParam(Long id) {
         this.id = id;
+    }
+
+    /**
+     * 指定id数组构造器。
+     *
+     * @param ids
+     */
+    public IdQueryParam(Long[] ids) {
+        this.ids = ids;
     }
 
     /**
@@ -36,33 +61,50 @@ public class IdQueryParam extends QueryParam<IdQueryParam> {
         return Map.of("id", "id");
     }
 
+
     /**
-     * 获取id。
-     *
-     * @return
+     * 获取ID。
      */
     public Long getId() {
-        return id;
+        return this.id;
     }
 
     /**
-     * 设置id。
-     *
-     * @param id
+     * 设置ID。
      */
     public void setId(Long id) {
         this.id = id;
     }
 
     /**
-     * 设置id。
-     *
-     * @param id
-     * @return
+     * 设置ID链式调用。
      */
     public IdQueryParam id(Long id) {
-        this.id = id;
+        setId(id);
         return this;
     }
+
+    /**
+     * 获取数组ID。
+     */
+    public Long[] getIds() {
+        return this.ids;
+    }
+
+    /**
+     * 设置数组ID。
+     */
+    public void setIds(Long[] ids) {
+        this.ids = ids;
+    }
+
+    /**
+     * 设置数组ID链式调用。
+     */
+    public IdQueryParam ids(Long[] ids) {
+        setIds(ids);
+        return this;
+    }
+
 
 }

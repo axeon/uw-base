@@ -204,7 +204,9 @@ public class $PackageInfo$ {
 ### AuthServiceHelper
 
 AuthServiceHelper是程序内获得用户权限信息的辅助类，此类通过ThreadLocal来传递关键的权限信息，通过AuthServiceHelper可以获得UserId，SaasId，mchId，token，log等相关信息。
-AuthServiceHelper.logInfo((String objectType, long objectId, String logInfo)方法可以在日志中记录关键业务信息，用于事后日志鉴权查证。
+AuthServiceHelper.logRef()方法可以记录操作引用信息。
+AuthServiceHelper.logInfo()方法可以在日志中记录关键业务信息，用于事后日志鉴权查证。
+AuthServiceHelper.logSysInfo()方法可以在日志中记录系统操作信息，用于事后日志鉴权查证。
 AuthServiceHelper.getContextToken()用于获得当前用户的token信息。
 AuthToken.getTokenPerm()用于获得用户的辅助权限信息，包括黑白名单，限速信息，权限表，自定义数据配置Map表（可用来存储包括业务权限信息，诸如销售地区限制表，业务授权产品id等业务数据信息）。
 

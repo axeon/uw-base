@@ -8,12 +8,18 @@ uw-common-app是基于uw框架web端的公共库。
 
 ## 后台查询的自动化权限注入管理
 通过结合uw-auth-service的AuthServiceHelper和uw-dao的QueryParam，提供自动化权限注入管理。
-权限自动化管理通过四个关键字段来组成，包括saasId,mchId,groupId,userId。
+Auth权限自动化管理通过四个关键字段来组成，包括saasId,mchId,groupId,userId。
 * saasId：saasId，默认为0，表示当前系统为单租户系统。
 * mchId：mchId，默认为0，表示当前系统为单商户系统。
 * groupId：groupId，默认为0，表示当前系统为单用户组系统。
 * userId：userId，默认为0，表示当前系统为单用户系统。
-同时，QueryParam支持链式调用，这样基本上可以消灭代码中的sql连接，消除sql注入隐患。
+提供了如下预制QueryParam：
+* IdQueryParam 封装了id查询参数，支持链式调用，可以消除sql连接。
+* IdStateQueryParam 封装了id和状态查询参数，支持链式调用，可以消除sql连接。
+* AuthQueryParam 封装了Auth查询参数，支持链式调用，可以消除sql连接。
+* AuthIdQueryParam 封装了Auth处理的id和状态查询参数，支持链式调用，可以消除sql连接。
+* AuthIdStateQueryParam 封装了Auth处理的id和状态查询参数，支持链式调用，可以消除sql连接。
+同时，基于QueryParam的SET_COND_PARAM可以方便的附加额外参数。
 
 ## 后台关键操作记录
 后台操作历史已经由uw-auth-service的uw.auth.action.log日志实现，但是Es的生命周期管理可能会导致日志的周期性删除。

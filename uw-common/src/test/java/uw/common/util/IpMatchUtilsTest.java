@@ -136,9 +136,9 @@ public class IpMatchUtilsTest {
 
     @Test
     void testIpv6Local(){
-        String ipWhiteList = "127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fe80::/10,FC00::/7";
+        String ipWhiteList = "127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,192.168.0.1-192.168.0.255,::1/128,fe80::/10,FC00::/7";
         List<IpMatchUtils.IpRange> ranges = IpMatchUtils.sortList(ipWhiteList.split(","));
-        Assertions.assertTrue(IpMatchUtils.matches(ranges, "0:0:0:0:0:0:0:1"));
+        Assertions.assertFalse(IpMatchUtils.matches(ranges, "123.122.12.12"));
     }
 
     // ============= 辅助方法 =============

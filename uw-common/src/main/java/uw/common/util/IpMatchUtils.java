@@ -33,14 +33,13 @@ public class IpMatchUtils {
         ipRangeList.sort((o1, o2) -> IpRange.compareIp(o1.getStart(), o2.getStart()));
 
         List<IpRange> sortedList = new ArrayList<>(ipRangeList.size());
-        int insertIndex = 0;
 
         // 2. 合并重叠或相邻的IP范围
         for (IpRange ipRange : ipRangeList) {
             if (sortedList.isEmpty()) {
                 sortedList.add(ipRange);
             } else {
-                IpRange lastRange = sortedList.get(sortedList.size() - 1);
+                IpRange lastRange = sortedList.getLast();
                 if (IpRange.isOverlappingOrAdjacent(ipRange, lastRange)) {
                     // 合并范围
                     lastRange.setEnd(IpRange.mergeEnd(lastRange.getEnd(), ipRange.getEnd()));
@@ -239,9 +238,9 @@ public class IpMatchUtils {
          */
         private static byte[] mergeEnd(byte[] currentEnd, byte[] newEnd) {
             if (compareIp(currentEnd, newEnd) >= 0) {
-                return Arrays.copyOf(currentEnd, IPV6_BYTE_LENGTH);
+                return currentEnd;
             } else {
-                return Arrays.copyOf(newEnd, IPV6_BYTE_LENGTH);
+                return newEnd;
             }
         }
 
@@ -259,8 +258,8 @@ public class IpMatchUtils {
         /**
          * 判断两个IP范围是否重叠或相邻。
          */
-        private static boolean isOverlappingOrAdjacent(IpRange a, IpRange b) {
-            return compareIp(a.getStart(), b.getEnd()) <= 0 || compareIp(b.getStart(), a.getEnd()) <= 0;
+        private static boolean isOverlappingOrAdjacent(IpRange ipRange, IpRange lastRange) {
+            return compareIp(ipRange.getStart(), lastRange.getEnd()) <= 0;
         }
 
         /**

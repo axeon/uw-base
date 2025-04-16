@@ -103,7 +103,7 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
                 }
                 response.setStatusCode(HttpStatusCode.valueOf( statusCode));
                 String code = "http.status." + statusCode ;
-                String msg = "path: "+String.valueOf(data.get( "path" ))+", msg: " +String.valueOf( data.get( "message" ) );
+                String msg = "Path: "+String.valueOf(data.get( "path" ))+", Msg: " +String.valueOf( data.get( "message" ) );
                 return logResponseData( ResponseData.errorCode( code, msg ) );
             }
         } else if (returnType.getParameterType().equals( String.class )) {

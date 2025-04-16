@@ -16,22 +16,31 @@ import java.util.Map;
 public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
 
     /**
-     * id匹配。
+     * ID。
      */
     @QueryMeta(expr = "id=?")
+    @Schema(title="ID", description = "ID")
     private Long id;
+
+    /**
+     * 数组ID。
+     */
+    @QueryMeta(expr = "id in (?)")
+    @Schema(title="ID数组", description = "ID数组，可同时匹配多个。")
+    private Long[] ids;
 
     /**
      * 单一状态匹配。
      */
     @QueryMeta(expr = "state=?")
+    @Schema(title = "状态", description = "状态，可同时匹配多个状态。")
     private Integer state;
 
     /**
      * 多状态匹配。
      */
     @QueryMeta(expr = "state in (?)")
-    @Schema(title = "状态", description = "状态，可同时匹配多个状态。")
+    @Schema(title = "状态数组", description = "状态，可同时匹配多个状态。")
     private Integer[] states;
 
     /**
@@ -77,9 +86,35 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
     private Integer userType;
 
     /**
-     * 指定saasId,id,state的构造器。
+     * 构造器。
+     */
+    public AuthIdStateQueryParam() {
+    }
+
+    /**
+     * 指定id构造器。
      *
-     * @param saasId
+     * @param id
+     */
+    public AuthIdStateQueryParam(Long saasId, Long id) {
+        this.saasId = saasId;
+        this.id = id;
+    }
+
+    /**
+     * 指定id数组构造器。
+     *
+     * @param ids
+     */
+    public AuthIdStateQueryParam(Long saasId, Long[] ids) {
+        this.saasId = saasId;
+        this.ids = ids;
+    }
+
+    /**
+     * 指定id,state的构造器。
+     * 如果不在web环境下运行，将会抛错。
+     *
      * @param id
      * @param state
      */
@@ -90,9 +125,9 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
     }
 
     /**
-     * 指定saasId,id,states的构造器。
+     * 指定id,states的构造器。
+     * 如果不在web环境下运行，将会抛错。
      *
-     * @param saasId
      * @param id
      * @param states
      */
@@ -106,13 +141,56 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      * 指定id,state的构造器。
      * 如果不在web环境下运行，将会抛错。
      *
+     * @param ids
+     * @param state
+     */
+    public AuthIdStateQueryParam(Long saasId, Long[] ids, Integer state) {
+        this.saasId = saasId;
+        this.ids = ids;
+        this.state = state;
+    }
+
+    /**
+     * 指定id,states的构造器。
+     * 如果不在web环境下运行，将会抛错。
+     *
+     * @param ids
+     * @param states
+     */
+    public AuthIdStateQueryParam(Long saasId, Long[] ids, Integer... states) {
+        this.saasId = saasId;
+        this.ids = ids;
+        this.states = states;
+    }
+
+    /**
+     * 指定id构造器。
+     *
+     * @param id
+     */
+    public AuthIdStateQueryParam(Long id) {
+        this.id = id;
+    }
+
+    /**
+     * 指定id数组构造器。
+     *
+     * @param ids
+     */
+    public AuthIdStateQueryParam(Long[] ids) {
+        this.ids = ids;
+    }
+
+    /**
+     * 指定id,state的构造器。
+     * 如果不在web环境下运行，将会抛错。
+     *
      * @param id
      * @param state
      */
     public AuthIdStateQueryParam(Long id, Integer state) {
         this.id = id;
         this.state = state;
-        bindSaasId();
     }
 
     /**
@@ -125,8 +203,32 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
     public AuthIdStateQueryParam(Long id, Integer... states) {
         this.id = id;
         this.states = states;
-        bindSaasId();
     }
+
+    /**
+     * 指定id,state的构造器。
+     * 如果不在web环境下运行，将会抛错。
+     *
+     * @param ids
+     * @param state
+     */
+    public AuthIdStateQueryParam(Long[] ids, Integer state) {
+        this.ids = ids;
+        this.state = state;
+    }
+
+    /**
+     * 指定id,states的构造器。
+     * 如果不在web环境下运行，将会抛错。
+     *
+     * @param ids
+     * @param states
+     */
+    public AuthIdStateQueryParam(Long[] ids, Integer... states) {
+        this.ids = ids;
+        this.states = states;
+    }
+
 
     /**
      * 允许的排序属性。
@@ -203,6 +305,28 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      */
     public AuthIdStateQueryParam id(Long id) {
         this.id = id;
+        return this;
+    }
+
+    /**
+     * 获取数组ID。
+     */
+    public Long[] getIds() {
+        return this.ids;
+    }
+
+    /**
+     * 设置数组ID。
+     */
+    public void setIds(Long[] ids) {
+        this.ids = ids;
+    }
+
+    /**
+     * 设置数组ID链式调用。
+     */
+    public AuthIdStateQueryParam ids(Long[] ids) {
+        setIds(ids);
         return this;
     }
 

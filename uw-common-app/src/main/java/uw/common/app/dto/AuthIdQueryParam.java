@@ -17,10 +17,19 @@ import java.util.Map;
 public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
 
     /**
-     * id。
+     * ID。
      */
     @QueryMeta(expr = "id=?")
+    @Schema(title="ID", description = "ID")
     private Long id;
+
+
+    /**
+     * 数组ID。
+     */
+    @QueryMeta(expr = "id in (?)")
+    @Schema(title="ID数组", description = "ID数组，可同时匹配多个。")
+    private Long[] ids;
 
     /**
      * saasId。
@@ -82,6 +91,30 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
         this.id = id;
         this.saasId = saasId;
     }
+
+    /**
+     * 默认带id构造器。
+     * 如果不在web环境下运行，将会抛异常。
+     *
+     * @param ids
+     */
+    public AuthIdQueryParam(Long[] ids) {
+        this.ids = ids;
+        bindSaasId();
+    }
+
+    /**
+     * 指定saasId,id的构造器。
+     *
+     * @param saasId
+     * @param ids
+     */
+    public AuthIdQueryParam(Long saasId, Long[] ids) {
+        this.ids = ids;
+        this.saasId = saasId;
+    }
+
+
     /**
      * 当前QueryParam填入当前用户的saasId。
      */
@@ -146,6 +179,28 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
      */
     public AuthIdQueryParam id(Long id) {
         this.id = id;
+        return this;
+    }
+
+    /**
+     * 获取数组ID。
+     */
+    public Long[] getIds() {
+        return this.ids;
+    }
+
+    /**
+     * 设置数组ID。
+     */
+    public void setIds(Long[] ids) {
+        this.ids = ids;
+    }
+
+    /**
+     * 设置数组ID链式调用。
+     */
+    public AuthIdQueryParam ids(Long[] ids) {
+        setIds(ids);
         return this;
     }
 

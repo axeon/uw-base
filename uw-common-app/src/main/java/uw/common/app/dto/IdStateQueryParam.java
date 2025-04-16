@@ -12,23 +12,33 @@ import java.util.Map;
  */
 public class IdStateQueryParam extends QueryParam<IdStateQueryParam> {
 
+
     /**
-     * id匹配。
+     * ID。
      */
     @QueryMeta(expr = "id=?")
+    @Schema(title="ID", description = "ID")
     private Long id;
+
+    /**
+     * 数组ID。
+     */
+    @QueryMeta(expr = "id in (?)")
+    @Schema(title="ID数组", description = "ID数组，可同时匹配多个。")
+    private Long[] ids;
 
     /**
      * 单一状态匹配。
      */
     @QueryMeta(expr = "state=?")
+    @Schema(title = "状态", description = "状态，可同时匹配多个状态。")
     private Integer state;
 
     /**
      * 多状态匹配。
      */
     @QueryMeta(expr = "state in (?)")
-    @Schema(title = "状态", description = "状态，可同时匹配多个状态。")
+    @Schema(title = "状态数组", description = "状态，可同时匹配多个状态。")
     private Integer[] states;
 
     /**
@@ -44,6 +54,30 @@ public class IdStateQueryParam extends QueryParam<IdStateQueryParam> {
     @QueryMeta(expr = "state<=?")
     @Schema(title = "小于等于状态值: -1: 删除 0: 冻结 1: 正常", description = "小于等于状态值: -1: 删除 0: 冻结 1: 正常")
     private Integer stateLte;
+
+    /**
+     * 构造器。
+     */
+    public IdStateQueryParam() {
+    }
+
+    /**
+     * 指定id构造器。
+     *
+     * @param id
+     */
+    public IdStateQueryParam(Long id) {
+        this.id = id;
+    }
+
+    /**
+     * 指定id数组构造器。
+     *
+     * @param ids
+     */
+    public IdStateQueryParam(Long[] ids) {
+        this.ids = ids;
+    }
 
     /**
      * 指定id,state的构造器。
@@ -70,6 +104,30 @@ public class IdStateQueryParam extends QueryParam<IdStateQueryParam> {
     }
 
     /**
+     * 指定id,state的构造器。
+     * 如果不在web环境下运行，将会抛错。
+     *
+     * @param ids
+     * @param state
+     */
+    public IdStateQueryParam(Long[] ids, Integer state) {
+        this.ids = ids;
+        this.state = state;
+    }
+
+    /**
+     * 指定id,states的构造器。
+     * 如果不在web环境下运行，将会抛错。
+     *
+     * @param ids
+     * @param states
+     */
+    public IdStateQueryParam(Long[] ids, Integer... states) {
+        this.ids = ids;
+        this.states = states;
+    }
+
+    /**
      * 允许的排序属性。
      * key:排序名 value:排序字段
      *
@@ -80,32 +138,48 @@ public class IdStateQueryParam extends QueryParam<IdStateQueryParam> {
         return Map.of("id", "id");
     }
 
+
     /**
-     * 获取id。
-     *
-     * @return
+     * 获取ID。
      */
     public Long getId() {
-        return id;
+        return this.id;
     }
 
     /**
-     * 设置id。
-     *
-     * @param id
+     * 设置ID。
      */
     public void setId(Long id) {
         this.id = id;
     }
 
     /**
-     * 设置id。
-     *
-     * @param id
-     * @return
+     * 设置ID链式调用。
      */
     public IdStateQueryParam id(Long id) {
-        this.id = id;
+        setId(id);
+        return this;
+    }
+
+    /**
+     * 获取数组ID。
+     */
+    public Long[] getIds() {
+        return this.ids;
+    }
+
+    /**
+     * 设置数组ID。
+     */
+    public void setIds(Long[] ids) {
+        this.ids = ids;
+    }
+
+    /**
+     * 设置数组ID链式调用。
+     */
+    public IdStateQueryParam ids(Long[] ids) {
+        setIds(ids);
         return this;
     }
 

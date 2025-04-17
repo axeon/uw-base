@@ -24,16 +24,33 @@ public class SysDataHistoryHelper {
 
     /**
      * 保存历史记录。
+     * @param dataEntity 实体数据
+     */
+    public static void saveHistory(DataEntity dataEntity) {
+        saveHistory( dataEntity.ENTITY_ID(), dataEntity, dataEntity.ENTITY_NAME(), null);
+    }
+
+    /**
+     * 保存历史记录。
+     * @param dataEntity 实体数据
+     * @param remark 备注信息
+     */
+    public static void saveHistory(DataEntity dataEntity, String remark) {
+        saveHistory( dataEntity.ENTITY_ID(), dataEntity, dataEntity.ENTITY_NAME(), remark);
+    }
+
+    /**
+     * 保存历史记录。
      * @param entityId 实体ID
-     * @param entityData 实体数据
+     * @param dataEntity 实体数据
      * @param entityName 实体名
      * @param remark 备注信息
      */
-    public static void saveHistory(Serializable entityId, Object entityData, String entityName, String remark) {
+    public static void saveHistory(Serializable entityId, Object dataEntity, String entityName, String remark) {
         SysDataHistory history = new SysDataHistory();
         history.setId( dao.getSequenceId( SysDataHistory.class ) );
         history.setEntityId( String.valueOf( entityId ) );
-        history.setEntityClass( entityData.getClass().getName() );
+        history.setEntityClass( dataEntity.getClass().getName() );
         history.setEntityName( entityName );
         history.setRemark( remark );
         if (AuthServiceHelper.getContextToken() != null) {
@@ -59,8 +76,8 @@ public class SysDataHistoryHelper {
         }
         history.setCreateDate( new Date() );
         try {
-            history.setEntityData( JsonUtils.toString( entityData ) );
-            if (entityData instanceof DataEntity de) {
+            history.setEntityData( JsonUtils.toString( dataEntity ) );
+            if (dataEntity instanceof DataEntity de) {
                 history.setEntityUpdateInfo( de.GET_UPDATED_INFO() );
             }
         } catch (DataMapperException e) {

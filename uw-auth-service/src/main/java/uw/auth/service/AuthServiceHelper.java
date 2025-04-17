@@ -626,7 +626,13 @@ public class AuthServiceHelper {
     public static MscActionLog logInfo(String bizType, Serializable bizId, String bizLog) {
         MscActionLog mscActionLog = contextLogHolder.get();
         if (mscActionLog == null) {
-            logger.warn("未设置日志属性, 请检查代码: bizType={}, bizId={}, bizLog={}", bizType, bizId, bizLog);
+            RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
+            String requestUri = "";
+            if (attributes != null) {
+                HttpServletRequest request = ((ServletRequestAttributes) attributes).getRequest();
+                requestUri = request.getRequestURI();
+            }
+            logger.warn("RequestPath: [{}]未设置日志属性, bizType=[{}], bizId=[{}], bizLog=[{}]", requestUri, bizType, bizId, bizLog);
         } else {
             //允许多次设置日志信息。
             if (bizType != null) {

@@ -89,7 +89,7 @@ public class EntityCommandImpl {
         }
         Connection con = null;
         PreparedStatement pstmt = null;
-        int effect = 0;
+        int effectedNum = 0;
         try {
             con = dao.getTransactionController().getConnection(connName);
             connId = con.hashCode();
@@ -108,7 +108,7 @@ public class EntityCommandImpl {
             if (dao.getBatchUpdateController().getBatchStatus()) {
                 pstmt.addBatch();
             } else {
-                effect = pstmt.executeUpdate();
+                effectedNum = pstmt.executeUpdate();
             }
             dbTime = SystemClock.now() - dbStart;
         } catch (Exception e) {
@@ -131,7 +131,7 @@ public class EntityCommandImpl {
             }
             long allTime = SystemClock.now() - start;
             if (!dao.getBatchUpdateController().getBatchStatus()) {
-                dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effect, connTime, dbTime, allTime, exception);
+                dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effectedNum, connTime, dbTime, allTime, exception);
             }
         }
         return entity;
@@ -192,7 +192,7 @@ public class EntityCommandImpl {
         }
         Connection con = null;
         PreparedStatement pstmt = null;
-        int effect = 0;
+        int effectedNum = 0;
         try {
             con = dao.getTransactionController().getConnection(connName);
             connId = con.hashCode();
@@ -213,7 +213,7 @@ public class EntityCommandImpl {
             if (dao.getBatchUpdateController().getBatchStatus()) {
                 pstmt.addBatch();
             } else {
-                effect = pstmt.executeUpdate();
+                effectedNum = pstmt.executeUpdate();
             }
             dbTime = SystemClock.now() - dbStart;
         } catch (Exception e) {
@@ -236,7 +236,7 @@ public class EntityCommandImpl {
             }
             long allTime = SystemClock.now() - start;
             if (!dao.getBatchUpdateController().getBatchStatus()) {
-                dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effect, connTime, dbTime, allTime, exception);
+                dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effectedNum, connTime, dbTime, allTime, exception);
             }
         }
         return entityList;
@@ -476,7 +476,7 @@ public class EntityCommandImpl {
 
         Connection con = null;
         PreparedStatement pstmt = null;
-        int effect = 0;
+        int effectedNum = 0;
         try {
             con = dao.getTransactionController().getConnection(connName);
             connId = con.hashCode();
@@ -500,7 +500,7 @@ public class EntityCommandImpl {
             if (dao.getBatchUpdateController().getBatchStatus()) {
                 pstmt.addBatch();
             } else {
-                effect = pstmt.executeUpdate();
+                effectedNum = pstmt.executeUpdate();
             }
             dbTime = SystemClock.now() - dbStart;
         } catch (Exception e) {
@@ -523,10 +523,10 @@ public class EntityCommandImpl {
             }
             long allTime = SystemClock.now() - start;
             if (!dao.getBatchUpdateController().getBatchStatus()) {
-                dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effect, connTime, dbTime, allTime, exception);
+                dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effectedNum, connTime, dbTime, allTime, exception);
             }
         }
-        return effect;
+        return effectedNum;
     }
 
 
@@ -621,7 +621,7 @@ public class EntityCommandImpl {
 
         Connection con = null;
         PreparedStatement pstmt = null;
-        int effect = 0;
+        int effectedNum = 0;
         try {
             con = dao.getTransactionController().getConnection(connName);
             connId = con.hashCode();
@@ -637,7 +637,7 @@ public class EntityCommandImpl {
             if (dao.getBatchUpdateController().getBatchStatus()) {
                 pstmt.addBatch();
             } else {
-                effect = pstmt.executeUpdate();
+                effectedNum = pstmt.executeUpdate();
             }
             dbTime = SystemClock.now() - dbStart;
         } catch (Exception e) {
@@ -660,10 +660,10 @@ public class EntityCommandImpl {
             }
             long allTime = SystemClock.now() - start;
             if (!dao.getBatchUpdateController().getBatchStatus()) {
-                dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effect, connTime, dbTime, allTime, exception);
+                dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effectedNum, connTime, dbTime, allTime, exception);
             }
         }
-        return effect;
+        return effectedNum;
     }
 
     /**

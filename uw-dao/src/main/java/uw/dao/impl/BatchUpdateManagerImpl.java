@@ -159,10 +159,10 @@ public class BatchUpdateManagerImpl implements BatchUpdateManager {
      */
     private void checkToBatchUpdate(String connName, int connId, String sql, PreparedStatement pstmt) throws TransactionException {
         // 开始做批量更新
-        int[] effects = executeBatch(connName, connId, sql, pstmt);
+        int[] effectedNums = executeBatch(connName, connId, sql, pstmt);
         List<Integer> list = resultMap.get(sql);
-        for (int effect : effects) {
-            list.add(effect);
+        for (int effectedNum : effectedNums) {
+            list.add(effectedNum);
         }
     }
 
@@ -205,11 +205,11 @@ public class BatchUpdateManagerImpl implements BatchUpdateManager {
                 // 先执行未完成执行的batchUpdate
                 PreparedStatementWrapper wrapper = kv.getValue();
 
-                int[] effects = executeBatch(wrapper.connName, wrapper.connId, kv.getKey(), wrapper.pstmt);
+                int[] effectedNums = executeBatch(wrapper.connName, wrapper.connId, kv.getKey(), wrapper.pstmt);
                 // 加入结果map
                 List<Integer> list = resultMap.get(kv.getKey());
-                for (int effect : effects) {
-                    list.add(effect);
+                for (int effectNum : effectedNums) {
+                    list.add(effectNum);
                 }
             } catch (Exception e) {
                 errorMsg.append("\n\t\t").append(e.getMessage());

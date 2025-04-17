@@ -110,7 +110,7 @@ public class DataSet implements Serializable, Cloneable {
             // 计算总页数
             this.pageCount = (int) Math.ceil((double) sizeAll / (double) resultNum);
         }
-        // 获得字段列表
+        // 获取字段列表
         ResultSetMetaData rsm = rs.getMetaData();
         int colsCount = rsm.getColumnCount();
         cols = new String[colsCount];
@@ -180,7 +180,7 @@ public class DataSet implements Serializable, Cloneable {
     }
 
     /**
-     * 获得列名列表.
+     * 获取列名列表.
      *
      * @return 列名列表
      */
@@ -304,7 +304,7 @@ public class DataSet implements Serializable, Cloneable {
     }
 
     /**
-     * 获得数组中指定位置的数据.
+     * 获取数组中指定位置的数据.
      *
      * @param colName 列名
      * @return 数组中指定位置的数据
@@ -399,7 +399,7 @@ public class DataSet implements Serializable, Cloneable {
     }
 
     /**
-     * 获得数组中指定位置的数据.
+     * 获取数组中指定位置的数据.
      *
      * @param colIndex 列位置
      * @return 数组中指定位置的数据
@@ -473,7 +473,7 @@ public class DataSet implements Serializable, Cloneable {
     }
 
     /**
-     * 获得列名位置.
+     * 获取列名位置.
      *
      * @param colName 列名
      * @return 列名位置

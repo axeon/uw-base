@@ -18,7 +18,7 @@ public abstract class CacheDataLoader<K, V> {
     public abstract V load(K key) throws Exception;
 
     /**
-     * 获得数值类型。
+     * 获取数值类型。
      *
      * @return
      */

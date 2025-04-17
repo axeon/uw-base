@@ -27,7 +27,7 @@ public class EnumUtils {
     });
 
     /**
-     * 根据基础包名，获得此包下所有的Enum数据Map。
+     * 根据基础包名，获取此包下所有的Enum数据Map。
      * @param basePackage
      * @return
      */

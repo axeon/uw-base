@@ -152,6 +152,32 @@ public class SysDataHistory implements DataEntity,Serializable{
      */
     private transient StringBuilder UPDATED_INFO = null;
 
+
+    /**
+     * 获得实体的表名。
+     */
+    @Override
+    public String ENTITY_TABLE(){
+         return "sys_data_history";
+       }
+
+    /**
+     * 获得实体的表注释。
+     */
+    @Override
+    public String ENTITY_NAME(){
+          return "系统数据历史";
+       }
+
+    /**
+     * 获得主键
+     */
+    @Override
+    public Serializable ENTITY_ID(){
+          return getId();
+       }
+
+
     /**
      * 获取更改的字段列表.
      */
@@ -320,10 +346,18 @@ public class SysDataHistory implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("id");
-            this.UPDATED_INFO.append("id:\"" + this.id+ "\"=>\"" + id + "\"\r\n");
+            this.UPDATED_INFO.append("id:\"").append(this.id).append("\"=>\"").append(id).append("\"\n");
             this.id = id;
         }
     }
+
+    /**
+     *  设置ID链式调用。
+     */
+    public SysDataHistory id(long id){
+        setId(id);
+        return this;
+        }
 
     /**
      * 设置saasId。
@@ -334,10 +368,18 @@ public class SysDataHistory implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("saas_id");
-            this.UPDATED_INFO.append("saas_id:\"" + this.saasId+ "\"=>\"" + saasId + "\"\r\n");
+            this.UPDATED_INFO.append("saas_id:\"").append(this.saasId).append("\"=>\"").append(saasId).append("\"\n");
             this.saasId = saasId;
         }
     }
+
+    /**
+     *  设置saasId链式调用。
+     */
+    public SysDataHistory saasId(long saasId){
+        setSaasId(saasId);
+        return this;
+        }
 
     /**
      * 设置商户ID。
@@ -348,10 +390,18 @@ public class SysDataHistory implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("mch_id");
-            this.UPDATED_INFO.append("mch_id:\"" + this.mchId+ "\"=>\"" + mchId + "\"\r\n");
+            this.UPDATED_INFO.append("mch_id:\"").append(this.mchId).append("\"=>\"").append(mchId).append("\"\n");
             this.mchId = mchId;
         }
     }
+
+    /**
+     *  设置商户ID链式调用。
+     */
+    public SysDataHistory mchId(long mchId){
+        setMchId(mchId);
+        return this;
+        }
 
     /**
      * 设置用户ID。
@@ -362,10 +412,18 @@ public class SysDataHistory implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("user_id");
-            this.UPDATED_INFO.append("user_id:\"" + this.userId+ "\"=>\"" + userId + "\"\r\n");
+            this.UPDATED_INFO.append("user_id:\"").append(this.userId).append("\"=>\"").append(userId).append("\"\n");
             this.userId = userId;
         }
     }
+
+    /**
+     *  设置用户ID链式调用。
+     */
+    public SysDataHistory userId(long userId){
+        setUserId(userId);
+        return this;
+        }
 
     /**
      * 设置用户类型。
@@ -376,10 +434,18 @@ public class SysDataHistory implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("user_type");
-            this.UPDATED_INFO.append("user_type:\"" + this.userType+ "\"=>\"" + userType + "\"\r\n");
+            this.UPDATED_INFO.append("user_type:\"").append(this.userType).append("\"=>\"").append(userType).append("\"\n");
             this.userType = userType;
         }
     }
+
+    /**
+     *  设置用户类型链式调用。
+     */
+    public SysDataHistory userType(int userType){
+        setUserType(userType);
+        return this;
+        }
 
     /**
      * 设置用户的组ID。
@@ -390,10 +456,18 @@ public class SysDataHistory implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("group_id");
-            this.UPDATED_INFO.append("group_id:\"" + this.groupId+ "\"=>\"" + groupId + "\"\r\n");
+            this.UPDATED_INFO.append("group_id:\"").append(this.groupId).append("\"=>\"").append(groupId).append("\"\n");
             this.groupId = groupId;
         }
     }
+
+    /**
+     *  设置用户的组ID链式调用。
+     */
+    public SysDataHistory groupId(long groupId){
+        setGroupId(groupId);
+        return this;
+        }
 
     /**
      * 设置用户名称。
@@ -404,10 +478,18 @@ public class SysDataHistory implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("user_name");
-            this.UPDATED_INFO.append("user_name:\"" + this.userName+ "\"=>\"" + userName + "\"\r\n");
+            this.UPDATED_INFO.append("user_name:\"").append(this.userName).append("\"=>\"").append(userName).append("\"\n");
             this.userName = userName;
         }
     }
+
+    /**
+     *  设置用户名称链式调用。
+     */
+    public SysDataHistory userName(String userName){
+        setUserName(userName);
+        return this;
+        }
 
     /**
      * 设置用户昵称。
@@ -418,10 +500,18 @@ public class SysDataHistory implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("nick_name");
-            this.UPDATED_INFO.append("nick_name:\"" + this.nickName+ "\"=>\"" + nickName + "\"\r\n");
+            this.UPDATED_INFO.append("nick_name:\"").append(this.nickName).append("\"=>\"").append(nickName).append("\"\n");
             this.nickName = nickName;
         }
     }
+
+    /**
+     *  设置用户昵称链式调用。
+     */
+    public SysDataHistory nickName(String nickName){
+        setNickName(nickName);
+        return this;
+        }
 
     /**
      * 设置真实名称。
@@ -432,10 +522,18 @@ public class SysDataHistory implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("real_name");
-            this.UPDATED_INFO.append("real_name:\"" + this.realName+ "\"=>\"" + realName + "\"\r\n");
+            this.UPDATED_INFO.append("real_name:\"").append(this.realName).append("\"=>\"").append(realName).append("\"\n");
             this.realName = realName;
         }
     }
+
+    /**
+     *  设置真实名称链式调用。
+     */
+    public SysDataHistory realName(String realName){
+        setRealName(realName);
+        return this;
+        }
 
     /**
      * 设置实体类。
@@ -446,10 +544,18 @@ public class SysDataHistory implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("entity_class");
-            this.UPDATED_INFO.append("entity_class:\"" + this.entityClass+ "\"=>\"" + entityClass + "\"\r\n");
+            this.UPDATED_INFO.append("entity_class:\"").append(this.entityClass).append("\"=>\"").append(entityClass).append("\"\n");
             this.entityClass = entityClass;
         }
     }
+
+    /**
+     *  设置实体类链式调用。
+     */
+    public SysDataHistory entityClass(String entityClass){
+        setEntityClass(entityClass);
+        return this;
+        }
 
     /**
      * 设置实体ID。
@@ -460,10 +566,18 @@ public class SysDataHistory implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("entity_id");
-            this.UPDATED_INFO.append("entity_id:\"" + this.entityId+ "\"=>\"" + entityId + "\"\r\n");
+            this.UPDATED_INFO.append("entity_id:\"").append(this.entityId).append("\"=>\"").append(entityId).append("\"\n");
             this.entityId = entityId;
         }
     }
+
+    /**
+     *  设置实体ID链式调用。
+     */
+    public SysDataHistory entityId(String entityId){
+        setEntityId(entityId);
+        return this;
+        }
 
     /**
      * 设置实体名。
@@ -474,10 +588,18 @@ public class SysDataHistory implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("entity_name");
-            this.UPDATED_INFO.append("entity_name:\"" + this.entityName+ "\"=>\"" + entityName + "\"\r\n");
+            this.UPDATED_INFO.append("entity_name:\"").append(this.entityName).append("\"=>\"").append(entityName).append("\"\n");
             this.entityName = entityName;
         }
     }
+
+    /**
+     *  设置实体名链式调用。
+     */
+    public SysDataHistory entityName(String entityName){
+        setEntityName(entityName);
+        return this;
+        }
 
     /**
      * 设置实体数据。
@@ -488,10 +610,18 @@ public class SysDataHistory implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("entity_data");
-            this.UPDATED_INFO.append("entity_data:\"" + this.entityData+ "\"=>\"" + entityData + "\"\r\n");
+            this.UPDATED_INFO.append("entity_data:\"").append(this.entityData).append("\"=>\"").append(entityData).append("\"\n");
             this.entityData = entityData;
         }
     }
+
+    /**
+     *  设置实体数据链式调用。
+     */
+    public SysDataHistory entityData(String entityData){
+        setEntityData(entityData);
+        return this;
+        }
 
     /**
      * 设置实体修改信息。
@@ -502,10 +632,18 @@ public class SysDataHistory implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("entity_update_info");
-            this.UPDATED_INFO.append("entity_update_info:\"" + this.entityUpdateInfo+ "\"=>\"" + entityUpdateInfo + "\"\r\n");
+            this.UPDATED_INFO.append("entity_update_info:\"").append(this.entityUpdateInfo).append("\"=>\"").append(entityUpdateInfo).append("\"\n");
             this.entityUpdateInfo = entityUpdateInfo;
         }
     }
+
+    /**
+     *  设置实体修改信息链式调用。
+     */
+    public SysDataHistory entityUpdateInfo(String entityUpdateInfo){
+        setEntityUpdateInfo(entityUpdateInfo);
+        return this;
+        }
 
     /**
      * 设置备注信息。
@@ -516,10 +654,18 @@ public class SysDataHistory implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("remark");
-            this.UPDATED_INFO.append("remark:\"" + this.remark+ "\"=>\"" + remark + "\"\r\n");
+            this.UPDATED_INFO.append("remark:\"").append(this.remark).append("\"=>\"").append(remark).append("\"\n");
             this.remark = remark;
         }
     }
+
+    /**
+     *  设置备注信息链式调用。
+     */
+    public SysDataHistory remark(String remark){
+        setRemark(remark);
+        return this;
+        }
 
     /**
      * 设置用户IP。
@@ -530,10 +676,18 @@ public class SysDataHistory implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("user_ip");
-            this.UPDATED_INFO.append("user_ip:\"" + this.userIp+ "\"=>\"" + userIp + "\"\r\n");
+            this.UPDATED_INFO.append("user_ip:\"").append(this.userIp).append("\"=>\"").append(userIp).append("\"\n");
             this.userIp = userIp;
         }
     }
+
+    /**
+     *  设置用户IP链式调用。
+     */
+    public SysDataHistory userIp(String userIp){
+        setUserIp(userIp);
+        return this;
+        }
 
     /**
      * 设置创建日期。
@@ -544,10 +698,18 @@ public class SysDataHistory implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("create_date");
-            this.UPDATED_INFO.append("create_date:\"" + this.createDate+ "\"=>\"" + createDate + "\"\r\n");
+            this.UPDATED_INFO.append("create_date:\"").append(this.createDate).append("\"=>\"").append(createDate).append("\"\n");
             this.createDate = createDate;
         }
     }
+
+    /**
+     *  设置创建日期链式调用。
+     */
+    public SysDataHistory createDate(java.util.Date createDate){
+        setCreateDate(createDate);
+        return this;
+        }
 
     /**
      * 重载toString方法.

@@ -30,7 +30,7 @@ public class SQLCommandImpl {
     private static final Logger logger = LoggerFactory.getLogger(SQLCommandImpl.class);
 
     /**
-     * 获得单个数值.
+     * 获取单个数值.
      *
      * @param dao       DAOFactoryImpl对象
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
@@ -119,7 +119,7 @@ public class SQLCommandImpl {
     }
 
     /**
-     * 获得单列数据列表.
+     * 获取单列数据列表.
      *
      * @param dao       DAOFactoryImpl对象
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
@@ -228,7 +228,7 @@ public class SQLCommandImpl {
     }
 
     /**
-     * 获得以DataSet为结果的数据集合.
+     * 获取以DataSet为结果的数据集合.
      *
      * @param dao        DAOFactoryImpl对象
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定

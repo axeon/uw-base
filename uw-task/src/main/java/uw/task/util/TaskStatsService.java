@@ -61,7 +61,7 @@ public class TaskStatsService {
     }
 
     /**
-     * 获得CronerMetrics列表，同时清空map。
+     * 获取CronerMetrics列表，同时清空map。
      *
      * @return
      */
@@ -107,7 +107,7 @@ public class TaskStatsService {
     }
 
     /**
-     * 获得RunnerMetrics列表，同时清空map。
+     * 获取RunnerMetrics列表，同时清空map。
      *
      * @return
      */

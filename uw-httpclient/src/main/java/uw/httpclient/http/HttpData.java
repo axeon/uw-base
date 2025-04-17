@@ -8,7 +8,7 @@ import java.util.Date;
 public interface HttpData {
 
     /**
-     * 获得http请求url。
+     * 获取http请求url。
      *
      * @return
      */
@@ -22,7 +22,7 @@ public interface HttpData {
     void setRequestUrl(String httpUrl);
 
     /**
-     * 获得http方法。
+     * 获取http方法。
      *
      * @return
      */
@@ -36,7 +36,7 @@ public interface HttpData {
     void setRequestMethod(String httpMethod);
 
     /**
-     * 获得http header。
+     * 获取http header。
      *
      * @return
      */
@@ -50,7 +50,7 @@ public interface HttpData {
     void setRequestHeader(String httpHeader);
 
     /**
-     * 获得http状态码。
+     * 获取http状态码。
      *
      * @return
      */
@@ -64,7 +64,7 @@ public interface HttpData {
     void setStatusCode(int statusCode);
 
     /**
-     * 获得请求数据大小。
+     * 获取请求数据大小。
      *
      * @return
      */
@@ -76,7 +76,7 @@ public interface HttpData {
     void setRequestSize(long requestSize);
 
     /**
-     * 获得返回byte[]。
+     * 获取返回byte[]。
      *
      * @return
      */
@@ -90,7 +90,7 @@ public interface HttpData {
     void setResponseBytes(byte[] responseBytes);
 
     /**
-     * 获得请求数据。
+     * 获取请求数据。
      *
      * @return
      */
@@ -104,7 +104,7 @@ public interface HttpData {
     void setRequestData(String requestData);
 
     /**
-     * 获得返回数据大小。
+     * 获取返回数据大小。
      *
      * @return
      */
@@ -116,7 +116,7 @@ public interface HttpData {
     void setResponseSize(long responseSize);
 
     /**
-     * 获得返回数据。
+     * 获取返回数据。
      *
      * @return
      */
@@ -130,7 +130,7 @@ public interface HttpData {
     void setResponseData(String responseData);
 
     /**
-     * 获得请求时间。
+     * 获取请求时间。
      *
      * @return
      */
@@ -144,7 +144,7 @@ public interface HttpData {
     void setRequestDate(Date requestDate);
 
     /**
-     * 获得返回时间。
+     * 获取返回时间。
      *
      * @return
      */
@@ -169,7 +169,7 @@ public interface HttpData {
      */
     String getResponseType();
     /**
-     * 获得错误信息。
+     * 获取错误信息。
      *
      * @return
      */

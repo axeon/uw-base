@@ -28,7 +28,7 @@ uw-auth由uw-auth-center，uw-auth-service，uw-auth-client三部分组成。
 1.
 权限菜单注册阶段。内置uw-auth-service的业务微服务应用第一次启动时，将会自动扫描代码中带有权限注解的功能模块，向uw-auth-center注册功能权限和树形菜单结构。当业务应用增删改功能后，重启将会向uw-auth-center自动注册同步最新权限和菜单结构。
 2. 用户权限授权阶段。管理员登陆uw-auth-center管理系统，可以将已注册的权限授权给SAAS系统、用户组、用户。
-3. 用户使用权限。用户使用指定用户类型、用户名密码登陆后，将获得对应的权限和菜单属性结构。
+3. 用户使用权限。用户使用指定用户类型、用户名密码登陆后，将获取对应的权限和菜单属性结构。
 4. 用户鉴权控制。管理员可以登陆uw-auth-center管理系统，查看用户访问日志和用户操作日志，包括请求ip，请求用户信息，请求内容，返回内容，请求时间，异常等相关信息。
 
 ### 权限模型
@@ -51,7 +51,7 @@ ANONYMOUS：匿名用户，一般用于未登陆用户。
 ### Token
 
 uw-auth没有照搬jwt的样式，是出于安全性和性能的考虑。
-当前的token分为AccessToken和RefreshToken，登录后将同时获得AccessToken和RefreshToken，AccessToken出于安全考虑，存在一个有效期，超过有效期后需要通过RfreshToken刷新。
+当前的token分为AccessToken和RefreshToken，登录后将同时获取AccessToken和RefreshToken，AccessToken出于安全考虑，存在一个有效期，超过有效期后需要通过RfreshToken刷新。
 AccessToken的格式为：UserType$AccessToken!UserId@SaasId
 RefreshToken的格式为：UserType#RfreshToken!Userid@SaasId
 
@@ -75,7 +75,7 @@ uw-auth可以自动记录用户操作日志，包括如下内容：
 ，按照用户限速等功能。
 
 同时访问限速支持两种限速器，分别是全局限速器：使用redis实现，可在集群中使用；本地限速器：使用guava
-ratelimiter实现，性能很高。实际使用的时候，如果gateway可以使用token来sticky到特定后端主机，则更建议使用本地限速器，可以获得几乎0损耗的性能。
+ratelimiter实现，性能很高。实际使用的时候，如果gateway可以使用token来sticky到特定后端主机，则更建议使用本地限速器，可以获取几乎0损耗的性能。
 
 ## 使用方法
 
@@ -203,12 +203,12 @@ public class $PackageInfo$ {
 
 ### AuthServiceHelper
 
-AuthServiceHelper是程序内获得用户权限信息的辅助类，此类通过ThreadLocal来传递关键的权限信息，通过AuthServiceHelper可以获得UserId，SaasId，mchId，token，log等相关信息。
+AuthServiceHelper是程序内获取用户权限信息的辅助类，此类通过ThreadLocal来传递关键的权限信息，通过AuthServiceHelper可以获取UserId，SaasId，mchId，token，log等相关信息。
 AuthServiceHelper.logRef()方法可以记录操作引用信息。
 AuthServiceHelper.logInfo()方法可以在日志中记录关键业务信息，用于事后日志鉴权查证。
 AuthServiceHelper.logSysInfo()方法可以在日志中记录系统操作信息，用于事后日志鉴权查证。
-AuthServiceHelper.getContextToken()用于获得当前用户的token信息。
-AuthToken.getTokenPerm()用于获得用户的辅助权限信息，包括黑白名单，限速信息，权限表，自定义数据配置Map表（可用来存储包括业务权限信息，诸如销售地区限制表，业务授权产品id等业务数据信息）。
+AuthServiceHelper.getContextToken()用于获取当前用户的token信息。
+AuthToken.getTokenPerm()用于获取用户的辅助权限信息，包括黑白名单，限速信息，权限表，自定义数据配置Map表（可用来存储包括业务权限信息，诸如销售地区限制表，业务授权产品id等业务数据信息）。
 
 ### 全局异常处理和全局返回结果Wrapper--ResponseData
 

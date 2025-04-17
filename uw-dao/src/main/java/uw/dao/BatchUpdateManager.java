@@ -16,14 +16,14 @@ public interface BatchUpdateManager {
     void setBatchSize(int size);
 
     /**
-     * 获得批量更新的数量.
+     * 获取批量更新的数量.
      *
-     * @return 获得批量更新的数量
+     * @return 获取批量更新的数量
      */
     int getBatchSize();
 
     /**
-     * 获得Batch的sql列表.
+     * 获取Batch的sql列表.
      *
      * @return Batch的sql列表
      */

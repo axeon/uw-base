@@ -101,7 +101,7 @@ public enum UserType {
     }
 
     /**
-     * 根据数值获得label。
+     * 根据数值获取label。
      *
      * @param value
      * @return
@@ -112,7 +112,7 @@ public enum UserType {
 
 
     /**
-     * 获得有菜单的用户类型。
+     * 获取有菜单的用户类型。
      *
      * @return
      */
@@ -121,7 +121,7 @@ public enum UserType {
     }
 
     /**
-     * 获得ROOT可管理类型列表。
+     * 获取ROOT可管理类型列表。
      *
      * @return
      */
@@ -130,7 +130,7 @@ public enum UserType {
     }
 
     /**
-     * 获得ROOT可管理类型列表。
+     * 获取ROOT可管理类型列表。
      *
      * @return
      */
@@ -139,7 +139,7 @@ public enum UserType {
     }
 
     /**
-     * 获得SAASAdmin可管理类型列表。
+     * 获取SAASAdmin可管理类型列表。
      *
      * @return
      */

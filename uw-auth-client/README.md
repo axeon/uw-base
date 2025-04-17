@@ -18,7 +18,7 @@ uw-auth验证客户端，主要用于内部RPC调用的鉴权。
 uw:
   auth:
     client:
-      # 如果是Spring Cloud应用，则开启Spring Cloud支持，可以获得添加@LoadBalanced注解后的restTemplate：
+      # 如果是Spring Cloud应用，则开启Spring Cloud支持，可以获取添加@LoadBalanced注解后的restTemplate：
       auth-center-host: http://localhost:9999
       username: username
       password: password

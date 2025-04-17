@@ -411,7 +411,7 @@ public class DateUtils {
 
 
     /**
-     * 获得指定日期是这个日期所在月份的第几天
+     * 获取指定日期是这个日期所在月份的第几天
      *
      * @param date 日期
      * @return 天

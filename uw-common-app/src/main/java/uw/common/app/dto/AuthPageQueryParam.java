@@ -88,7 +88,7 @@ public class AuthPageQueryParam extends PageQueryParam {
     }
 
     /**
-     * 获得saasId。
+     * 获取saasId。
      * @return
      */
     public Long getSaasId() {
@@ -114,7 +114,7 @@ public class AuthPageQueryParam extends PageQueryParam {
     }
 
     /**
-     * 获得mchId。
+     * 获取mchId。
      * @return
      */
     public Long getMchId() {
@@ -140,7 +140,7 @@ public class AuthPageQueryParam extends PageQueryParam {
     }
 
     /**
-     * 获得userId。
+     * 获取userId。
      * @return
      */
     public Long getUserId() {
@@ -166,7 +166,7 @@ public class AuthPageQueryParam extends PageQueryParam {
     }
 
     /**
-     * 获得userType。
+     * 获取userType。
      * @return
      */
     public Integer getUserType() {
@@ -203,7 +203,7 @@ public class AuthPageQueryParam extends PageQueryParam {
     }
 
     /**
-     * 获得AuthToken。
+     * 获取AuthToken。
      *
      * @return
      */

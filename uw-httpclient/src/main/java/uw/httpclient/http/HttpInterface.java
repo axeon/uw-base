@@ -94,7 +94,7 @@ public class HttpInterface {
     }
 
     /**
-     * 获得设置的ObjectMapper。
+     * 获取设置的ObjectMapper。
      *
      * @return
      */
@@ -103,7 +103,7 @@ public class HttpInterface {
     }
 
     /**
-     * 获得原生的OkHttpClient。
+     * 获取原生的OkHttpClient。
      *
      * @return
      */
@@ -112,7 +112,7 @@ public class HttpInterface {
     }
 
     /**
-     * 获得HttpDataClass。
+     * 获取HttpDataClass。
      *
      * @return
      */
@@ -121,7 +121,7 @@ public class HttpInterface {
     }
 
     /**
-     * 获得HttpDataLogLevel。
+     * 获取HttpDataLogLevel。
      *
      * @return
      */
@@ -130,7 +130,7 @@ public class HttpInterface {
     }
 
     /**
-     * 获得HttpData过滤器。
+     * 获取HttpData过滤器。
      *
      * @return
      */
@@ -139,7 +139,7 @@ public class HttpInterface {
     }
 
     /**
-     * 获得默认的MediaType。
+     * 获取默认的MediaType。
      *
      * @return
      */
@@ -219,7 +219,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Get方法获得HttpData。
+     * 使用Get方法获取HttpData。
      *
      * @param url
      * @param <D>
@@ -231,7 +231,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Get方法获得HttpData。
+     * 使用Get方法获取HttpData。
      *
      * @param url
      * @param queryParam
@@ -244,7 +244,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Get方法获得HttpData。
+     * 使用Get方法获取HttpData。
      *
      * @param url
      * @param headers
@@ -262,7 +262,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Get方法获得HttpEntity。
+     * 使用Get方法获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -276,7 +276,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Get方法获得HttpEntity。
+     * 使用Get方法获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -291,7 +291,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Get方法获得HttpEntity。
+     * 使用Get方法获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -313,7 +313,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Get方法获得HttpEntity。
+     * 使用Get方法获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -328,7 +328,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Get方法获得HttpEntity。
+     * 使用Get方法获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -343,7 +343,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Get方法获得HttpEntity。
+     * 使用Get方法获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -365,7 +365,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Get方法获得HttpEntity。
+     * 使用Get方法获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -379,7 +379,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Get方法获得HttpEntity。
+     * 使用Get方法获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -394,7 +394,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Get方法获得HttpEntity。
+     * 使用Get方法获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -416,7 +416,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST Form获得HttpData。
+     * POST Form获取HttpData。
      *
      * @param url
      * @param formData
@@ -430,7 +430,7 @@ public class HttpInterface {
 
 
     /**
-     * POST Form获得HttpData。
+     * POST Form获取HttpData。
      *
      * @param url
      * @param formData
@@ -443,7 +443,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST Form获得HttpData。
+     * POST Form获取HttpData。
      *
      * @param url
      * @param headers
@@ -462,7 +462,7 @@ public class HttpInterface {
 
 
     /**
-     * POST Form获得HttpData。
+     * POST Form获取HttpData。
      *
      * @param url
      * @param headers
@@ -480,7 +480,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST FormData 获得HttpEntity。
+     * POST FormData 获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -495,7 +495,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST FormData 获得HttpEntity。
+     * POST FormData 获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -517,7 +517,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST FormData 获得HttpEntity。
+     * POST FormData 获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -532,7 +532,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST FormData 获得HttpEntity。
+     * POST FormData 获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -554,7 +554,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST FormData 获得HttpEntity。
+     * POST FormData 获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -569,7 +569,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST FormData 获得HttpEntity。
+     * POST FormData 获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -592,7 +592,7 @@ public class HttpInterface {
 
 
     /**
-     * POST FormData 获得HttpEntity。
+     * POST FormData 获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -607,7 +607,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST FormData 获得HttpEntity。
+     * POST FormData 获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -630,7 +630,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST FormData 获得HttpEntity。
+     * POST FormData 获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -645,7 +645,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST FormData 获得HttpEntity。
+     * POST FormData 获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -668,7 +668,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST FormData 获得HttpEntity。
+     * POST FormData 获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -683,7 +683,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST FormData 获得HttpEntity。
+     * POST FormData 获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -706,7 +706,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST RequestBody获得HttpData。
+     * POST RequestBody获取HttpData。
      *
      * @param url
      * @param requestData
@@ -719,7 +719,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST RequestBody获得HttpData。
+     * POST RequestBody获取HttpData。
      *
      * @param url
      * @param headers
@@ -737,7 +737,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST RequestBody 获得HttpEntity。
+     * POST RequestBody 获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -752,7 +752,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST RequestBody 获得HttpEntity。
+     * POST RequestBody 获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -774,7 +774,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST RequestBody 获得HttpEntity。
+     * POST RequestBody 获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -790,7 +790,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST RequestBody 获得HttpEntity。
+     * POST RequestBody 获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -812,7 +812,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST RequestBody 获得HttpEntity。
+     * POST RequestBody 获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -827,7 +827,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST RequestBody 获得HttpEntity。
+     * POST RequestBody 获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -849,7 +849,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT Form获得HttpData。
+     * PUT Form获取HttpData。
      *
      * @param url
      * @param formData
@@ -862,7 +862,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT Form获得HttpData。
+     * PUT Form获取HttpData。
      *
      * @param url
      * @param headers
@@ -880,7 +880,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT FormData 获得HttpEntity。
+     * PUT FormData 获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -895,7 +895,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT FormData 获得HttpEntity。
+     * PUT FormData 获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -917,7 +917,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT FormData 获得HttpEntity。
+     * PUT FormData 获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -932,7 +932,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT FormData 获得HttpEntity。
+     * PUT FormData 获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -954,7 +954,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT FormData 获得HttpEntity。
+     * PUT FormData 获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -969,7 +969,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT FormData 获得HttpEntity。
+     * PUT FormData 获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -991,7 +991,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT RequestBody获得HttpData。
+     * PUT RequestBody获取HttpData。
      *
      * @param url
      * @param requestData
@@ -1004,7 +1004,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT RequestBody获得HttpData。
+     * PUT RequestBody获取HttpData。
      *
      * @param url
      * @param headers
@@ -1022,7 +1022,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT RequestBody 获得HttpEntity。
+     * PUT RequestBody 获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -1037,7 +1037,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT RequestBody 获得HttpEntity。
+     * PUT RequestBody 获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -1059,7 +1059,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT RequestBody 获得HttpEntity。
+     * PUT RequestBody 获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -1075,7 +1075,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT RequestBody 获得HttpEntity。
+     * PUT RequestBody 获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -1097,7 +1097,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT RequestBody 获得HttpEntity。
+     * PUT RequestBody 获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -1112,7 +1112,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT RequestBody 获得HttpEntity。
+     * PUT RequestBody 获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -1134,7 +1134,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH Form获得HttpData。
+     * PATCH Form获取HttpData。
      *
      * @param url
      * @param formData
@@ -1147,7 +1147,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH Form获得HttpData。
+     * PATCH Form获取HttpData。
      *
      * @param url
      * @param headers
@@ -1165,7 +1165,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH FormData 获得HttpEntity。
+     * PATCH FormData 获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -1180,7 +1180,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH FormData 获得HttpEntity。
+     * PATCH FormData 获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -1202,7 +1202,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH FormData 获得HttpEntity。
+     * PATCH FormData 获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -1217,7 +1217,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH FormData 获得HttpEntity。
+     * PATCH FormData 获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -1239,7 +1239,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH FormData 获得HttpEntity。
+     * PATCH FormData 获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -1254,7 +1254,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH FormData 获得HttpEntity。
+     * PATCH FormData 获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -1276,7 +1276,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH RequestBody获得HttpData。
+     * PATCH RequestBody获取HttpData。
      *
      * @param url
      * @param requestData
@@ -1289,7 +1289,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH RequestBody获得HttpData。
+     * PATCH RequestBody获取HttpData。
      *
      * @param url
      * @param headers
@@ -1307,7 +1307,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH RequestBody 获得HttpEntity。
+     * PATCH RequestBody 获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -1322,7 +1322,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH RequestBody 获得HttpEntity。
+     * PATCH RequestBody 获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -1344,7 +1344,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH RequestBody 获得HttpEntity。
+     * PATCH RequestBody 获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -1360,7 +1360,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH RequestBody 获得HttpEntity。
+     * PATCH RequestBody 获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -1382,7 +1382,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH RequestBody 获得HttpEntity。
+     * PATCH RequestBody 获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -1397,7 +1397,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH RequestBody 获得HttpEntity。
+     * PATCH RequestBody 获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -1419,7 +1419,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Delete方法获得HttpData。
+     * 使用Delete方法获取HttpData。
      *
      * @param url
      * @param <D>
@@ -1431,7 +1431,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Delete方法获得HttpData。
+     * 使用Delete方法获取HttpData。
      *
      * @param url
      * @param queryParam
@@ -1444,7 +1444,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Delete方法获得HttpData。
+     * 使用Delete方法获取HttpData。
      *
      * @param url
      * @param headers
@@ -1462,7 +1462,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Delete方法获得HttpEntity。
+     * 使用Delete方法获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -1476,7 +1476,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Delete方法获得HttpEntity。
+     * 使用Delete方法获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -1491,7 +1491,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Delete方法获得HttpEntity。
+     * 使用Delete方法获取HttpEntity。
      *
      * @param url
      * @param responseType
@@ -1513,7 +1513,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Delete方法获得HttpEntity。
+     * 使用Delete方法获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -1528,7 +1528,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Delete方法获得HttpEntity。
+     * 使用Delete方法获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -1543,7 +1543,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Delete方法获得HttpEntity。
+     * 使用Delete方法获取HttpEntity。
      *
      * @param url
      * @param typeRef
@@ -1565,7 +1565,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Delete方法获得HttpEntity。
+     * 使用Delete方法获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -1579,7 +1579,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Delete方法获得HttpEntity。
+     * 使用Delete方法获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -1594,7 +1594,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Delete方法获得HttpEntity。
+     * 使用Delete方法获取HttpEntity。
      *
      * @param url
      * @param javaType
@@ -1668,7 +1668,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Get方法获得HttpData。
+     * 使用Get方法获取HttpData。
      *
      * @param url
      * @param headers
@@ -1711,7 +1711,7 @@ public class HttpInterface {
     }
 
     /**
-     * POST Form获得HttpData。
+     * POST Form获取HttpData。
      *
      * @param url
      * @param headers
@@ -1767,7 +1767,7 @@ public class HttpInterface {
 
 
     /**
-     * POST Form获得HttpData。
+     * POST Form获取HttpData。
      *
      * @param url
      * @param headers
@@ -1839,7 +1839,7 @@ public class HttpInterface {
 
 
     /**
-     * POST RequestBody获得HttpData。
+     * POST RequestBody获取HttpData。
      *
      * @param url
      * @param headers
@@ -1889,7 +1889,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT Form获得HttpData。
+     * PUT Form获取HttpData。
      *
      * @param url
      * @param headers
@@ -1944,7 +1944,7 @@ public class HttpInterface {
     }
 
     /**
-     * PUT RequestBody获得HttpData。
+     * PUT RequestBody获取HttpData。
      *
      * @param url
      * @param headers
@@ -1995,7 +1995,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH Form获得HttpData。
+     * PATCH Form获取HttpData。
      *
      * @param url
      * @param headers
@@ -2050,7 +2050,7 @@ public class HttpInterface {
     }
 
     /**
-     * PATCH RequestBody获得HttpData。
+     * PATCH RequestBody获取HttpData。
      *
      * @param url
      * @param headers
@@ -2101,7 +2101,7 @@ public class HttpInterface {
     }
 
     /**
-     * 使用Delete方法获得HttpData。
+     * 使用Delete方法获取HttpData。
      *
      * @param url
      * @param headers

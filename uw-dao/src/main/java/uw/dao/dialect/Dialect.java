@@ -8,7 +8,7 @@ package uw.dao.dialect;
 public class Dialect {
 
     /**
-     * 获得分页sql.
+     * 获取分页sql.
      *
      * @param sql       执行sql
      * @param startPos  起始位置

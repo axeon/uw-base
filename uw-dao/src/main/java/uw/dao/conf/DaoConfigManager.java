@@ -76,7 +76,7 @@ public final class DaoConfigManager {
 
 
     /**
-     * 获得连接池配置列表.
+     * 获取连接池配置列表.
      *
      * @return 连接池配置列表
      */
@@ -102,7 +102,7 @@ public final class DaoConfigManager {
 
 
     /**
-     * 获得表分片配置.
+     * 获取表分片配置.
      *
      * @param tableName 表名
      * @return 表分片配置
@@ -112,7 +112,7 @@ public final class DaoConfigManager {
     }
 
     /**
-     * 获得连接池配置.
+     * 获取连接池配置.
      *
      * @param poolName
      * @return 连接池配置
@@ -129,7 +129,7 @@ public final class DaoConfigManager {
     }
 
     /**
-     * 获得路由映射信息.
+     * 获取路由映射信息.
      *
      * @param table  表名
      * @param access 权限

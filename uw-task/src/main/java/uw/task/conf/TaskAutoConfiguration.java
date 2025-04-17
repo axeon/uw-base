@@ -145,7 +145,7 @@ public class TaskAutoConfiguration {
     }
 
     /**
-     * 获得任务自定义的rabbitConnectionFactory
+     * 获取任务自定义的rabbitConnectionFactory
      *
      * @param rabbitProperties RabbitMQ配置
      * @return ConnectionFactory

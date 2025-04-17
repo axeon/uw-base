@@ -131,7 +131,7 @@ public interface AuthServiceRpc {
     ResponseData updateSaasUserLimit(long saasId, int userLimit, String remark);
 
     /**
-     * 获得Saas用户数限制。
+     * 获取Saas用户数限制。
      */
     ResponseData<Integer> getSaasUserLimit(long saasId);
 
@@ -145,14 +145,14 @@ public interface AuthServiceRpc {
     ResponseData createUser(MscUserRegister mscUserRegister);
 
     /**
-     * 获得用户信息。
+     * 获取用户信息。
      *
      * @param userId
      */
     ResponseData<MscUserVo> getUser(long userId);
 
     /**
-     * 获得saas用户列表。
+     * 获取saas用户列表。
      *
      * @param saasId
      * @param mchId
@@ -167,7 +167,7 @@ public interface AuthServiceRpc {
     ResponseData<List<MscUserVo>> getUserList(long saasId, int userType, long mchId, long groupId, long userId, String userName, String nickName, String realName, String mobile, String email);
 
     /**
-     * 获得saas用户组列表。
+     * 获取saas用户组列表。
      *
      * @param saasId
      * @param mchId
@@ -186,7 +186,7 @@ public interface AuthServiceRpc {
 
 
     /**
-     * 获得应用的权限ID列表。
+     * 获取应用的权限ID列表。
      */
     ResponseData<String> getAppSaasPerm(String[] appNames);
 

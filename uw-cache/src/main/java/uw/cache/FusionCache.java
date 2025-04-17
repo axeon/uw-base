@@ -272,7 +272,7 @@ public class FusionCache {
     }
 
     /**
-     * 获得指定缓存大小。
+     * 获取指定缓存大小。
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @return
@@ -282,7 +282,7 @@ public class FusionCache {
     }
 
     /**
-     * 获得指定缓存大小。
+     * 获取指定缓存大小。
      *
      * @param cacheName 缓存名
      * @return
@@ -314,7 +314,7 @@ public class FusionCache {
     }
 
     /**
-     * 获得缓存。
+     * 获取缓存。
      *
      * @param cacheName
      * @return
@@ -329,7 +329,7 @@ public class FusionCache {
     }
 
     /**
-     * 获得缓存。
+     * 获取缓存。
      *
      * @param entityClass
      * @return
@@ -339,7 +339,7 @@ public class FusionCache {
     }
 
     /**
-     * 获得指定缓存统计信息。
+     * 获取指定缓存统计信息。
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @return
@@ -349,7 +349,7 @@ public class FusionCache {
     }
 
     /**
-     * 获得指定缓存统计信息。
+     * 获取指定缓存统计信息。
      *
      * @param cacheName 缓存名
      * @return
@@ -601,7 +601,7 @@ public class FusionCache {
         private long globalCacheExpireMillis = -1;
         /**
          * 空值保护毫秒数，默认为60秒。
-         * 当reload方法获得null的时候，将会保护一段时间，防穿透。
+         * 当reload方法获取null的时候，将会保护一段时间，防穿透。
          */
         private long nullProtectMillis = 60_000L;
         /**
@@ -810,13 +810,13 @@ public class FusionCache {
             private long globalCacheExpireMillis = -1;
             /**
              * 空值保护毫秒数，默认为60秒。
-             * 当reload方法获得null的时候，将会保护一段时间，防穿透。
+             * 当reload方法获取null的时候，将会保护一段时间，防穿透。
              */
             private long nullProtectMillis = 60_000L;
 
             /**
              * 失败保护毫秒数，默认为60秒。
-             * 当reload方法没有获得数据的时候，将会保护一段时间，防穿透。
+             * 当reload方法没有获取数据的时候，将会保护一段时间，防穿透。
              */
             private long failProtectMillis = 60_000L;
 

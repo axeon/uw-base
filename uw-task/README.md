@@ -312,7 +312,7 @@ public void sendToQueue(TaskData<?, ?> taskData);
 
 ```
 	/**
-	 * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获得数据，可以使用futrue.get()来获得。
+	 * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获取数据，可以使用futrue.get()来获取。
 	 * 此方法要谨慎使用，因为task存在限速，大并发下可能会导致线程数超。
 	 * @param runTarget
 	 *            目标主机配置名，如果没有，则为空

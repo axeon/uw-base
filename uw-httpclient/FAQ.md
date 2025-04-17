@@ -10,7 +10,7 @@ Http接口的大部分实现均位于HttpInterface,而接口工具类JsonInterfa
 
 #### 3.HttpEntity类有什么作用？为什么使用它？
 
-是返回结果的封装类，一些请求方法用它来作为返回类型。作为返回类，可以获得比较完整和方便的整个请求信息：响应的Response，请求的Request，响应内容ResponseBody，以及通过设置泛型对响应内容进行类型转换后的value。
+是返回结果的封装类，一些请求方法用它来作为返回类型。作为返回类，可以获取比较完整和方便的整个请求信息：响应的Response，请求的Request，响应内容ResponseBody，以及通过设置泛型对响应内容进行类型转换后的value。
 
 #### 4.如果出现了MapperException异常，可能是因为什么原因？
 

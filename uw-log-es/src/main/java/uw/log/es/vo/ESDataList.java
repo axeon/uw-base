@@ -117,7 +117,7 @@ public class ESDataList<T> implements Iterable<T>, Serializable {
     }
 
     /**
-     * 获得指定处的对象.
+     * 获取指定处的对象.
      *
      * @param index 位置
      * @return value object数组指定的对象
@@ -207,7 +207,7 @@ public class ESDataList<T> implements Iterable<T>, Serializable {
     }
 
     /**
-     * 获得iterator列表.
+     * 获取iterator列表.
      *
      * @return Iterator列表
      */

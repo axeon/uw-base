@@ -29,9 +29,9 @@ uw-auth由uw-auth-center，uw-auth-service，uw-auth-client三部分组成。
 
 #### 6.可以通过AuthServiceHelper的哪个方法获取用户token信息？AuthServiceHelper还有什么功能？
 
- AuthServiceHelper.getContextToken()用于获得当前用户的token信息。 
+ AuthServiceHelper.getContextToken()用于获取当前用户的token信息。 
 
- AuthToken.getTokenPerm()用于获得用户的辅助权限信息，包括黑白名单，限速信息，权限表，自定义数据配置Map表（可用来存储包括业务权限信息，诸如销售地区限制表，业务授权产品id等业务数据信息）。 
+ AuthToken.getTokenPerm()用于获取用户的辅助权限信息，包括黑白名单，限速信息，权限表，自定义数据配置Map表（可用来存储包括业务权限信息，诸如销售地区限制表，业务授权产品id等业务数据信息）。 
 
 #### 7.假如要编写一个c站用户用于在商品搜索栏搜索商品列表的接口，那么MscPermDeclare注解应该设置什么用户类型权限和验证方式？你认为这个接口需要限流吗？如果需要，怎么设定RateLimitDeclare注解的target属性？
 

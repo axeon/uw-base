@@ -21,7 +21,7 @@ public class CaptchaRandomUtils {
     }
 
     /**
-     * 获得随机int数值。
+     * 获取随机int数值。
      *
      * @param bound
      * @return
@@ -31,7 +31,7 @@ public class CaptchaRandomUtils {
     }
 
     /**
-     * 获得随机范围内数字。
+     * 获取随机范围内数字。
      *
      * @param startNum
      * @param endNum

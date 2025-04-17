@@ -143,7 +143,7 @@ public class TableShardingTask implements Runnable {
     }
 
     /**
-     * 获得建表sql.
+     * 获取建表sql.
      *
      * @param tableName 表名
      * @return 建表sql

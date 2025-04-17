@@ -732,7 +732,7 @@ public class ByteArrayUtils {
      */
     public static byte[] combine(byte[]... args) {
         int length = 0, pos = 0;
-        // 先获得数组总大小
+        // 先获取数组总大小
         for (int i = 0; i < args.length; i++) {
             length += args[i].length;
         }

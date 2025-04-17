@@ -96,7 +96,7 @@ DaoFactory VS DaoManager
 
 基于DaoFactory的代码做DaoManager改造的注意点：
 * 对大多数代码，可以简单的增加.getData()进行适配。因为上一级调用代码一般通过判断!=null来判断是否成功。
-* DaoManager同时提供了getDaoFactory()接口直接获得DaoFactory。
+* DaoManager同时提供了getDaoFactory()接口直接获取DaoFactory。
 * 对于controller，一般建议返回值为ResponseData，这样代码会更简单。
 
 
@@ -343,7 +343,7 @@ public abstract int executeCommand(String connName,String sql,Object...paramList
 
 # DaoSequenceFactory VS FusionSequenceFactory。
 SequenceFactory工厂类通过配置文件动态决定使用 DaoSequenceFactory，还是 FusionSequenceFactory。
-1. FusionSequenceFactory 可以获得连续的Sequence数值，DaoSequenceFactory 集群环境下是不连续的。
+1. FusionSequenceFactory 可以获取连续的Sequence数值，DaoSequenceFactory 集群环境下是不连续的。
 2. FusionSequenceFactory 默认配置下性能是 DaoSequenceFactory 的100、倍。
 3. DaoSequenceFactory的incrementNum=100的时候和FusionSequenceFactory性能平衡点，超过100则性能大于FusionSequenceFactory。
 4. FusionSequenceFactory 和 DaoSequenceFactory 不可以混用，超过200线程下可能会出现ID重复，如果解决此问题将会大大降低性能。

@@ -59,7 +59,7 @@ public class TaskGlobalRateLimiter {
     }
 
     /**
-     * 尝试可否获得授权。
+     * 尝试可否获取授权。
      *
      * @param permits 申请访问次数
      * @return 如果未超限则返回0，-1为不确定时间，其他为需要等待的毫秒数

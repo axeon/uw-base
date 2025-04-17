@@ -45,7 +45,7 @@ public class DaoFactoryImpl extends DaoFactory {
     private ArrayList<SqlExecuteStats> statsList = null;
 
     /**
-     * 获得一个DAOFactory的实现.
+     * 获取一个DAOFactory的实现.
      */
     public DaoFactoryImpl() {
         transactionManager = new TransactionManagerImpl();
@@ -118,7 +118,7 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 获得一个java.sql.Connection连接。 请注意，这是一个原生的Connection对象，需确保手工关闭.
+     * 获取一个java.sql.Connection连接。 请注意，这是一个原生的Connection对象，需确保手工关闭.
      *
      * @param configName 配置名
      * @return Connection对象
@@ -130,7 +130,7 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 根据表名和访问类型获得一个java.sql.Connection。 请注意，这是一个原生的Connection对象，需确保手工关闭.
+     * 根据表名和访问类型获取一个java.sql.Connection。 请注意，这是一个原生的Connection对象，需确保手工关闭.
      *
      * @param table  表名
      * @param access 访问类型。支持all/read/write
@@ -143,7 +143,7 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 根据表名和访问类型获得一个数据库连接配置名.
+     * 根据表名和访问类型获取一个数据库连接配置名.
      *
      * @param table  表名
      * @param access 访问类型。支持all/read/write
@@ -155,7 +155,7 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 获得当前DAOFactory实例下sql执行次数.
+     * 获取当前DAOFactory实例下sql执行次数.
      *
      * @return sql执行次数
      */
@@ -165,7 +165,7 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 根据Entity来获得seq序列。 此序列通过一个系统数据库来维护，可以保证在分布式下的可用性.
+     * 根据Entity来获取seq序列。 此序列通过一个系统数据库来维护，可以保证在分布式下的可用性.
      *
      * @param entityCls 实体类类型
      * @return seq序列
@@ -176,7 +176,7 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 根据名称来获得seq序列。 此序列通过一个系统数据库来维护，可以保证在分布式下的可用性.
+     * 根据名称来获取seq序列。 此序列通过一个系统数据库来维护，可以保证在分布式下的可用性.
      *
      * @param seqName 表名
      * @return seq序列
@@ -187,7 +187,7 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 获得当前DAOFactory实例下的sql执行统计列表.
+     * 获取当前DAOFactory实例下的sql执行统计列表.
      *
      * @return 统计列表
      */
@@ -1469,7 +1469,7 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 获得控制器.
+     * 获取控制器.
      *
      * @return BatchupdateManagerImpl对象
      */
@@ -1478,7 +1478,7 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 获得事务控制器.
+     * 获取事务控制器.
      *
      * @return TransactionManagerImpl对象
      */

@@ -38,7 +38,7 @@ public class LogClient {
     }
 
     /**
-     * 获得全局唯一实例。
+     * 获取全局唯一实例。
      *
      * @return
      */
@@ -97,7 +97,7 @@ public class LogClient {
     }
 
     /**
-     * 获得带引号的索引名。
+     * 获取带引号的索引名。
      *
      * @param logClass
      * @return
@@ -119,7 +119,7 @@ public class LogClient {
     }
 
     /**
-     * 获得带引号的查询索引名。
+     * 获取带引号的查询索引名。
      *
      * @param logClass
      * @return

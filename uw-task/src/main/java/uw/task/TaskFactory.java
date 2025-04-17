@@ -191,7 +191,7 @@ public class TaskFactory {
     }
 
     /**
-     * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获得数据，可以使用futrue.get()来获得。
+     * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获取数据，可以使用futrue.get()来获取。
      * 此方法要谨慎使用，因为task存在限速，大并发下可能会导致线程数超。
      * 在调用的时候，尤其要注意，taskData对象不可改变！
      *
@@ -243,7 +243,7 @@ public class TaskFactory {
     }
 
     /**
-     * 获得队列信息。
+     * 获取队列信息。
      *
      * @param queueName
      * @return 0 是消息数量 1 是消费者数量

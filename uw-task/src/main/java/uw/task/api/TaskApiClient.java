@@ -99,7 +99,7 @@ public class TaskApiClient {
     }
 
     /**
-     * 根据包名前缀获得TaskRunner配置列表。
+     * 根据包名前缀获取TaskRunner配置列表。
      *
      * @param lastUpdateTime 最后更新时间
      * @return
@@ -117,7 +117,7 @@ public class TaskApiClient {
     }
 
     /**
-     * 根据包名前缀获得TaskCroner配置列表。
+     * 根据包名前缀获取TaskCroner配置列表。
      *
      * @param taskProject
      * @param lastUpdateTime 最后更新时间

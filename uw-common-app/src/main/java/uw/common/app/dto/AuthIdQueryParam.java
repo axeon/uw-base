@@ -154,7 +154,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
     }
 
     /**
-     * 获得id。
+     * 获取id。
      *
      * @return
      */
@@ -314,7 +314,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
     }
 
     /**
-     * 获得AuthToken。
+     * 获取AuthToken。
      *
      * @return
      */

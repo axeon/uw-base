@@ -52,7 +52,7 @@ public enum TokenInvalidType {
     }
 
     /**
-     * 根据value获得enum。
+     * 根据value获取enum。
      *
      * @param value
      * @return

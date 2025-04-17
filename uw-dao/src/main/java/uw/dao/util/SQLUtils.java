@@ -12,7 +12,7 @@ import static uw.dao.conf.DaoConfigManager.ROOT_CONN_NAME;
 public class SQLUtils {
 
     /**
-     * 从sql中获得连接信息.
+     * 从sql中获取连接信息.
      *
      * @param sql SQL语句
      * @return 连接信息

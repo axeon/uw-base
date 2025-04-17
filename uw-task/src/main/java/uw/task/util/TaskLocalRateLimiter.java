@@ -15,7 +15,7 @@ public class TaskLocalRateLimiter {
     private final ConcurrentHashMap<String, RateLimiter> map = new ConcurrentHashMap<>();
 
     /**
-     * 尝试获得限制允许状态。
+     * 尝试获取限制允许状态。
      *
      * @param name
      * @return

@@ -127,7 +127,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前appId。
+     * 获取当前appId。
      *
      * @return
      */
@@ -136,7 +136,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前appPermMap。
+     * 获取当前appPermMap。
      *
      * @return
      */
@@ -145,7 +145,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前appLabel。
+     * 获取当前appLabel。
      *
      * @return
      */
@@ -154,7 +154,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前appName。
+     * 获取当前appName。
      *
      * @return
      */
@@ -163,7 +163,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前appVersion。
+     * 获取当前appVersion。
      *
      * @return
      */
@@ -172,7 +172,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前appHost。
+     * 获取当前appHost。
      *
      * @return
      */
@@ -181,7 +181,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前appPort。
+     * 获取当前appPort。
      *
      * @return
      */
@@ -190,7 +190,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前appInfo。
+     * 获取当前appInfo。
      *
      * @return
      */
@@ -199,7 +199,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前appHostInfo。
+     * 获取当前appHostInfo。
      *
      * @return
      */
@@ -269,7 +269,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得authServer rpc实例。
+     * 获取authServer rpc实例。
      *
      * @return
      */
@@ -278,7 +278,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得saas下用户数量限制。
+     * 获取saas下用户数量限制。
      *
      * @param saasId
      * @return
@@ -288,7 +288,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前token类型。
+     * 获取当前token类型。
      */
     public static int getTokenType() {
         AuthTokenData authToken = contextTokenHolder.get();
@@ -300,7 +300,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前的用户Id
+     * 获取当前的用户Id
      *
      * @return
      */
@@ -314,7 +314,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前的用户名
+     * 获取当前的用户名
      *
      * @return
      */
@@ -328,7 +328,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前用户的组ID。
+     * 获取当前用户的组ID。
      *
      * @return
      */
@@ -342,7 +342,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前用户真实姓名。
+     * 获取当前用户真实姓名。
      *
      * @return
      */
@@ -356,7 +356,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前用户昵称。
+     * 获取当前用户昵称。
      *
      * @return
      */
@@ -370,7 +370,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得手机号。
+     * 获取手机号。
      *
      * @return
      */
@@ -384,7 +384,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得Email地址。
+     * 获取Email地址。
      *
      * @return
      */
@@ -398,7 +398,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前用户的登录IP。
+     * 获取当前用户的登录IP。
      *
      * @return
      */
@@ -412,7 +412,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前用户等级。
+     * 获取当前用户等级。
      *
      * @return
      */
@@ -426,7 +426,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前的saasId
+     * 获取当前的saasId
      *
      * @return
      */
@@ -440,7 +440,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前的mchId
+     * 获取当前的mchId
      *
      * @return
      */
@@ -454,7 +454,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得当前的用户类型
+     * 获取当前的用户类型
      *
      * @return
      */
@@ -716,7 +716,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得远端IP.
+     * 获取远端IP.
      *
      * @return
      */
@@ -725,7 +725,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得用户IP.
+     * 获取用户IP.
      *
      * @return
      */
@@ -755,7 +755,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 获得活跃用户信息。
+     * 获取活跃用户信息。
      *
      * @param userType
      */

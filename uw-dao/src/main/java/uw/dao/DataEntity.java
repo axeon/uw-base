@@ -11,35 +11,35 @@ import java.util.Set;
 public interface DataEntity {
 
     /**
-     * 获得实体的表名。
+     * 获取实体的表名。
      *
      * @return 表名
      */
     String ENTITY_TABLE();
 
     /**
-     * 获得实体的名称。
+     * 获取实体的名称。
      *
      * @return 实体名称
      */
     String ENTITY_NAME();
 
     /**
-     * 获得实体的ID。
+     * 获取实体的ID。
      *
      * @return 表名
      */
     Serializable ENTITY_ID();
 
     /**
-     * 获得更改的字段列表。
+     * 获取更改的字段列表。
      *
      * @return 字段列表
      */
     Set<String> GET_UPDATED_COLUMN();
 
     /**
-     * 获得文本变更信息。
+     * 获取文本变更信息。
      *
      * @return String
      */

@@ -97,9 +97,9 @@ public class TaskRunnerContainer {
         }
         // 设置开始消费时间
         taskData.setConsumeDate( new Date() );
-        // 获得任务实例
+        // 获取任务实例
         TaskRunner<?, ?> taskRunner = taskMetaInfoManager.getRunnerInstance( taskData.getTaskClass() );
-        // 获得任务设置数据
+        // 获取任务设置数据
         TaskRunnerConfig taskConfig = taskMetaInfoManager.getRunnerConfigByData( taskData );
         // 增加执行信息
         taskData.setRanTimes( taskData.getRanTimes() + 1 );

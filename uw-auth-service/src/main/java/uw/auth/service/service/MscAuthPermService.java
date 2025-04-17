@@ -68,7 +68,7 @@ public class MscAuthPermService {
     }
 
     /**
-     * 获得appId。
+     * 获取appId。
      *
      * @return
      */
@@ -77,7 +77,7 @@ public class MscAuthPermService {
     }
 
     /**
-     * 获得注册状态。
+     * 获取注册状态。
      *
      * @return
      */
@@ -86,7 +86,7 @@ public class MscAuthPermService {
     }
 
     /**
-     * 获得AppPermMap。
+     * 获取AppPermMap。
      *
      * @return
      */

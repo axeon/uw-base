@@ -27,7 +27,7 @@ public class DaoValueUtils {
     }
 
     /**
-     * 获得真正的列名。 在sql里面可能会使用一些函数并使用as进行区分.
+     * 获取真正的列名。 在sql里面可能会使用一些函数并使用as进行区分.
      *
      * @param columnName 列名
      * @return 列名

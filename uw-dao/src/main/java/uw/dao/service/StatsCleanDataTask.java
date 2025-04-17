@@ -29,7 +29,7 @@ public class StatsCleanDataTask implements Runnable {
     private final DaoFactory dao = DaoFactory.getInstance();
 
     /**
-     * 获得当前的表Set.
+     * 获取当前的表Set.
      *
      * @return HashSet对象
      */

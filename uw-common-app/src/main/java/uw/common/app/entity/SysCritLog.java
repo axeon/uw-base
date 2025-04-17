@@ -207,6 +207,32 @@ public class SysCritLog implements DataEntity,Serializable{
      */
     private transient StringBuilder UPDATED_INFO = null;
 
+
+    /**
+     * 获得实体的表名。
+     */
+    @Override
+    public String ENTITY_TABLE(){
+         return "sys_crit_log";
+       }
+
+    /**
+     * 获得实体的表注释。
+     */
+    @Override
+    public String ENTITY_NAME(){
+          return "系统关键日志";
+       }
+
+    /**
+     * 获得主键
+     */
+    @Override
+    public Serializable ENTITY_ID(){
+          return getId();
+       }
+
+
     /**
      * 获取更改的字段列表.
      */
@@ -431,10 +457,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("id");
-            this.UPDATED_INFO.append("id:\"" + this.id+ "\"=>\"" + id + "\"\r\n");
+            this.UPDATED_INFO.append("id:\"").append(this.id).append("\"=>\"").append(id).append("\"\n");
             this.id = id;
         }
     }
+
+    /**
+     *  设置ID链式调用。
+     */
+    public SysCritLog id(long id){
+        setId(id);
+        return this;
+        }
 
     /**
      * 设置saasId。
@@ -445,10 +479,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("saas_id");
-            this.UPDATED_INFO.append("saas_id:\"" + this.saasId+ "\"=>\"" + saasId + "\"\r\n");
+            this.UPDATED_INFO.append("saas_id:\"").append(this.saasId).append("\"=>\"").append(saasId).append("\"\n");
             this.saasId = saasId;
         }
     }
+
+    /**
+     *  设置saasId链式调用。
+     */
+    public SysCritLog saasId(long saasId){
+        setSaasId(saasId);
+        return this;
+        }
 
     /**
      * 设置商户ID。
@@ -459,10 +501,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("mch_id");
-            this.UPDATED_INFO.append("mch_id:\"" + this.mchId+ "\"=>\"" + mchId + "\"\r\n");
+            this.UPDATED_INFO.append("mch_id:\"").append(this.mchId).append("\"=>\"").append(mchId).append("\"\n");
             this.mchId = mchId;
         }
     }
+
+    /**
+     *  设置商户ID链式调用。
+     */
+    public SysCritLog mchId(long mchId){
+        setMchId(mchId);
+        return this;
+        }
 
     /**
      * 设置用户id。
@@ -473,10 +523,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("user_id");
-            this.UPDATED_INFO.append("user_id:\"" + this.userId+ "\"=>\"" + userId + "\"\r\n");
+            this.UPDATED_INFO.append("user_id:\"").append(this.userId).append("\"=>\"").append(userId).append("\"\n");
             this.userId = userId;
         }
     }
+
+    /**
+     *  设置用户id链式调用。
+     */
+    public SysCritLog userId(long userId){
+        setUserId(userId);
+        return this;
+        }
 
     /**
      * 设置用户类型。
@@ -487,10 +545,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("user_type");
-            this.UPDATED_INFO.append("user_type:\"" + this.userType+ "\"=>\"" + userType + "\"\r\n");
+            this.UPDATED_INFO.append("user_type:\"").append(this.userType).append("\"=>\"").append(userType).append("\"\n");
             this.userType = userType;
         }
     }
+
+    /**
+     *  设置用户类型链式调用。
+     */
+    public SysCritLog userType(int userType){
+        setUserType(userType);
+        return this;
+        }
 
     /**
      * 设置用户组ID。
@@ -501,10 +567,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("group_id");
-            this.UPDATED_INFO.append("group_id:\"" + this.groupId+ "\"=>\"" + groupId + "\"\r\n");
+            this.UPDATED_INFO.append("group_id:\"").append(this.groupId).append("\"=>\"").append(groupId).append("\"\n");
             this.groupId = groupId;
         }
     }
+
+    /**
+     *  设置用户组ID链式调用。
+     */
+    public SysCritLog groupId(long groupId){
+        setGroupId(groupId);
+        return this;
+        }
 
     /**
      * 设置用户名。
@@ -515,10 +589,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("user_name");
-            this.UPDATED_INFO.append("user_name:\"" + this.userName+ "\"=>\"" + userName + "\"\r\n");
+            this.UPDATED_INFO.append("user_name:\"").append(this.userName).append("\"=>\"").append(userName).append("\"\n");
             this.userName = userName;
         }
     }
+
+    /**
+     *  设置用户名链式调用。
+     */
+    public SysCritLog userName(String userName){
+        setUserName(userName);
+        return this;
+        }
 
     /**
      * 设置用户昵称。
@@ -529,10 +611,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("nick_name");
-            this.UPDATED_INFO.append("nick_name:\"" + this.nickName+ "\"=>\"" + nickName + "\"\r\n");
+            this.UPDATED_INFO.append("nick_name:\"").append(this.nickName).append("\"=>\"").append(nickName).append("\"\n");
             this.nickName = nickName;
         }
     }
+
+    /**
+     *  设置用户昵称链式调用。
+     */
+    public SysCritLog nickName(String nickName){
+        setNickName(nickName);
+        return this;
+        }
 
     /**
      * 设置真实名称。
@@ -543,10 +633,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("real_name");
-            this.UPDATED_INFO.append("real_name:\"" + this.realName+ "\"=>\"" + realName + "\"\r\n");
+            this.UPDATED_INFO.append("real_name:\"").append(this.realName).append("\"=>\"").append(realName).append("\"\n");
             this.realName = realName;
         }
     }
+
+    /**
+     *  设置真实名称链式调用。
+     */
+    public SysCritLog realName(String realName){
+        setRealName(realName);
+        return this;
+        }
 
     /**
      * 设置用户ip。
@@ -557,10 +655,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("user_ip");
-            this.UPDATED_INFO.append("user_ip:\"" + this.userIp+ "\"=>\"" + userIp + "\"\r\n");
+            this.UPDATED_INFO.append("user_ip:\"").append(this.userIp).append("\"=>\"").append(userIp).append("\"\n");
             this.userIp = userIp;
         }
     }
+
+    /**
+     *  设置用户ip链式调用。
+     */
+    public SysCritLog userIp(String userIp){
+        setUserIp(userIp);
+        return this;
+        }
 
     /**
      * 设置请求uri。
@@ -571,10 +677,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("api_uri");
-            this.UPDATED_INFO.append("api_uri:\"" + this.apiUri+ "\"=>\"" + apiUri + "\"\r\n");
+            this.UPDATED_INFO.append("api_uri:\"").append(this.apiUri).append("\"=>\"").append(apiUri).append("\"\n");
             this.apiUri = apiUri;
         }
     }
+
+    /**
+     *  设置请求uri链式调用。
+     */
+    public SysCritLog apiUri(String apiUri){
+        setApiUri(apiUri);
+        return this;
+        }
 
     /**
      * 设置API名称。
@@ -585,10 +699,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("api_name");
-            this.UPDATED_INFO.append("api_name:\"" + this.apiName+ "\"=>\"" + apiName + "\"\r\n");
+            this.UPDATED_INFO.append("api_name:\"").append(this.apiName).append("\"=>\"").append(apiName).append("\"\n");
             this.apiName = apiName;
         }
     }
+
+    /**
+     *  设置API名称链式调用。
+     */
+    public SysCritLog apiName(String apiName){
+        setApiName(apiName);
+        return this;
+        }
 
     /**
      * 设置业务类型。
@@ -599,10 +721,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("biz_type");
-            this.UPDATED_INFO.append("biz_type:\"" + this.bizType+ "\"=>\"" + bizType + "\"\r\n");
+            this.UPDATED_INFO.append("biz_type:\"").append(this.bizType).append("\"=>\"").append(bizType).append("\"\n");
             this.bizType = bizType;
         }
     }
+
+    /**
+     *  设置业务类型链式调用。
+     */
+    public SysCritLog bizType(String bizType){
+        setBizType(bizType);
+        return this;
+        }
 
     /**
      * 设置业务ID。
@@ -613,10 +743,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("biz_id");
-            this.UPDATED_INFO.append("biz_id:\"" + this.bizId+ "\"=>\"" + bizId + "\"\r\n");
+            this.UPDATED_INFO.append("biz_id:\"").append(this.bizId).append("\"=>\"").append(bizId).append("\"\n");
             this.bizId = bizId;
         }
     }
+
+    /**
+     *  设置业务ID链式调用。
+     */
+    public SysCritLog bizId(String bizId){
+        setBizId(bizId);
+        return this;
+        }
 
     /**
      * 设置业务日志。
@@ -627,10 +765,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("biz_log");
-            this.UPDATED_INFO.append("biz_log:\"" + this.bizLog+ "\"=>\"" + bizLog + "\"\r\n");
+            this.UPDATED_INFO.append("biz_log:\"").append(this.bizLog).append("\"=>\"").append(bizLog).append("\"\n");
             this.bizLog = bizLog;
         }
     }
+
+    /**
+     *  设置业务日志链式调用。
+     */
+    public SysCritLog bizLog(String bizLog){
+        setBizLog(bizLog);
+        return this;
+        }
 
     /**
      * 设置请求时间。
@@ -641,10 +787,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("request_date");
-            this.UPDATED_INFO.append("request_date:\"" + this.requestDate+ "\"=>\"" + requestDate + "\"\r\n");
+            this.UPDATED_INFO.append("request_date:\"").append(this.requestDate).append("\"=>\"").append(requestDate).append("\"\n");
             this.requestDate = requestDate;
         }
     }
+
+    /**
+     *  设置请求时间链式调用。
+     */
+    public SysCritLog requestDate(java.util.Date requestDate){
+        setRequestDate(requestDate);
+        return this;
+        }
 
     /**
      * 设置请求参数。
@@ -655,10 +809,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("request_body");
-            this.UPDATED_INFO.append("request_body:\"" + this.requestBody+ "\"=>\"" + requestBody + "\"\r\n");
+            this.UPDATED_INFO.append("request_body:\"").append(this.requestBody).append("\"=>\"").append(requestBody).append("\"\n");
             this.requestBody = requestBody;
         }
     }
+
+    /**
+     *  设置请求参数链式调用。
+     */
+    public SysCritLog requestBody(String requestBody){
+        setRequestBody(requestBody);
+        return this;
+        }
 
     /**
      * 设置响应状态。
@@ -669,10 +831,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("response_state");
-            this.UPDATED_INFO.append("response_state:\"" + this.responseState+ "\"=>\"" + responseState + "\"\r\n");
+            this.UPDATED_INFO.append("response_state:\"").append(this.responseState).append("\"=>\"").append(responseState).append("\"\n");
             this.responseState = responseState;
         }
     }
+
+    /**
+     *  设置响应状态链式调用。
+     */
+    public SysCritLog responseState(String responseState){
+        setResponseState(responseState);
+        return this;
+        }
 
     /**
      * 设置响应代码。
@@ -683,10 +853,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("response_code");
-            this.UPDATED_INFO.append("response_code:\"" + this.responseCode+ "\"=>\"" + responseCode + "\"\r\n");
+            this.UPDATED_INFO.append("response_code:\"").append(this.responseCode).append("\"=>\"").append(responseCode).append("\"\n");
             this.responseCode = responseCode;
         }
     }
+
+    /**
+     *  设置响应代码链式调用。
+     */
+    public SysCritLog responseCode(String responseCode){
+        setResponseCode(responseCode);
+        return this;
+        }
 
     /**
      * 设置响应消息。
@@ -697,10 +875,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("response_msg");
-            this.UPDATED_INFO.append("response_msg:\"" + this.responseMsg+ "\"=>\"" + responseMsg + "\"\r\n");
+            this.UPDATED_INFO.append("response_msg:\"").append(this.responseMsg).append("\"=>\"").append(responseMsg).append("\"\n");
             this.responseMsg = responseMsg;
         }
     }
+
+    /**
+     *  设置响应消息链式调用。
+     */
+    public SysCritLog responseMsg(String responseMsg){
+        setResponseMsg(responseMsg);
+        return this;
+        }
 
     /**
      * 设置响应日志。
@@ -711,10 +897,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("response_body");
-            this.UPDATED_INFO.append("response_body:\"" + this.responseBody+ "\"=>\"" + responseBody + "\"\r\n");
+            this.UPDATED_INFO.append("response_body:\"").append(this.responseBody).append("\"=>\"").append(responseBody).append("\"\n");
             this.responseBody = responseBody;
         }
     }
+
+    /**
+     *  设置响应日志链式调用。
+     */
+    public SysCritLog responseBody(String responseBody){
+        setResponseBody(responseBody);
+        return this;
+        }
 
     /**
      * 设置请求毫秒数。
@@ -725,10 +919,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("response_millis");
-            this.UPDATED_INFO.append("response_millis:\"" + this.responseMillis+ "\"=>\"" + responseMillis + "\"\r\n");
+            this.UPDATED_INFO.append("response_millis:\"").append(this.responseMillis).append("\"=>\"").append(responseMillis).append("\"\n");
             this.responseMillis = responseMillis;
         }
     }
+
+    /**
+     *  设置请求毫秒数链式调用。
+     */
+    public SysCritLog responseMillis(long responseMillis){
+        setResponseMillis(responseMillis);
+        return this;
+        }
 
     /**
      * 设置响应状态码。
@@ -739,10 +941,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("status_code");
-            this.UPDATED_INFO.append("status_code:\"" + this.statusCode+ "\"=>\"" + statusCode + "\"\r\n");
+            this.UPDATED_INFO.append("status_code:\"").append(this.statusCode).append("\"=>\"").append(statusCode).append("\"\n");
             this.statusCode = statusCode;
         }
     }
+
+    /**
+     *  设置响应状态码链式调用。
+     */
+    public SysCritLog statusCode(int statusCode){
+        setStatusCode(statusCode);
+        return this;
+        }
 
     /**
      * 设置应用信息。
@@ -753,10 +963,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("app_info");
-            this.UPDATED_INFO.append("app_info:\"" + this.appInfo+ "\"=>\"" + appInfo + "\"\r\n");
+            this.UPDATED_INFO.append("app_info:\"").append(this.appInfo).append("\"=>\"").append(appInfo).append("\"\n");
             this.appInfo = appInfo;
         }
     }
+
+    /**
+     *  设置应用信息链式调用。
+     */
+    public SysCritLog appInfo(String appInfo){
+        setAppInfo(appInfo);
+        return this;
+        }
 
     /**
      * 设置应用主机。
@@ -767,10 +985,18 @@ public class SysCritLog implements DataEntity,Serializable{
                 _INIT_UPDATE_INFO();
             }
             this.UPDATED_COLUMN.add("app_host");
-            this.UPDATED_INFO.append("app_host:\"" + this.appHost+ "\"=>\"" + appHost + "\"\r\n");
+            this.UPDATED_INFO.append("app_host:\"").append(this.appHost).append("\"=>\"").append(appHost).append("\"\n");
             this.appHost = appHost;
         }
     }
+
+    /**
+     *  设置应用主机链式调用。
+     */
+    public SysCritLog appHost(String appHost){
+        setAppHost(appHost);
+        return this;
+        }
 
     /**
      * 重载toString方法.

@@ -548,7 +548,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
     }
 
     /**
-     * 获得AuthToken。
+     * 获取AuthToken。
      *
      * @return
      */

@@ -123,7 +123,7 @@ public class BatchUpdateManagerImpl implements BatchUpdateManager {
     }
 
     /**
-     * 获得批量更新的数量.
+     * 获取批量更新的数量.
      *
      * @return boolean
      */
@@ -143,7 +143,7 @@ public class BatchUpdateManagerImpl implements BatchUpdateManager {
     }
 
     /**
-     * 获得是否在批量模式下.
+     * 获取是否在批量模式下.
      *
      * @return boolean
      * @throws TransactionException 事务异常
@@ -237,14 +237,14 @@ public class BatchUpdateManagerImpl implements BatchUpdateManager {
     }
 
     /**
-     * 获得Batch的sql列表.
+     * 获取Batch的sql列表.
      *
      * @return sql列表
      */
     @Override
     public List<String> getBatchList() {
         ArrayList<String> sqlList = new ArrayList<String>(sizeMap.size());
-        // 获得相关sql和pstmt
+        // 获取相关sql和pstmt
         sqlList.addAll(sizeMap.keySet());
         return sqlList;
     }

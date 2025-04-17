@@ -159,7 +159,7 @@ public class ClickWordCaptchaStrategy implements CaptchaStrategy {
     }
 
     /**
-     * 获得人类正常操作毫秒数。
+     * 获取人类正常操作毫秒数。
      * 检测是否是人类，当前只有一个操作时间。
      *
      * @return

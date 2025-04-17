@@ -292,7 +292,7 @@ public class EntityCommandImpl {
             ResultSet rs = pstmt.executeQuery();
             dbTime = SystemClock.now() - dbStart;
 
-            // 获得字段列表
+            // 获取字段列表
             ResultSetMetaData rsm = rs.getMetaData();
             int colsCount = rsm.getColumnCount();
             String[] cols = new String[colsCount];
@@ -381,7 +381,7 @@ public class EntityCommandImpl {
             ResultSet rs = pstmt.executeQuery();
             dbTime = SystemClock.now() - dbStart;
 
-            // 获得字段列表
+            // 获取字段列表
             ResultSetMetaData rsm = rs.getMetaData();
             int colsCount = rsm.getColumnCount();
             String[] cols = new String[colsCount];
@@ -667,7 +667,7 @@ public class EntityCommandImpl {
     }
 
     /**
-     * 获得列表.
+     * 获取列表.
      *
      * @param dao        DAOFactoryImpl对象
      * @param connName   连接名
@@ -738,7 +738,7 @@ public class EntityCommandImpl {
             ResultSet rs = pstmt.executeQuery();
             dbTime = SystemClock.now() - dbStart;
 
-            // 获得字段列表
+            // 获取字段列表
             ResultSetMetaData rsm = rs.getMetaData();
             int colsCount = rsm.getColumnCount();
             String[] cols = new String[colsCount];

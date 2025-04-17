@@ -83,7 +83,7 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 获得队列任务实例Map。
+     * 获取队列任务实例Map。
      *
      * @return
      */
@@ -92,7 +92,7 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 获得定时任务实例Map。
+     * 获取定时任务实例Map。
      *
      * @return
      */
@@ -101,7 +101,7 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 获得队列任务实例。
+     * 获取队列任务实例。
      *
      * @param runnerCls
      * @return
@@ -111,7 +111,7 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 获得定时任务实例。
+     * 获取定时任务实例。
      *
      * @param cronerCls
      * @return
@@ -121,7 +121,7 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 获得队列任务配置Map。
+     * 获取队列任务配置Map。
      *
      * @return
      */
@@ -130,7 +130,7 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 获得定时任务配置Map。
+     * 获取定时任务配置Map。
      *
      * @return
      */
@@ -171,7 +171,7 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 客户端发送任务到队列时，通过此方法获得合适的队列。
+     * 客户端发送任务到队列时，通过此方法获取合适的队列。
      * 根据服务器端Queue列表，匹配合适的key。
      * 队列格式为：taskClass#taskTag$runTarget
      *
@@ -207,7 +207,7 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 任务执行端执行任务时，调用此方法来获得合适的队列。
+     * 任务执行端执行任务时，调用此方法来获取合适的队列。
      *
      * @param data
      * @return
@@ -232,7 +232,7 @@ public class TaskMetaInfoManager {
 
 
     /**
-     * 获得croner配置键。 使用taskClass#Id$target来配置
+     * 获取croner配置键。 使用taskClass#Id$target来配置
      *
      * @return
      */
@@ -250,7 +250,7 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 获得Runner配置的key。
+     * 获取Runner配置的key。
      *
      * @return
      */
@@ -268,7 +268,7 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 获得taskData的key。
+     * 获取taskData的key。
      *
      * @return
      */
@@ -323,7 +323,7 @@ public class TaskMetaInfoManager {
 
 
     /**
-     * 根据TaskData获得包下队列名。
+     * 根据TaskData获取包下队列名。
      *
      * @return
      */

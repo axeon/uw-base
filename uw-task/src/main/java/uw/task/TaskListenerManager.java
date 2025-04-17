@@ -55,7 +55,7 @@ public class TaskListenerManager {
     }
 
     /**
-     * 获得Runner Listener列表。
+     * 获取Runner Listener列表。
      *
      * @return
      */
@@ -64,7 +64,7 @@ public class TaskListenerManager {
     }
 
     /**
-     * 获得Croner Listener列表。
+     * 获取Croner Listener列表。
      *
      * @return
      */

@@ -61,7 +61,7 @@ public final class ConnectionManager {
     }
 
     /**
-     * 获得一个connection，在poolList中排名第一的为默认连接.
+     * 获取一个connection，在poolList中排名第一的为默认连接.
      *
      * @return Connection
      * @throws SQLException SQL异常
@@ -71,7 +71,7 @@ public final class ConnectionManager {
     }
 
     /**
-     * 获得一个新连接.
+     * 获取一个新连接.
      *
      * @param poolName 连接池名称
      * @return 指定的新连接
@@ -91,7 +91,7 @@ public final class ConnectionManager {
     }
 
     /**
-     * 获得一个连接的方言，在poolList中排名第一的为默认连接.
+     * 获取一个连接的方言，在poolList中排名第一的为默认连接.
      *
      * @return
      * @throws SQLException
@@ -101,7 +101,7 @@ public final class ConnectionManager {
     }
 
     /**
-     * 获得一个连接的方言，在poolList中排名第一的为默认连接.
+     * 获取一个连接的方言，在poolList中排名第一的为默认连接.
      *
      * @return
      */
@@ -123,7 +123,7 @@ public final class ConnectionManager {
     }
 
     /**
-     * 获得一个连接池。
+     * 获取一个连接池。
      *
      * @param poolName 连接池名字
      */
@@ -247,7 +247,7 @@ public final class ConnectionManager {
     }
 
     /**
-     * 获得连接池.
+     * 获取连接池.
      *
      * @param poolName 连接池名字
      * @return Connection

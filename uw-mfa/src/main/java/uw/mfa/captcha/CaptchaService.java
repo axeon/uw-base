@@ -49,7 +49,7 @@ public class CaptchaService {
     }
 
     /**
-     * 获得Captcha类型列表。
+     * 获取Captcha类型列表。
      *
      * @return
      */

@@ -122,7 +122,37 @@ public class TestEntity implements DataEntity,Serializable{
     private transient StringBuilder UPDATED_INFO = null;
 
 	/**
-	 * 获得更改的字段列表.
+	 * 获取实体的表名。
+	 *
+	 * @return 表名
+	 */
+	@Override
+	public String ENTITY_TABLE() {
+		return "msc_app";
+	}
+
+	/**
+	 * 获取实体的名称。
+	 *
+	 * @return 实体名称
+	 */
+	@Override
+	public String ENTITY_NAME() {
+		return "mscApp";
+	}
+
+	/**
+	 * 获取实体的ID。
+	 *
+	 * @return 表名
+	 */
+	@Override
+	public Serializable ENTITY_ID() {
+		return getId();
+	}
+
+	/**
+	 * 获取更改的字段列表.
 	 */
     @Override
 	public Set<String> GET_UPDATED_COLUMN() {
@@ -161,91 +191,91 @@ public class TestEntity implements DataEntity,Serializable{
 
 
 	/**
-	 * 获得主键。
+	 * 获取主键。
 	 */
 	public long getId(){
 		return this.id;
 	}
 
 	/**
-	 * 获得应用名称。
+	 * 获取应用名称。
 	 */
 	public String getAppName(){
 		return this.appName;
 	}
 
 	/**
-	 * 获得应用显示名称。
+	 * 获取应用显示名称。
 	 */
 	public String getAppLabel(){
 		return this.appLabel;
 	}
 
 	/**
-	 * 获得应用版本。
+	 * 获取应用版本。
 	 */
 	public String getAppVersion(){
 		return this.appVersion;
 	}
 
 	/**
-	 * 获得应用显示顺序[ASC]。
+	 * 获取应用显示顺序[ASC]。
 	 */
 	public int getAppRank(){
 		return this.appRank;
 	}
 
 	/**
-	 * 获得应用app接收用户登录,注册信息回调。
+	 * 获取应用app接收用户登录,注册信息回调。
 	 */
 	public String getCallbackUrl(){
 		return this.callbackUrl;
 	}
 
 	/**
-	 * 获得用户成功登录重定向地址。
+	 * 获取用户成功登录重定向地址。
 	 */
 	public String getRedirectUrl(){
 		return this.redirectUrl;
 	}
 
 	/**
-	 * 获得备注。
+	 * 获取备注。
 	 */
 	public String getRemark(){
 		return this.remark;
 	}
 
 	/**
-	 * 获得创建时间。
+	 * 获取创建时间。
 	 */
 	public java.util.Date getCreateDate(){
 		return this.createDate;
 	}
 
 	/**
-	 * 获得修改时间。
+	 * 获取修改时间。
 	 */
 	public java.util.Date getModifyDate(){
 		return this.modifyDate;
 	}
 
 	/**
-	 * 获得最后更新时间。
+	 * 获取最后更新时间。
 	 */
 	public java.util.Date getLastUpdate(){
 		return this.lastUpdate;
 	}
 
 	/**
-	 * 获得应用状态1: 上线; 0: 下线 -1:删除。
+	 * 获取应用状态1: 上线; 0: 下线 -1:删除。
 	 */
 	public int getState(){
 		return this.state;
 	}
 
 	/**
-	 * 获得是否显示。
+	 * 获取是否显示。
 	 */
 	public int getDisplayState(){
 		return this.displayState;

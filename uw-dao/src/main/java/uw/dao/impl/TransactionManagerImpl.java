@@ -83,7 +83,7 @@ public class TransactionManagerImpl implements TransactionManager {
     }
 
     /**
-     * 根据连接名获得配置名称.
+     * 根据连接名获取配置名称.
      *
      * @param configName 配置名称
      * @return Connection对象
@@ -120,7 +120,7 @@ public class TransactionManagerImpl implements TransactionManager {
     }
 
     /**
-     * 获得连接名.
+     * 获取连接名.
      *
      * @param table  表名
      * @param access 访问方式
@@ -153,7 +153,7 @@ public class TransactionManagerImpl implements TransactionManager {
     }
 
     /**
-     * 获得当前是否是自动提交状态.
+     * 获取当前是否是自动提交状态.
      *
      * @return boolean
      */
@@ -205,7 +205,7 @@ public class TransactionManagerImpl implements TransactionManager {
     }
 
     /**
-     * 获得被调用次数.
+     * 获取被调用次数.
      *
      * @return 被调用次数
      */

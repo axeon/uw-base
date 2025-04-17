@@ -11,7 +11,7 @@ import java.util.function.Function;
 /**
  * ResponseData是一个基于泛型的响应数据对象，封装了响应数据，以及响应状态码。
  * 在整个项目中，所有响应数据都使用ResponseData进行封装，包括返回给前端的数据，以及返回给后端的数据。
- * 使用ResponseData的好处是，可以统一处理响应数据，尤其在返回数据的同时，也返回了响应状态码和消息，使得程序可以更好的处理响应数据。这样也避免了不必要的异常处理和异常捕获代码，可能获得更简单和更优雅的代码。
+ * 使用ResponseData的好处是，可以统一处理响应数据，尤其在返回数据的同时，也返回了响应状态码和消息，使得程序可以更好的处理响应数据。这样也避免了不必要的异常处理和异常捕获代码，可能获取更简单和更优雅的代码。
  * 同时，ResponseData和i18n的结合，使得处理国际化的工作更加简单和方便。
  * ResponseCode定义了响应状态码和消息的统一接口，通过继承关系，可以定义各种状态码和消息，使得代码更加清晰和可读。
  * ResponseData通过传入ResponseCode，简化调用代码，同时更简单的支持多语言。
@@ -885,7 +885,7 @@ public class ResponseData<T> {
 
 
     /**
-     * 获得状态。
+     * 获取状态。
      *
      * @return
      */
@@ -904,7 +904,7 @@ public class ResponseData<T> {
 
 
     /**
-     * 获得数据。
+     * 获取数据。
      *
      * @return
      */
@@ -934,7 +934,7 @@ public class ResponseData<T> {
     }
 
     /**
-     * 获得代码。
+     * 获取代码。
      *
      * @return
      */
@@ -964,7 +964,7 @@ public class ResponseData<T> {
     }
 
     /**
-     * 获得消息。
+     * 获取消息。
      *
      * @return
      */
@@ -992,7 +992,7 @@ public class ResponseData<T> {
     }
 
     /**
-     * 获得时间戳。
+     * 获取时间戳。
      *
      * @return
      */
@@ -1010,7 +1010,7 @@ public class ResponseData<T> {
     }
 
     /**
-     * 获得数据类型。
+     * 获取数据类型。
      *
      * @return
      */

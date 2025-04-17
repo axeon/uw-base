@@ -44,7 +44,7 @@ public class TaskSequenceManager {
     }
 
     /**
-     * 获得序列值
+     * 获取序列值
      *
      * @param name
      * @return
@@ -104,7 +104,7 @@ public class TaskSequenceManager {
         }
 
         /**
-         * 获得下一个ID
+         * 获取下一个ID
          *
          * @return 如果为超限则返回0，否则返回需要等待的秒数
          */

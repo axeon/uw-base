@@ -174,7 +174,7 @@ public class TaskServiceRegister {
                 }
             }
 
-            // 获得当前主机上所有的TaskRunner
+            // 获取当前主机上所有的TaskRunner
             for (Entry<String, TaskRunner> kv : taskMetaInfoManager.getRunnerInstanceMap().entrySet()) {
                 try {
                     // 拿到任务类名

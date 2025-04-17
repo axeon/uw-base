@@ -201,7 +201,7 @@ public class FusionCounter {
     }
 
     /**
-     * 获得计数器数值。
+     * 获取计数器数值。
      *
      * @param entityType entity类型(主要用于构造counterType)。
      * @param counterId  计数器ID
@@ -212,7 +212,7 @@ public class FusionCounter {
     }
 
     /**
-     * 获得计数器数值。
+     * 获取计数器数值。
      *
      * @param counterType 计数器类型。
      * @param counterId   计数器ID
@@ -223,7 +223,7 @@ public class FusionCounter {
     }
 
     /**
-     * 获得计数器数值。
+     * 获取计数器数值。
      *
      * @param entityType entity类型(主要用于构造counterType)。
      * @param counterId  计数器ID
@@ -235,7 +235,7 @@ public class FusionCounter {
     }
 
     /**
-     * 获得计数器数值。
+     * 获取计数器数值。
      *
      * @param counterType 计数器类型。
      * @param counterId   计数器ID
@@ -342,7 +342,7 @@ public class FusionCounter {
         }
 
         /**
-         * 获得当前计数。
+         * 获取当前计数。
          *
          * @return
          */

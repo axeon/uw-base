@@ -159,7 +159,7 @@ public class AuthServiceFilter implements Filter {
         ActionLog permLogType = ActionLog.NONE;
         try {
             invokeCounter.increment();
-            // 获得原始token
+            // 获取原始token
             String rawToken = httpServletRequest.getHeader(AuthServiceConstants.TOKEN_HEADER_PARAM);
             // 解析token
             ResponseData<AuthTokenData> authTokenDataResponse = AuthServiceHelper.parseRawToken(userIp, rawToken);

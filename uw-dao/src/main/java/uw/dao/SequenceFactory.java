@@ -8,7 +8,7 @@ import uw.dao.sequence.FusionSequenceFactory;
  * Sequence工厂类。
  * 通过配置文件动态决定使用 DaoSequenceFactory，还是 FusionSequenceFactory。
  * DaoSequenceFactory 和还是 FusionSequenceFactory 差异在于：
- * 1.FusionSequenceFactory 可以获得连续的Sequence数值，DaoSequenceFactory 集群环境下是不连续的。
+ * 1.FusionSequenceFactory 可以获取连续的Sequence数值，DaoSequenceFactory 集群环境下是不连续的。
  * 2.FusionSequenceFactory 默认配置下性能是 DaoSequenceFactory 的100倍。
  * 3.DaoSequenceFactory的incrementNum=100的时候和FusionSequenceFactory性能平衡点，超过100则性能大于FusionSequenceFactory。
  *
@@ -56,7 +56,7 @@ public class SequenceFactory {
     }
 
     /**
-     * 通过传入entityClass名，来获得主键ID.
+     * 通过传入entityClass名，来获取主键ID.
      *
      * @param cls
      * @return

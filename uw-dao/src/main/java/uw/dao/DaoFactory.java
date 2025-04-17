@@ -27,7 +27,7 @@ public abstract class DaoFactory {
     }
 
     /**
-     * 获得一个batchupdate handle.
+     * 获取一个batchupdate handle.
      *
      * @return BatchupdateManager对象
      * @throws TransactionException 事务异常
@@ -52,7 +52,7 @@ public abstract class DaoFactory {
     public abstract void enableSqlExecuteStats();
 
     /**
-     * 获得一个java.sql.Connection连接。 请注意，这是一个原生的Connection对象，需确保手工关闭.
+     * 获取一个java.sql.Connection连接。 请注意，这是一个原生的Connection对象，需确保手工关闭.
      *
      * @param configName 配置名
      * @return Connection对象
@@ -61,7 +61,7 @@ public abstract class DaoFactory {
     public abstract Connection getConnection(String configName) throws SQLException;
 
     /**
-     * 根据表名和访问类型获得一个java.sql.Connection。 请注意，这是一个原生的Connection对象，需确保手工关闭.
+     * 根据表名和访问类型获取一个java.sql.Connection。 请注意，这是一个原生的Connection对象，需确保手工关闭.
      *
      * @param table  表名
      * @param access 访问类型。支持all/read/write
@@ -71,7 +71,7 @@ public abstract class DaoFactory {
     public abstract Connection getConnection(String table, String access) throws SQLException;
 
     /**
-     * 根据表名和访问类型获得一个数据库连接配置名.
+     * 根据表名和访问类型获取一个数据库连接配置名.
      *
      * @param table  表名
      * @param access 访问类型。支持all/read/write
@@ -80,14 +80,14 @@ public abstract class DaoFactory {
     public abstract String getConnectionName(String table, String access);
 
     /**
-     * 获得当前DAOFactory实例下sql执行次数.
+     * 获取当前DAOFactory实例下sql执行次数.
      *
      * @return sql执行次数
      */
     public abstract int getInvokeCount();
 
     /**
-     * 根据Entity来获得seq序列。 此序列通过一个系统数据库来维护，可以保证在分布式下的可用性.
+     * 根据Entity来获取seq序列。 此序列通过一个系统数据库来维护，可以保证在分布式下的可用性.
      *
      * @param entityCls 实体类类型
      * @return seq序列
@@ -95,7 +95,7 @@ public abstract class DaoFactory {
     public abstract long getSequenceId(Class<?> entityCls);
 
     /**
-     * 根据表名来获得seq序列。 此序列通过一个系统数据库来维护，可以保证在分布式下的可用性.
+     * 根据表名来获取seq序列。 此序列通过一个系统数据库来维护，可以保证在分布式下的可用性.
      *
      * @param seqName 表名
      * @return seq序列
@@ -103,7 +103,7 @@ public abstract class DaoFactory {
     public abstract long getSequenceId(String seqName);
 
     /**
-     * 获得当前DAOFactory实例下的sql执行统计列表.
+     * 获取当前DAOFactory实例下的sql执行统计列表.
      *
      * @return 统计列表
      */

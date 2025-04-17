@@ -103,7 +103,7 @@ private long localCacheExpireMillis = 0L;
 private long globalCacheExpireMillis = -1;
 /**
  * 空值保护毫秒数，默认为60秒。
- * 当reload方法获得null的时候，将会保护一段时间，防穿透。
+ * 当reload方法获取null的时候，将会保护一段时间，防穿透。
  */
 private long nullProtectMillis = 60_000L;
 /**
@@ -157,7 +157,7 @@ public static boolean containsKey(Class entityClass, Object key) ;
 
 ```java
 /**
- * 获得指定缓存大小。
+ * 获取指定缓存大小。
  *
  * @param entityClass 缓存对象类(主要用于构造cacheName)
  * @return
@@ -243,7 +243,7 @@ GlobalCache主要方法有get。
 private long expireMillis = -1;
 /**
  * 空值保护毫秒数，默认为60秒。
- * 当reload方法获得null的时候，将会保护一段时间，防穿透。
+ * 当reload方法获取null的时候，将会保护一段时间，防穿透。
  */
 private long nullProtectMillis = 60_000L;
 /**
@@ -413,7 +413,7 @@ public static LocalCounter init(Class entityType, Object counterId, long initNum
 
 ```java
 /**
- * 获得计数器数值。
+ * 获取计数器数值。
  *
  * @param entityType entity类型(主要用于构造counterType)。
  * @param counterId  计数器ID
@@ -509,7 +509,7 @@ public static void setIfAbsent(Class entityType, Object counterId, long num)
 
 ```java
 /**
- * 获得计数器数值。
+ * 获取计数器数值。
  *
  * @param entityType entity类型(主要用于构造counterType)。
  * @param counterId  计数器ID

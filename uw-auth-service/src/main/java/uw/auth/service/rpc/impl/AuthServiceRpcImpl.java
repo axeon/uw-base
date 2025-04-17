@@ -223,7 +223,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     }
 
     /**
-     * 获得Saas用户数限制。
+     * 获取Saas用户数限制。
      *
      * @param saasId
      */
@@ -259,7 +259,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     }
 
     /**
-     * 获得saas用户列表。
+     * 获取saas用户列表。
      *
      * @param saasId
      * @param mchId
@@ -279,7 +279,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     }
 
     /**
-     * 获得saas用户组列表。
+     * 获取saas用户组列表。
      *
      * @param saasId
      * @param mchId
@@ -306,7 +306,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     }
 
     /**
-     * 获得应用的权限ID列表
+     * 获取应用的权限ID列表
      *
      * @param appNames
      * @return

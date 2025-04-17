@@ -171,7 +171,7 @@ public class DaoSequenceFactory {
     }
 
     /**
-     * 通过多次尝试获得下一组sequenceId.
+     * 通过多次尝试获取下一组sequenceId.
      *
      * @param value 递增累加值
      */

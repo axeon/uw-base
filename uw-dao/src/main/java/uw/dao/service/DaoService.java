@@ -77,7 +77,7 @@ public class DaoService {
      */
     public static void start() {
         if (isStarted.compareAndSet(false, true)) {
-            //获得配置。
+            //获取配置。
             DaoConfig config = DaoConfigManager.getConfig();
             enableSqlStats = config.getSqlStats().isEnable();
             enableTableShard = config.getTableShard().size() > 0;
@@ -143,7 +143,7 @@ public class DaoService {
     }
 
     /**
-     * 获得sql执行列表，并重新构造列表.
+     * 获取sql执行列表，并重新构造列表.
      *
      * @return 列表
      */

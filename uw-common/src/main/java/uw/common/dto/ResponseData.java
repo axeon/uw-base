@@ -733,6 +733,37 @@ public class ResponseData<T> {
         return !STATE_SUCCESS.equals(this.state);
     }
 
+
+    /**
+     * 不成功时执行。
+     *
+     * @param function
+     * @param <R>
+     * @return
+     */
+    @JsonIgnore
+    public <R> ResponseData<R> onNotSuccess(Function<T, ResponseData<R>> function) {
+        if (isNotSuccess()) {
+            return function.apply(data);
+        }
+        return this.raw();
+    }
+
+    /**
+     * 不成功时执行。
+     *
+     * @param consumer
+     * @return
+     */
+    @JsonIgnore
+    public ResponseData<T> onNotSuccess(Consumer<T> consumer) {
+        if (isNotSuccess()) {
+            consumer.accept(data);
+        }
+        return this.raw();
+    }
+
+
     /**
      * 是否有警报
      *
@@ -861,6 +892,37 @@ public class ResponseData<T> {
     public boolean isNotError() {
         return !STATE_ERROR.equals(this.state) && !STATE_FATAL.equals(this.state);
     }
+
+
+    /**
+     * 不是错误时执行。
+     *
+     * @param function
+     * @param <R>
+     * @return
+     */
+    @JsonIgnore
+    public <R> ResponseData<R> onNotError(Function<T, ResponseData<R>> function) {
+        if (isNotError()) {
+            return function.apply(data);
+        }
+        return this.raw();
+    }
+
+    /**
+     * 不是错误时执行。
+     *
+     * @param consumer
+     * @return
+     */
+    @JsonIgnore
+    public ResponseData<T> onNotError(Consumer<T> consumer) {
+        if (isNotError()) {
+            consumer.accept(data);
+        }
+        return this.raw();
+    }
+
 
     /**
      * 返回未泛型化的原始响应对象实例。

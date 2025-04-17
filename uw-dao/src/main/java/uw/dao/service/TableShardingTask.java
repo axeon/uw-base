@@ -169,13 +169,13 @@ public class TableShardingTask implements Runnable {
      * @return int
      */
     private int exeCreateTable(String tableName, String createScript) {
-        int effect = 0;
+        int effectedNum = 0;
         try {
-            effect = dao.executeCommand( dao.getConnectionName( tableName, "all" ), createScript );
+            effectedNum = dao.executeCommand( dao.getConnectionName( tableName, "all" ), createScript );
         } catch (TransactionException e) {
             log.error( e.getMessage(), e );
         }
-        return effect;
+        return effectedNum;
     }
 
 }

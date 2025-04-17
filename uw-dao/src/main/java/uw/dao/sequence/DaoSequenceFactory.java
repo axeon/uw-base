@@ -217,8 +217,8 @@ public class DaoSequenceFactory {
             }
             // 自动递增id到我们规定的递增累加值。
             long newId = currentId + Math.max( incrementNum, value );
-            int effect = dao.executeCommand( connName, UPDATE_SEQ, new Object[]{newId, seqName, currentId} );
-            success = (effect == 1);
+            int effectedNum = dao.executeCommand( connName, UPDATE_SEQ, new Object[]{newId, seqName, currentId} );
+            success = (effectedNum == 1);
             if (success) {
                 if (value > 1) {
                     //对于allocate，强制让maxId=0，重新从数据库获取数值。
@@ -254,8 +254,8 @@ public class DaoSequenceFactory {
     private boolean resetSequenceId(long initSeq, int incrementNum) {
         boolean success = false;
         try {
-            int effect = dao.executeCommand( DaoConfigManager.getRouteMapping( "sys_seq", "write" ), RESET_SEQ, new Object[]{initSeq, incrementNum, seqName} );
-            success = (effect == 1);
+            int effectedNum = dao.executeCommand( DaoConfigManager.getRouteMapping( "sys_seq", "write" ), RESET_SEQ, new Object[]{initSeq, incrementNum, seqName} );
+            success = (effectedNum == 1);
             if (success) {
                 this.maxId = 0;
             }

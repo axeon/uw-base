@@ -1426,7 +1426,6 @@ public class DaoFactoryImpl extends DaoFactory {
     @Override
     public int executeCommand(String connName, String sql, Object[] paramList) throws TransactionException {
         return SQLCommandImpl.executeSQL(this, connName, sql, paramList);
-
     }
 
     /**

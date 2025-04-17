@@ -1,5 +1,6 @@
 package uw.dao;
 
+import java.io.Serializable;
 import java.util.Set;
 
 /**
@@ -8,6 +9,27 @@ import java.util.Set;
  * @author axeon
  */
 public interface DataEntity {
+
+    /**
+     * 获得实体的表名。
+     *
+     * @return 表名
+     */
+    String ENTITY_TABLE();
+
+    /**
+     * 获得实体的名称。
+     *
+     * @return 实体名称
+     */
+    String ENTITY_NAME();
+
+    /**
+     * 获得实体的ID。
+     *
+     * @return 表名
+     */
+    Serializable ENTITY_ID();
 
     /**
      * 获得更改的字段列表。

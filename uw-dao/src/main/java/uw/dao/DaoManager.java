@@ -281,7 +281,7 @@ public class DaoManager {
         try {
             int effectedNum = daoFactory.update(entity);
             if (effectedNum < 1) {
-                return ResponseData.error(effectedNum, DaoResponseCode.DATA_NOT_FOUND_WARN);
+                return ResponseData.errorCode(DaoResponseCode.DATA_NOT_FOUND_WARN);
             } else {
                 return responseData(entity);
             }
@@ -301,7 +301,7 @@ public class DaoManager {
         try {
             int effectedNum = daoFactory.update(connName, entity);
             if (effectedNum < 1) {
-                return ResponseData.error(effectedNum, DaoResponseCode.DATA_NOT_FOUND_WARN);
+                return ResponseData.errorCode(DaoResponseCode.DATA_NOT_FOUND_WARN);
             } else {
                 return responseData(entity);
             }
@@ -321,7 +321,7 @@ public class DaoManager {
         try {
             int effectedNum = daoFactory.update(entity, tableName);
             if (effectedNum < 1) {
-                return ResponseData.error(effectedNum, DaoResponseCode.DATA_NOT_FOUND_WARN);
+                return ResponseData.errorCode(DaoResponseCode.DATA_NOT_FOUND_WARN);
             } else {
                 return responseData(entity);
             }
@@ -342,7 +342,7 @@ public class DaoManager {
         try {
             int effectedNum = daoFactory.update(connName, entity, tableName);
             if (effectedNum < 1) {
-                return ResponseData.error(effectedNum, DaoResponseCode.DATA_NOT_FOUND_WARN);
+                return ResponseData.errorCode(DaoResponseCode.DATA_NOT_FOUND_WARN);
             } else {
                 return responseData(entity);
             }

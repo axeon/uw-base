@@ -1,4 +1,32 @@
-# 2025.0330.1012版本升级说明
+# 2025.0330.1031版本升级说明。
+1. 谨慎升级！！！升级本版本需要重新生成代码！！！
+2. 优化DataEntity对象，增加了ENTITY_TABLE(),ENTITY_NAME(),ENTITY_ID()直接获取表名，实体名，id。
+3. 优化了SysDataHistoryHelper，简化代码。
+
+# 2025.0330.1030版本升级说明。
+优化GlobalResponseAdvice，GlobalExceptionAdvice的异常情况处理。
+
+# 2025.0330.1026版本升级说明。
+1. 优化操作日志中记录http请求字符集问题。
+2. 在AuthServiceHelper中增加logSysInfo，用于记录系统操作，比如回调中操作库表结构。
+3. 强化uw-common-app中对于通用queryParam优化，强化支持IdQueryParam和IdStateQueryParam，并可以用过SET_COND_PARAM链式调用增强额外条件。
+
+# 2025.0330.1025版本升级说明
+1. 修正特定情况下ipv6地址判定问题导致ip匹配失效。
+
+# 2025.0330.1023版本升级说明
+1. 修正密码复杂度过于严格的问题。
+2. uw-mfa发送验证码默认为6位。
+3. 修正http状态498输出问题。
+
+# 2025.0330.1022版本升级说明
+1. 移除了uw-auth-service的authBasePackage配置项，改用spring扫描。
+
+# 2025.0330.1019版本升级说明
+1. 降低totp加密算法级别，以自动适应免费客户端。
+2. 通过自动适配权限，解决部分菜单不显示问题。
+
+# 2025.0330.1018版本升级说明
 本版本是一个较大升级，需要同步升级包括uw-auth-center和uw-gateway。
 
 ## 安全升级：

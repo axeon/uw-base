@@ -95,7 +95,7 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
                 }
                 response.setStatusCode(HttpStatusCode.valueOf(statusCode));
                 String code = "http.status." + statusCode;
-                String msg = "Path: " + String.valueOf(data.get("path")) + ", Msg: " + String.valueOf(data.get("message"));
+                String msg = "RequestPath: [" + String.valueOf(data.get("path")) + "], Msg: " + String.valueOf(data.get("message"));
                 return logResponseData(returnType, ResponseData.errorCode(code, msg));
             }
         }

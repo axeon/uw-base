@@ -99,6 +99,12 @@ DaoFactory VS DaoManager
 * DaoManager同时提供了getDaoFactory()接口直接获取DaoFactory。
 * 对于controller，一般建议返回值为ResponseData，这样代码会更简单。
 
+DaoFactory迁移到DaoManager的快速方式：
+1. 项目中全文替换DaoFactory为DaoManager。
+2. 项目中全文替换"throws TransactionException"为空。
+3. 代码生成器生成并覆盖dto和entity，需要手工确认状态。
+4. 代码生成器生成controller，需要手工覆盖并确认状态。
+5. 编译、测试、上线。
 
 # 实体类操作
 

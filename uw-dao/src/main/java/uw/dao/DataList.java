@@ -17,6 +17,11 @@ import java.util.Iterator;
 public class DataList<T> implements Iterable<T>, Serializable {
 
     /**
+     * 空的DataList.
+     */
+    public static final DataList<?> EMPTY = new DataList<>();
+
+    /**
      * 开始的索引.
      */
     @JsonProperty

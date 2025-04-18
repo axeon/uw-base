@@ -145,7 +145,7 @@ public class SQLCommandImpl {
 
         Connection con = null;
         PreparedStatement pstmt = null;
-        ArrayList<Object> list = new ArrayList<Object>(128);
+        ArrayList<Object> list = new ArrayList<Object>();
         try {
             con = dao.getTransactionController().getConnection(connName);
             connId = con.hashCode();
@@ -270,7 +270,7 @@ public class SQLCommandImpl {
             paramList = ArrayUtils.addAll(paramList, po[1], po[2]);
         }
 
-        DataSet ds = null;
+        DataSet ds = DataSet.EMPTY;
         Connection con = null;
         PreparedStatement pstmt = null;
         try {

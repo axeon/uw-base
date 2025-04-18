@@ -212,15 +212,13 @@ public class BatchUpdateManagerImpl implements BatchUpdateManager {
                     list.add(effectNum);
                 }
             } catch (Exception e) {
-                errorMsg.append("\n\t\t").append(e.getMessage());
-                logger.error(e.getMessage(), e);
+                errorMsg.append("\n").append(e.getMessage());
             } finally {
                 try {
                     // 最后关闭该pstmt
                     kv.getValue().pstmt.close();
                 } catch (Exception e) {
-                    errorMsg.append("\n\t\t").append(e.getMessage());
-                    logger.error(e.getMessage(), e);
+                    errorMsg.append("\n").append(e.getMessage());
                 }
             }
         }

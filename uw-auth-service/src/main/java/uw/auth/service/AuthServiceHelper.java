@@ -37,11 +37,6 @@ public class AuthServiceHelper {
     private static final Logger logger = LoggerFactory.getLogger(AuthServiceHelper.class);
 
     /**
-     * access token的用户类型分隔符。
-     */
-    private static final char TOKEN_TYPE_SEPARATOR = '$';
-
-    /**
      * InheritableThreadLocal 保存当前线程请求用户对象
      */
     private static final ThreadLocal<AuthTokenData> contextTokenHolder = new InheritableThreadLocal<AuthTokenData>();
@@ -265,7 +260,7 @@ public class AuthServiceHelper {
      * @return
      */
     public static String genAnonymousToken(long saasId, long mchId) {
-        return String.valueOf(UserType.ANYONE.getValue()) + TOKEN_TYPE_SEPARATOR + mchId + "!0@" + saasId;
+        return String.valueOf(UserType.ANYONE.getValue()) + AuthServiceConstants.TOKEN_ACCESS_TYPE_SEPARATOR + mchId + "!0@" + saasId;
     }
 
     /**
@@ -799,7 +794,7 @@ public class AuthServiceHelper {
         int tokenStart = AuthServiceConstants.TOKEN_HEADER_PREFIX.length();
         //解析出token来
         String token = bearerToken.substring(tokenStart);
-        int typeSeparator = token.indexOf(TOKEN_TYPE_SEPARATOR);
+        int typeSeparator = token.indexOf(AuthServiceConstants.TOKEN_ACCESS_TYPE_SEPARATOR);
         if (typeSeparator == -1) {
             return ResponseData.errorCode(AuthServiceConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token parse illegal. Token: " + token);
         }

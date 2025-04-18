@@ -1,4 +1,4 @@
-# 2025.0330.1035版本升级说明
+# 2025.0330.1036版本升级说明
 1. ResponseData完善了链式函数调用语法，包括onSuccess,onNotSuccess,onError,onNotError,onWarn,onFatal，新增传入类型Runnable，减少命名负担。
 2. ResponseData增加了map函数，支持将ResponseData转换为特定类型返回。
 3. QueryParam(IdQueryParam,IdStateQueryParam...)的Id参数类型由long修改为Serializable，方便传递更多数据类型。

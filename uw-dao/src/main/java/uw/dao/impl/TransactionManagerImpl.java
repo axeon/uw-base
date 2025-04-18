@@ -64,14 +64,12 @@ public class TransactionManagerImpl implements TransactionManager {
                 conn.commit();
                 conn.setAutoCommit(true);
             } catch (SQLException e) {
-                errorMsg.append("\n\t\t").append(e.getMessage());
-                logger.error(e.getMessage(), e);
+                errorMsg.append("\n").append(e.getMessage());
             } finally {
                 try {
                     conn.close();
                 } catch (Exception e) {
-                    errorMsg.append("\n\t\t").append(e.getMessage());
-                    logger.error(e.getMessage(), e);
+                    errorMsg.append("\n").append(e.getMessage());
                 }
             }
         }
@@ -178,14 +176,12 @@ public class TransactionManagerImpl implements TransactionManager {
                 conn.rollback();
                 conn.setAutoCommit(true);
             } catch (SQLException e) {
-                errorMsg.append("\n\t\t").append(e.getMessage());
-                logger.error(e.getMessage(), e);
+                errorMsg.append("\n").append(e.getMessage());
             } finally {
                 try {
                     conn.close();
                 } catch (Exception e) {
-                    errorMsg.append("\n\t\t").append(e.getMessage());
-                    logger.error(e.getMessage(), e);
+                    errorMsg.append("\n").append(e.getMessage());
                 }
             }
         }

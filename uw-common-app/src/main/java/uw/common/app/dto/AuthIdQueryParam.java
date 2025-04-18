@@ -7,6 +7,7 @@ import uw.auth.service.token.AuthTokenData;
 import uw.dao.QueryParam;
 import uw.dao.annotation.QueryMeta;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -21,7 +22,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
      */
     @QueryMeta(expr = "id=?")
     @Schema(title="ID", description = "ID")
-    private Long id;
+    private Serializable id;
 
 
     /**
@@ -29,7 +30,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
      */
     @QueryMeta(expr = "id in (?)")
     @Schema(title="ID数组", description = "ID数组，可同时匹配多个。")
-    private Long[] ids;
+    private Serializable[] ids;
 
     /**
      * saasId。
@@ -76,7 +77,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
      *
      * @param id
      */
-    public AuthIdQueryParam(Long id) {
+    public AuthIdQueryParam(Serializable id) {
         this.id = id;
         bindSaasId();
     }
@@ -87,7 +88,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
      * @param saasId
      * @param id
      */
-    public AuthIdQueryParam(Long saasId, Long id) {
+    public AuthIdQueryParam(Long saasId, Serializable id) {
         this.id = id;
         this.saasId = saasId;
     }
@@ -98,7 +99,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
      *
      * @param ids
      */
-    public AuthIdQueryParam(Long[] ids) {
+    public AuthIdQueryParam(Serializable[] ids) {
         this.ids = ids;
         bindSaasId();
     }
@@ -109,7 +110,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
      * @param saasId
      * @param ids
      */
-    public AuthIdQueryParam(Long saasId, Long[] ids) {
+    public AuthIdQueryParam(Long saasId, Serializable[] ids) {
         this.ids = ids;
         this.saasId = saasId;
     }
@@ -158,7 +159,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
      *
      * @return
      */
-    public Long getId() {
+    public Serializable getId() {
         return id;
     }
 
@@ -167,7 +168,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
      *
      * @param id
      */
-    public void setId(Long id) {
+    public void setId(Serializable id) {
         this.id = id;
     }
 
@@ -177,7 +178,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
      * @param id
      * @return
      */
-    public AuthIdQueryParam id(Long id) {
+    public AuthIdQueryParam id(Serializable id) {
         this.id = id;
         return this;
     }
@@ -185,21 +186,21 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
     /**
      * 获取数组ID。
      */
-    public Long[] getIds() {
+    public Serializable[] getIds() {
         return this.ids;
     }
 
     /**
      * 设置数组ID。
      */
-    public void setIds(Long[] ids) {
+    public void setIds(Serializable[] ids) {
         this.ids = ids;
     }
 
     /**
      * 设置数组ID链式调用。
      */
-    public AuthIdQueryParam ids(Long[] ids) {
+    public AuthIdQueryParam ids(Serializable[] ids) {
         setIds(ids);
         return this;
     }

@@ -7,6 +7,7 @@ import uw.auth.service.token.AuthTokenData;
 import uw.dao.QueryParam;
 import uw.dao.annotation.QueryMeta;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -20,14 +21,14 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      */
     @QueryMeta(expr = "id=?")
     @Schema(title="ID", description = "ID")
-    private Long id;
+    private Serializable id;
 
     /**
      * 数组ID。
      */
     @QueryMeta(expr = "id in (?)")
     @Schema(title="ID数组", description = "ID数组，可同时匹配多个。")
-    private Long[] ids;
+    private Serializable[] ids;
 
     /**
      * 单一状态匹配。
@@ -96,7 +97,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      *
      * @param id
      */
-    public AuthIdStateQueryParam(Long saasId, Long id) {
+    public AuthIdStateQueryParam(Long saasId, Serializable id) {
         this.saasId = saasId;
         this.id = id;
     }
@@ -106,7 +107,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      *
      * @param ids
      */
-    public AuthIdStateQueryParam(Long saasId, Long[] ids) {
+    public AuthIdStateQueryParam(Long saasId, Serializable[] ids) {
         this.saasId = saasId;
         this.ids = ids;
     }
@@ -118,7 +119,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      * @param id
      * @param state
      */
-    public AuthIdStateQueryParam(Long saasId, Long id, Integer state) {
+    public AuthIdStateQueryParam(Long saasId, Serializable id, Integer state) {
         this.saasId = saasId;
         this.id = id;
         this.state = state;
@@ -131,7 +132,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      * @param id
      * @param states
      */
-    public AuthIdStateQueryParam(Long saasId, Long id, Integer... states) {
+    public AuthIdStateQueryParam(Long saasId, Serializable id, Integer... states) {
         this.saasId = saasId;
         this.id = id;
         this.states = states;
@@ -144,7 +145,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      * @param ids
      * @param state
      */
-    public AuthIdStateQueryParam(Long saasId, Long[] ids, Integer state) {
+    public AuthIdStateQueryParam(Long saasId, Serializable[] ids, Integer state) {
         this.saasId = saasId;
         this.ids = ids;
         this.state = state;
@@ -157,7 +158,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      * @param ids
      * @param states
      */
-    public AuthIdStateQueryParam(Long saasId, Long[] ids, Integer... states) {
+    public AuthIdStateQueryParam(Long saasId, Serializable[] ids, Integer... states) {
         this.saasId = saasId;
         this.ids = ids;
         this.states = states;
@@ -168,7 +169,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      *
      * @param id
      */
-    public AuthIdStateQueryParam(Long id) {
+    public AuthIdStateQueryParam(Serializable id) {
         this.id = id;
     }
 
@@ -177,7 +178,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      *
      * @param ids
      */
-    public AuthIdStateQueryParam(Long[] ids) {
+    public AuthIdStateQueryParam(Serializable[] ids) {
         this.ids = ids;
     }
 
@@ -188,7 +189,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      * @param id
      * @param state
      */
-    public AuthIdStateQueryParam(Long id, Integer state) {
+    public AuthIdStateQueryParam(Serializable id, Integer state) {
         this.id = id;
         this.state = state;
     }
@@ -200,7 +201,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      * @param id
      * @param states
      */
-    public AuthIdStateQueryParam(Long id, Integer... states) {
+    public AuthIdStateQueryParam(Serializable id, Integer... states) {
         this.id = id;
         this.states = states;
     }
@@ -212,7 +213,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      * @param ids
      * @param state
      */
-    public AuthIdStateQueryParam(Long[] ids, Integer state) {
+    public AuthIdStateQueryParam(Serializable[] ids, Integer state) {
         this.ids = ids;
         this.state = state;
     }
@@ -224,7 +225,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      * @param ids
      * @param states
      */
-    public AuthIdStateQueryParam(Long[] ids, Integer... states) {
+    public AuthIdStateQueryParam(Serializable[] ids, Integer... states) {
         this.ids = ids;
         this.states = states;
     }
@@ -284,7 +285,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      *
      * @return
      */
-    public Long getId() {
+    public Serializable getId() {
         return id;
     }
 
@@ -293,7 +294,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      *
      * @param id
      */
-    public void setId(Long id) {
+    public void setId(Serializable id) {
         this.id = id;
     }
 
@@ -303,7 +304,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      * @param id
      * @return
      */
-    public AuthIdStateQueryParam id(Long id) {
+    public AuthIdStateQueryParam id(Serializable id) {
         this.id = id;
         return this;
     }
@@ -311,21 +312,21 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
     /**
      * 获取数组ID。
      */
-    public Long[] getIds() {
+    public Serializable[] getIds() {
         return this.ids;
     }
 
     /**
      * 设置数组ID。
      */
-    public void setIds(Long[] ids) {
+    public void setIds(Serializable[] ids) {
         this.ids = ids;
     }
 
     /**
      * 设置数组ID链式调用。
      */
-    public AuthIdStateQueryParam ids(Long[] ids) {
+    public AuthIdStateQueryParam ids(Serializable[] ids) {
         setIds(ids);
         return this;
     }

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import uw.dao.QueryParam;
 import uw.dao.annotation.QueryMeta;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -18,14 +19,14 @@ public class IdStateQueryParam extends QueryParam<IdStateQueryParam> {
      */
     @QueryMeta(expr = "id=?")
     @Schema(title="ID", description = "ID")
-    private Long id;
+    private Serializable id;
 
     /**
      * 数组ID。
      */
     @QueryMeta(expr = "id in (?)")
     @Schema(title="ID数组", description = "ID数组，可同时匹配多个。")
-    private Long[] ids;
+    private Serializable[] ids;
 
     /**
      * 单一状态匹配。
@@ -66,7 +67,7 @@ public class IdStateQueryParam extends QueryParam<IdStateQueryParam> {
      *
      * @param id
      */
-    public IdStateQueryParam(Long id) {
+    public IdStateQueryParam(Serializable id) {
         this.id = id;
     }
 
@@ -75,7 +76,7 @@ public class IdStateQueryParam extends QueryParam<IdStateQueryParam> {
      *
      * @param ids
      */
-    public IdStateQueryParam(Long[] ids) {
+    public IdStateQueryParam(Serializable[] ids) {
         this.ids = ids;
     }
 
@@ -98,7 +99,7 @@ public class IdStateQueryParam extends QueryParam<IdStateQueryParam> {
      * @param id
      * @param states
      */
-    public IdStateQueryParam(Long id, Integer... states) {
+    public IdStateQueryParam(Serializable id, Integer... states) {
         this.id = id;
         this.states = states;
     }
@@ -110,7 +111,7 @@ public class IdStateQueryParam extends QueryParam<IdStateQueryParam> {
      * @param ids
      * @param state
      */
-    public IdStateQueryParam(Long[] ids, Integer state) {
+    public IdStateQueryParam(Serializable[] ids, Integer state) {
         this.ids = ids;
         this.state = state;
     }
@@ -122,7 +123,7 @@ public class IdStateQueryParam extends QueryParam<IdStateQueryParam> {
      * @param ids
      * @param states
      */
-    public IdStateQueryParam(Long[] ids, Integer... states) {
+    public IdStateQueryParam(Serializable[] ids, Integer... states) {
         this.ids = ids;
         this.states = states;
     }
@@ -142,21 +143,21 @@ public class IdStateQueryParam extends QueryParam<IdStateQueryParam> {
     /**
      * 获取ID。
      */
-    public Long getId() {
+    public Serializable getId() {
         return this.id;
     }
 
     /**
      * 设置ID。
      */
-    public void setId(Long id) {
+    public void setId(Serializable id) {
         this.id = id;
     }
 
     /**
      * 设置ID链式调用。
      */
-    public IdStateQueryParam id(Long id) {
+    public IdStateQueryParam id(Serializable id) {
         setId(id);
         return this;
     }
@@ -164,21 +165,21 @@ public class IdStateQueryParam extends QueryParam<IdStateQueryParam> {
     /**
      * 获取数组ID。
      */
-    public Long[] getIds() {
+    public Serializable[] getIds() {
         return this.ids;
     }
 
     /**
      * 设置数组ID。
      */
-    public void setIds(Long[] ids) {
+    public void setIds(Serializable[] ids) {
         this.ids = ids;
     }
 
     /**
      * 设置数组ID链式调用。
      */
-    public IdStateQueryParam ids(Long[] ids) {
+    public IdStateQueryParam ids(Serializable[] ids) {
         setIds(ids);
         return this;
     }

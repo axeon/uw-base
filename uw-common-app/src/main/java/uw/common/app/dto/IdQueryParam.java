@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import uw.dao.QueryParam;
 import uw.dao.annotation.QueryMeta;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -16,7 +17,7 @@ public class IdQueryParam extends QueryParam<IdQueryParam> {
      */
     @QueryMeta(expr = "id=?")
     @Schema(title="ID", description = "ID")
-    private Long id;
+    private Serializable id;
 
 
     /**
@@ -24,7 +25,7 @@ public class IdQueryParam extends QueryParam<IdQueryParam> {
      */
     @QueryMeta(expr = "id in (?)")
     @Schema(title="ID数组", description = "ID数组，可同时匹配多个。")
-    private Long[] ids;
+    private Serializable[] ids;
 
     /**
      * 构造器。
@@ -37,7 +38,7 @@ public class IdQueryParam extends QueryParam<IdQueryParam> {
      *
      * @param id
      */
-    public IdQueryParam(Long id) {
+    public IdQueryParam(Serializable id) {
         this.id = id;
     }
 
@@ -46,7 +47,7 @@ public class IdQueryParam extends QueryParam<IdQueryParam> {
      *
      * @param ids
      */
-    public IdQueryParam(Long[] ids) {
+    public IdQueryParam(Serializable[] ids) {
         this.ids = ids;
     }
 
@@ -65,21 +66,21 @@ public class IdQueryParam extends QueryParam<IdQueryParam> {
     /**
      * 获取ID。
      */
-    public Long getId() {
+    public Serializable getId() {
         return this.id;
     }
 
     /**
      * 设置ID。
      */
-    public void setId(Long id) {
+    public void setId(Serializable id) {
         this.id = id;
     }
 
     /**
      * 设置ID链式调用。
      */
-    public IdQueryParam id(Long id) {
+    public IdQueryParam id(Serializable id) {
         setId(id);
         return this;
     }
@@ -87,21 +88,21 @@ public class IdQueryParam extends QueryParam<IdQueryParam> {
     /**
      * 获取数组ID。
      */
-    public Long[] getIds() {
+    public Serializable[] getIds() {
         return this.ids;
     }
 
     /**
      * 设置数组ID。
      */
-    public void setIds(Long[] ids) {
+    public void setIds(Serializable[] ids) {
         this.ids = ids;
     }
 
     /**
      * 设置数组ID链式调用。
      */
-    public IdQueryParam ids(Long[] ids) {
+    public IdQueryParam ids(Serializable[] ids) {
         setIds(ids);
         return this;
     }

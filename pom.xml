@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <revision>2025.0330.1031</revision>
+        <revision>2025.0330.1032</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
@@ -26,11 +26,11 @@
         <spring-cloud.alibaba.version>2023.0.1.2</spring-cloud.alibaba.version>
         <uw-ai.version>1.0.9</uw-ai.version>
         <uw-auth-client.version>6.1.10</uw-auth-client.version>
-        <uw-auth-service.version>6.1.20</uw-auth-service.version>
+        <uw-auth-service.version>6.1.21</uw-auth-service.version>
         <uw-cache.version>1.1.81</uw-cache.version>
-        <uw-common.version>1.0.60</uw-common.version>
+        <uw-common.version>1.0.61</uw-common.version>
         <uw-common-app.version>1.0.60</uw-common-app.version>
-        <uw-dao.version>5.2.5</uw-dao.version>
+        <uw-dao.version>5.2.6</uw-dao.version>
         <uw-httpclient.version>2.1.121</uw-httpclient.version>
         <uw-log-es.version>3.0.81</uw-log-es.version>
         <uw-logback-es.version>3.0.81</uw-logback-es.version>

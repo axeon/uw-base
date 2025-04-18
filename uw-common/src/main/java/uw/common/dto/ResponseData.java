@@ -724,6 +724,20 @@ public class ResponseData<T> {
     }
 
     /**
+     * 成功时执行。
+     *
+     * @param runnable
+     * @return
+     */
+    @JsonIgnore
+    public ResponseData<T> onSuccess(Runnable runnable) {
+        if (isSuccess()) {
+            runnable.run();
+        }
+        return this.raw();
+    }
+
+    /**
      * 是否不成功。
      *
      * @return
@@ -763,6 +777,19 @@ public class ResponseData<T> {
         return this.raw();
     }
 
+    /**
+     * 不成功时执行。
+     *
+     * @param runnable
+     * @return
+     */
+    @JsonIgnore
+    public ResponseData<T> onNotSuccess(Runnable runnable) {
+        if (isNotSuccess()) {
+            runnable.run();
+        }
+        return this.raw();
+    }
 
     /**
      * 是否有警报
@@ -797,12 +824,25 @@ public class ResponseData<T> {
      */
     @JsonIgnore
     public ResponseData<T> onWarn(Consumer<T> consumer) {
-        if (isSuccess()) {
+        if (isWarn()) {
             consumer.accept(data);
         }
         return this.raw();
     }
 
+    /**
+     * 警告时执行。
+     *
+     * @param runnable
+     * @return
+     */
+    @JsonIgnore
+    public ResponseData<T> onWarn(Runnable runnable) {
+        if (isWarn()) {
+            runnable.run();
+        }
+        return this.raw();
+    }
 
     /**
      * 是否有错误
@@ -837,12 +877,25 @@ public class ResponseData<T> {
      */
     @JsonIgnore
     public ResponseData<T> onError(Consumer<T> consumer) {
-        if (isSuccess()) {
+        if (isError()) {
             consumer.accept(data);
         }
         return this.raw();
     }
 
+    /**
+     * 错误时执行。
+     *
+     * @param runnable
+     * @return
+     */
+    @JsonIgnore
+    public ResponseData<T> onError(Runnable runnable) {
+        if (isError()) {
+            runnable.run();
+        }
+        return this.raw();
+    }
 
     /**
      * 是否严重错误
@@ -877,8 +930,22 @@ public class ResponseData<T> {
      */
     @JsonIgnore
     public ResponseData<T> onFatal(Consumer<T> consumer) {
-        if (isSuccess()) {
+        if (isFatal()) {
             consumer.accept(data);
+        }
+        return this.raw();
+    }
+
+    /**
+     * 严重错误时执行。
+     *
+     * @param runnable
+     * @return
+     */
+    @JsonIgnore
+    public ResponseData<T> onFatal(Runnable runnable) {
+        if (isFatal()) {
+            runnable.run();
         }
         return this.raw();
     }
@@ -923,6 +990,31 @@ public class ResponseData<T> {
         return this.raw();
     }
 
+    /**
+     * 不是错误时执行。
+     *
+     * @param runnable
+     * @return
+     */
+    @JsonIgnore
+    public ResponseData<T> onNotError(Runnable runnable) {
+        if (isNotError()) {
+            runnable.run();
+        }
+        return this.raw();
+    }
+
+    /**
+     * map类型转换。
+     *
+     * @param function
+     * @param <R>
+     * @return
+     */
+    @JsonIgnore
+    public <R> R map(Function<ResponseData<T>, R> function) {
+            return function.apply(this);
+    }
 
     /**
      * 返回未泛型化的原始响应对象实例。

@@ -20,6 +20,11 @@ import java.util.ArrayList;
 public class DataSet implements Serializable, Cloneable {
 
     /**
+     * 空数据集.
+     */
+    public static final DataSet EMPTY = new DataSet();
+
+    /**
      * 当前索引位置.
      */
     @JsonIgnore
@@ -29,42 +34,42 @@ public class DataSet implements Serializable, Cloneable {
      * 开始的索引.
      */
     @JsonProperty
-    @Schema(title = "请求的起始索引",description = "请求的起始索引")
+    @Schema(title = "请求的起始索引", description = "请求的起始索引")
     private int startIndex = 0;
 
     /**
      * 返回的结果集大小.
      */
     @JsonProperty
-    @Schema(title = "请求的结果集大小",description ="请求的结果集大小")
+    @Schema(title = "请求的结果集大小", description = "请求的结果集大小")
     private int resultNum = 0;
 
     /**
      * List大小（实际返回的结果集大小）.
      */
     @JsonProperty
-    @Schema(title = "结果集大小",description = "结果集大小")
+    @Schema(title = "结果集大小", description = "结果集大小")
     private int size = 0;
 
     /**
      * 整个表数据量大小.
      */
     @JsonProperty
-    @Schema(title = "总数据大小",description = "总数据大小")
+    @Schema(title = "总数据大小", description = "总数据大小")
     private int sizeAll = 0;
 
     /**
      * 当前页.
      */
     @JsonProperty
-    @Schema(title = "当前页",description = "当前页")
+    @Schema(title = "当前页", description = "当前页")
     private int page = 0;
 
     /**
      * 总页数.
      */
     @JsonProperty
-    @Schema(title = "总页数",description = "总页数")
+    @Schema(title = "总页数", description = "总页数")
     private int pageCount = 0;
 
 
@@ -72,14 +77,14 @@ public class DataSet implements Serializable, Cloneable {
      * 列名数组.
      */
     @JsonProperty
-    @Schema(title = "列名数组",description = "列名数组")
+    @Schema(title = "列名数组", description = "列名数组")
     private String[] cols;
 
     /**
      * 数据存放数组.
      */
     @JsonProperty
-    @Schema(title = "数据集",description = "数据集")
+    @Schema(title = "数据集", description = "数据集")
     private ArrayList<Object[]> results;
 
     /**

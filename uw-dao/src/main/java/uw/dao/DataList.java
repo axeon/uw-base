@@ -4,8 +4,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serializable;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * 组合了互联网应用常见列表所需数据的集合接口。 实现Iterable接口.
@@ -71,7 +73,7 @@ public class DataList<T> implements Iterable<T>, Serializable {
      */
     @JsonProperty
     @Schema(title = "结果集", description = "结果集")
-    private ArrayList<T> results = null;
+    private List<T> results = Collections.emptyList();
 
     /**
      * 构造函数.
@@ -88,7 +90,7 @@ public class DataList<T> implements Iterable<T>, Serializable {
      * @param resultNum  每页大小
      * @param sizeAll    所有的数量
      */
-    public DataList(ArrayList<T> results, int startIndex, int resultNum, int sizeAll) {
+    public DataList(List<T> results, int startIndex, int resultNum, int sizeAll) {
         this.results = results;
 
         this.startIndex = startIndex;
@@ -192,19 +194,27 @@ public class DataList<T> implements Iterable<T>, Serializable {
      *
      * @return 结果集
      */
-    public ArrayList<T> results() {
-        return this.results;
+    public List<T> results() {
+        if (this.results == null) {
+            return Collections.emptyList();
+        } else {
+            return this.results;
+        }
     }
 
     /**
      * 重新设定结果集合.
      *
-     * @param objects objects集合
+     * @param list objects集合
      */
-    public void reset(ArrayList<T> objects) {
-        this.results = objects;
-        if (this.size != objects.size()) {
-            this.size = objects.size();
+    public void reset(List<T> list) {
+        this.results = list;
+        if (this.results == null) {
+            this.size = 0;
+        } else {
+            if (this.size != list.size()) {
+                this.size = list.size();
+            }
         }
     }
 
@@ -215,7 +225,34 @@ public class DataList<T> implements Iterable<T>, Serializable {
      */
     @Override
     public Iterator<T> iterator() {
-        return this.results.iterator();
+        if (this.results == null) {
+            return Collections.emptyIterator();
+        } else {
+            return this.results.iterator();
+        }
+    }
+
+    /**
+     * 获取stream列表.
+     *
+     * @return
+     */
+    public Stream<T> stream() {
+        if (this.results == null) {
+            return Stream.empty();
+        } else {
+            return this.results.stream();
+        }
+    }
+
+    /**
+     * 获取空的DataList.
+     *
+     * @param <T>
+     * @return
+     */
+    public static <T> DataList<T> empty() {
+        return (DataList<T>) EMPTY;
     }
 
 }

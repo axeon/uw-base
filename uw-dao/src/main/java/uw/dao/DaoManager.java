@@ -1611,10 +1611,5 @@ public class DaoManager {
         }
     }
 
-    public static void main(String[] args) {
-        DataSet.empty().remove();
-        System.out.println(DataSet.EMPTY.map(dataSet -> dataSet.getString("name")).get(1));
-    }
-
 
 }

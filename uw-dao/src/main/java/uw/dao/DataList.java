@@ -108,6 +108,16 @@ public class DataList<T> implements Iterable<T>, Serializable {
     }
 
     /**
+     * 获取空的DataList.
+     *
+     * @param <T>
+     * @return
+     */
+    public static <T> DataList<T> empty() {
+        return (DataList<T>) EMPTY;
+    }
+
+    /**
      * 计算页面参数信息。
      */
     public void calcPages(int sizeAll) {
@@ -169,7 +179,6 @@ public class DataList<T> implements Iterable<T>, Serializable {
     public int page() {
         return this.page;
     }
-
 
     /**
      * 在整个数据集中的开始索引位置.
@@ -243,16 +252,6 @@ public class DataList<T> implements Iterable<T>, Serializable {
         } else {
             return this.results.stream();
         }
-    }
-
-    /**
-     * 获取空的DataList.
-     *
-     * @param <T>
-     * @return
-     */
-    public static <T> DataList<T> empty() {
-        return (DataList<T>) EMPTY;
     }
 
 }

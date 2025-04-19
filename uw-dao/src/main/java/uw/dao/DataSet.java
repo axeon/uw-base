@@ -3,13 +3,16 @@ package uw.dao;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
+import java.util.function.Function;
 
 /**
  * 存储并转化ResultSet对象数据.
@@ -17,7 +20,7 @@ import java.util.ArrayList;
  * @author zhangjin
  */
 @Schema(title = "DataSet结果集", description = "DataSet结果集")
-public class DataSet implements Serializable, Cloneable {
+public class DataSet implements Serializable {
 
     /**
      * 空数据集.
@@ -72,7 +75,6 @@ public class DataSet implements Serializable, Cloneable {
     @Schema(title = "总页数", description = "总页数")
     private int pageCount = 0;
 
-
     /**
      * 列名数组.
      */
@@ -126,59 +128,16 @@ public class DataSet implements Serializable, Cloneable {
         }
         // 开始赋值
         if (resultNum > 0) {
-            this.results = new ArrayList<Object[]>(resultNum);
+            this.results = new ArrayList<>(resultNum);
         } else {
-            this.results = new ArrayList<Object[]>();
+            this.results = new ArrayList<>();
         }
         while (rs.next()) {
             this.size++;
             Object[] result = new Object[cols.length];
             for (int x = 0; x < cols.length; x++) {
                 // 将对应列名的值放入二维数组中
-                switch (colTypes[x]) {
-                    case Types.NUMERIC:
-                        result[x] = rs.getBigDecimal(x + 1);
-                        break;
-                    case Types.VARCHAR:
-                        result[x] = rs.getString(x + 1);
-                        break;
-                    case Types.CLOB:
-                        result[x] = rs.getString(x + 1);
-                        break;
-                    case Types.DATE:
-                        result[x] = rs.getTimestamp(x + 1);
-                        break;
-                    case Types.TIME:
-                        result[x] = rs.getTimestamp(x + 1);
-                        break;
-                    case Types.TIMESTAMP:
-                        result[x] = rs.getTimestamp(x + 1);
-                        break;
-                    case Types.BIGINT:
-                        result[x] = rs.getLong(x + 1);
-                        break;
-                    case Types.INTEGER:
-                        result[x] = rs.getInt(x + 1);
-                        break;
-                    case Types.SMALLINT:
-                        result[x] = rs.getInt(x + 1);
-                        break;
-                    case Types.TINYINT:
-                        result[x] = rs.getInt(x + 1);
-                        break;
-                    case Types.FLOAT:
-                        result[x] = rs.getFloat(x + 1);
-                        break;
-                    case Types.DOUBLE:
-                        result[x] = rs.getDouble(x + 1);
-                        break;
-                    case Types.BIT:
-                        result[x] = rs.getInt(x + 1);
-                        break;
-
-                    default:
-                        result[x] = rs.getObject(x + 1);
-                }
+                result[x] = rs.getObject(x + 1);
             }
             results.add(result);
         }
@@ -315,7 +274,17 @@ public class DataSet implements Serializable, Cloneable {
      * @return 数组中指定位置的数据
      */
     public Object get(String colName) {
-        return ((Object[]) results.get(currentIndex))[getColumnPos(colName)];
+        return results.get(currentIndex)[getColumnPos(colName)];
+    }
+
+    /**
+     * 返回值为boolean.
+     *
+     * @param colName 列名
+     * @return int
+     */
+    public boolean getBoolean(String colName) {
+        return getBoolean(getColumnPos(colName));
     }
 
     /**
@@ -325,12 +294,7 @@ public class DataSet implements Serializable, Cloneable {
      * @return int
      */
     public int getInt(String colName) {
-        Object data = get(colName);
-        if (data == null) {
-            return 0;
-        } else {
-            return Integer.parseInt(String.valueOf(data));
-        }
+        return getInt(getColumnPos(colName));
     }
 
     /**
@@ -340,12 +304,7 @@ public class DataSet implements Serializable, Cloneable {
      * @return long
      */
     public long getLong(String colName) {
-        Object data = get(colName);
-        if (data == null) {
-            return 0;
-        } else {
-            return Long.parseLong(String.valueOf(data));
-        }
+        return getLong(getColumnPos(colName));
     }
 
     /**
@@ -355,12 +314,7 @@ public class DataSet implements Serializable, Cloneable {
      * @return double
      */
     public double getDouble(String colName) {
-        Object data = get(colName);
-        if (data == null) {
-            return 0;
-        } else {
-            return Double.parseDouble(String.valueOf(data));
-        }
+        return getDouble(getColumnPos(colName));
     }
 
     /**
@@ -370,12 +324,7 @@ public class DataSet implements Serializable, Cloneable {
      * @return float
      */
     public float getFloat(String colName) {
-        Object data = get(colName);
-        if (data == null) {
-            return 0;
-        } else {
-            return Float.parseFloat(String.valueOf(data));
-        }
+        return getFloat(getColumnPos(colName));
     }
 
     /**
@@ -385,12 +334,36 @@ public class DataSet implements Serializable, Cloneable {
      * @return String
      */
     public String getString(String colName) {
-        Object data = get(colName);
-        if (data == null) {
-            return "";
-        } else {
-            return String.valueOf(data);
-        }
+        return getString(getColumnPos(colName));
+    }
+
+    /**
+     * 返回值为BigInteger.
+     *
+     * @param colName 列名
+     * @return BigInteger
+     */
+    public BigInteger getBigInteger(String colName) {
+        return getBigInteger(getColumnPos(colName));
+    }
+
+    /**
+     * 返回值为BigDecimal.
+     *
+     * @param colName 列名
+     * @return BigDecimal
+     */
+    public BigDecimal getDecimal(String colName) {
+        return getDecimal(getColumnPos(colName));
+    }
+
+    /**
+     * 返回值为byte[].
+     * @param colName
+     * @return
+     */
+    public byte[] getBytes(String colName) {
+        return getBytes(getColumnPos(colName));
     }
 
     /**
@@ -400,7 +373,7 @@ public class DataSet implements Serializable, Cloneable {
      * @return Date
      */
     public java.util.Date getDate(String colName) {
-        return (java.util.Date) get(colName);
+        return getDate(getColumnPos(colName));
     }
 
     /**
@@ -410,7 +383,25 @@ public class DataSet implements Serializable, Cloneable {
      * @return 数组中指定位置的数据
      */
     public Object get(int colIndex) {
-        return ((Object[]) results.get(currentIndex))[--colIndex];
+        return results.get(currentIndex)[--colIndex];
+    }
+
+    /**
+     * 返回值为boolean.
+     *
+     * @param colIndex 列位置
+     * @return int
+     */
+    public boolean getBoolean(int colIndex) {
+        Object data = get(colIndex);
+        if (data == null) {
+            return false;
+        }
+        if (data instanceof Boolean bool) {
+            return bool;
+        } else {
+            return Boolean.parseBoolean(String.valueOf(data));
+        }
     }
 
     /**
@@ -420,7 +411,15 @@ public class DataSet implements Serializable, Cloneable {
      * @return int
      */
     public int getInt(int colIndex) {
-        return (Integer) get(colIndex);
+        Object data = get(colIndex);
+        if (data == null) {
+            return 0;
+        }
+        if (data instanceof Integer num) {
+            return num;
+        } else {
+            return Integer.parseInt(String.valueOf(data));
+        }
     }
 
     /**
@@ -430,7 +429,15 @@ public class DataSet implements Serializable, Cloneable {
      * @return long
      */
     public long getLong(int colIndex) {
-        return (Long) get(colIndex);
+        Object data = get(colIndex);
+        if (data == null) {
+            return 0;
+        }
+        if (data instanceof Long num) {
+            return num;
+        } else {
+            return Long.parseLong(String.valueOf(data));
+        }
     }
 
     /**
@@ -440,7 +447,17 @@ public class DataSet implements Serializable, Cloneable {
      * @return double
      */
     public double getDouble(int colIndex) {
-        return (Double) get(colIndex);
+        Object data = get(colIndex);
+        if (data == null) {
+            return 0d;
+        }
+        if (data instanceof Double num) {
+            return num;
+        } else if (data instanceof Float num) {
+            return num;
+        } else {
+            return Double.parseDouble(String.valueOf(data));
+        }
     }
 
     /**
@@ -450,7 +467,15 @@ public class DataSet implements Serializable, Cloneable {
      * @return float
      */
     public float getFloat(int colIndex) {
-        return (Float) get(colIndex);
+        Object data = get(colIndex);
+        if (data == null) {
+            return 0f;
+        }
+        if (data instanceof Float num) {
+            return num;
+        } else {
+            return Float.parseFloat(String.valueOf(data));
+        }
     }
 
     /**
@@ -460,11 +485,62 @@ public class DataSet implements Serializable, Cloneable {
      * @return String
      */
     public String getString(int colIndex) {
-        String s = String.valueOf(get(colIndex));
-        if (s.equals("null")) {
-            s = "";
+        Object data = get(colIndex);
+        if (data == null) {
+            return StringUtils.EMPTY;
         }
-        return s;
+        if (data instanceof String s) {
+            return s;
+        } else {
+            return String.valueOf(data);
+        }
+    }
+
+    /**
+     * 返回值为BigInteger.
+     * @param colIndex
+     * @return
+     */
+    public BigInteger getBigInteger(int colIndex) {
+        Object data = get(colIndex);
+        if (data == null) {
+            return BigInteger.ZERO;
+        }
+        if (data instanceof BigInteger num) {
+            return num;
+        } else {
+            return new BigInteger(String.valueOf(data));
+        }
+    }
+
+    /**
+     * 返回值为BigDecimal.
+     * @param colIndex
+     * @return
+     */
+    public BigDecimal getDecimal(int colIndex){
+        Object data = get(colIndex);
+        if (data == null) {
+            return BigDecimal.ZERO;
+        }
+        if (data instanceof BigDecimal num) {
+            return num;
+        } else {
+            return new BigDecimal(String.valueOf(data));
+        }
+    }
+
+    /**
+     * 返回值为bytes.
+     * @param colIndex
+     * @return
+     */
+    public byte[] getBytes(int colIndex){
+        Object data = get(colIndex);
+        if (data == null) {
+            return null;
+        }
+        return (byte[]) data;
     }
 
     /**
@@ -474,7 +550,11 @@ public class DataSet implements Serializable, Cloneable {
      * @return Date
      */
     public java.util.Date getDate(int colIndex) {
-        return (java.util.Date) get(colIndex);
+        Object data = get(colIndex);
+        if (data == null) {
+            return null;
+        }
+        return (java.util.Date) data;
     }
 
     /**
@@ -494,4 +574,21 @@ public class DataSet implements Serializable, Cloneable {
         }
         return index;
     }
+
+    /**
+     * map类型转换。
+     *
+     * @param function
+     * @param <R>
+     * @return
+     */
+    @JsonIgnore
+    public <R> DataList<R> map(Function<DataSet, R> function) {
+        ArrayList<R> list = new ArrayList<>();
+        while (next()) {
+            list.add(function.apply(this));
+        }
+        return new DataList<>(list, startIndex, resultNum, sizeAll);
+    }
+
 }

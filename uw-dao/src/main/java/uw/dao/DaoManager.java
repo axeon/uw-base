@@ -11,7 +11,7 @@ import uw.dao.vo.SqlExecuteStats;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -128,7 +128,7 @@ public class DaoManager {
      *
      * @return 统计列表
      */
-    public ArrayList<SqlExecuteStats> getSqlExecuteStatsList() {
+    public List<SqlExecuteStats> getSqlExecuteStatsList() {
         return daoFactory.getSqlExecuteStatsList();
     }
 
@@ -159,7 +159,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.save(entity));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -174,7 +174,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.save(connName, entity));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -189,7 +189,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.save(entity, tableName));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -205,7 +205,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.save(connName, entity, tableName));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -219,7 +219,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.save(entityList));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(Collections.emptyList(), e);
         }
     }
 
@@ -234,7 +234,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.save(connName, entityList));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(Collections.emptyList(), e);
         }
     }
 
@@ -249,7 +249,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.save(entityList, tableName));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(Collections.emptyList(), e);
         }
     }
 
@@ -265,7 +265,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.save(connName, entityList, tableName));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(Collections.emptyList(), e);
         }
     }
 
@@ -286,7 +286,7 @@ public class DaoManager {
                 return responseData(entity);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -306,7 +306,7 @@ public class DaoManager {
                 return responseData(entity);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -326,7 +326,7 @@ public class DaoManager {
                 return responseData(entity);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -347,7 +347,7 @@ public class DaoManager {
                 return responseData(entity);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -367,7 +367,7 @@ public class DaoManager {
                 return responseData(effectedNum);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(-1, e);
         }
     }
 
@@ -387,7 +387,7 @@ public class DaoManager {
                 return responseData(effectedNum);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(-1, e);
         }
     }
 
@@ -409,7 +409,7 @@ public class DaoManager {
                 return responseData(effectedNum);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(-1, e);
         }
     }
 
@@ -430,7 +430,7 @@ public class DaoManager {
                 return responseData(effectedNum);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(-1, e);
         }
     }
 
@@ -450,7 +450,7 @@ public class DaoManager {
                 return responseData(effectedNum);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(-1, e);
         }
     }
 
@@ -470,7 +470,7 @@ public class DaoManager {
                 return responseData(effectedNum);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(-1, e);
         }
     }
 
@@ -491,7 +491,7 @@ public class DaoManager {
                 return responseData(effectedNum);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(-1, e);
         }
     }
 
@@ -511,7 +511,7 @@ public class DaoManager {
                 return responseData(effectedNum);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(-1, e);
         }
     }
 
@@ -532,7 +532,7 @@ public class DaoManager {
                 return responseData(effectedNum);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(-1, e);
         }
     }
 
@@ -554,7 +554,7 @@ public class DaoManager {
                 return responseData(effectedNum);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(-1, e);
         }
     }
 
@@ -571,7 +571,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.load(entityCls, id));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -587,7 +587,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.load(connName, entityCls, id));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -603,7 +603,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.load(entityCls, tableName, id));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -620,7 +620,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.load(connName, entityCls, tableName, id));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -637,7 +637,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.list(entityCls, selectSql));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataList.empty(), e);
         }
     }
 
@@ -654,7 +654,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.list(entityCls, selectSql, startIndex, resultNum));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataList.empty(), e);
         }
     }
 
@@ -673,7 +673,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.list(entityCls, selectSql, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataList.empty(), e);
         }
     }
 
@@ -689,7 +689,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.list(connName, entityCls, selectSql));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataList.empty(), e);
         }
     }
 
@@ -707,7 +707,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.list(connName, entityCls, selectSql, startIndex, resultNum));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataList.empty(), e);
         }
     }
 
@@ -727,7 +727,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.list(connName, entityCls, selectSql, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataList.empty(), e);
         }
     }
 
@@ -743,7 +743,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.list(entityCls, selectSql, paramList));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataList.empty(), e);
         }
     }
 
@@ -760,7 +760,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.list(connName, entityCls, selectSql, paramList));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataList.empty(), e);
         }
     }
 
@@ -778,7 +778,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.list(entityCls, selectSql, paramList, startIndex, resultNum));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataList.empty(), e);
         }
     }
 
@@ -797,7 +797,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.list(connName, entityCls, selectSql, paramList, startIndex, resultNum));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataList.empty(), e);
         }
     }
 
@@ -816,7 +816,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.list(entityCls, selectSql, paramList, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataList.empty(), e);
         }
     }
 
@@ -836,7 +836,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.list(connName, entityCls, selectSql, paramList, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataList.empty(), e);
         }
     }
 
@@ -851,7 +851,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.list(entityCls, pageQueryParam));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataList.empty(), e);
         }
     }
 
@@ -868,7 +868,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.list(entityCls, tableName, pageQueryParam));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataList.empty(), e);
         }
     }
 
@@ -884,7 +884,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.list(connName, entityCls, pageQueryParam));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataList.empty(), e);
         }
     }
 
@@ -901,7 +901,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.list(connName, entityCls, tableName, pageQueryParam));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataList.empty(), e);
         }
     }
 
@@ -918,7 +918,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForSingleValue(cls, sql));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -934,7 +934,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForSingleValue(connName, cls, sql));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -950,7 +950,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForSingleValue(cls, sql, paramList));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -967,7 +967,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForSingleValue(connName, cls, sql, paramList));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -982,7 +982,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForSingleValue(valueCls, queryParam));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -998,7 +998,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForSingleValue(connName, valueCls, queryParam));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -1009,11 +1009,11 @@ public class DaoManager {
      * @param sql      查询的SQL
      * @return DataSet对象
      */
-    public <T> ResponseData<ArrayList<T>> queryForSingleList(Class<T> valueCls, String sql) {
+    public <T> ResponseData<List<T>> queryForSingleList(Class<T> valueCls, String sql) {
         try {
             return responseData(daoFactory.queryForSingleList(valueCls, sql));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(Collections.emptyList(), e);
         }
     }
 
@@ -1025,11 +1025,11 @@ public class DaoManager {
      * @param sql      查询的SQL
      * @return 单个对象
      */
-    public <T> ResponseData<ArrayList<T>> queryForSingleList(String connName, Class<T> valueCls, String sql) {
+    public <T> ResponseData<List<T>> queryForSingleList(String connName, Class<T> valueCls, String sql) {
         try {
             return responseData(daoFactory.queryForSingleList(connName, valueCls, sql));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(Collections.emptyList(), e);
         }
     }
 
@@ -1040,11 +1040,11 @@ public class DaoManager {
      * @param queryParam 查询参数
      * @return DataSet数据列表
      */
-    public <T> ResponseData<ArrayList<T>> queryForSingleList(Class<T> valueCls, QueryParam queryParam) {
+    public <T> ResponseData<List<T>> queryForSingleList(Class<T> valueCls, QueryParam queryParam) {
         try {
             return responseData(daoFactory.queryForSingleList(valueCls, queryParam));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(Collections.emptyList(), e);
         }
     }
 
@@ -1057,11 +1057,11 @@ public class DaoManager {
      * @return DataSet数据列表
      * @throws TransactionException 事务异常
      */
-    public <T> ResponseData<ArrayList<T>> queryForSingleList(String connName, Class<T> valueCls, QueryParam queryParam) {
+    public <T> ResponseData<List<T>> queryForSingleList(String connName, Class<T> valueCls, QueryParam queryParam) {
         try {
             return responseData(daoFactory.queryForSingleList(connName, valueCls, queryParam));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(Collections.emptyList(), e);
         }
     }
 
@@ -1074,11 +1074,11 @@ public class DaoManager {
      * @param paramList 查询SQL的参数
      * @return 单个对象
      */
-    public <T> ResponseData<ArrayList<T>> queryForSingleList(String connName, Class<T> valueCls, String sql, Object[] paramList) {
+    public <T> ResponseData<List<T>> queryForSingleList(String connName, Class<T> valueCls, String sql, Object[] paramList) {
         try {
             return responseData(daoFactory.queryForSingleList(connName, valueCls, sql, paramList));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(Collections.emptyList(), e);
         }
     }
 
@@ -1090,11 +1090,11 @@ public class DaoManager {
      * @param paramList 查询SQL的参数
      * @return 单个对象
      */
-    public <T> ResponseData<ArrayList<T>> queryForSingleList(Class<T> valueCls, String sql, Object[] paramList) {
+    public <T> ResponseData<List<T>> queryForSingleList(Class<T> valueCls, String sql, Object[] paramList) {
         try {
             return responseData(daoFactory.queryForSingleList(valueCls, sql, paramList));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(Collections.emptyList(), e);
         }
     }
 
@@ -1109,7 +1109,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForSingleObject(entityCls, selectSql));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -1125,7 +1125,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForSingleObject(connName, entityCls, selectSql));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -1140,7 +1140,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForSingleObject(entityCls, queryParam));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -1157,7 +1157,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForSingleObject(entityCls, tableName, queryParam));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -1173,7 +1173,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForSingleObject(connName, entityCls, queryParam));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -1189,7 +1189,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForSingleObject(entityCls, selectSql, paramList));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -1206,7 +1206,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForSingleObject(connName, entityCls, selectSql, paramList));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -1223,7 +1223,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForSingleObject(connName, entityCls, tableName, queryParam));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(null, e);
         }
     }
 
@@ -1237,7 +1237,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForDataSet(selectSql));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataSet.EMPTY, e);
         }
     }
 
@@ -1252,7 +1252,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForDataSet(connName, selectSql));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataSet.EMPTY, e);
         }
     }
 
@@ -1268,7 +1268,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForDataSet(selectSql, startIndex, resultNum));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataSet.EMPTY, e);
         }
     }
 
@@ -1283,7 +1283,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForDataSet(selectSql, paramList));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataSet.EMPTY, e);
         }
     }
 
@@ -1300,7 +1300,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForDataSet(connName, selectSql, startIndex, resultNum));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataSet.EMPTY, e);
         }
     }
 
@@ -1319,7 +1319,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForDataSet(connName, selectSql, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataSet.EMPTY, e);
         }
     }
 
@@ -1335,7 +1335,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForDataSet(connName, selectSql, paramList));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataSet.EMPTY, e);
         }
     }
 
@@ -1354,7 +1354,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForDataSet(connName, selectSql, paramList, startIndex, resultNum));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataSet.EMPTY, e);
         }
     }
 
@@ -1371,7 +1371,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForDataSet(selectSql, paramList, startIndex, resultNum));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataSet.EMPTY, e);
         }
     }
 
@@ -1390,7 +1390,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForDataSet(selectSql, paramList, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataSet.EMPTY, e);
         }
     }
 
@@ -1407,7 +1407,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForDataSet(selectSql, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataSet.EMPTY, e);
         }
     }
 
@@ -1426,7 +1426,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForDataSet(connName, selectSql, paramList, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataSet.EMPTY, e);
         }
     }
 
@@ -1441,7 +1441,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForDataSet(connName, queryParam));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataSet.EMPTY, e);
         }
     }
 
@@ -1455,7 +1455,7 @@ public class DaoManager {
         try {
             return responseData(daoFactory.queryForDataSet(queryParam));
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(DataSet.EMPTY, e);
         }
     }
 
@@ -1476,7 +1476,7 @@ public class DaoManager {
                 return responseData(effectedNum);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(-1, e);
         }
     }
 
@@ -1496,7 +1496,7 @@ public class DaoManager {
                 return responseData(effectedNum);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(-1, e);
         }
     }
 
@@ -1516,7 +1516,7 @@ public class DaoManager {
                 return responseData(effectedNum);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(-1, e);
         }
     }
 
@@ -1538,7 +1538,7 @@ public class DaoManager {
                 return responseData(effectedNum);
             }
         } catch (TransactionException e) {
-            return responseError(e);
+            return responseError(-1, e);
         }
     }
 
@@ -1600,14 +1600,14 @@ public class DaoManager {
      * @param <T>
      * @return
      */
-    private <T> ResponseData<T> responseError(TransactionException e) {
+    private <T> ResponseData<T> responseError(T data, TransactionException e) {
         // 记录错误日志
         logger.error(e.getMessage(), e);
         // 生产环境，只返回错误码，不返回错误信息，防止攻击者获取到敏感信息
         if (DaoConfigManager.isProdProfile()) {
-            return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR);
+            return ResponseData.error(data, DaoResponseCode.TRANSACTION_ERROR);
         } else {
-            return ResponseData.errorCode(DaoResponseCode.TRANSACTION_ERROR.getFullCode(), DaoResponseCode.TRANSACTION_ERROR.getLocalizedMessage() + e.getMessage());
+            return ResponseData.error(data, DaoResponseCode.TRANSACTION_ERROR.getFullCode(), DaoResponseCode.TRANSACTION_ERROR.getLocalizedMessage() + e.getMessage());
         }
     }
 

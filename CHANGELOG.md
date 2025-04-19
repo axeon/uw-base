@@ -1,11 +1,13 @@
-# 2025.0330.1036版本升级说明
-1. ResponseData完善了链式函数调用语法，包括onSuccess,onNotSuccess,onError,onNotError,onWarn,onFatal，新增传入类型Runnable，减少命名负担。
-2. ResponseData增加了map函数，支持将ResponseData转换为特定类型返回。
-3. QueryParam(IdQueryParam,IdStateQueryParam...)的Id参数类型由long修改为Serializable，方便传递更多数据类型。
-4. DaoManager对于DATA_NOT_FOUND_WARN类型的错误，返回ResponseData的state为warn。
-5. DaoManager对于effectedNum的返回类型，在isNotSuccess的情况下data默认值0，以保证返回值不为null，减少不必要的判空。
-6. DaoManager对于异常报错的输出，将针对生产环境(prod/stab)优化，自动屏蔽sql输出信息。
-7. uw-auth-service在异常情况下，完善错误码和错误信息输出，同时输出RequestPath，便于定位错误。
+# 2025.0330.1037版本升级说明
+1. uw-common-app: ResponseData完善了链式函数调用语法，包括onSuccess,onNotSuccess,onError,onNotError,onWarn,onFatal，新增传入类型Runnable，减少命名负担。
+2. uw-common-app: ResponseData增加了map函数，支持将ResponseData转换为特定类型返回。
+3. uw-common-app: QueryParam(IdQueryParam,IdStateQueryParam...)的Id参数类型由long修改为Serializable，方便传递更多数据类型。
+4. uw-dao: DaoManager对于DATA_NOT_FOUND_WARN类型的错误，返回ResponseData的state为warn。
+5. uw-dao: DaoManager对于DataList,DataSet,effectedNum的返回类型，在isNotSuccess的情况下data返回默认空数值或0/-1，减少不必要的判空。
+6. uw-dao: DaoManager对于异常报错的输出，将针对生产环境(prod/stab)优化，自动屏蔽sql输出信息。
+7. uw-dao: DataList新增stream()方法，允许使用stream()方法进行数据流处理。
+8. uw-dao: DataSet新增了map方法，支持转换为vo类型。
+9. uw-auth-service: 异常情况下，完善错误码和错误信息输出，同时输出RequestPath，便于定位错误。
 
 # 2025.0330.1031版本升级说明
 1. 谨慎升级！！！升级本版本需要重新生成代码！！！

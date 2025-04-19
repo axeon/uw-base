@@ -12,6 +12,8 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -87,13 +89,13 @@ public class DataSet implements Serializable {
      */
     @JsonProperty
     @Schema(title = "数据集", description = "数据集")
-    private ArrayList<Object[]> results;
+    private List<Object[]> results;
 
     /**
      * 构造函数.
      */
     public DataSet() {
-        super();
+        results = Collections.emptyList();
     }
 
     /**
@@ -144,6 +146,15 @@ public class DataSet implements Serializable {
     }
 
     /**
+     * 获取一个空的DataSet.
+     *
+     * @return
+     */
+    public static DataSet empty() {
+        return EMPTY;
+    }
+
+    /**
      * 获取列名列表.
      *
      * @return 列名列表
@@ -171,8 +182,14 @@ public class DataSet implements Serializable {
      * @return boolean
      */
     public boolean next() {
-        currentIndex++;
-        return results.size() > currentIndex;
+        if (results == null) {
+            return false;
+        }
+        boolean flag = results.size() > currentIndex;
+        if (flag) {
+            currentIndex++;
+        }
+        return flag;
     }
 
     /**
@@ -181,17 +198,22 @@ public class DataSet implements Serializable {
      * @return boolean
      */
     public boolean previous() {
-        currentIndex--;
-        return currentIndex > -1;
+        boolean flag = currentIndex > -1;
+        if (flag) {
+            currentIndex--;
+        }
+        return flag;
     }
 
     /**
      * remove当前行.
      */
     public void remove() {
-        this.results.remove(currentIndex);
-        this.size--;
-        this.sizeAll--;
+        if (results != null) {
+            this.results.remove(currentIndex);
+            this.size--;
+            this.sizeAll--;
+        }
     }
 
     /**
@@ -199,7 +221,7 @@ public class DataSet implements Serializable {
      *
      * @return 结果集数组
      */
-    public ArrayList<Object[]> results() {
+    public List<Object[]> results() {
         return results;
     }
 
@@ -274,6 +296,9 @@ public class DataSet implements Serializable {
      * @return 数组中指定位置的数据
      */
     public Object get(String colName) {
+        if (results == null) {
+            return null;
+        }
         return results.get(currentIndex)[getColumnPos(colName)];
     }
 
@@ -359,6 +384,7 @@ public class DataSet implements Serializable {
 
     /**
      * 返回值为byte[].
+     *
      * @param colName
      * @return
      */
@@ -383,6 +409,9 @@ public class DataSet implements Serializable {
      * @return 数组中指定位置的数据
      */
     public Object get(int colIndex) {
+        if (results == null) {
+            return null;
+        }
         return results.get(currentIndex)[--colIndex];
     }
 
@@ -498,6 +527,7 @@ public class DataSet implements Serializable {
 
     /**
      * 返回值为BigInteger.
+     *
      * @param colIndex
      * @return
      */
@@ -515,10 +545,11 @@ public class DataSet implements Serializable {
 
     /**
      * 返回值为BigDecimal.
+     *
      * @param colIndex
      * @return
      */
-    public BigDecimal getDecimal(int colIndex){
+    public BigDecimal getDecimal(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
             return BigDecimal.ZERO;
@@ -532,10 +563,11 @@ public class DataSet implements Serializable {
 
     /**
      * 返回值为bytes.
+     *
      * @param colIndex
      * @return
      */
-    public byte[] getBytes(int colIndex){
+    public byte[] getBytes(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
             return null;
@@ -565,11 +597,12 @@ public class DataSet implements Serializable {
      */
     public int getColumnPos(String colName) {
         int index = -1;
-        int end = cols.length;
-        for (int i = 0; i < end; i++) {
-            if (colName.equalsIgnoreCase(cols[i])) {
-                index = i;
-                break;
+        if (cols != null) {
+            for (int i = 0; i < cols.length; i++) {
+                if (colName.equalsIgnoreCase(cols[i])) {
+                    index = i;
+                    break;
+                }
             }
         }
         return index;

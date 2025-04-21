@@ -210,8 +210,8 @@ public class DaoSequenceFactory {
             // 从数据库中获取当前值。
             DataSet ds = dao.queryForDataSet( connName, LOAD_SEQ, new Object[]{seqName} );
             if (ds.next()) {
-                currentId = ds.getLong( 1 );
-                incrementNum = ds.getInt( 2 );
+                currentId = ds.getLong( 0 );
+                incrementNum = ds.getInt( 1 );
             } else {
                 initSequence();
             }

@@ -1,3 +1,8 @@
+# 2025.0330.1038版本升级说明
+1. uw-dao: QueryParam的SET_COND_SQL可以支持多次调用。
+2. uw-dao: DataSet字段索引从0开始(之前从1开始)，需要特别注意，并检查所有相关代码。
+3. uw-auth-service: 优化GlobalExceptionAdvice的异常处理，新增对UserIp和RequestMethod的输出，方便定位错误。
+
 # 2025.0330.1037版本升级说明
 1. uw-common-app: ResponseData完善了链式函数调用语法，包括onSuccess,onNotSuccess,onError,onNotError,onWarn,onFatal，新增传入类型Runnable，减少命名负担。
 2. uw-common-app: ResponseData增加了map函数，支持将ResponseData转换为特定类型返回。

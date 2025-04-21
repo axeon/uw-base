@@ -153,7 +153,7 @@ public class TableShardingTask implements Runnable {
         try {
             DataSet ds = dao.queryForDataSet( dao.getConnectionName( tableName, "all" ), "show create table " + tableName );
             if (ds.next()) {
-                script = ds.getString( 2 );
+                script = ds.getString( 1 );
             }
         } catch (TransactionException e) {
             log.error( e.getMessage(), e );

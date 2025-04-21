@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.util.MscUtils;
 import uw.common.dto.ResponseData;
 
@@ -25,7 +26,8 @@ public class GlobalExceptionAdvice {
     @ExceptionHandler({Throwable.class})
     public ResponseData<String> exceptionHandle(Throwable ex, HttpServletRequest request, HttpServletResponse response) {
         //针对不同类型异常，设置不同的详细消息。
-        String msg = "RequestPath: [" + request.getRequestURI() + "], Msg: " + ex.toString();
+        String userIp = IpWebUtils.getRealIp(request);
+        String msg = "UserIp: [" + userIp + "], RequestPath: [" + request.getRequestURI() + "], RequestMethod: [" + request.getMethod() + "], Msg: " + ex.toString();
         String data = null;
         // 针对ErrorResponse异常，设置不同的状态码。
         if (ex instanceof ErrorResponse errorResponse) {

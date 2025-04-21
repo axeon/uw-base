@@ -185,7 +185,7 @@ public class DataSet implements Serializable {
         if (results == null) {
             return false;
         }
-        boolean flag = results.size() > currentIndex;
+        boolean flag = results.size() > currentIndex + 1;
         if (flag) {
             currentIndex++;
         }
@@ -412,7 +412,7 @@ public class DataSet implements Serializable {
         if (results == null) {
             return null;
         }
-        return results.get(currentIndex)[--colIndex];
+        return results.get(currentIndex)[colIndex];
     }
 
     /**

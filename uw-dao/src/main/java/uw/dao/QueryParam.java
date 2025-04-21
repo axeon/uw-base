@@ -186,15 +186,21 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
     }
 
     /**
-     * 增加附加的where sql。
+     * 增加附加的where条件sql。
      * 可以多次调用执行。
      *
      * @param ADD_COND_SQL
      */
     @JsonIgnore
     public P ADD_EXT_COND_SQL(String ADD_COND_SQL) {
+        if (StringUtils.isBlank( ADD_COND_SQL )) {
+            return (P) this;
+        }
         if (this.EXT_COND_SQL == null) {
-            this.EXT_COND_SQL = new StringBuilder( 512 );
+            this.EXT_COND_SQL = new StringBuilder( 128 );
+        }
+        if (!this.EXT_COND_SQL.isEmpty()) {
+            this.EXT_COND_SQL.append( " and " );
         }
         this.EXT_COND_SQL.append( ADD_COND_SQL );
         return (P) this;

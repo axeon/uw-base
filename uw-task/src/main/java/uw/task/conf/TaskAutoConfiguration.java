@@ -71,7 +71,7 @@ public class TaskAutoConfiguration {
     /**
      * 是否已初始化配置，保证只初始化一次；
      */
-    private AtomicBoolean initFlag = new AtomicBoolean( false );
+    private final AtomicBoolean initFlag = new AtomicBoolean( false );
 
     /**
      * 服务端任务配置。

@@ -11,7 +11,7 @@ uw-dao包是一个封装数据库操作的类库，比hibernate效率高，比my
 3. 非常类似hibernate的jpa的CRUD操作，以及非常类似mybatis的SQL映射实现，调用更加简单和直接。以上基于反射实现，已经使用缓存来保证效率了，木有泄漏。
 4. 更直接和爽快的事务支持和批量更新支持，但是用起来要小心点哦，必须要用try.catch.finally规范处理异常。
 5. 运维特性支持，可以监控每一条sql的执行情况，各种报表都可以做，比如slow-query，bad-query等等。。
-6. 内部有一个CodeGen用于直接从数据库生成entity类，方便。
+6. 使用uw-code-center项目用于直接从数据库生成后端entity/dto/controller代码，以及前端的router/api/page代码。
 
 # maven引入
 
@@ -19,7 +19,7 @@ uw-dao包是一个封装数据库操作的类库，比hibernate效率高，比my
 <dependency>
 	<groupId>com.umtone</groupId>
 	<artifactId>uw-dao</artifactId>
-	<version>5.0.x</version>
+	<version>5.2.x</version>
 </dependency>
 ```
 
@@ -88,15 +88,17 @@ DaoFactory dao = DaoFactory.getInstance();
 
 DaoFactory VS DaoManager
 * DaoFactory 基于异常处理的传统调用办法，通过抛出TransactionException来处理异常。
-* DaoManager 基于ResponseData来返回数据，将异常封装在ResponseData中，这将避免潜在攻击行为。
+* DaoManager 基于ResponseData函数式风格来返回数据，将异常封装在ResponseData中，这将避免潜在攻击行为。
 
-这导致了两种不同方式的调用代码。
+代码风格差异：
 * DaoFactory 可以一锅乱烩的方式在最外围层做异常处理，代码可能会简单。
-* DaoManager 需要处理每个异常，但是可以通过Controller层做统一异常处理，代码会更简单。
+* DaoManager 推荐基于onSuccess()类型的函数调用方式，多个条件可以嵌套处理，代码会更简单。
 
 基于DaoFactory的代码做DaoManager改造的注意点：
 * 对于简单代码，一般建议直接返回，如果需要根据返回结果操作，可使用onSuccess()来做。
-* 对复杂逻辑判断的，可以简单的增加.getData()进行适配。后续通过判断!=null来判断是否成功。
+* 对于少于三个的逻辑判定，推荐使用onSuccess嵌套来实现，这是代码复杂度和实现效率的折中点。
+* 对于多于三个的复杂逻辑判断的，可以简单的使用.getData()进行适配。后续通过判断!=null来判断是否成功。
+* 对于DataList/DataSet/effectedNum类的操作，将永远不会返回null。所以可以大胆使用lambda表达式来简化代码。
 
 DaoFactory迁移到DaoManager的快速方式：
 1. 项目中全文替换DaoFactory为DaoManager。
@@ -349,7 +351,7 @@ public abstract int executeCommand(String connName,String sql,Object...paramList
 # DaoSequenceFactory VS FusionSequenceFactory。
 SequenceFactory工厂类通过配置文件动态决定使用 DaoSequenceFactory，还是 FusionSequenceFactory。
 1. FusionSequenceFactory 可以获取连续的Sequence数值，DaoSequenceFactory 集群环境下是不连续的。
-2. FusionSequenceFactory 默认配置下性能是 DaoSequenceFactory 的100、倍。
+2. FusionSequenceFactory 默认配置下性能是 DaoSequenceFactory 的100倍。
 3. DaoSequenceFactory的incrementNum=100的时候和FusionSequenceFactory性能平衡点，超过100则性能大于FusionSequenceFactory。
 4. FusionSequenceFactory 和 DaoSequenceFactory 不可以混用，超过200线程下可能会出现ID重复，如果解决此问题将会大大降低性能。
 5. ResetSequenceId方法要非常谨慎使用，最好提前设置，否则可能引发可能的ID重复问题。

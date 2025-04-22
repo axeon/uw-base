@@ -95,9 +95,8 @@ DaoFactory VS DaoManager
 * DaoManager 需要处理每个异常，但是可以通过Controller层做统一异常处理，代码会更简单。
 
 基于DaoFactory的代码做DaoManager改造的注意点：
-* 对大多数代码，可以简单的增加.getData()进行适配。因为上一级调用代码一般通过判断!=null来判断是否成功。
-* DaoManager同时提供了getDaoFactory()接口直接获取DaoFactory。
-* 对于controller，一般建议返回值为ResponseData，这样代码会更简单。
+* 对于简单代码，一般建议直接返回，如果需要根据返回结果操作，可使用onSuccess()来做。
+* 对复杂逻辑判断的，可以简单的增加.getData()进行适配。后续通过判断!=null来判断是否成功。
 
 DaoFactory迁移到DaoManager的快速方式：
 1. 项目中全文替换DaoFactory为DaoManager。

@@ -8,6 +8,8 @@ import uw.mfa.helper.MfaIPLimitHelper;
 import uw.mfa.helper.MfaTotpHelper;
 import uw.mfa.totp.vo.TotpSecretData;
 
+import java.util.Set;
+
 /**
  * 一个融合MFA帮助类。
  * 输出和检测Captcha，DeviceCode前后对IP限制进行了检查。
@@ -51,8 +53,8 @@ public class MfaFusionHelper {
      *
      * @param ip
      */
-    public static void clearIpErrorLimit(String ip) {
-        MfaIPLimitHelper.clearIpErrorLimit(ip);
+    public static boolean clearIpErrorLimit(String ip) {
+        return MfaIPLimitHelper.clearIpErrorLimit(ip);
     }
 
     /**
@@ -60,8 +62,50 @@ public class MfaFusionHelper {
      *
      * @return
      */
-    public static long countLimitInfo() {
-        return MfaIPLimitHelper.countLimitInfo();
+    public static long countMfaInfo() {
+        return MfaIPLimitHelper.countMfaInfo();
+    }
+
+    /**
+     * 获取IP限制信息。
+     * @return
+     */
+    public static Set<String> getIpErrorLimitList() {
+        return MfaIPLimitHelper.getIpErrorLimitList();
+    }
+
+    /**
+     * 获取发送Captcha验证码限制信息。
+     * @return
+     */
+    public static Set<String> getCaptchaSendLimitList() {
+        return MfaCaptchaHelper.getSendLimitList();
+    }
+
+    /**
+     * 清除发送Captcha验证码限制。
+     * @param ip
+     * @return
+     */
+    public static boolean clearCaptchaSendLimit(String ip) {
+        return MfaCaptchaHelper.clearSendLimit(ip);
+    }
+
+    /**
+     * 获取发送DeviceCode验证码限制信息。
+     * @return
+     */
+    public static Set<String> getDeviceCodeSendLimitList() {
+        return MfaDeviceCodeHelper.getSendLimitList();
+    }
+
+    /**
+     * 清除发送DeviceCode验证码限制。
+     * @param ip
+     * @return
+     */
+    public static boolean clearDeviceCodeSendLimit(String ip) {
+        return MfaDeviceCodeHelper.clearSendLimit(ip);
     }
 
     /**
@@ -148,7 +192,7 @@ public class MfaFusionHelper {
 
 
     /**
-     * 检查设备识别码。
+     * 检查设备验证码。
      * 如果识别错误，则直接递增IP错误。
      *
      * @return

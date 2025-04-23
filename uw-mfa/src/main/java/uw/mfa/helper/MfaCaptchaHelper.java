@@ -4,7 +4,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.ValueOperations;
 import uw.common.dto.ResponseData;
 import uw.mfa.captcha.CaptchaService;
@@ -14,6 +16,8 @@ import uw.mfa.conf.UwMfaProperties;
 import uw.mfa.constant.MfaResponseCode;
 import uw.mfa.util.RedisKeyUtils;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -107,6 +111,31 @@ public class MfaCaptchaHelper {
             return ResponseData.errorCode( MfaResponseCode.CAPTCHA_VERIFY_ERROR );
         }
         return ResponseData.success();
+    }
+
+
+    /**
+     * 清除CAPTCHA验证码发送限制。
+     *
+     * @param ip
+     */
+    public static boolean clearSendLimit(String ip) {
+        return mfaRedisTemplate.delete(RedisKeyUtils.buildKey(REDIS_LIMIT_CAPTCHA_PREFIX, ip));
+    }
+
+    /**
+     * 获取IP限制列表。
+     *
+     * @return
+     */
+    public static Set<String> getSendLimitList() {
+        Set<String> keys = new LinkedHashSet<>();
+        try (Cursor<String> cursor = mfaRedisTemplate.scan(ScanOptions.scanOptions().match(REDIS_LIMIT_CAPTCHA_PREFIX + ":*").count(1000).build())) {
+            cursor.forEachRemaining(key -> {
+                keys.add(key.substring(REDIS_LIMIT_CAPTCHA_PREFIX.length() + 1));
+            });
+        }
+        return keys;
     }
 
 

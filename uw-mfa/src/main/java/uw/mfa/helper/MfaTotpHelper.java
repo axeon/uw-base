@@ -11,7 +11,7 @@ import uw.mfa.totp.TotpSecretDataGenerator;
 import uw.mfa.totp.vo.TotpSecretData;
 
 /**
- * 设备验证码帮助类。
+ * TOTP验证码帮助类。
  */
 public class MfaTotpHelper {
 

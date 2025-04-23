@@ -47,42 +47,42 @@ public class UwMfaProperties {
     private long captchaSendLimitTimes = 10L;
 
     /**
-     * 设备识别码发送限制时间，默认30分钟。
+     * 设备验证码发送限制时间，默认30分钟。
      */
     private long deviceCodeSendLimitSeconds = 1800L;
 
     /**
-     * 设备识别码发送限制次数，默认10次。
+     * 设备验证码发送限制次数，默认10次。
      */
     private long deviceCodeSendLimitTimes = 10L;
 
     /**
-     * 设备识别码过期时间，默认5min。
+     * 设备验证码过期时间，默认5min。
      */
     private long deviceCodeExpiredSeconds = 300L;
 
     /**
-     * 设备识别码默认长度，默认6。
+     * 设备验证码默认长度，默认6。
      */
     private int deviceCodeDefaultLength = 6;
 
     /**
-     * 设备识别码通知标题。
+     * 设备验证码通知标题。
      */
-    private String deviceNotifySubject = "设备识别码";
+    private String deviceNotifySubject = "设备验证码";
 
     /**
-     * 设备识别码通知内容。
+     * 设备验证码通知内容。
      */
-    private String deviceNotifyContent = "设备识别码[$DEVICE_CODE$]，$EXPIRE_MINUTES$分钟后过期，如非本人操作，请忽略此信息。";
+    private String deviceNotifyContent = "设备验证码[$DEVICE_CODE$]，$EXPIRE_MINUTES$分钟后过期，如非本人操作，请忽略此信息。";
 
     /**
-     * 设备识别码短信发送API。
+     * 设备验证码短信发送API。
      */
     private String deviceNotifyMobileApi = "http://saas-base-app/rpc/saasMsg/sendSms";
 
     /**
-     * 设备识别码EMAIL发送API。
+     * 设备验证码EMAIL发送API。
      */
     private String deviceNotifyEmailApi = "http://saas-base-app/rpc/saasMsg/sendMail";
 

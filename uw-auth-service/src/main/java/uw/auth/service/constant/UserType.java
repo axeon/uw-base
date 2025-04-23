@@ -14,7 +14,7 @@ public enum UserType {
      * 任意用户类型
      * 未指定权限类型时候的默认值
      */
-    ANYONE( 0, "任意用户" ),
+    ANY( 0, "任意用户" ),
 
     /**
      * C站用户类型
@@ -97,7 +97,7 @@ public enum UserType {
                 return type;
             }
         }
-        return ANYONE;
+        return ANY;
     }
 
     /**

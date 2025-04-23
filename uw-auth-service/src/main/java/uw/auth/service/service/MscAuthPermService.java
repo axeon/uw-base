@@ -119,7 +119,7 @@ public class MscAuthPermService {
         //token用户类型。
         long tokenUserType = authTokenData.getUserType();
         //token用户类型和权限用户类型不匹配，直接返回false。
-        if (permUserType.getValue() > UserType.ANYONE.getValue() && permUserType.getValue() != tokenUserType) {
+        if (permUserType.getValue() > UserType.ANY.getValue() && permUserType.getValue() != tokenUserType) {
             return RESPONSE_FORBIDDEN;
         }
         //检测应用权限表。

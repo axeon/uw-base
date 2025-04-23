@@ -260,7 +260,7 @@ public class AuthServiceHelper {
      * @return
      */
     public static String genAnonymousToken(long saasId, long mchId) {
-        return String.valueOf(UserType.ANYONE.getValue()) + AuthServiceConstants.TOKEN_ACCESS_TYPE_SEPARATOR + mchId + "!0@" + saasId;
+        return String.valueOf(UserType.ANY.getValue()) + AuthServiceConstants.TOKEN_ACCESS_TYPE_SEPARATOR + mchId + "!0@" + saasId;
     }
 
     /**
@@ -809,7 +809,7 @@ public class AuthServiceHelper {
         if (!UserType.checkTypeValid(userType)) {
             return ResponseData.errorCode(AuthServiceConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token UserType invalid. Token: " + token);
         }
-        if (userType == UserType.ANYONE.getValue()) {
+        if (userType == UserType.ANY.getValue()) {
             return ResponseData.success(parseAnonymousToken(token.substring(typeSeparator + 1)));
         }
         //检查是否非法token请求，如果确认非法，则直接抛异常，引导用户重新登录。
@@ -852,7 +852,7 @@ public class AuthServiceHelper {
             //说明数据有问题，直接返回吧。
             return authToken;
         }
-        authToken.setUserType(UserType.ANYONE.getValue());
+        authToken.setUserType(UserType.ANY.getValue());
         authToken.setSaasId(Long.parseLong(ids[1]));
         authToken.setMchId(Long.parseLong(ids[0]));
         authToken.setUserId(0);

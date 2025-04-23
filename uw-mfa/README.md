@@ -52,42 +52,42 @@ private long captchaSendLimitSeconds = 60L;
 private long captchaSendLimitTimes = 10L;
 
 /**
- * 设备识别码发送限制时间，默认30分钟。
+ * 设备验证码发送限制时间，默认30分钟。
  */
 private long deviceCodeSendLimitSeconds = 1800L;
 
 /**
- * 设备识别码发送限制次数，默认10次。
+ * 设备验证码发送限制次数，默认10次。
  */
 private long deviceCodeSendLimitTimes = 10L;
 
 /**
- * 设备识别码过期时间，默认5min。
+ * 设备验证码过期时间，默认5min。
  */
 private long deviceCodeExpiredSeconds = 300L;
 
 /**
- * 设备识别码默认长度，默认4。
+ * 设备验证码默认长度，默认4。
  */
 private int deviceCodeDefaultLength = 4;
 
 /**
- * 设备识别码通知标题。
+ * 设备验证码通知标题。
  */
 private String deviceNotifySubject = "验证码";
 
 /**
- * 设备识别码通知内容。
+ * 设备验证码通知内容。
  */
 private String deviceNotifyContent =  "验证码[$DEVICE_CODE$]，$EXPIRE_SECONDS$分钟后过期，如非本人操作，请忽略此信息。";
 
 /**
- * 设备识别码短信发送API。
+ * 设备验证码短信发送API。
  */
 private String deviceNotifyMobileApi = "http://saas-market-app/rpc/msg/sms";
 
 /**
- * 设备识别码EMAIL发送API。
+ * 设备验证码EMAIL发送API。
  */
 private String deviceNotifyEmailApi = "http://saas-market-app/rpc/msg/mail";
 
@@ -189,7 +189,7 @@ public class MfaFusionHelper {
 
 
     /**
-     * 检查设备识别码。
+     * 检查设备验证码。
      * 如果识别错误，则直接递增IP错误。
      *
      * @return

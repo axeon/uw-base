@@ -4,8 +4,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import uw.httpclient.http.DataObjectMapper;
 import uw.httpclient.exception.DataMapperException;
+import uw.httpclient.http.DataObjectMapper;
 
 import java.io.OutputStream;
 

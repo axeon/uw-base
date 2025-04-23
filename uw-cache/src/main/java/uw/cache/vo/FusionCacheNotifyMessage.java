@@ -1,7 +1,5 @@
 package uw.cache.vo;
 
-import java.util.StringJoiner;
-
 /**
  * 融合缓存通知消息。
  * 主要用于集群环境下，通知缓存失效。

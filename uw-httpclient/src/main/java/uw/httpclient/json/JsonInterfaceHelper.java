@@ -1,8 +1,7 @@
 package uw.httpclient.json;
 
-import uw.httpclient.http.HttpDataLogLevel;
-import uw.httpclient.util.MediaTypes;
 import uw.httpclient.http.*;
+import uw.httpclient.util.MediaTypes;
 
 /**
  * Json接口帮助类。

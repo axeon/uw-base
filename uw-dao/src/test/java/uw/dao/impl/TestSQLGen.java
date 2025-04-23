@@ -2,7 +2,6 @@ package uw.dao.impl;
 
 import org.junit.jupiter.api.Test;
 import uw.dao.util.QueryParamUtils;
-import uw.dao.vo.QueryParamResult;
 
 
 public class TestSQLGen {

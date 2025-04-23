@@ -1,15 +1,15 @@
 package uw.common.app.entity;
 
-import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-
 import com.fasterxml.jackson.annotation.JsonRawValue;
 import io.swagger.v3.oas.annotations.media.Schema;
 import uw.dao.DataEntity;
 import uw.dao.annotation.ColumnMeta;
 import uw.dao.annotation.TableMeta;
+
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * SysDataHistory实体类

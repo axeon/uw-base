@@ -4,10 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
-import uw.common.app.conf.CommonAppProperties;
-import uw.common.app.entity.SysCritLog;
 import uw.auth.service.log.AuthCriticalLogStorage;
 import uw.auth.service.vo.MscActionLog;
+import uw.common.app.conf.CommonAppProperties;
+import uw.common.app.entity.SysCritLog;
 import uw.dao.DaoFactory;
 
 import java.util.concurrent.ExecutorService;

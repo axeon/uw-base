@@ -1,10 +1,9 @@
 package uw.log.es;
 
 import uw.common.util.JsonUtils;
-import uw.httpclient.json.JsonInterfaceHelper;
+import uw.httpclient.exception.DataMapperException;
 import uw.log.es.vo.ScrollResponse;
 import uw.log.es.vo.TaskRunnerLog;
-import uw.httpclient.exception.DataMapperException;
 
 /**
  * 

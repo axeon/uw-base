@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * 组合了互联网应用常见列表所需数据的集合接口。 实现了iterator,Iterable.

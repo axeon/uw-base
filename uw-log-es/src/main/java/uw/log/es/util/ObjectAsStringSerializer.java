@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.util.JsonUtils;
-import uw.httpclient.json.JsonInterfaceHelper;
 
 import java.io.IOException;
 

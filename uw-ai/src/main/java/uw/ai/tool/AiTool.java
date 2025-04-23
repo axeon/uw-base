@@ -1,7 +1,6 @@
 package uw.ai.tool;
 
 import uw.common.util.JsonUtils;
-import uw.httpclient.json.JsonInterfaceHelper;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

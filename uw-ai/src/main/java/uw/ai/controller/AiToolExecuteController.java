@@ -5,7 +5,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import uw.ai.tool.AiTool;
 import uw.ai.tool.AiToolParam;
 import uw.ai.vo.AiToolExecuteParam;
@@ -21,7 +24,7 @@ import uw.common.dto.ResponseData;
 @RequestMapping("/rpc/ai/tool")
 public class AiToolExecuteController {
 
-    private static final Logger logger = LoggerFactory.getLogger( AiToolExecuteController.class );
+    private static final Logger logger = LoggerFactory.getLogger(AiToolExecuteController.class);
 
     /**
      * spring上下文对象
@@ -41,15 +44,15 @@ public class AiToolExecuteController {
     @MscPermDeclare(user = UserType.RPC)
     @Operation(summary = "运行任务", description = "运行任务")
     public ResponseData execute(@RequestBody AiToolExecuteParam executeParam) {
-        if (StringUtils.isBlank( executeParam.getToolClass())|| StringUtils.isBlank( executeParam.getToolInput() )){
-            return ResponseData.errorMsg( "请给出任务类和任务参数！" );
+        if (StringUtils.isBlank(executeParam.getToolClass()) || StringUtils.isBlank(executeParam.getToolInput())) {
+            return ResponseData.errorMsg("请给出任务类和任务参数！");
         }
-        AiTool<AiToolParam, ResponseData> aiTool = applicationContext.getBean( executeParam.getToolClass(), AiTool.class );
+        AiTool<AiToolParam, ResponseData> aiTool = applicationContext.getBean(executeParam.getToolClass(), AiTool.class);
         if (aiTool == null) {
-            return ResponseData.errorMsg( "找不到任务类：" + executeParam.getToolClass() );
+            return ResponseData.errorMsg("找不到任务类：" + executeParam.getToolClass());
         }
-        AiToolParam toolParam = aiTool.convertParam( executeParam.getToolInput() );
-        return aiTool.apply( toolParam ) ;
+        AiToolParam toolParam = aiTool.convertParam(executeParam.getToolInput());
+        return aiTool.apply(toolParam);
     }
 
 }

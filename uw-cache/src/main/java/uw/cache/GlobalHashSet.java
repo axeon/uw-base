@@ -8,7 +8,6 @@ import uw.cache.util.KryoUtils;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * 基于Redis实现的HashSet。

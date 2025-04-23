@@ -8,16 +8,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import uw.ai.conf.UwAiProperties;
-import uw.ai.rpc.AiToolRpc;
 import uw.ai.rpc.AiTranslateRpc;
-import uw.ai.vo.AiToolMeta;
 import uw.ai.vo.AiTranslateListParam;
 import uw.ai.vo.AiTranslateMapParam;
 import uw.ai.vo.AiTranslateResultData;
 import uw.common.dto.ResponseData;
 
 import java.net.URI;
-import java.util.List;
 
 /**
  * AiToolRpcImpl.

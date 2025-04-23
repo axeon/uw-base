@@ -154,7 +154,7 @@ public class AuthServiceFilter implements Filter {
         //操作日志
         MscActionLog mscActionLog = null;
         //整理权限信息
-        UserType permUserType = UserType.ANYONE;
+        UserType permUserType = UserType.ANY;
         AuthType permAuthType = AuthType.NONE;
         ActionLog permLogType = ActionLog.NONE;
         try {

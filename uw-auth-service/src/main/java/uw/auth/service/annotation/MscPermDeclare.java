@@ -39,7 +39,7 @@ public @interface MscPermDeclare {
      *
      * @return
      */
-    UserType user() default UserType.ANYONE;
+    UserType user() default UserType.ANY;
 
     /**
      * 验证类型

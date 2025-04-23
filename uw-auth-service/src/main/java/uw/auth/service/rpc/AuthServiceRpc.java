@@ -69,6 +69,12 @@ public interface AuthServiceRpc {
      */
     ResponseData kickoutGuest(String loginAgent, long saasId, long userId, String remark);
 
+
+    /**
+     * 获取应用的权限ID列表。
+     */
+    ResponseData<String> getAppSaasPerm(String[] appNames);
+
     /**
      * 初始化Saas权限。
      *
@@ -77,6 +83,14 @@ public interface AuthServiceRpc {
      * @return
      */
     ResponseData initSaasPerm(long saasId, String saasName, String[] initAppNames, String adminPasswd, String adminMobile, String adminEmail);
+
+    /**
+     * 更新saas名称。
+     *
+     * @param saasId
+     * @param saasName
+     */
+    ResponseData updateSaasName(long saasId, String saasName);
 
 
     /**
@@ -149,7 +163,7 @@ public interface AuthServiceRpc {
      *
      * @param userId
      */
-    ResponseData<MscUserVo> getUser(long userId);
+    ResponseData<MscUserVo> loadUser(long userId);
 
     /**
      * 获取saas用户列表。
@@ -164,7 +178,7 @@ public interface AuthServiceRpc {
      * @param mobile
      * @param email
      */
-    ResponseData<List<MscUserVo>> getUserList(long saasId, int userType, long mchId, long groupId, long userId, String userName, String nickName, String realName, String mobile, String email);
+    ResponseData<List<MscUserVo>> listUser(long saasId, int userType, long mchId, long groupId, long userId, String userName, String nickName, String realName, String mobile, String email);
 
     /**
      * 获取saas用户组列表。
@@ -174,20 +188,7 @@ public interface AuthServiceRpc {
      * @param groupId
      * @param groupName
      */
-    ResponseData<List<MscUserGroupVo>> getUserGroupList(long saasId, int userType, long mchId, long groupId, String groupName);
+    ResponseData<List<MscUserGroupVo>> listUserGroup(long saasId, int userType, long mchId, long groupId, String groupName);
 
-    /**
-     * 更新saas名称。
-     *
-     * @param saasId
-     * @param saasName
-     */
-    ResponseData updateSaasName(long saasId, String saasName);
-
-
-    /**
-     * 获取应用的权限ID列表。
-     */
-    ResponseData<String> getAppSaasPerm(String[] appNames);
 
 }

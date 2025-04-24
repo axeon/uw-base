@@ -1,4 +1,4 @@
-# 2025.0330.1050版本升级说明
+# 2025.0330.1051版本升级说明
 1. uw-dao: 优化update操作，增加实体加载标志。此功能升级需要重新生成Entity代码。
 2. uw-dao: save和update之后的对象，将会清除更新标记。
 3. uw-auth-service: 将UserType.ANYONE修改为UserType.ANY，并作为默认值。

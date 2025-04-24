@@ -319,14 +319,14 @@ public class EntityCommandImpl {
                         DaoReflectUtils.DAOLiteLoadReflect(rs, entity, fmi);
                     }
                 }
+                // 设置主键值
+                emi.setLoadFlag(entity);
+                // 清除更新标记
+                if (entity instanceof DataEntity dataEntity) {
+                    dataEntity.CLEAR_UPDATED_INFO();
+                }
             }
             rs.close();
-            // 设置主键值
-            emi.setLoadFlag(entity);
-            // 清除更新标记
-            if (entity instanceof DataEntity dataEntity) {
-                dataEntity.CLEAR_UPDATED_INFO();
-            }
         } catch (Exception e) {
             exception = e.toString();
             throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + id.toString(), e);
@@ -414,14 +414,14 @@ public class EntityCommandImpl {
                         DaoReflectUtils.DAOLiteLoadReflect(rs, entity, fmi);
                     }
                 }
+                // 设置主键值
+                emi.setLoadFlag(entity);
+                // 清除更新标记
+                if (entity instanceof DataEntity dataEntity) {
+                    dataEntity.CLEAR_UPDATED_INFO();
+                }
             }
             rs.close();
-            // 设置主键值
-            emi.setLoadFlag(entity);
-            // 清除更新标记
-            if (entity instanceof DataEntity dataEntity) {
-                dataEntity.CLEAR_UPDATED_INFO();
-            }
         } catch (Exception e) {
             exception = e.toString();
             throw new TransactionException(exception + connName + "@" + connId + ": " + selectSql + "#" + Arrays.toString(paramList), e);

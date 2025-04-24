@@ -1,5 +1,9 @@
 package uw.dao.vo;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -11,29 +15,37 @@ import java.util.LinkedHashMap;
 public class TableMetaInfo {
 
     /**
-     * 表名.
+     * 日志对象.
      */
-    private String tableName;
-
+    private static final Logger logger = LoggerFactory.getLogger(TableMetaInfo.class);
     /**
-     * 表类型，table/view
+     * 加载标志.
      */
-    private String tableType;
-
-    /**
-     * 查询sql。
-     */
-    private String sql;
-
+    public static final String LOADED_FLAG = "_IS_LOADED";
     /**
      * 主键列表.
      */
     private final ArrayList<FieldMetaInfo> pkList = new ArrayList<FieldMetaInfo>();
-
     /**
      * 列名列表. key=column.
      */
     private final LinkedHashMap<String, FieldMetaInfo> columnMap = new LinkedHashMap<String, FieldMetaInfo>();
+    /**
+     * 表名.
+     */
+    private String tableName;
+    /**
+     * 表类型，table/view
+     */
+    private String tableType;
+    /**
+     * 查询sql。
+     */
+    private String sql;
+    /**
+     * 加载标志字段.
+     */
+    private Field loadFlagField;
 
     /**
      * @return the tableName
@@ -107,4 +119,36 @@ public class TableMetaInfo {
         this.columnMap.put(columnName, fi);
     }
 
+    /**
+     * 获取加载标志字段.
+     *
+     * @return
+     */
+    public Field getLoadFlagField() {
+        return loadFlagField;
+    }
+
+    /**
+     * 设置加载标志字段.
+     *
+     * @param loadFlagField
+     */
+    public void setLoadFlagField(Field loadFlagField) {
+        this.loadFlagField = loadFlagField;
+    }
+
+    /**
+     * 设置加载标志.
+     *
+     * @param object
+     */
+    public void setLoadFlag(Object object) {
+        if (this.loadFlagField != null) {
+            try {
+                this.loadFlagField.setBoolean(object, true);
+            } catch (IllegalAccessException e) {
+                logger.error("tableName[{}] setLoadFlag Error! {}", tableName, e.getMessage(), e);
+            }
+        }
+    }
 }

@@ -15,14 +15,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class EntityMetaUtils {
 
     /**
-     * 实体信息反射缓存.
-     */
-    private static final Map<String, TableMetaInfo> entityMetaCache = new ConcurrentHashMap<>(1280);
-
-    /**
      * 实体类支持的最大继承层级
      */
     static final int MAX_ENTITY_CLASS_EXTEND_LEVEL = 10;
+    /**
+     * 实体信息反射缓存.
+     */
+    private static final Map<String, TableMetaInfo> entityMetaCache = new ConcurrentHashMap<>(1280);
 
     /**
      * 加载读取pojo的注解信息.
@@ -44,6 +43,12 @@ public class EntityMetaUtils {
                 Field[] fields = clazz.getDeclaredFields();
                 for (Field field : fields) {
                     field.setAccessible(true);
+                    // 设置加载标识字段.
+                    if (field.getName().equals(TableMetaInfo.LOADED_FLAG)) {
+                        emi.setLoadFlagField(field);
+                        continue;
+                    }
+                    // 加载列注解信息.
                     ColumnMeta meta = field.getAnnotation(ColumnMeta.class);
                     if (meta != null) {
                         FieldMetaInfo fieldInfo = new FieldMetaInfo();

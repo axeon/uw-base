@@ -111,6 +111,10 @@ public class EntityCommandImpl {
                 effectedNum = pstmt.executeUpdate();
             }
             dbTime = SystemClock.now() - dbStart;
+            // 设置主键值
+            emi.setLoadFlag(entity);
+            // 清除更新标记
+            entity.CLEAR_UPDATED_INFO();
         } catch (Exception e) {
             exception = e.toString();
             throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + Arrays.toString(paramList), e);
@@ -216,6 +220,12 @@ public class EntityCommandImpl {
                 effectedNum = pstmt.executeUpdate();
             }
             dbTime = SystemClock.now() - dbStart;
+            for (T entity : entityList) {
+                // 设置主键值
+                emi.setLoadFlag(entity);
+                // 清除更新标记
+                entity.CLEAR_UPDATED_INFO();
+            }
         } catch (Exception e) {
             exception = e.toString();
             throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + Arrays.toString(paramList), e);
@@ -311,6 +321,12 @@ public class EntityCommandImpl {
                 }
             }
             rs.close();
+            // 设置主键值
+            emi.setLoadFlag(entity);
+            // 清除更新标记
+            if (entity instanceof DataEntity dataEntity) {
+                dataEntity.CLEAR_UPDATED_INFO();
+            }
         } catch (Exception e) {
             exception = e.toString();
             throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + id.toString(), e);
@@ -400,6 +416,12 @@ public class EntityCommandImpl {
                 }
             }
             rs.close();
+            // 设置主键值
+            emi.setLoadFlag(entity);
+            // 清除更新标记
+            if (entity instanceof DataEntity dataEntity) {
+                dataEntity.CLEAR_UPDATED_INFO();
+            }
         } catch (Exception e) {
             exception = e.toString();
             throw new TransactionException(exception + connName + "@" + connId + ": " + selectSql + "#" + Arrays.toString(paramList), e);
@@ -503,6 +525,10 @@ public class EntityCommandImpl {
                 effectedNum = pstmt.executeUpdate();
             }
             dbTime = SystemClock.now() - dbStart;
+            // 设置主键值
+            emi.setLoadFlag(entity);
+            // 清除更新标记
+            entity.CLEAR_UPDATED_INFO();
         } catch (Exception e) {
             exception = e.toString();
             throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + Arrays.toString(paramList), e);
@@ -527,55 +553,6 @@ public class EntityCommandImpl {
             }
         }
         return effectedNum;
-    }
-
-
-    /**
-     * 保存一个实体.
-     *
-     * @param dao       DAOFactoryImpl对象
-     * @param connName  连接名
-     * @param entity    实体类
-     * @param tableName 表名
-     * @return 实体类
-     * @throws TransactionException 事务异常
-     */
-    static int update(DaoFactoryImpl dao, String connName, DataEntity entity, String tableName, QueryParam queryParam) throws TransactionException {
-        // 有时候从数据库中load数据，并无实质更新，此时直接返回-1.
-        if (entity.GET_UPDATED_COLUMN() == null) {
-            return 0;
-        }
-        // 解析查询参数。
-        QueryParamResult queryParamResult = QueryParamUtils.parseQueryParam(queryParam);
-        // 获取TableMetaInfo。
-        TableMetaInfo emi = EntityMetaUtils.loadEntityMetaInfo(entity.getClass());
-        if (emi == null) {
-            throw new TransactionException("TableMetaInfo[" + entity.getClass() + "] not found! ");
-        }
-        if (StringUtils.isBlank(tableName)) {
-            tableName = emi.getTableName();
-        }
-        if (StringUtils.isBlank(connName)) {
-            connName = DaoConfigManager.getRouteMapping(tableName, "write");
-        }
-        StringBuilder sb = new StringBuilder(256);
-        Set<String> cols = entity.GET_UPDATED_COLUMN();
-        //参数列表。
-        Object[] paramList = new Object[cols.size()];
-        try {
-            sb.append("update ").append(tableName).append(" set ");
-            int pos = 0;
-            for (String col : cols) {
-                sb.append(col).append("=?,");
-                paramList[pos++] = emi.getFieldMetaInfo(col).getField().get(entity);
-            }
-            sb.deleteCharAt(sb.length() - 1);
-        } catch (Exception e) {
-            throw new TransactionException("FieldMetaInfo@[" + entity.getClass() + "] get error! " + e.toString(), e);
-        }
-        sb.append(queryParamResult.getSql());
-        Object[] allParamList = ArrayUtils.addAll(paramList, queryParamResult.getParamList());
-        return SQLCommandImpl.executeSQL(dao, connName, sb.toString(), allParamList);
     }
 
     /**
@@ -754,6 +731,12 @@ public class EntityCommandImpl {
                         DaoReflectUtils.DAOLiteLoadReflect(rs, entity, fmi);
                     }
                 }
+                // 设置主键值
+                emi.setLoadFlag(entity);
+                // 清除更新标记
+                if (entity instanceof DataEntity dataEntity) {
+                    dataEntity.CLEAR_UPDATED_INFO();
+                }
                 list.add(entity);
             }
             rs.close();
@@ -779,20 +762,5 @@ public class EntityCommandImpl {
             dao.addSqlExecuteStats(connName, connId, selectSql, paramList, list.size(), connTime, dbTime, allTime, exception);
         }
         return new DataList<T>(list, startIndex, resultNum, allSize);
-    }
-
-    /**
-     * 获取表名.
-     *
-     * @param cls 类型
-     * @return 表名
-     */
-    static String getTableName(Class<?> cls) {
-        TableMetaInfo emi = EntityMetaUtils.loadEntityMetaInfo(cls);
-        if (emi != null) {
-            return emi.getTableName();
-        } else {
-            return null;
-        }
     }
 }

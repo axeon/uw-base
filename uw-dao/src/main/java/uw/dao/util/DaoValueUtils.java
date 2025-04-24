@@ -1,5 +1,6 @@
 package uw.dao.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 
 import java.util.Arrays;
@@ -18,7 +19,7 @@ public class DaoValueUtils {
      * @param date 日期时间
      * @return Timestamp对象
      */
-    public static final java.sql.Timestamp dateToTimestamp(java.util.Date date) {
+    public static java.sql.Timestamp dateToTimestamp(java.util.Date date) {
         if (date != null) {
             return new java.sql.Timestamp(date.getTime());
         } else {
@@ -32,7 +33,7 @@ public class DaoValueUtils {
      * @param columnName 列名
      * @return 列名
      */
-    public static final String getTrueColumnName(String columnName) {
+    public static String getTrueColumnName(String columnName) {
         int p = columnName.indexOf(" as ");
         if (p > -1) {
             return columnName.substring(p + 4).trim();
@@ -47,9 +48,9 @@ public class DaoValueUtils {
      * @param str 字符串
      * @return String
      */
-    public static final String nullToStr(String str) {
+    public static String nullToStr(String str) {
         if (str == null) {
-            return "";
+            return StringUtils.EMPTY;
         }
         return str;
     }
@@ -61,7 +62,7 @@ public class DaoValueUtils {
      * @param paramList
      * @return
      */
-    public static final String combineSqlAndParam(String sql, Object[] paramList) {
+    public static String combineSqlAndParam(String sql, Object[] paramList) {
         //如果参数列表为空，直接返回sql。
         if (paramList == null) {
             return sql;

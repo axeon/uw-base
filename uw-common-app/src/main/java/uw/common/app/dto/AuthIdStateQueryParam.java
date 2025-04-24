@@ -93,26 +93,6 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
     }
 
     /**
-     * 指定id构造器。
-     *
-     * @param id
-     */
-    public AuthIdStateQueryParam(Long saasId, Serializable id) {
-        this.saasId = saasId;
-        this.id = id;
-    }
-
-    /**
-     * 指定id数组构造器。
-     *
-     * @param ids
-     */
-    public AuthIdStateQueryParam(Long saasId, Serializable[] ids) {
-        this.saasId = saasId;
-        this.ids = ids;
-    }
-
-    /**
      * 指定id,state的构造器。
      * 如果不在web环境下运行，将会抛错。
      *
@@ -162,24 +142,6 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
         this.saasId = saasId;
         this.ids = ids;
         this.states = states;
-    }
-
-    /**
-     * 指定id构造器。
-     *
-     * @param id
-     */
-    public AuthIdStateQueryParam(Serializable id) {
-        this.id = id;
-    }
-
-    /**
-     * 指定id数组构造器。
-     *
-     * @param ids
-     */
-    public AuthIdStateQueryParam(Serializable[] ids) {
-        this.ids = ids;
     }
 
     /**

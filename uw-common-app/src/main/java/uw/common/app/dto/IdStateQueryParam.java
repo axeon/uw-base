@@ -62,23 +62,6 @@ public class IdStateQueryParam extends QueryParam<IdStateQueryParam> {
     public IdStateQueryParam() {
     }
 
-    /**
-     * 指定id构造器。
-     *
-     * @param id
-     */
-    public IdStateQueryParam(Serializable id) {
-        this.id = id;
-    }
-
-    /**
-     * 指定id数组构造器。
-     *
-     * @param ids
-     */
-    public IdStateQueryParam(Serializable[] ids) {
-        this.ids = ids;
-    }
 
     /**
      * 指定id,state的构造器。

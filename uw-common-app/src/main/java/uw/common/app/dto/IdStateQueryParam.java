@@ -87,7 +87,7 @@ public class IdStateQueryParam extends QueryParam<IdStateQueryParam> {
      * @param id
      * @param state
      */
-    public IdStateQueryParam(Long id, Integer state) {
+    public IdStateQueryParam(Serializable id, Integer state) {
         this.id = id;
         this.state = state;
     }

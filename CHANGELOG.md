@@ -1,3 +1,10 @@
+# 2025.0330.1039版本升级说明
+1. uw-dao: 优化update操作，增加实体加载标志。此功能升级需要重新生成Entity代码。
+2. uw-dao: save和update之后的对象，将会清除更新标记。
+3. uw-auth-service: 将UserType.ANYONE修改为UserType.ANY，并作为默认值。
+4. uw-auth-service: ServiceRpc方法中的getUser改为loadUser，getUserList改为listUser，getUserGroupList改为listUserGroup。
+5. uw-mfa: 增加了对IP限制类型的列表获取功能。
+
 # 2025.0330.1038版本升级说明
 1. uw-dao: QueryParam的SET_COND_SQL可以支持多次调用。
 2. uw-dao: DataSet字段索引从0开始(之前从1开始)，需要特别注意，并检查所有相关代码。

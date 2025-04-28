@@ -437,6 +437,15 @@ public class ResponseData<T> {
     }
 
     /**
+     * 失败返回值。
+     *
+     * @return
+     */
+    public static <T> ResponseData<T> error(T t) {
+        return new ResponseData<T>(t, STATE_ERROR,null, null);
+    }
+
+    /**
      * 附带代码的失败返回值。
      *
      * @param code
@@ -564,6 +573,16 @@ public class ResponseData<T> {
     public static <T> ResponseData<T> fatal() {
         return new ResponseData<T>(null, STATE_FATAL, null, null);
     }
+
+    /**
+     * 严重错误返回值。
+     *
+     * @return
+     */
+    public static <T> ResponseData<T> fatal(T t) {
+        return new ResponseData<T>(t, STATE_FATAL,null, null);
+    }
+
 
     /**
      * 附带代码的严重错误返回值。

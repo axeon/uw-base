@@ -364,12 +364,9 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
                 //去掉最后一个逗号
                 sb.deleteCharAt(sb.length() - 1);
                 return sb.toString();
-            }else{
-                return StringUtils.EMPTY;
             }
-        }else{
-            return StringUtils.EMPTY;
         }
+        return StringUtils.EMPTY;
     }
 
 }

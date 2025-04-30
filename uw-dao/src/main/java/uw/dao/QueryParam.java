@@ -6,7 +6,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,15 +22,15 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
     /**
      * 不排序。
      */
-    public static int SORT_NONE = 0;
+    public static final int SORT_NONE = 0;
     /**
      * 排顺序。
      */
-    public static int SORT_ASC = 1;
+    public static final int SORT_ASC = 1;
     /**
      * 排倒序。
      */
-    public static int SORT_DESC = 2;
+    public static final int SORT_DESC = 2;
     /**
      * like参数的最小长度。
      * 少于最小参数的，将转化为=查询。
@@ -66,13 +68,13 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      */
     @JsonProperty("sortName")
     @Schema(name = "$sn", title = "排序名称", description = "排序名称")
-    private String SORT_NAME;
+    private List<String> SORT_NAME;
     /**
      * 排序类型。
      */
     @JsonProperty("sortType")
     @Schema(name = "$st", title = "排序类型", description = "排序类型。0:不排序, 1:顺序, 2:倒序", defaultValue = "0")
-    private int SORT_TYPE = SORT_NONE;
+    private List<Integer> SORT_TYPE;
 
     public QueryParam() {
     }
@@ -193,16 +195,16 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      */
     @JsonIgnore
     public P ADD_EXT_COND_SQL(String ADD_COND_SQL) {
-        if (StringUtils.isBlank( ADD_COND_SQL )) {
+        if (StringUtils.isBlank(ADD_COND_SQL)) {
             return (P) this;
         }
         if (this.EXT_COND_SQL == null) {
-            this.EXT_COND_SQL = new StringBuilder( 128 );
+            this.EXT_COND_SQL = new StringBuilder(128);
         }
         if (!this.EXT_COND_SQL.isEmpty()) {
-            this.EXT_COND_SQL.append( " and " );
+            this.EXT_COND_SQL.append(" and ");
         }
-        this.EXT_COND_SQL.append( ADD_COND_SQL );
+        this.EXT_COND_SQL.append(ADD_COND_SQL);
         return (P) this;
     }
 
@@ -237,7 +239,7 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
         if (EXT_COND_MAP == null) {
             EXT_COND_MAP = new LinkedHashMap<>();
         }
-        this.EXT_COND_MAP.put( condExpr, condValue );
+        this.EXT_COND_MAP.put(condExpr, condValue);
         return (P) this;
     }
 
@@ -253,26 +255,8 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
         if (EXT_COND_MAP == null) {
             EXT_COND_MAP = new LinkedHashMap<>();
         }
-        this.EXT_COND_MAP.put( paramExpr+"=?", paramValue );
+        this.EXT_COND_MAP.put(paramExpr + "=?", paramValue);
         return (P) this;
-    }
-
-    /**
-     * 生成sort的sql。
-     *
-     * @return
-     */
-    public String GEN_SORT_SQL() {
-        Map<String, String> allowedSortProperty = ALLOWED_SORT_PROPERTY();
-        if (allowedSortProperty == null || StringUtils.isBlank( SORT_NAME )) {
-            return StringUtils.EMPTY;
-        }
-        String sortColumns = allowedSortProperty.get( SORT_NAME );
-        if (StringUtils.isBlank( sortColumns )) {
-            return StringUtils.EMPTY;
-        }
-        //此处要对SORT_NAME处理，此处是唯一潜在注入点。
-        return " order by " + sortColumns + " " + (SORT_TYPE == SORT_NONE ? StringUtils.EMPTY : SORT_TYPE == SORT_ASC ? "asc" : "desc");
     }
 
     /**
@@ -280,7 +264,7 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      *
      * @return
      */
-    public String SORT_NAME() {
+    public List<String> SORT_NAME() {
         return SORT_NAME;
     }
 
@@ -290,8 +274,8 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * @param SORT_NAME
      * @return
      */
-    public QueryParam SORT_NAME(String SORT_NAME) {
-        this.SORT_NAME = SORT_NAME;
+    public QueryParam SORT_NAME(String... SORT_NAME) {
+        this.SORT_NAME = new ArrayList<>(List.of(SORT_NAME));
         return this;
     }
 
@@ -300,8 +284,8 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      *
      * @param sortName
      */
-    public void set$sn(String sortName) {
-        this.SORT_NAME = sortName;
+    public void set$sn(String... sortName) {
+        this.SORT_NAME = new ArrayList<>(List.of(sortName));
     }
 
     /**
@@ -309,7 +293,7 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      *
      * @return
      */
-    public int SORT_TYPE() {
+    public List<Integer> SORT_TYPE() {
         return SORT_TYPE;
     }
 
@@ -319,8 +303,8 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * @param SORT_TYPE
      * @return
      */
-    public QueryParam SORT_TYPE(int SORT_TYPE) {
-        this.SORT_TYPE = SORT_TYPE;
+    public QueryParam SORT_TYPE(Integer... SORT_TYPE) {
+        this.SORT_TYPE = new ArrayList<>(List.of(SORT_TYPE));
         return this;
     }
 
@@ -329,9 +313,57 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      *
      * @param sortType
      */
-    public void set$st(int sortType) {
-        this.SORT_TYPE = sortType;
+    public void set$st(Integer... sortType) {
+        this.SORT_TYPE = new ArrayList<>(List.of(sortType));
+        ;
     }
 
+    /**
+     * 增加排序。
+     *
+     * @param sortName
+     * @param sortType
+     */
+    public void ADD_SORT(String sortName, int sortType) {
+        if (this.SORT_NAME == null) {
+            this.SORT_NAME = new ArrayList<>(3);
+            this.SORT_TYPE = new ArrayList<>(3);
+        }
+        this.SORT_NAME.add(sortName);
+        this.SORT_TYPE.add(sortType);
+    }
+
+    /**
+     * 生成sort的sql。
+     *
+     * @return
+     */
+    public String GEN_SORT_SQL() {
+        Map<String, String> allowedSortProperty = ALLOWED_SORT_PROPERTY();
+        StringBuilder sb = new StringBuilder(32);
+        if (SORT_NAME != null && SORT_NAME.size() > 0) {
+            sb.append(" order by");
+            for (int i = 0; i < SORT_NAME.size(); i++) {
+                String sortColumns = allowedSortProperty.get(SORT_NAME.get(i));
+                if (StringUtils.isBlank(sortColumns)) {
+                    continue;
+                }
+                sb.append(" ").append(sortColumns);
+                if (SORT_TYPE != null && i < SORT_TYPE.size()) {
+                    if (SORT_TYPE.get(i) != null && SORT_TYPE.get(i) == SORT_DESC) {
+                        sb.append(" desc");
+                    } else {
+                        sb.append(" asc");
+                    }
+                }
+                sb.append(",");
+            }
+            //去掉最后一个逗号
+            if (sb.charAt(sb.length() - 1) == ',') {
+                sb.deleteCharAt(sb.length() - 1);
+            }
+        }
+        return sb.toString();
+    }
 
 }

@@ -6,9 +6,7 @@ import uw.dao.vo.QueryParamResult;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * 测试查询meta
@@ -22,16 +20,34 @@ public class QueryMetaTest {
         a.stateGte = 1;
         a.date = Arrays.asList( new Date[]{new Date(1), new Date()} );
         a.ADD_EXT_COND( "create_date>?" ,new Date());
-        a.ADD_EXT_COND_SQL( " x>0" );
+        a.ADD_EXT_COND_SQL( "x>0" );
+        a.SORT_NAME( "id");
+        a.SORT_TYPE( QueryParam.SORT_ASC);
+        a.ADD_SORT( "name", QueryParam.SORT_DESC);
 //        a.LIKE_QUERY_ENABLE(false);
         QueryParamResult queryParamResult = DaoFactory.getInstance().parseQueryParam(EntityA.class, a);
         System.out.println(queryParamResult.getSql().toString());
-        System.out.println(Arrays.toString(queryParamResult.getParamList()));
-        System.out.println(queryParamResult.genFullSql());
+//        System.out.println(Arrays.toString(queryParamResult.getParamList()));
+//        System.out.println(queryParamResult.genFullSql());
     }
 
 
     public static class QueryParamA extends QueryParam {
+
+
+        /**
+         * 允许的排序属性。
+         * key:排序名 value:排序字段
+         *
+         * @return
+         */
+        @Override
+        public Map<String, String> ALLOWED_SORT_PROPERTY() {
+            return new HashMap<>() {{
+                put( "id", "id" );
+                put( "name", "name" );
+            }};
+        }
 
         @QueryMeta(expr = "id=?")
         private Long id;

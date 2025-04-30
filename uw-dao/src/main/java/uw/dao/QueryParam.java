@@ -274,9 +274,9 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * @param SORT_NAME
      * @return
      */
-    public QueryParam SORT_NAME(String... SORT_NAME) {
+    public P SORT_NAME(String... SORT_NAME) {
         this.SORT_NAME = new ArrayList<>(List.of(SORT_NAME));
-        return this;
+        return (P) this;
     }
 
     /**
@@ -303,9 +303,9 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * @param SORT_TYPE
      * @return
      */
-    public QueryParam SORT_TYPE(Integer... SORT_TYPE) {
+    public P SORT_TYPE(Integer... SORT_TYPE) {
         this.SORT_TYPE = new ArrayList<>(List.of(SORT_TYPE));
-        return this;
+        return (P) this;
     }
 
     /**
@@ -315,7 +315,6 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      */
     public void set$st(Integer... sortType) {
         this.SORT_TYPE = new ArrayList<>(List.of(sortType));
-        ;
     }
 
     /**
@@ -324,13 +323,14 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * @param sortName
      * @param sortType
      */
-    public void ADD_SORT(String sortName, int sortType) {
+    public P ADD_SORT(String sortName, int sortType) {
         if (this.SORT_NAME == null) {
             this.SORT_NAME = new ArrayList<>(3);
             this.SORT_TYPE = new ArrayList<>(3);
         }
         this.SORT_NAME.add(sortName);
         this.SORT_TYPE.add(sortType);
+        return (P) this;
     }
 
     /**

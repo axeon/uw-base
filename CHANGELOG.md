@@ -1,3 +1,7 @@
+# 2025.0330.1052版本升级说明
+1. uw-dao: QueryParam的排序优化，支持多字段排序。新增ADD_SORT方法一次性设定排序字段和排序方法，并支持多次调用。
+2. uw-common: ResponseData的warn/error/fatal方法，新增单独返回数据信息的方法。
+
 # 2025.0330.1051版本升级说明
 1. uw-dao: 优化update操作，增加实体加载标志。此功能升级需要重新生成Entity代码。
 2. uw-dao: save和update之后的对象，将会清除更新标记。

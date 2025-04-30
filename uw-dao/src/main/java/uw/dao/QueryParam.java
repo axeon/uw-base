@@ -339,15 +339,17 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * @return
      */
     public String GEN_SORT_SQL() {
-        Map<String, String> allowedSortProperty = ALLOWED_SORT_PROPERTY();
-        StringBuilder sb = new StringBuilder(32);
         if (SORT_NAME != null && SORT_NAME.size() > 0) {
+            // 是否有排序字段。
+            boolean hasSort = false;
+            StringBuilder sb = new StringBuilder(32);
             sb.append(" order by");
             for (int i = 0; i < SORT_NAME.size(); i++) {
-                String sortColumns = allowedSortProperty.get(SORT_NAME.get(i));
+                String sortColumns = ALLOWED_SORT_PROPERTY().get(SORT_NAME.get(i));
                 if (StringUtils.isBlank(sortColumns)) {
                     continue;
                 }
+                hasSort = true;
                 sb.append(" ").append(sortColumns);
                 if (SORT_TYPE != null && i < SORT_TYPE.size()) {
                     if (SORT_TYPE.get(i) != null && SORT_TYPE.get(i) == SORT_DESC) {
@@ -358,12 +360,16 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
                 }
                 sb.append(",");
             }
-            //去掉最后一个逗号
-            if (sb.charAt(sb.length() - 1) == ',') {
+            if (hasSort) {
+                //去掉最后一个逗号
                 sb.deleteCharAt(sb.length() - 1);
+                return sb.toString();
+            }else{
+                return StringUtils.EMPTY;
             }
+        }else{
+            return StringUtils.EMPTY;
         }
-        return sb.toString();
     }
 
 }

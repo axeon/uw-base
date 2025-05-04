@@ -12,11 +12,11 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.10</version>
+        <version>3.3.11</version>
     </parent>
 
     <properties>
-        <revision>2025.0330.1053</revision>
+        <revision>2025.0501.1000</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
@@ -26,11 +26,12 @@
         <spring-cloud.alibaba.version>2023.0.1.2</spring-cloud.alibaba.version>
         <uw-ai.version>1.0.9</uw-ai.version>
         <uw-auth-client.version>6.1.10</uw-auth-client.version>
-        <uw-auth-service.version>6.1.25</uw-auth-service.version>
+        <uw-auth-service.version>6.1.26</uw-auth-service.version>
         <uw-cache.version>1.1.81</uw-cache.version>
         <uw-common.version>1.0.62</uw-common.version>
         <uw-common-app.version>1.0.62</uw-common-app.version>
         <uw-dao.version>5.2.16</uw-dao.version>
+        <uw-gateway-client.version>1.0.0</uw-gateway-client.version>
         <uw-httpclient.version>2.1.121</uw-httpclient.version>
         <uw-log-es.version>3.0.81</uw-log-es.version>
         <uw-logback-es.version>3.0.81</uw-logback-es.version>
@@ -64,16 +65,6 @@
             </dependency>
             <dependency>
                 <groupId>com.umtone</groupId>
-                <artifactId>uw-common-app</artifactId>
-                <version>${uw-common-app.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.umtone</groupId>
-                <artifactId>uw-common</artifactId>
-                <version>${uw-common.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.umtone</groupId>
                 <artifactId>uw-auth-client</artifactId>
                 <version>${uw-auth-client.version}</version>
             </dependency>
@@ -84,18 +75,28 @@
             </dependency>
             <dependency>
                 <groupId>com.umtone</groupId>
-                <artifactId>uw-dao</artifactId>
-                <version>${uw-dao.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.umtone</groupId>
                 <artifactId>uw-cache</artifactId>
                 <version>${uw-cache.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.umtone</groupId>
-                <artifactId>uw-mfa</artifactId>
-                <version>${uw-mfa.version}</version>
+                <artifactId>uw-common</artifactId>
+                <version>${uw-common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.umtone</groupId>
+                <artifactId>uw-common-app</artifactId>
+                <version>${uw-common-app.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.umtone</groupId>
+                <artifactId>uw-dao</artifactId>
+                <version>${uw-dao.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.umtone</groupId>
+                <artifactId>uw-gateway-client</artifactId>
+                <version>${uw-gateway-client.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.umtone</groupId>
@@ -111,6 +112,11 @@
                 <groupId>com.umtone</groupId>
                 <artifactId>uw-logback-es</artifactId>
                 <version>${uw-logback-es.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.umtone</groupId>
+                <artifactId>uw-mfa</artifactId>
+                <version>${uw-mfa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.umtone</groupId>
@@ -135,7 +141,7 @@
             <dependency>
                 <groupId>org.msgpack</groupId>
                 <artifactId>msgpack-core</artifactId>
-                <version>0.9.8</version>
+                <version>0.9.9</version>
             </dependency>
             <dependency>
                 <groupId>org.openjdk.jmh</groupId>
@@ -155,7 +161,7 @@
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-annotations</artifactId>
-                <version>2.2.27</version>
+                <version>2.2.30</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -180,17 +186,17 @@
             <dependency>
                 <groupId>com.github.victools</groupId>
                 <artifactId>jsonschema-generator</artifactId>
-                <version>4.37.0</version>
+                <version>4.38.0</version>
             </dependency>
             <dependency>
                 <groupId>com.github.victools</groupId>
                 <artifactId>jsonschema-module-jackson</artifactId>
-                <version>4.37.0</version>
+                <version>4.38.0</version>
             </dependency>
             <dependency>
                 <groupId>com.github.victools</groupId>
                 <artifactId>jsonschema-module-swagger-2</artifactId>
-                <version>4.37.0</version>
+                <version>4.38.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -203,6 +209,7 @@
         <module>uw-common</module>
         <module>uw-common-app</module>
         <module>uw-dao</module>
+        <module>uw-gateway-client</module>
         <module>uw-httpclient</module>
         <module>uw-log-es</module>
         <module>uw-logback-es</module>

@@ -118,24 +118,6 @@ public interface AuthServiceRpc {
     ResponseData disableSaasPerm(long saasId, String remark);
 
     /**
-     * 运营商限速设置。
-     *
-     * @param saasId
-     * @param remark
-     * @return
-     */
-    ResponseData updateSaasRateLimit(long saasId, int limitSeconds, int limitRequests, int limitBytes, Date expireDate, String remark);
-
-    /**
-     * 清除运营商限速设置。
-     *
-     * @param saasId
-     * @param remark
-     * @return
-     */
-    ResponseData clearSaasRateLimit(long saasId, String remark);
-
-    /**
      * 修改SAAS用户数限制。
      *
      * @param saasId

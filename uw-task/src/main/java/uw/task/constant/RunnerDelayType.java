@@ -3,65 +3,44 @@ package uw.task.constant;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- * 任务运行状态。
+ * 队列任务延迟类型。
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum StateTaskRun {
+public enum RunnerDelayType {
 
 
     /**
-     * 任务状态:未设置
+     * 非延迟任务类型。
      */
-    UNKNOWN(0, "未设置"),
+    OFF(0,"非延迟任务类型"),
 
     /**
-     * 任务状态:成功
+     * 延迟任务类型。
      */
-    SUCCESS(1, "成功"),
-
-    /**
-     * 任务状态:程序错误
-     */
-    FAIL_PROGRAM(2, "程序错误"),
-
-    /**
-     * 任务状态:配置错误，如超过流量限制
-     */
-    FAIL_CONFIG(3, "配置错误"),
-
-    /**
-     * 任务状态:第三方接口错误
-     */
-    FAIL_PARTNER(4, "三方接口错误"),
-
-    /**
-     * 任务状态:数据错误
-     */
-    FAIL_DATA(5, "数据错误");
-
+    ON(1,"延迟任务类型");
 
     private final int value;
 
     private final String label;
 
-    StateTaskRun(int value, String label) {
+    RunnerDelayType(int value, String label) {
         this.value = value;
         this.label = label;
     }
 
     /**
-     * 如果匹配不上，最后会返回为止（UNKNOWN）
+     * 如果匹配不上，最后会返回OFF。
      *
      * @param value
      * @return
      */
-    public static StateTaskRun findByValue(int value) {
-        for (StateTaskRun state : values()) {
+    public static RunnerDelayType findByValue(int value) {
+        for (RunnerDelayType state : values()) {
             if (state.getValue() == value) {
                 return state;
             }
         }
-        return UNKNOWN;
+        return OFF;
     }
 
     public int getValue() {
@@ -75,7 +54,7 @@ public enum StateTaskRun {
      * @return
      */
     public static boolean isEffective(int name) {
-        for (StateTaskRun state : values()) {
+        for (RunnerDelayType state : values()) {
             if (state.value == name) {
                 return true;
             }

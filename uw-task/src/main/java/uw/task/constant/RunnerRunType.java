@@ -3,44 +3,55 @@ package uw.task.constant;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- * 任务重试类型。
- *
+ * 队列任务运行类型。
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum TypeTaskRetry {
+public enum RunnerRunType {
+
 
     /**
-     * 自动重试[为了兼容,默认开启重试]
+     * 运行模式：本地运行
      */
-    AUTO(0, "自动重试"),
+    LOCAL(1, "本地运行"),
+
     /**
-     * 用户手工重试
+     * 运行模式：全局运行
      */
-    MANUAL(1, "手工重试");
+    GLOBAL(3, "全局运行"),
+
+    /**
+     * 运行模式：全局运行RPC返回结果
+     */
+    GLOBAL_RPC(5, "全局运行RPC"),
+
+    /**
+     * 运行模式：自动运行RPC返回结果，使用此模式，会自动选择本地还远程运行模式。
+     */
+    AUTO_RPC(6, "自动运行RPC");
 
 
     private final int value;
 
     private final String label;
 
-    TypeTaskRetry(int value, String label) {
+    RunnerRunType(int value, String label) {
         this.value = value;
         this.label = label;
     }
 
     /**
-     * 如果匹配不上,返回自动。
+     * 如果匹配不上，最后会返回为止（UNKNOWN）
      *
      * @param value
      * @return
      */
-    public static TypeTaskRetry findByValue(int value) {
-        for (TypeTaskRetry state : values()) {
+    public static RunnerRunType findByValue(int value) {
+        for (RunnerRunType state : values()) {
             if (state.getValue() == value) {
                 return state;
             }
         }
-        return AUTO;
+        return LOCAL;
     }
 
     public int getValue() {
@@ -54,7 +65,7 @@ public enum TypeTaskRetry {
      * @return
      */
     public static boolean isEffective(int name) {
-        for (TypeTaskRetry state : values()) {
+        for (RunnerRunType state : values()) {
             if (state.value == name) {
                 return true;
             }

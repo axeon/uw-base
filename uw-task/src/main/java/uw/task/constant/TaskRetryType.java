@@ -3,59 +3,43 @@ package uw.task.constant;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- * 任务日志记录类型。
+ * 任务重试类型。
+ *
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum TypeTaskLogRecord {
-
-
-    /**
-     * 什么都不记录
-     */
-    NONE(-1,"不记录日志"),
+public enum TaskRetryType {
 
     /**
-     * 记录日志
+     * 自动重试[为了兼容,默认开启重试]
      */
-    RECORD(0,"记录日志"),
-
+    AUTO(0, "自动重试"),
     /**
-     * 记录日志,含请求参数
+     * 用户手工重试
      */
-    RECORD_TASK_PARAM(1,"记录日志,含请求参数"),
-
-    /**
-     * 记录日志,含返回参数
-     */
-    RECORD_RESULT_DATA(2,"记录日志,含返回参数"),
-
-    /**
-     * 记录全部日志
-     */
-    RECORD_ALL(3,"记录全部日志");
+    MANUAL(1, "手工重试");
 
     private final int value;
 
     private final String label;
 
-    TypeTaskLogRecord(int value, String label) {
+    TaskRetryType(int value, String label) {
         this.value = value;
         this.label = label;
     }
 
     /**
-     * 如果匹配不上，最后会返回NONE。
+     * 如果匹配不上,返回自动。
      *
      * @param value
      * @return
      */
-    public static TypeTaskLogRecord findByValue(int value) {
-        for (TypeTaskLogRecord state : values()) {
+    public static TaskRetryType findByValue(int value) {
+        for (TaskRetryType state : values()) {
             if (state.getValue() == value) {
                 return state;
             }
         }
-        return NONE;
+        return AUTO;
     }
 
     public int getValue() {
@@ -69,7 +53,7 @@ public enum TypeTaskLogRecord {
      * @return
      */
     public static boolean isEffective(int name) {
-        for (TypeTaskLogRecord state : values()) {
+        for (TaskRetryType state : values()) {
             if (state.value == name) {
                 return true;
             }

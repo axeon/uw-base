@@ -3,41 +3,42 @@ package uw.task.constant;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- * 队列任务队列类型。
+ * 任务日志记录类型。
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum TypeRunnerQueue {
+public enum TaskLogRecordType {
+
 
     /**
-     * 项目队列。
+     * 什么都不记录
      */
-    PROJECT(0,"项目队列"),
+    NONE(-1,"不记录日志"),
 
     /**
-     * 项目优先级队列。
+     * 记录日志
      */
-    PROJECT_PRIORITY(1,"项目优先级队列"),
+    RECORD(0,"记录日志"),
 
     /**
-     * 任务组队列。
+     * 记录日志,含请求参数
      */
-    GROUP(2,"任务组队列"),
+    RECORD_TASK_PARAM(1,"记录日志,含请求参数"),
 
     /**
-     * 任务组优先级队列。
+     * 记录日志,含返回参数
      */
-    GROUP_PRIORITY(3,"任务组优先级队列"),
+    RECORD_RESULT_DATA(2,"记录日志,含返回参数"),
 
     /**
-     * 任务队列。
+     * 记录全部日志
      */
-    TASK(5,"任务队列");
+    RECORD_ALL(3,"记录全部日志");
 
     private final int value;
 
     private final String label;
 
-    TypeRunnerQueue(int value, String label) {
+    TaskLogRecordType(int value, String label) {
         this.value = value;
         this.label = label;
     }
@@ -48,13 +49,13 @@ public enum TypeRunnerQueue {
      * @param value
      * @return
      */
-    public static TypeRunnerQueue findByValue(int value) {
-        for (TypeRunnerQueue state : values()) {
+    public static TaskLogRecordType findByValue(int value) {
+        for (TaskLogRecordType state : values()) {
             if (state.getValue() == value) {
                 return state;
             }
         }
-        return PROJECT;
+        return NONE;
     }
 
     public int getValue() {
@@ -68,7 +69,7 @@ public enum TypeRunnerQueue {
      * @return
      */
     public static boolean isEffective(int name) {
-        for (TypeRunnerQueue state : values()) {
+        for (TaskLogRecordType state : values()) {
             if (state.value == name) {
                 return true;
             }

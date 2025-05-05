@@ -3,55 +3,58 @@ package uw.task.constant;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- * 队列任务运行类型。
+ * 队列任务队列类型。
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum TypeRunnerRun {
-
-
-    /**
-     * 运行模式：本地运行
-     */
-    LOCAL(1, "本地运行"),
+public enum RunnerQueueType {
 
     /**
-     * 运行模式：全局运行
+     * 项目队列。
      */
-    GLOBAL(3, "全局运行"),
+    PROJECT(0,"项目队列"),
 
     /**
-     * 运行模式：全局运行RPC返回结果
+     * 项目优先级队列。
      */
-    GLOBAL_RPC(5, "全局运行RPC"),
+    PROJECT_PRIORITY(1,"项目优先级队列"),
 
     /**
-     * 运行模式：自动运行RPC返回结果，使用此模式，会自动选择本地还远程运行模式。
+     * 任务组队列。
      */
-    AUTO_RPC(6, "自动运行RPC");
+    GROUP(2,"任务组队列"),
 
+    /**
+     * 任务组优先级队列。
+     */
+    GROUP_PRIORITY(3,"任务组优先级队列"),
+
+    /**
+     * 任务队列。
+     */
+    TASK(5,"任务队列");
 
     private final int value;
 
     private final String label;
 
-    TypeRunnerRun(int value, String label) {
+    RunnerQueueType(int value, String label) {
         this.value = value;
         this.label = label;
     }
 
     /**
-     * 如果匹配不上，最后会返回为止（UNKNOWN）
+     * 如果匹配不上，最后会返回NONE。
      *
      * @param value
      * @return
      */
-    public static TypeRunnerRun findByValue(int value) {
-        for (TypeRunnerRun state : values()) {
+    public static RunnerQueueType findByValue(int value) {
+        for (RunnerQueueType state : values()) {
             if (state.getValue() == value) {
                 return state;
             }
         }
-        return LOCAL;
+        return PROJECT;
     }
 
     public int getValue() {
@@ -65,7 +68,7 @@ public enum TypeRunnerRun {
      * @return
      */
     public static boolean isEffective(int name) {
-        for (TypeRunnerRun state : values()) {
+        for (RunnerQueueType state : values()) {
             if (state.value == name) {
                 return true;
             }

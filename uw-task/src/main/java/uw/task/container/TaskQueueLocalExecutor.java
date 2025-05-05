@@ -25,9 +25,9 @@ public class TaskQueueLocalExecutor implements Runnable {
     /**
      * 要执行的任务。
      */
-    private final TaskData taskData;
+    private final TaskData<?,?> taskData;
 
-    public TaskQueueLocalExecutor(TaskFactory taskFactory, TaskData taskData) {
+    public TaskQueueLocalExecutor(TaskFactory taskFactory, TaskData<?,?> taskData) {
         this.taskFactory = taskFactory;
         this.taskData = taskData;
     }

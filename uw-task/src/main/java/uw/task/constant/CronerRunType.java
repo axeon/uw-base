@@ -3,44 +3,44 @@ package uw.task.constant;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- * 队列任务延迟类型。
+ * 定时任务运行类型。
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum TypeRunnerDelay {
-
-
-    /**
-     * 非延迟任务类型。
-     */
-    OFF(0,"非延迟任务类型"),
+public enum CronerRunType {
 
     /**
-     * 延迟任务类型。
+     * 直接运行模式。
      */
-    ON(1,"延迟任务类型");
+    ANYWAY(0,"到处运行"),
+    /**
+     * 运行在全局单例模式下。
+     */
+    SINGLETON(1,"单例运行");
+
+
 
     private final int value;
 
     private final String label;
 
-    TypeRunnerDelay(int value, String label) {
+    CronerRunType(int value, String label) {
         this.value = value;
         this.label = label;
     }
 
     /**
-     * 如果匹配不上，最后会返回OFF。
+     * 如果匹配不上，最后会返回为止（UNKNOWN）
      *
      * @param value
      * @return
      */
-    public static TypeRunnerDelay findByValue(int value) {
-        for (TypeRunnerDelay state : values()) {
+    public static CronerRunType findByValue(int value) {
+        for (CronerRunType state : values()) {
             if (state.getValue() == value) {
                 return state;
             }
         }
-        return OFF;
+        return SINGLETON;
     }
 
     public int getValue() {
@@ -54,7 +54,7 @@ public enum TypeRunnerDelay {
      * @return
      */
     public static boolean isEffective(int name) {
-        for (TypeRunnerDelay state : values()) {
+        for (CronerRunType state : values()) {
             if (state.value == name) {
                 return true;
             }

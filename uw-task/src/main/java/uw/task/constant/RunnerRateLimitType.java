@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
  * 队列任务限速类型。
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum TypeRunnerRateLimit {
+public enum RunnerRateLimitType {
 
     /**
      * 限速类型：不限速
@@ -68,7 +68,7 @@ public enum TypeRunnerRateLimit {
 
     private final String label;
 
-    TypeRunnerRateLimit(int value, String label) {
+    RunnerRateLimitType(int value, String label) {
         this.value = value;
         this.label = label;
     }
@@ -79,8 +79,8 @@ public enum TypeRunnerRateLimit {
      * @param value
      * @return
      */
-    public static TypeRunnerRateLimit findByValue(int value) {
-        for (TypeRunnerRateLimit state : values()) {
+    public static RunnerRateLimitType findByValue(int value) {
+        for (RunnerRateLimitType state : values()) {
             if (state.getValue() == value) {
                 return state;
             }
@@ -99,7 +99,7 @@ public enum TypeRunnerRateLimit {
      * @return
      */
     public static boolean isEffective(int name) {
-        for (TypeRunnerRateLimit state : values()) {
+        for (RunnerRateLimitType state : values()) {
             if (state.value == name) {
                 return true;
             }

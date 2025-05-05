@@ -3,27 +3,48 @@ package uw.task.constant;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- * 定时任务运行类型。
+ * 任务运行状态。
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum TypeCronerRun {
+public enum RunStateTask {
+
 
     /**
-     * 直接运行模式。
+     * 任务状态:未设置
      */
-    ANYWAY(0,"到处运行"),
-    /**
-     * 运行在全局单例模式下。
-     */
-    SINGLETON(1,"单例运行");
+    UNKNOWN(0, "未设置"),
 
+    /**
+     * 任务状态:成功
+     */
+    SUCCESS(1, "成功"),
+
+    /**
+     * 任务状态:程序错误
+     */
+    FAIL_PROGRAM(2, "程序错误"),
+
+    /**
+     * 任务状态:配置错误，如超过流量限制
+     */
+    FAIL_CONFIG(3, "配置错误"),
+
+    /**
+     * 任务状态:第三方接口错误
+     */
+    FAIL_PARTNER(4, "三方接口错误"),
+
+    /**
+     * 任务状态:数据错误
+     */
+    FAIL_DATA(5, "数据错误");
 
 
     private final int value;
 
     private final String label;
 
-    TypeCronerRun(int value, String label) {
+    RunStateTask(int value, String label) {
         this.value = value;
         this.label = label;
     }
@@ -34,13 +55,13 @@ public enum TypeCronerRun {
      * @param value
      * @return
      */
-    public static TypeCronerRun findByValue(int value) {
-        for (TypeCronerRun state : values()) {
+    public static RunStateTask findByValue(int value) {
+        for (RunStateTask state : values()) {
             if (state.getValue() == value) {
                 return state;
             }
         }
-        return SINGLETON;
+        return UNKNOWN;
     }
 
     public int getValue() {
@@ -54,7 +75,7 @@ public enum TypeCronerRun {
      * @return
      */
     public static boolean isEffective(int name) {
-        for (TypeCronerRun state : values()) {
+        for (RunStateTask state : values()) {
             if (state.value == name) {
                 return true;
             }

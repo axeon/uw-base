@@ -144,7 +144,7 @@ public class DemoCronTask extends TaskCroner{
 ## 队列任务配置
 
 - 实现TaskRunner接口的runTask方法。
-- 对于接口异常，请抛出TaskException用于标识。
+- 对于接口异常，请抛出TaskPartnerException用于标识，可以引发重试。
 - 对于执行结果，通过返回值来设置。
 
 ```
@@ -222,8 +222,9 @@ public class DemoTask extends TaskRunner<DemoTaskParam, String> {
 
 -
 为了更好的支持监控，runTask的异常主要分为3类。分别是：TaskDataException数据异常；TaskPartnerException合作方异常；其他程序异常。其中限速超时异常由框架自动生成。程序异常、数据异常、接口方异常需要程序员来维护。
+- TaskPartnerException 任务合作方异常，此异常会引发任务重试。
+- TaskDataException 任务数据异常，此异常不会引发任务重试。
 - 一般来说，尽量不要捕获异常，除非这个异常捕获后不影响任务的完整执行。不捕获的异常，框架会自动捕获为程序异常。
-- 接口方异常为TaskPartnerException，此异常需要程序员手工抛出。一般http超时，返回码错误（非200）肯定要抛接口方异常的，其他可能为接口方异常的，可自行决断抛出。
 
 ## 队列任务发布
 

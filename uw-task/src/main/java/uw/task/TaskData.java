@@ -14,70 +14,57 @@ import java.util.Date;
 public class TaskData<TP, RD> implements Serializable {
 
     /**
-     * serialVersionUID
-     */
-    private static final long serialVersionUID = 1333167065535557828L;
-
-    /**
      * 任务状态:未设置
      */
     public static final int STATE_UNKNOWN = 0;
-
     /**
      * 任务状态:成功
      */
     public static final int STATE_SUCCESS = 1;
-
     /**
      * 任务状态:程序错误
      */
     public static final int STATE_FAIL_PROGRAM = 2;
-
     /**
      * 任务状态:配置错误，如超过流量限制
      */
     public static final int STATE_FAIL_CONFIG = 3;
-
     /**
      * 任务状态:第三方接口错误
      */
     public static final int STATE_FAIL_PARTNER = 4;
-
     /**
      * 任务状态:数据错误
      */
     public static final int STATE_FAIL_DATA = 5;
-
     /**
      * 运行模式：本地运行
      */
     public static final int RUN_TYPE_LOCAL = 1;
-
     /**
      * 运行模式：全局运行
      */
     public static final int RUN_TYPE_GLOBAL = 3;
-
     /**
      * 运行模式：全局运行RPC返回结果
      */
     public static final int RUN_TYPE_GLOBAL_RPC = 5;
-
     /**
      * 运行模式：自动运行RPC返回结果，使用此模式，会自动选择本地还远程运行模式。
      */
     public static final int RUN_TYPE_AUTO_RPC = 6;
-
     /**
      * 自动重试[为了兼容,默认开启重试]
      */
     public static final int RETRY_TYPE_AUTO = 0;
-
     /**
      * 用户手工重试
      */
     public static final int RETRY_TYPE_MANUAL = 1;
-
+    /**
+     * serialVersionUID
+     */
+    private static final long serialVersionUID = 1333167065535557828L;
     /**
      * id，此序列值由框架自动生成，无需手工设置。
      */
@@ -210,8 +197,7 @@ public class TaskData<TP, RD> implements Serializable {
         this.taskParam = taskParam;
     }
 
-    private TaskData(Builder builder) {
-        setId(builder.id);
+    private TaskData(Builder<TP, RD> builder) {
         setRefTag(builder.refTag);
         setRefId(builder.refId);
         setRefSubId(builder.refSubId);
@@ -220,18 +206,10 @@ public class TaskData<TP, RD> implements Serializable {
         setTaskClass(builder.taskClass);
         setTaskTag(builder.taskTag);
         setTaskDelay(builder.taskDelay);
-        setTaskParam((TP) builder.taskParam);
+        setTaskParam(builder.taskParam);
         setRunType(builder.runType);
         setRetryType(builder.retryType);
         setRunTarget(builder.runTarget);
-        setQueueDate(builder.queueDate);
-        setConsumeDate(builder.consumeDate);
-        setRunDate(builder.runDate);
-        setFinishDate(builder.finishDate);
-        setResultData((RD) builder.resultData);
-        setErrorInfo(builder.errorInfo);
-        setRanTimes(builder.ranTimes);
-        setState(builder.state);
     }
 
     /**
@@ -239,8 +217,8 @@ public class TaskData<TP, RD> implements Serializable {
      *
      * @return
      */
-    public static Builder builder() {
-        return new Builder();
+    public static <TP, RD> Builder<TP, RD> builder() {
+        return new Builder<TP, RD>();
     }
 
     /**
@@ -249,8 +227,8 @@ public class TaskData<TP, RD> implements Serializable {
      * @param taskClass
      * @return
      */
-    public static Builder builder(String taskClass) {
-        return new Builder().taskClass(taskClass);
+    public static <TP, RD> Builder<TP, RD> builder(String taskClass) {
+        return new Builder<TP, RD>().taskClass(taskClass);
     }
 
     /**
@@ -259,8 +237,8 @@ public class TaskData<TP, RD> implements Serializable {
      * @param taskClass
      * @return
      */
-    public static Builder builder(Class taskClass) {
-        return new Builder().taskClass(taskClass.getName());
+    public static <TP, RD> Builder<TP, RD> builder(Class<? extends TaskRunner<TP, RD>> taskClass) {
+        return new Builder<TP, RD>().taskClass(taskClass.getName());
     }
 
     /**
@@ -269,8 +247,8 @@ public class TaskData<TP, RD> implements Serializable {
      * @param taskClass
      * @return
      */
-    public static Builder builder(String taskClass, Object taskParam) {
-        return new Builder().taskClass(taskClass).taskParam(taskParam);
+    public static <TP,RD> Builder<TP,RD> builder(String taskClass, TP taskParam) {
+        return new Builder<TP,RD>().taskClass(taskClass).taskParam(taskParam);
     }
 
 
@@ -280,14 +258,13 @@ public class TaskData<TP, RD> implements Serializable {
      * @param taskClass
      * @return
      */
-    public static Builder builder(Class taskClass, Object taskParam) {
-        return new Builder().taskClass(taskClass.getName()).taskParam(taskParam);
+    public static <TP,RD> Builder<TP,RD> builder(Class<? extends TaskRunner<TP, RD>> taskClass, TP taskParam) {
+        return new Builder<TP,RD>().taskClass(taskClass.getName()).taskParam(taskParam);
     }
 
 
-    public static Builder builder(TaskData copy) {
-        Builder builder = new Builder();
-        builder.id = copy.getId();
+    public static <TP,RD> Builder<TP,RD> builder(TaskData<TP,RD> copy) {
+        Builder<TP,RD> builder = new Builder<TP,RD>();
         builder.refTag = copy.getRefTag();
         builder.refId = copy.getRefId();
         builder.refSubId = copy.getRefSubId();
@@ -300,14 +277,6 @@ public class TaskData<TP, RD> implements Serializable {
         builder.runType = copy.getRunType();
         builder.retryType = copy.getRetryType();
         builder.runTarget = copy.getRunTarget();
-        builder.queueDate = copy.getQueueDate();
-        builder.consumeDate = copy.getConsumeDate();
-        builder.runDate = copy.getRunDate();
-        builder.finishDate = copy.getFinishDate();
-        builder.resultData = copy.getResultData();
-        builder.errorInfo = copy.getErrorInfo();
-        builder.ranTimes = copy.getRanTimes();
-        builder.state = copy.getState();
         return builder;
     }
 
@@ -317,8 +286,8 @@ public class TaskData<TP, RD> implements Serializable {
      *
      * @return
      */
-    public TaskData copy() {
-        TaskData taskData = new TaskData();
+    public TaskData<TP, RD> copy() {
+        TaskData<TP, RD> taskData = new TaskData<TP, RD>();
         taskData.setId(this.id);
         taskData.setRefTag(this.refTag);
         taskData.setRefId(this.refId);
@@ -448,6 +417,12 @@ public class TaskData<TP, RD> implements Serializable {
         return taskTag;
     }
 
+    /**
+     * @param taskTag the taskTag to set
+     */
+    public void setTaskTag(String taskTag) {
+        this.taskTag = taskTag;
+    }
 
     public long getTaskDelay() {
         return taskDelay;
@@ -455,13 +430,6 @@ public class TaskData<TP, RD> implements Serializable {
 
     public void setTaskDelay(long taskDelay) {
         this.taskDelay = taskDelay;
-    }
-
-    /**
-     * @param taskTag the taskTag to set
-     */
-    public void setTaskTag(String taskTag) {
-        this.taskTag = taskTag;
     }
 
     /**
@@ -513,6 +481,7 @@ public class TaskData<TP, RD> implements Serializable {
     public void setRunTarget(String runTarget) {
         this.runTarget = runTarget;
     }
+
     /**
      * @return the queueDate
      */
@@ -632,11 +601,6 @@ public class TaskData<TP, RD> implements Serializable {
     public static final class Builder<TP, RD> {
 
         /**
-         * id，此序列值由框架自动生成，无需手工设置。
-         */
-        private long id;
-
-        /**
          * 关联TAG，由调用方设定，用于第三方统计信息。
          */
         private String refTag;
@@ -672,11 +636,6 @@ public class TaskData<TP, RD> implements Serializable {
         private String taskTag = "";
 
         /**
-         * 队列类型。
-         */
-        private int queueType;
-
-        /**
          * 延迟队列延迟时间
          */
         private long taskDelay;
@@ -701,69 +660,9 @@ public class TaskData<TP, RD> implements Serializable {
          */
         private String runTarget = "default";
 
-        /**
-         * 任务运行时主机IP，此信息由框架自动设置。
-         */
-        private String hostIp;
-
-        /**
-         * 任务运行时主机ID（可能为docker的ContainerID），此信息由框架自动设置。
-         */
-        private String hostId;
-
-        /**
-         * 进入队列时间，此信息由框架自动设置。
-         */
-        private Date queueDate;
-
-        /**
-         * 开始消费时间，此信息由框架自动设置。
-         */
-        private Date consumeDate;
-
-        /**
-         * 开始运行时间，此信息由框架自动设置。
-         */
-        private Date runDate;
-
-        /**
-         * 运行结束日期，此信息由框架自动设置。
-         */
-        private Date finishDate;
-
-        /**
-         * 执行信息，用于存储框架自动设置。
-         */
-        private RD resultData;
-
-        /**
-         * 出错信息
-         */
-        private String errorInfo;
-
-        /**
-         * 已经执行的次数，此信息由框架自动设置。
-         */
-        private int ranTimes;
-
-        /**
-         * 执行状态，此信息由框架根据异常自动设置。
-         */
-        private int state;
-
         private Builder() {
         }
 
-        /**
-         * Sets the {@code id} and returns a reference to this Builder enabling method chaining.
-         *
-         * @param id the {@code id} to set
-         * @return a reference to this Builder
-         */
-        public Builder id(long id) {
-            this.id = id;
-            return this;
-        }
 
         /**
          * Sets the {@code refTag} and returns a reference to this Builder enabling method chaining.
@@ -771,7 +670,7 @@ public class TaskData<TP, RD> implements Serializable {
          * @param refTag the {@code refTag} to set
          * @return a reference to this Builder
          */
-        public Builder refTag(String refTag) {
+        public Builder<TP, RD> refTag(String refTag) {
             this.refTag = refTag;
             return this;
         }
@@ -782,7 +681,7 @@ public class TaskData<TP, RD> implements Serializable {
          * @param refId the {@code refId} to set
          * @return a reference to this Builder
          */
-        public Builder refId(long refId) {
+        public Builder<TP, RD> refId(long refId) {
             this.refId = refId;
             return this;
         }
@@ -793,7 +692,7 @@ public class TaskData<TP, RD> implements Serializable {
          * @param refSubId the {@code refSubId} to set
          * @return a reference to this Builder
          */
-        public Builder refSubId(long refSubId) {
+        public Builder<TP, RD> refSubId(long refSubId) {
             this.refSubId = refSubId;
             return this;
         }
@@ -804,7 +703,7 @@ public class TaskData<TP, RD> implements Serializable {
          * @param refObject the {@code refObject} to set
          * @return a reference to this Builder
          */
-        public Builder refObject(Object refObject) {
+        public Builder<TP, RD> refObject(Object refObject) {
             this.refObject = refObject;
             return this;
         }
@@ -815,7 +714,7 @@ public class TaskData<TP, RD> implements Serializable {
          * @param rateLimitTag the {@code rateLimitTag} to set
          * @return a reference to this Builder
          */
-        public Builder rateLimitTag(String rateLimitTag) {
+        public Builder<TP, RD> rateLimitTag(String rateLimitTag) {
             this.rateLimitTag = rateLimitTag;
             return this;
         }
@@ -826,7 +725,7 @@ public class TaskData<TP, RD> implements Serializable {
          * @param taskClass the {@code taskClass} to set
          * @return a reference to this Builder
          */
-        public Builder taskClass(String taskClass) {
+        public Builder<TP, RD> taskClass(String taskClass) {
             this.taskClass = taskClass;
             return this;
         }
@@ -837,19 +736,8 @@ public class TaskData<TP, RD> implements Serializable {
          * @param taskTag the {@code taskTag} to set
          * @return a reference to this Builder
          */
-        public Builder taskTag(String taskTag) {
+        public Builder<TP, RD> taskTag(String taskTag) {
             this.taskTag = taskTag;
-            return this;
-        }
-
-        /**
-         * Sets the {@code queueType} and returns a reference to this Builder enabling method chaining.
-         *
-         * @param queueType the {@code queueType} to set
-         * @return a reference to this Builder
-         */
-        public Builder queueType(int queueType) {
-            this.queueType = queueType;
             return this;
         }
 
@@ -859,7 +747,7 @@ public class TaskData<TP, RD> implements Serializable {
          * @param taskDelay the {@code taskDelay} to set
          * @return a reference to this Builder
          */
-        public Builder taskDelay(long taskDelay) {
+        public Builder<TP, RD> taskDelay(long taskDelay) {
             this.taskDelay = taskDelay;
             return this;
         }
@@ -870,7 +758,7 @@ public class TaskData<TP, RD> implements Serializable {
          * @param taskParam the {@code taskParam} to set
          * @return a reference to this Builder
          */
-        public Builder taskParam(TP taskParam) {
+        public Builder<TP, RD> taskParam(TP taskParam) {
             this.taskParam = taskParam;
             return this;
         }
@@ -881,7 +769,7 @@ public class TaskData<TP, RD> implements Serializable {
          * @param runType the {@code runType} to set
          * @return a reference to this Builder
          */
-        public Builder runType(int runType) {
+        public Builder<TP, RD> runType(int runType) {
             this.runType = runType;
             return this;
         }
@@ -892,7 +780,7 @@ public class TaskData<TP, RD> implements Serializable {
          * @param retryType the {@code retryType} to set
          * @return a reference to this Builder
          */
-        public Builder retryType(int retryType) {
+        public Builder<TP, RD> retryType(int retryType) {
             this.retryType = retryType;
             return this;
         }
@@ -903,118 +791,8 @@ public class TaskData<TP, RD> implements Serializable {
          * @param runTarget the {@code runTarget} to set
          * @return a reference to this Builder
          */
-        public Builder runTarget(String runTarget) {
+        public Builder<TP, RD> runTarget(String runTarget) {
             this.runTarget = runTarget;
-            return this;
-        }
-
-        /**
-         * Sets the {@code hostIp} and returns a reference to this Builder enabling method chaining.
-         *
-         * @param hostIp the {@code hostIp} to set
-         * @return a reference to this Builder
-         */
-        public Builder hostIp(String hostIp) {
-            this.hostIp = hostIp;
-            return this;
-        }
-
-        /**
-         * Sets the {@code hostId} and returns a reference to this Builder enabling method chaining.
-         *
-         * @param hostId the {@code hostId} to set
-         * @return a reference to this Builder
-         */
-        public Builder hostId(String hostId) {
-            this.hostId = hostId;
-            return this;
-        }
-
-        /**
-         * Sets the {@code queueDate} and returns a reference to this Builder enabling method chaining.
-         *
-         * @param queueDate the {@code queueDate} to set
-         * @return a reference to this Builder
-         */
-        public Builder queueDate(Date queueDate) {
-            this.queueDate = queueDate;
-            return this;
-        }
-
-        /**
-         * Sets the {@code consumeDate} and returns a reference to this Builder enabling method chaining.
-         *
-         * @param consumeDate the {@code consumeDate} to set
-         * @return a reference to this Builder
-         */
-        public Builder consumeDate(Date consumeDate) {
-            this.consumeDate = consumeDate;
-            return this;
-        }
-
-        /**
-         * Sets the {@code runDate} and returns a reference to this Builder enabling method chaining.
-         *
-         * @param runDate the {@code runDate} to set
-         * @return a reference to this Builder
-         */
-        public Builder runDate(Date runDate) {
-            this.runDate = runDate;
-            return this;
-        }
-
-        /**
-         * Sets the {@code finishDate} and returns a reference to this Builder enabling method chaining.
-         *
-         * @param finishDate the {@code finishDate} to set
-         * @return a reference to this Builder
-         */
-        public Builder finishDate(Date finishDate) {
-            this.finishDate = finishDate;
-            return this;
-        }
-
-        /**
-         * Sets the {@code resultData} and returns a reference to this Builder enabling method chaining.
-         *
-         * @param resultData the {@code resultData} to set
-         * @return a reference to this Builder
-         */
-        public Builder resultData(RD resultData) {
-            this.resultData = resultData;
-            return this;
-        }
-
-        /**
-         * Sets the {@code errorInfo} and returns a reference to this Builder enabling method chaining.
-         *
-         * @param errorInfo the {@code errorInfo} to set
-         * @return a reference to this Builder
-         */
-        public Builder errorInfo(String errorInfo) {
-            this.errorInfo = errorInfo;
-            return this;
-        }
-
-        /**
-         * Sets the {@code ranTimes} and returns a reference to this Builder enabling method chaining.
-         *
-         * @param ranTimes the {@code ranTimes} to set
-         * @return a reference to this Builder
-         */
-        public Builder ranTimes(int ranTimes) {
-            this.ranTimes = ranTimes;
-            return this;
-        }
-
-        /**
-         * Sets the {@code state} and returns a reference to this Builder enabling method chaining.
-         *
-         * @param state the {@code state} to set
-         * @return a reference to this Builder
-         */
-        public Builder state(int state) {
-            this.state = state;
             return this;
         }
 
@@ -1023,8 +801,8 @@ public class TaskData<TP, RD> implements Serializable {
          *
          * @return a {@code TaskData} built with parameters of this {@code TaskData.Builder}
          */
-        public TaskData build() {
-            return new TaskData(this);
+        public TaskData<TP, RD> build() {
+            return new TaskData<TP, RD>(this);
         }
     }
 }

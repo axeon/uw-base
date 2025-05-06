@@ -161,6 +161,9 @@ public class MscAppUpdateService {
         if (appRegResponse.getState() == MscAppRegResponse.STATE_INIT) {
             //此时需要补充上传权限注册信息。
             logger.info("AuthService scaning@RequestMapping annotations in @Controller HandlerMethod ");
+            List<MscAppRegRequest.PermVo> allVoList = new ArrayList<>(1000);
+            //扫描菜单。
+            List<MscAppRegRequest.PermVo> menuVoList = new ArrayList<>(200);
             //扫描权限。
             List<MscAppRegRequest.PermVo> permVoList = new ArrayList<>(1000);
             // 先扫Class的菜单注解。
@@ -204,7 +207,7 @@ public class MscAppUpdateService {
                     permVo.setDesc(permDesc);
                     permVo.setUser(mscPermDeclare.user().getValue());
                     permVo.setCode(permUri);
-                    permVoList.add(permVo);
+                    menuVoList.add(permVo);
                 }
             }
 
@@ -263,7 +266,18 @@ public class MscAppUpdateService {
                     }
                 }
             }
-            appRegRequest.setPerms(permVoList);
+            //过滤menu,保留perm的menu。
+            for (MscAppRegRequest.PermVo menuVo : menuVoList) {
+                for (MscAppRegRequest.PermVo permVo : permVoList) {
+                    if (permVo.getCode().startsWith(menuVo.getCode())) {
+                        allVoList.add(menuVo);
+                        break;
+                    }
+                }
+            }
+            // 合并menu和perm
+            allVoList.addAll(permVoList);
+            appRegRequest.setPerms(allVoList);
             appRegResponse = authAppRpc.regApp(appRegRequest);
         }
         logger.info("AuthService RegApp: {}, version: {}, auth-center response state: {}, msg: {}", authServiceProperties.getAppName(), authServiceProperties.getAppVersion(),

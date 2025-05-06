@@ -1,5 +1,10 @@
+# 2025.0501.1001版本升级说明
+1. uw-task: 优化队列参数Enum，优化TaskData.builder()参数，简化配置项。
+2. uw-httpclient: http异常抛出HttpRequestException, HttpRequestException继承TaskPartnerException。
+3. uw-log-es: 日志基类完善swagger注释。
+
 # 2025.0501.1000版本升级说明
-1. 新增uw-gateway-client模块，将原uw-auth-service中的限速控制接口迁移到uw-gateway-client中。
+1. uw-gateway-client: 新增uw-gateway-client模块，将原uw-auth-service中的限速控制接口迁移到uw-gateway-client中。
 2. 升级spring boot 3.3.11。
 
 # 2025.0330.1053版本升级说明

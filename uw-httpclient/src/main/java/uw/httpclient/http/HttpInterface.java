@@ -23,7 +23,13 @@ import java.util.concurrent.TimeUnit;
  */
 public class HttpInterface {
 
+    /**
+     * 全局的OkHttpClient。
+     */
     private static final OkHttpClient globalOkHttpClient = new OkHttpClient.Builder().retryOnConnectionFailure(false).build();
+    /**
+     * 日志。
+     */
     private static final Logger log = LoggerFactory.getLogger(HttpInterface.class);
     /**
      * okHttpClient。

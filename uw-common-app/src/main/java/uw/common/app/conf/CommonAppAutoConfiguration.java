@@ -144,7 +144,7 @@ public class CommonAppAutoConfiguration {
     @Bean
     @Primary
     public AuthCriticalLogStorage SysCritLogStorageService(CommonAppProperties uwAppBaseProperties) {
-        logger.info("init SysCritLogStorageService!");
+        logger.info("Init SysCritLogStorageService.");
         return new SysCritLogStorageService(uwAppBaseProperties);
     }
 

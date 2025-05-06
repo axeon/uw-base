@@ -1,3 +1,7 @@
+# 2025.0501.1002版本升级说明
+1. uw-auth-service: 优化权限上报机制，当菜单下无权限的时候，自动屏蔽该菜单。
+
+
 # 2025.0501.1001版本升级说明
 1. uw-task: 优化队列参数Enum，优化TaskData.builder()参数，简化配置项。
 2. uw-httpclient: http异常抛出HttpRequestException, HttpRequestException继承TaskPartnerException。

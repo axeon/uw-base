@@ -7,11 +7,6 @@ package uw.task.exception;
  */
 public class TaskPartnerException extends RuntimeException {
 
-    /**
-     * <code>serialVersionUID</code> 的注释
-     */
-    private static final long serialVersionUID = 8713460933603499992L;
-
     public TaskPartnerException() {
         super();
     }

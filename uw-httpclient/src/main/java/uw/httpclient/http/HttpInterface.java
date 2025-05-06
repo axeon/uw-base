@@ -6,9 +6,9 @@ import okhttp3.*;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.httpclient.exception.HttpRequestException;
 import uw.httpclient.json.JsonInterfaceHelper;
 import uw.httpclient.util.MediaTypes;
-import uw.task.exception.TaskPartnerException;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,8 +23,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class HttpInterface {
 
-    private static final OkHttpClient globalOkHttpClient = new OkHttpClient.Builder().retryOnConnectionFailure( false ).build();
-    private static final Logger log = LoggerFactory.getLogger( HttpInterface.class );
+    private static final OkHttpClient globalOkHttpClient = new OkHttpClient.Builder().retryOnConnectionFailure(false).build();
+    private static final Logger log = LoggerFactory.getLogger(HttpInterface.class);
     /**
      * okHttpClient。
      */
@@ -51,25 +51,24 @@ public class HttpInterface {
     public DataObjectMapper objectMapper;
 
 
-    public HttpInterface(HttpConfig httpConfig, Class<? extends HttpData> httpDataCls, HttpDataLogLevel httpDataLogLevel, HttpDataProcessor httpDataProcessor,
-                         DataObjectMapper objectMapper, MediaType mediaType) {
+    public HttpInterface(HttpConfig httpConfig, Class<? extends HttpData> httpDataCls, HttpDataLogLevel httpDataLogLevel, HttpDataProcessor<? extends HttpData, ?> httpDataProcessor, DataObjectMapper objectMapper, MediaType mediaType) {
         if (httpConfig != null) {
-            OkHttpClient.Builder okHttpClientBuilder =
-                    globalOkHttpClient.newBuilder().connectTimeout( httpConfig.getConnectTimeout(), TimeUnit.MILLISECONDS ).readTimeout( httpConfig.getConnectTimeout(),
-                            TimeUnit.MILLISECONDS ).writeTimeout( httpConfig.getWriteTimeout(), TimeUnit.MILLISECONDS );
-            if (httpConfig.isRetryOnConnectionFailure()) okHttpClientBuilder.retryOnConnectionFailure( httpConfig.isRetryOnConnectionFailure() );
+            OkHttpClient.Builder okHttpClientBuilder = globalOkHttpClient.newBuilder().connectTimeout(httpConfig.getConnectTimeout(), TimeUnit.MILLISECONDS).readTimeout(httpConfig.getConnectTimeout(), TimeUnit.MILLISECONDS).writeTimeout(httpConfig.getWriteTimeout(), TimeUnit.MILLISECONDS);
+            if (httpConfig.isRetryOnConnectionFailure())
+                okHttpClientBuilder.retryOnConnectionFailure(httpConfig.isRetryOnConnectionFailure());
             if (httpConfig.getSslSocketFactory() != null || httpConfig.getTrustManager() != null)
-                okHttpClientBuilder.sslSocketFactory( httpConfig.getSslSocketFactory(), httpConfig.getTrustManager() );
-            if (httpConfig.getHostnameVerifier() != null) okHttpClientBuilder.hostnameVerifier( httpConfig.getHostnameVerifier() );
+                okHttpClientBuilder.sslSocketFactory(httpConfig.getSslSocketFactory(), httpConfig.getTrustManager());
+            if (httpConfig.getHostnameVerifier() != null)
+                okHttpClientBuilder.hostnameVerifier(httpConfig.getHostnameVerifier());
             if (httpConfig.getMaxIdleConnections() > 0 && httpConfig.getKeepAliveTimeout() > 0) {
-                okHttpClientBuilder.connectionPool( new ConnectionPool( httpConfig.getMaxIdleConnections(), httpConfig.getKeepAliveTimeout(), TimeUnit.MILLISECONDS ) );
+                okHttpClientBuilder.connectionPool(new ConnectionPool(httpConfig.getMaxIdleConnections(), httpConfig.getKeepAliveTimeout(), TimeUnit.MILLISECONDS));
             }
             this.okHttpClient = okHttpClientBuilder.build();
             if (httpConfig.getMaxRequestsPerHost() > 0) {
-                this.okHttpClient.dispatcher().setMaxRequestsPerHost( httpConfig.getMaxRequestsPerHost() );
+                this.okHttpClient.dispatcher().setMaxRequestsPerHost(httpConfig.getMaxRequestsPerHost());
             }
             if (httpConfig.getMaxRequests() > 0) {
-                this.okHttpClient.dispatcher().setMaxRequests( httpConfig.getMaxRequests() );
+                this.okHttpClient.dispatcher().setMaxRequests(httpConfig.getMaxRequests());
             }
         } else {
             this.okHttpClient = globalOkHttpClient;
@@ -155,10 +154,10 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D requestForData(final Request request) {
-        D httpData = requestData( request );
+        D httpData = requestData(request);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, null );
+            this.httpDataProcessor.postProcess(httpData, null);
         }
         return httpData;
     }
@@ -173,13 +172,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> requestForEntity(final Request request, Class<T> responseType) {
-        D httpData = requestData( request );
-        T t = this.objectMapper.parse( httpData.getResponseData(), responseType );
+        D httpData = requestData(request);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -191,13 +190,13 @@ public class HttpInterface {
      * @return
      */
     public <D extends HttpData, T> HttpEntity<D, T> requestForEntity(final Request request, TypeReference<T> typeRef) {
-        D httpData = requestData( request );
-        T t = this.objectMapper.parse( httpData.getResponseData(), typeRef );
+        D httpData = requestData(request);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -209,13 +208,13 @@ public class HttpInterface {
      * @return
      */
     public <D extends HttpData, T> HttpEntity<D, T> requestForEntity(final Request request, JavaType javaType) {
-        D httpData = requestData( request );
-        T t = this.objectMapper.parse( httpData.getResponseData(), javaType );
+        D httpData = requestData(request);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -227,7 +226,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D getForData(String url) {
-        return getForData( url, null, null );
+        return getForData(url, null, null);
     }
 
     /**
@@ -240,7 +239,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D getForData(String url, Map<String, String> queryParam) {
-        return getForData( url, null, queryParam );
+        return getForData(url, null, queryParam);
     }
 
     /**
@@ -254,9 +253,9 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D getForData(String url, Map<String, String> headers, Map<String, String> queryParam) {
-        D httpData = getData( url, headers, queryParam );
+        D httpData = getData(url, headers, queryParam);
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, null );
+            this.httpDataProcessor.postProcess(httpData, null);
         }
         return httpData;
     }
@@ -272,7 +271,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> getForEntity(String url, Class<T> responseType) {
-        return getForEntity( url, responseType, null, null );
+        return getForEntity(url, responseType, null, null);
     }
 
     /**
@@ -287,7 +286,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> getForEntity(String url, Class<T> responseType, Map<String, String> queryParam) {
-        return getForEntity( url, responseType, null, queryParam );
+        return getForEntity(url, responseType, null, queryParam);
     }
 
     /**
@@ -303,13 +302,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> getForEntity(String url, Class<T> responseType, Map<String, String> headers, Map<String, String> queryParam) {
-        D httpData = getData( url, headers, queryParam );
-        T t = this.objectMapper.parse( httpData.getResponseData(), responseType );
+        D httpData = getData(url, headers, queryParam);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -323,7 +322,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> getForEntity(String url, TypeReference<T> typeRef) {
-        return getForEntity( url, typeRef, null, null );
+        return getForEntity(url, typeRef, null, null);
 
     }
 
@@ -339,7 +338,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> getForEntity(String url, TypeReference<T> typeRef, Map<String, String> queryParam) {
-        return getForEntity( url, typeRef, null, queryParam );
+        return getForEntity(url, typeRef, null, queryParam);
     }
 
     /**
@@ -355,13 +354,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> getForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Map<String, String> queryParam) {
-        D httpData = getData( url, headers, queryParam );
-        T t = this.objectMapper.parse( httpData.getResponseData(), typeRef );
+        D httpData = getData(url, headers, queryParam);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -375,7 +374,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> getForEntity(String url, JavaType javaType) {
-        return getForEntity( url, javaType, null, null );
+        return getForEntity(url, javaType, null, null);
     }
 
     /**
@@ -390,7 +389,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> getForEntity(String url, JavaType javaType, Map<String, String> queryParam) {
-        return getForEntity( url, javaType, null, queryParam );
+        return getForEntity(url, javaType, null, queryParam);
     }
 
     /**
@@ -406,13 +405,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> getForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> queryParam) {
-        D httpData = getData( url, headers, queryParam );
-        T t = this.objectMapper.parse( httpData.getResponseData(), javaType );
+        D httpData = getData(url, headers, queryParam);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -425,7 +424,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D postFormForData(String url, Map<String, String> formData) {
-        return postFormForData( url, null, formData );
+        return postFormForData(url, null, formData);
     }
 
 
@@ -439,7 +438,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D postFormFileForData(String url, Map<String, String> formData, Map<String, Object> fileData) {
-        return postFormFileForData( url, null, formData, fileData );
+        return postFormFileForData(url, null, formData, fileData);
     }
 
     /**
@@ -453,9 +452,9 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D postFormForData(String url, Map<String, String> headers, Map<String, String> formData) {
-        D httpData = postFormData( url, headers, formData );
+        D httpData = postFormData(url, headers, formData);
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, null );
+            this.httpDataProcessor.postProcess(httpData, null);
         }
         return httpData;
     }
@@ -472,9 +471,9 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D postFormFileForData(String url, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
-        D httpData = postFormFileData( url, headers, formData, fileData );
+        D httpData = postFormFileData(url, headers, formData, fileData);
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, null );
+            this.httpDataProcessor.postProcess(httpData, null);
         }
         return httpData;
     }
@@ -491,7 +490,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> postFormForEntity(String url, Class<T> responseType, Map<String, String> formData) {
-        return postFormForEntity( url, responseType, null, formData );
+        return postFormForEntity(url, responseType, null, formData);
     }
 
     /**
@@ -507,13 +506,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> postFormForEntity(String url, Class<T> responseType, Map<String, String> headers, Map<String, String> formData) {
-        D httpData = postFormData( url, headers, formData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), responseType );
+        D httpData = postFormData(url, headers, formData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -528,7 +527,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> postFormForEntity(String url, TypeReference<T> typeRef, Map<String, String> formData) {
-        return postFormForEntity( url, typeRef, null, formData );
+        return postFormForEntity(url, typeRef, null, formData);
     }
 
     /**
@@ -544,13 +543,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> postFormForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Map<String, String> formData) {
-        D httpData = postFormData( url, headers, formData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), typeRef );
+        D httpData = postFormData(url, headers, formData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -565,7 +564,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> postFormForEntity(String url, JavaType javaType, Map<String, String> formData) {
-        return postFormForEntity( url, javaType, null, formData );
+        return postFormForEntity(url, javaType, null, formData);
     }
 
     /**
@@ -581,13 +580,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> postFormForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> formData) {
-        D httpData = postFormData( url, headers, formData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), javaType );
+        D httpData = postFormData(url, headers, formData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
 
@@ -603,7 +602,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> postFormFileForEntity(String url, Class<T> responseType, Map<String, String> formData, Map<String, Object> fileData) {
-        return postFormFileForEntity( url, responseType, null, formData, fileData );
+        return postFormFileForEntity(url, responseType, null, formData, fileData);
     }
 
     /**
@@ -618,15 +617,14 @@ public class HttpInterface {
      * @return
      * @throws Exception
      */
-    public <D extends HttpData, T> HttpEntity<D, T> postFormFileForEntity(String url, Class<T> responseType, Map<String, String> headers, Map<String, String> formData,
-                                                                          Map<String, Object> fileData) {
-        D httpData = postFormFileData( url, headers, formData, fileData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), responseType );
+    public <D extends HttpData, T> HttpEntity<D, T> postFormFileForEntity(String url, Class<T> responseType, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
+        D httpData = postFormFileData(url, headers, formData, fileData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -641,7 +639,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> postFormFileForEntity(String url, TypeReference<T> typeRef, Map<String, String> formData, Map<String, Object> fileData) {
-        return postFormFileForEntity( url, typeRef, null, formData, fileData );
+        return postFormFileForEntity(url, typeRef, null, formData, fileData);
     }
 
     /**
@@ -656,15 +654,14 @@ public class HttpInterface {
      * @return
      * @throws Exception
      */
-    public <D extends HttpData, T> HttpEntity<D, T> postFormFileForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Map<String, String> formData,
-                                                                          Map<String, Object> fileData) {
-        D httpData = postFormFileData( url, headers, formData, fileData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), typeRef );
+    public <D extends HttpData, T> HttpEntity<D, T> postFormFileForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
+        D httpData = postFormFileData(url, headers, formData, fileData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -679,7 +676,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> postFormFileForEntity(String url, JavaType javaType, Map<String, String> formData, Map<String, Object> fileData) {
-        return postFormFileForEntity( url, javaType, null, formData, fileData );
+        return postFormFileForEntity(url, javaType, null, formData, fileData);
     }
 
     /**
@@ -694,15 +691,14 @@ public class HttpInterface {
      * @return
      * @throws Exception
      */
-    public <D extends HttpData, T> HttpEntity<D, T> postFormFileForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> formData, Map<String,
-            Object> fileData) {
-        D httpData = postFormFileData( url, headers, formData, fileData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), javaType );
+    public <D extends HttpData, T> HttpEntity<D, T> postFormFileForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
+        D httpData = postFormFileData(url, headers, formData, fileData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -715,7 +711,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D postBodyForData(String url, Object requestData) {
-        return postBodyForData( url, null, requestData );
+        return postBodyForData(url, null, requestData);
     }
 
     /**
@@ -729,9 +725,9 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D postBodyForData(String url, Map<String, String> headers, Object requestData) {
-        D httpData = postBodyData( url, headers, requestData );
+        D httpData = postBodyData(url, headers, requestData);
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, null );
+            this.httpDataProcessor.postProcess(httpData, null);
         }
         return httpData;
     }
@@ -748,7 +744,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> postBodyForEntity(String url, Class<T> responseType, Object requestData) {
-        return postBodyForEntity( url, responseType, null, requestData );
+        return postBodyForEntity(url, responseType, null, requestData);
     }
 
     /**
@@ -764,13 +760,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> postBodyForEntity(String url, Class<T> responseType, Map<String, String> headers, Object requestData) {
-        D httpData = postBodyData( url, headers, requestData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), responseType );
+        D httpData = postBodyData(url, headers, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -785,7 +781,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> postBodyForEntity(String url, TypeReference<T> typeRef, Object requestData) {
-        return postBodyForEntity( url, typeRef, null, requestData );
+        return postBodyForEntity(url, typeRef, null, requestData);
 
     }
 
@@ -802,13 +798,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> postBodyForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Object requestData) {
-        D httpData = postBodyData( url, headers, requestData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), typeRef );
+        D httpData = postBodyData(url, headers, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -823,7 +819,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> postBodyForEntity(String url, JavaType javaType, Object requestData) {
-        return postBodyForEntity( url, javaType, null, requestData );
+        return postBodyForEntity(url, javaType, null, requestData);
     }
 
     /**
@@ -839,13 +835,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> postBodyForEntity(String url, JavaType javaType, Map<String, String> headers, Object requestData) {
-        D httpData = postBodyData( url, headers, requestData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), javaType );
+        D httpData = postBodyData(url, headers, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -858,7 +854,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D putFormForData(String url, Map<String, String> formData) {
-        return putFormForData( url, null, formData );
+        return putFormForData(url, null, formData);
     }
 
     /**
@@ -872,9 +868,9 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D putFormForData(String url, Map<String, String> headers, Map<String, String> formData) {
-        D httpData = putFormData( url, headers, formData );
+        D httpData = putFormData(url, headers, formData);
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, null );
+            this.httpDataProcessor.postProcess(httpData, null);
         }
         return httpData;
     }
@@ -891,7 +887,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> putFormForEntity(String url, Class<T> responseType, Map<String, String> formData) {
-        return putFormForEntity( url, responseType, null, formData );
+        return putFormForEntity(url, responseType, null, formData);
     }
 
     /**
@@ -907,13 +903,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> putFormForEntity(String url, Class<T> responseType, Map<String, String> headers, Map<String, String> formData) {
-        D httpData = putFormData( url, headers, formData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), responseType );
+        D httpData = putFormData(url, headers, formData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -928,7 +924,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> putFormForEntity(String url, TypeReference<T> typeRef, Map<String, String> formData) {
-        return putFormForEntity( url, typeRef, null, formData );
+        return putFormForEntity(url, typeRef, null, formData);
     }
 
     /**
@@ -944,13 +940,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> putFormForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Map<String, String> formData) {
-        D httpData = putFormData( url, headers, formData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), typeRef );
+        D httpData = putFormData(url, headers, formData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -965,7 +961,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> putFormForEntity(String url, JavaType javaType, Map<String, String> formData) {
-        return putFormForEntity( url, javaType, null, formData );
+        return putFormForEntity(url, javaType, null, formData);
     }
 
     /**
@@ -981,13 +977,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> putFormForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> formData) {
-        D httpData = putFormData( url, headers, formData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), javaType );
+        D httpData = putFormData(url, headers, formData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -1000,7 +996,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D putBodyForData(String url, Object requestData) {
-        return putBodyForData( url, null, requestData );
+        return putBodyForData(url, null, requestData);
     }
 
     /**
@@ -1014,9 +1010,9 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D putBodyForData(String url, Map<String, String> headers, Object requestData) {
-        D httpData = putBodyData( url, headers, requestData );
+        D httpData = putBodyData(url, headers, requestData);
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, null );
+            this.httpDataProcessor.postProcess(httpData, null);
         }
         return httpData;
     }
@@ -1033,7 +1029,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> putBodyForEntity(String url, Class<T> responseType, Object requestData) {
-        return putBodyForEntity( url, responseType, null, requestData );
+        return putBodyForEntity(url, responseType, null, requestData);
     }
 
     /**
@@ -1049,13 +1045,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> putBodyForEntity(String url, Class<T> responseType, Map<String, String> headers, Object requestData) {
-        D httpData = putBodyData( url, headers, requestData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), responseType );
+        D httpData = putBodyData(url, headers, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -1070,7 +1066,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> putBodyForEntity(String url, TypeReference<T> typeRef, Object requestData) {
-        return putBodyForEntity( url, typeRef, null, requestData );
+        return putBodyForEntity(url, typeRef, null, requestData);
 
     }
 
@@ -1087,13 +1083,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> putBodyForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Object requestData) {
-        D httpData = putBodyData( url, headers, requestData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), typeRef );
+        D httpData = putBodyData(url, headers, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -1108,7 +1104,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> putBodyForEntity(String url, JavaType javaType, Object requestData) {
-        return putBodyForEntity( url, javaType, null, requestData );
+        return putBodyForEntity(url, javaType, null, requestData);
     }
 
     /**
@@ -1124,13 +1120,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> putBodyForEntity(String url, JavaType javaType, Map<String, String> headers, Object requestData) {
-        D httpData = putBodyData( url, headers, requestData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), javaType );
+        D httpData = putBodyData(url, headers, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -1143,7 +1139,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D patchFormForData(String url, Map<String, String> formData) {
-        return patchFormForData( url, null, formData );
+        return patchFormForData(url, null, formData);
     }
 
     /**
@@ -1157,9 +1153,9 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D patchFormForData(String url, Map<String, String> headers, Map<String, String> formData) {
-        D httpData = patchFormData( url, headers, formData );
+        D httpData = patchFormData(url, headers, formData);
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, null );
+            this.httpDataProcessor.postProcess(httpData, null);
         }
         return httpData;
     }
@@ -1176,7 +1172,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> patchFormForEntity(String url, Class<T> responseType, Map<String, String> formData) {
-        return patchFormForEntity( url, responseType, null, formData );
+        return patchFormForEntity(url, responseType, null, formData);
     }
 
     /**
@@ -1192,13 +1188,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> patchFormForEntity(String url, Class<T> responseType, Map<String, String> headers, Map<String, String> formData) {
-        D httpData = patchFormData( url, headers, formData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), responseType );
+        D httpData = patchFormData(url, headers, formData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -1213,7 +1209,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> patchFormForEntity(String url, TypeReference<T> typeRef, Map<String, String> formData) {
-        return patchFormForEntity( url, typeRef, null, formData );
+        return patchFormForEntity(url, typeRef, null, formData);
     }
 
     /**
@@ -1229,13 +1225,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> patchFormForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Map<String, String> formData) {
-        D httpData = patchFormData( url, headers, formData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), typeRef );
+        D httpData = patchFormData(url, headers, formData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -1250,7 +1246,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> patchFormForEntity(String url, JavaType javaType, Map<String, String> formData) {
-        return patchFormForEntity( url, javaType, null, formData );
+        return patchFormForEntity(url, javaType, null, formData);
     }
 
     /**
@@ -1266,13 +1262,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> patchFormForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> formData) {
-        D httpData = patchFormData( url, headers, formData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), javaType );
+        D httpData = patchFormData(url, headers, formData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -1285,7 +1281,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D patchBodyForData(String url, Object requestData) {
-        return patchBodyForData( url, null, requestData );
+        return patchBodyForData(url, null, requestData);
     }
 
     /**
@@ -1299,9 +1295,9 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D patchBodyForData(String url, Map<String, String> headers, Object requestData) {
-        D httpData = patchBodyData( url, headers, requestData );
+        D httpData = patchBodyData(url, headers, requestData);
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, null );
+            this.httpDataProcessor.postProcess(httpData, null);
         }
         return httpData;
     }
@@ -1318,7 +1314,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> patchBodyForEntity(String url, Class<T> responseType, Object requestData) {
-        return patchBodyForEntity( url, responseType, null, requestData );
+        return patchBodyForEntity(url, responseType, null, requestData);
     }
 
     /**
@@ -1334,13 +1330,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> patchBodyForEntity(String url, Class<T> responseType, Map<String, String> headers, Object requestData) {
-        D httpData = patchBodyData( url, headers, requestData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), responseType );
+        D httpData = patchBodyData(url, headers, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -1355,7 +1351,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> patchBodyForEntity(String url, TypeReference<T> typeRef, Object requestData) {
-        return patchBodyForEntity( url, typeRef, null, requestData );
+        return patchBodyForEntity(url, typeRef, null, requestData);
 
     }
 
@@ -1372,13 +1368,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> patchBodyForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Object requestData) {
-        D httpData = patchBodyData( url, headers, requestData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), typeRef );
+        D httpData = patchBodyData(url, headers, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -1393,7 +1389,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> patchBodyForEntity(String url, JavaType javaType, Object requestData) {
-        return patchBodyForEntity( url, javaType, null, requestData );
+        return patchBodyForEntity(url, javaType, null, requestData);
     }
 
     /**
@@ -1409,13 +1405,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> patchBodyForEntity(String url, JavaType javaType, Map<String, String> headers, Object requestData) {
-        D httpData = patchBodyData( url, headers, requestData );
-        T t = this.objectMapper.parse( httpData.getResponseData(), javaType );
+        D httpData = patchBodyData(url, headers, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -1427,7 +1423,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D deleteForData(String url) {
-        return deleteForData( url, null, null );
+        return deleteForData(url, null, null);
     }
 
     /**
@@ -1440,7 +1436,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D deleteForData(String url, Map<String, String> queryParam) {
-        return deleteForData( url, null, queryParam );
+        return deleteForData(url, null, queryParam);
     }
 
     /**
@@ -1454,9 +1450,9 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData> D deleteForData(String url, Map<String, String> headers, Map<String, String> queryParam) {
-        D httpData = deleteData( url, headers, queryParam );
+        D httpData = deleteData(url, headers, queryParam);
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, null );
+            this.httpDataProcessor.postProcess(httpData, null);
         }
         return httpData;
     }
@@ -1472,7 +1468,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> deleteForEntity(String url, Class<T> responseType) {
-        return deleteForEntity( url, responseType, null, null );
+        return deleteForEntity(url, responseType, null, null);
     }
 
     /**
@@ -1487,7 +1483,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> deleteForEntity(String url, Class<T> responseType, Map<String, String> queryParam) {
-        return deleteForEntity( url, responseType, null, queryParam );
+        return deleteForEntity(url, responseType, null, queryParam);
     }
 
     /**
@@ -1503,13 +1499,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> deleteForEntity(String url, Class<T> responseType, Map<String, String> headers, Map<String, String> queryParam) {
-        D httpData = deleteData( url, headers, queryParam );
-        T t = this.objectMapper.parse( httpData.getResponseData(), responseType );
+        D httpData = deleteData(url, headers, queryParam);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -1523,7 +1519,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> deleteForEntity(String url, TypeReference<T> typeRef) {
-        return deleteForEntity( url, typeRef, null, null );
+        return deleteForEntity(url, typeRef, null, null);
 
     }
 
@@ -1539,7 +1535,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> deleteForEntity(String url, TypeReference<T> typeRef, Map<String, String> queryParam) {
-        return deleteForEntity( url, typeRef, null, queryParam );
+        return deleteForEntity(url, typeRef, null, queryParam);
     }
 
     /**
@@ -1555,13 +1551,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> deleteForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Map<String, String> queryParam) {
-        D httpData = deleteData( url, headers, queryParam );
-        T t = this.objectMapper.parse( httpData.getResponseData(), typeRef );
+        D httpData = deleteData(url, headers, queryParam);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -1575,7 +1571,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> deleteForEntity(String url, JavaType javaType) {
-        return deleteForEntity( url, javaType, null, null );
+        return deleteForEntity(url, javaType, null, null);
     }
 
     /**
@@ -1590,7 +1586,7 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> deleteForEntity(String url, JavaType javaType, Map<String, String> queryParam) {
-        return deleteForEntity( url, javaType, null, queryParam );
+        return deleteForEntity(url, javaType, null, queryParam);
     }
 
     /**
@@ -1606,13 +1602,13 @@ public class HttpInterface {
      * @throws Exception
      */
     public <D extends HttpData, T> HttpEntity<D, T> deleteForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> queryParam) {
-        D httpData = deleteData( url, headers, queryParam );
-        T t = this.objectMapper.parse( httpData.getResponseData(), javaType );
+        D httpData = deleteData(url, headers, queryParam);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
         //处理日志。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.postProcess( httpData, t );
+            this.httpDataProcessor.postProcess(httpData, t);
         }
-        return new HttpEntity<>( httpData, t );
+        return new HttpEntity<>(httpData, t);
     }
 
     /**
@@ -1625,43 +1621,43 @@ public class HttpInterface {
     private <D extends HttpData> D requestData(final Request request) {
         //request过滤器。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.requestProcess( null, null, null );
+            this.httpDataProcessor.requestProcess(null, null, null);
         }
         D httpData = initHttpData();
-        httpData.setRequestDate( new Date() );
-        httpData.setRequestUrl( request.url().toString() );
-        httpData.setRequestMethod( request.method() );
-        httpData.setRequestHeader( request.headers().toString() );
-        if (HttpDataLogLevel.isRecordRequest( httpDataLogLevel )) {
+        httpData.setRequestDate(new Date());
+        httpData.setRequestUrl(request.url().toString());
+        httpData.setRequestMethod(request.method());
+        httpData.setRequestHeader(request.headers().toString());
+        if (HttpDataLogLevel.isRecordRequest(httpDataLogLevel)) {
             if (request.body() != null) {
                 if (request.body() instanceof FormBody formBody) {
-                    StringBuilder sb = new StringBuilder( 256 );
+                    StringBuilder sb = new StringBuilder(256);
                     for (int i = 0; i < formBody.size(); i++) {
-                        sb.append( formBody.name( i ) ).append( "=" ).append( formBody.value( i ) ).append( "\n" );
+                        sb.append(formBody.name(i)).append("=").append(formBody.value(i)).append("\n");
                     }
-                    httpData.setRequestData( sb.toString() );
+                    httpData.setRequestData(sb.toString());
                 } else {
-                    httpData.setRequestData( request.body().toString() );
+                    httpData.setRequestData(request.body().toString());
                 }
                 if (httpData.getRequestData() != null) {
-                    httpData.setRequestSize( httpData.getRequestData().length() );
+                    httpData.setRequestSize(httpData.getRequestData().length());
                 }
             }
         }
-        try (Response response = okHttpClient.newCall( request ).execute()) {
-            httpData.setResponseDate( new Date() );
-            httpData.setStatusCode( response.code() );
-            httpData.setResponseType( response.header( "Content-Type" ) );
-            httpData.setResponseBytes( response.body().bytes() );
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            httpData.setResponseDate(new Date());
+            httpData.setStatusCode(response.code());
+            httpData.setResponseType(response.header("Content-Type"));
+            httpData.setResponseBytes(response.body().bytes());
             if (httpData.getResponseBytes() != null) {
-                httpData.setResponseSize( httpData.getResponseBytes().length );
+                httpData.setResponseSize(httpData.getResponseBytes().length);
             }
             if (this.httpDataProcessor != null) {
-                this.httpDataProcessor.responseProcess( httpData, response.headers() );
+                this.httpDataProcessor.responseProcess(httpData, response.headers());
             }
 
         } catch (IOException e) {
-            throw new TaskPartnerException( e.getMessage(), e );
+            throw new HttpRequestException(e.getMessage(), e);
         }
 
         return httpData;
@@ -1680,31 +1676,31 @@ public class HttpInterface {
     private <D extends HttpData> D getData(String url, Map<String, String> headers, Map<String, String> queryParam) {
         //request过滤器。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.requestProcess( null, queryParam, headers );
+            this.httpDataProcessor.requestProcess(null, queryParam, headers);
         }
-        Request.Builder requestBuilder = new Request.Builder().url( buildUrl( url, queryParam ) );
+        Request.Builder requestBuilder = new Request.Builder().url(buildUrl(url, queryParam));
         if (headers != null) {
-            requestBuilder.headers( Headers.of( headers ) );
+            requestBuilder.headers(Headers.of(headers));
         }
         Request request = requestBuilder.get().build();
         D httpData = initHttpData();
-        httpData.setRequestDate( new Date() );
-        httpData.setRequestUrl( request.url().toString() );
-        httpData.setRequestMethod( request.method() );
-        httpData.setRequestHeader( request.headers().toString() );
-        try (Response response = okHttpClient.newCall( request ).execute()) {
-            httpData.setResponseDate( new Date() );
-            httpData.setStatusCode( response.code() );
-            httpData.setResponseType( response.header( "Content-Type" ) );
-            httpData.setResponseBytes( response.body().bytes() );
+        httpData.setRequestDate(new Date());
+        httpData.setRequestUrl(request.url().toString());
+        httpData.setRequestMethod(request.method());
+        httpData.setRequestHeader(request.headers().toString());
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            httpData.setResponseDate(new Date());
+            httpData.setStatusCode(response.code());
+            httpData.setResponseType(response.header("Content-Type"));
+            httpData.setResponseBytes(response.body().bytes());
             if (httpData.getResponseBytes() != null) {
-                httpData.setResponseSize( httpData.getResponseBytes().length );
+                httpData.setResponseSize(httpData.getResponseBytes().length);
             }
             if (this.httpDataProcessor != null) {
-                this.httpDataProcessor.responseProcess( httpData, response.headers() );
+                this.httpDataProcessor.responseProcess(httpData, response.headers());
             }
         } catch (IOException e) {
-            throw new TaskPartnerException( e.getMessage(), e );
+            throw new HttpRequestException(e.getMessage(), e);
         }
 
         return httpData;
@@ -1723,44 +1719,44 @@ public class HttpInterface {
     private <D extends HttpData> D postFormData(String url, Map<String, String> headers, Map<String, String> formData) {
         //request过滤器。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.requestProcess( null, formData, headers );
+            this.httpDataProcessor.requestProcess(null, formData, headers);
         }
-        Request.Builder requestBuilder = new Request.Builder().url( url );
+        Request.Builder requestBuilder = new Request.Builder().url(url);
         if (headers != null) {
-            requestBuilder.headers( Headers.of( headers ) );
+            requestBuilder.headers(Headers.of(headers));
         }
         FormBody.Builder formBodyBuilder = new FormBody.Builder();
         //表单数据。
         if (formData != null) {
             for (Map.Entry<String, String> param : formData.entrySet()) {
-                formBodyBuilder.add( param.getKey(), param.getValue() );
+                formBodyBuilder.add(param.getKey(), param.getValue());
             }
         }
-        Request request = requestBuilder.post( formBodyBuilder.build() ).build();
+        Request request = requestBuilder.post(formBodyBuilder.build()).build();
         D httpData = initHttpData();
-        httpData.setRequestDate( new Date() );
-        httpData.setRequestUrl( request.url().toString() );
-        httpData.setRequestMethod( request.method() );
-        httpData.setRequestHeader( request.headers().toString() );
-        if (HttpDataLogLevel.isRecordRequest( httpDataLogLevel ) && formData != null && formData.size() > 0) {
-            httpData.setRequestData( JsonInterfaceHelper.JSON_CONVERTER.toString( formData ) );
+        httpData.setRequestDate(new Date());
+        httpData.setRequestUrl(request.url().toString());
+        httpData.setRequestMethod(request.method());
+        httpData.setRequestHeader(request.headers().toString());
+        if (HttpDataLogLevel.isRecordRequest(httpDataLogLevel) && formData != null && formData.size() > 0) {
+            httpData.setRequestData(JsonInterfaceHelper.JSON_CONVERTER.toString(formData));
             if (httpData.getRequestData() != null) {
-                httpData.setRequestSize( httpData.getRequestData().length() );
+                httpData.setRequestSize(httpData.getRequestData().length());
             }
         }
-        try (Response response = okHttpClient.newCall( request ).execute()) {
-            httpData.setResponseDate( new Date() );
-            httpData.setStatusCode( response.code() );
-            httpData.setResponseType( response.header( "Content-Type" ) );
-            httpData.setResponseBytes( response.body().bytes() );
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            httpData.setResponseDate(new Date());
+            httpData.setStatusCode(response.code());
+            httpData.setResponseType(response.header("Content-Type"));
+            httpData.setResponseBytes(response.body().bytes());
             if (httpData.getResponseBytes() != null) {
-                httpData.setResponseSize( httpData.getResponseBytes().length );
+                httpData.setResponseSize(httpData.getResponseBytes().length);
             }
             if (this.httpDataProcessor != null) {
-                this.httpDataProcessor.responseProcess( httpData, response.headers() );
+                this.httpDataProcessor.responseProcess(httpData, response.headers());
             }
         } catch (IOException e) {
-            throw new TaskPartnerException( e.getMessage(), e );
+            throw new HttpRequestException(e.getMessage(), e);
         }
         return httpData;
     }
@@ -1779,17 +1775,17 @@ public class HttpInterface {
     private <D extends HttpData> D postFormFileData(String url, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
         //request过滤器。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.requestProcess( null, formData, headers );
+            this.httpDataProcessor.requestProcess(null, formData, headers);
         }
-        Request.Builder requestBuilder = new Request.Builder().url( url );
+        Request.Builder requestBuilder = new Request.Builder().url(url);
         if (headers != null) {
-            requestBuilder.headers( Headers.of( headers ) );
+            requestBuilder.headers(Headers.of(headers));
         }
-        MultipartBody.Builder formBodyBuilder = new MultipartBody.Builder().setType( MultipartBody.FORM );
+        MultipartBody.Builder formBodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
         // 添加表单数据
         if (formData != null) {
             for (Map.Entry<String, String> entry : formData.entrySet()) {
-                formBodyBuilder.addFormDataPart( entry.getKey(), entry.getValue() );
+                formBodyBuilder.addFormDataPart(entry.getKey(), entry.getValue());
             }
         }
         if (fileData != null) {
@@ -1798,41 +1794,41 @@ public class HttpInterface {
                 String key = entry.getKey();
                 Object value = entry.getValue();
                 if (value instanceof byte[]) {
-                    RequestBody body = RequestBody.create( (byte[]) value, MediaType.parse( "application/octet-stream" ) );
-                    formBodyBuilder.addFormDataPart( key, key, body );
+                    RequestBody body = RequestBody.create((byte[]) value, MediaType.parse("application/octet-stream"));
+                    formBodyBuilder.addFormDataPart(key, key, body);
                 } else if (value instanceof File) {
-                    RequestBody body = RequestBody.create( (File) value, MediaType.parse( "application/octet-stream" ) );
-                    formBodyBuilder.addFormDataPart( key, ((File) value).getName(), body );
+                    RequestBody body = RequestBody.create((File) value, MediaType.parse("application/octet-stream"));
+                    formBodyBuilder.addFormDataPart(key, ((File) value).getName(), body);
                 } else {
-                    formBodyBuilder.addFormDataPart( key, value.toString() );
+                    formBodyBuilder.addFormDataPart(key, value.toString());
                 }
             }
         }
-        Request request = requestBuilder.post( formBodyBuilder.build() ).build();
+        Request request = requestBuilder.post(formBodyBuilder.build()).build();
         D httpData = initHttpData();
-        httpData.setRequestDate( new Date() );
-        httpData.setRequestUrl( request.url().toString() );
-        httpData.setRequestMethod( request.method() );
-        httpData.setRequestHeader( request.headers().toString() );
-        if (HttpDataLogLevel.isRecordRequest( httpDataLogLevel ) && formData != null && formData.size() > 0) {
-            httpData.setRequestData( JsonInterfaceHelper.JSON_CONVERTER.toString( formData ) );
+        httpData.setRequestDate(new Date());
+        httpData.setRequestUrl(request.url().toString());
+        httpData.setRequestMethod(request.method());
+        httpData.setRequestHeader(request.headers().toString());
+        if (HttpDataLogLevel.isRecordRequest(httpDataLogLevel) && formData != null && formData.size() > 0) {
+            httpData.setRequestData(JsonInterfaceHelper.JSON_CONVERTER.toString(formData));
             if (httpData.getRequestData() != null) {
-                httpData.setRequestSize( httpData.getRequestData().length() );
+                httpData.setRequestSize(httpData.getRequestData().length());
             }
         }
-        try (Response response = okHttpClient.newCall( request ).execute()) {
-            httpData.setResponseDate( new Date() );
-            httpData.setStatusCode( response.code() );
-            httpData.setResponseType( response.header( "Content-Type" ) );
-            httpData.setResponseBytes( response.body().bytes() );
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            httpData.setResponseDate(new Date());
+            httpData.setStatusCode(response.code());
+            httpData.setResponseType(response.header("Content-Type"));
+            httpData.setResponseBytes(response.body().bytes());
             if (httpData.getResponseBytes() != null) {
-                httpData.setResponseSize( httpData.getResponseBytes().length );
+                httpData.setResponseSize(httpData.getResponseBytes().length);
             }
             if (this.httpDataProcessor != null) {
-                this.httpDataProcessor.responseProcess( httpData, response.headers() );
+                this.httpDataProcessor.responseProcess(httpData, response.headers());
             }
         } catch (IOException e) {
-            throw new TaskPartnerException( e.getMessage(), e );
+            throw new HttpRequestException(e.getMessage(), e);
         }
         return httpData;
     }
@@ -1850,40 +1846,40 @@ public class HttpInterface {
      */
     private <D extends HttpData> D postBodyData(String url, Map<String, String> headers, Object requestData) {
         //请求体。
-        String requestBody = this.objectMapper.toString( requestData );
+        String requestBody = this.objectMapper.toString(requestData);
         //request过滤器。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.requestProcess( requestBody, null, headers );
+            this.httpDataProcessor.requestProcess(requestBody, null, headers);
         }
-        Request.Builder builder = new Request.Builder().url( url );
+        Request.Builder builder = new Request.Builder().url(url);
         if (headers != null) {
-            builder.headers( Headers.of( headers ) );
+            builder.headers(Headers.of(headers));
         }
-        Request requestBuilder = builder.post( RequestBody.create( requestBody, this.mediaType ) ).build();
+        Request requestBuilder = builder.post(RequestBody.create(requestBody, this.mediaType)).build();
         D httpData = initHttpData();
-        httpData.setRequestDate( new Date() );
-        httpData.setRequestUrl( requestBuilder.url().toString() );
-        httpData.setRequestMethod( requestBuilder.method() );
-        httpData.setRequestHeader( requestBuilder.headers().toString() );
-        if (HttpDataLogLevel.isRecordRequest( httpDataLogLevel ) && StringUtils.isNotBlank( requestBody )) {
-            httpData.setRequestData( requestBody );
+        httpData.setRequestDate(new Date());
+        httpData.setRequestUrl(requestBuilder.url().toString());
+        httpData.setRequestMethod(requestBuilder.method());
+        httpData.setRequestHeader(requestBuilder.headers().toString());
+        if (HttpDataLogLevel.isRecordRequest(httpDataLogLevel) && StringUtils.isNotBlank(requestBody)) {
+            httpData.setRequestData(requestBody);
             if (httpData.getRequestData() != null) {
-                httpData.setRequestSize( httpData.getRequestData().length() );
+                httpData.setRequestSize(httpData.getRequestData().length());
             }
         }
-        try (Response response = okHttpClient.newCall( requestBuilder ).execute()) {
-            httpData.setResponseDate( new Date() );
-            httpData.setStatusCode( response.code() );
-            httpData.setResponseType( response.header( "Content-Type" ) );
-            httpData.setResponseBytes( response.body().bytes() );
+        try (Response response = okHttpClient.newCall(requestBuilder).execute()) {
+            httpData.setResponseDate(new Date());
+            httpData.setStatusCode(response.code());
+            httpData.setResponseType(response.header("Content-Type"));
+            httpData.setResponseBytes(response.body().bytes());
             if (httpData.getResponseBytes() != null) {
-                httpData.setResponseSize( httpData.getResponseBytes().length );
+                httpData.setResponseSize(httpData.getResponseBytes().length);
             }
             if (this.httpDataProcessor != null) {
-                this.httpDataProcessor.responseProcess( httpData, response.headers() );
+                this.httpDataProcessor.responseProcess(httpData, response.headers());
             }
         } catch (IOException e) {
-            throw new TaskPartnerException( e.getMessage(), e );
+            throw new HttpRequestException(e.getMessage(), e);
         }
         return httpData;
     }
@@ -1901,44 +1897,44 @@ public class HttpInterface {
     private <D extends HttpData> D putFormData(String url, Map<String, String> headers, Map<String, String> formData) {
         //request过滤器。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.requestProcess( null, formData, headers );
+            this.httpDataProcessor.requestProcess(null, formData, headers);
         }
-        Request.Builder requestBuilder = new Request.Builder().url( url );
+        Request.Builder requestBuilder = new Request.Builder().url(url);
         if (headers != null) {
-            requestBuilder.headers( Headers.of( headers ) );
+            requestBuilder.headers(Headers.of(headers));
         }
         FormBody.Builder formBodyBuilder = new FormBody.Builder();
         if (formData != null) {
             //表单数据。
             for (Map.Entry<String, String> param : formData.entrySet()) {
-                formBodyBuilder.add( param.getKey(), param.getValue() );
+                formBodyBuilder.add(param.getKey(), param.getValue());
             }
         }
-        Request request = requestBuilder.put( formBodyBuilder.build() ).build();
+        Request request = requestBuilder.put(formBodyBuilder.build()).build();
         D httpData = initHttpData();
-        httpData.setRequestDate( new Date() );
-        httpData.setRequestUrl( request.url().toString() );
-        httpData.setRequestMethod( request.method() );
-        httpData.setRequestHeader( request.headers().toString() );
-        if (HttpDataLogLevel.isRecordRequest( httpDataLogLevel ) && formData != null && formData.size() > 0) {
-            httpData.setRequestData( JsonInterfaceHelper.JSON_CONVERTER.toString( formData ) );
+        httpData.setRequestDate(new Date());
+        httpData.setRequestUrl(request.url().toString());
+        httpData.setRequestMethod(request.method());
+        httpData.setRequestHeader(request.headers().toString());
+        if (HttpDataLogLevel.isRecordRequest(httpDataLogLevel) && formData != null && formData.size() > 0) {
+            httpData.setRequestData(JsonInterfaceHelper.JSON_CONVERTER.toString(formData));
             if (httpData.getRequestData() != null) {
-                httpData.setRequestSize( httpData.getRequestData().length() );
+                httpData.setRequestSize(httpData.getRequestData().length());
             }
         }
-        try (Response response = okHttpClient.newCall( request ).execute()) {
-            httpData.setResponseDate( new Date() );
-            httpData.setStatusCode( response.code() );
-            httpData.setResponseType( response.header( "Content-Type" ) );
-            httpData.setResponseBytes( response.body().bytes() );
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            httpData.setResponseDate(new Date());
+            httpData.setStatusCode(response.code());
+            httpData.setResponseType(response.header("Content-Type"));
+            httpData.setResponseBytes(response.body().bytes());
             if (httpData.getResponseBytes() != null) {
-                httpData.setResponseSize( httpData.getResponseBytes().length );
+                httpData.setResponseSize(httpData.getResponseBytes().length);
             }
             if (this.httpDataProcessor != null) {
-                this.httpDataProcessor.responseProcess( httpData, response.headers() );
+                this.httpDataProcessor.responseProcess(httpData, response.headers());
             }
         } catch (IOException e) {
-            throw new TaskPartnerException( e.getMessage(), e );
+            throw new HttpRequestException(e.getMessage(), e);
         }
         return httpData;
     }
@@ -1955,41 +1951,41 @@ public class HttpInterface {
      */
     private <D extends HttpData> D putBodyData(String url, Map<String, String> headers, Object requestData) {
         //请求体。
-        String requestBody = this.objectMapper.toString( requestData );
+        String requestBody = this.objectMapper.toString(requestData);
         //request过滤器。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.requestProcess( requestBody, null, headers );
+            this.httpDataProcessor.requestProcess(requestBody, null, headers);
         }
-        Request.Builder builder = new Request.Builder().url( url );
+        Request.Builder builder = new Request.Builder().url(url);
         if (headers != null) {
-            builder.headers( Headers.of( headers ) );
+            builder.headers(Headers.of(headers));
         }
-        Request requestBuilder = builder.put( RequestBody.create( requestBody, this.mediaType ) ).build();
+        Request requestBuilder = builder.put(RequestBody.create(requestBody, this.mediaType)).build();
         D httpData = initHttpData();
-        httpData.setRequestDate( new Date() );
-        httpData.setRequestUrl( requestBuilder.url().toString() );
-        httpData.setRequestMethod( requestBuilder.method() );
-        httpData.setRequestHeader( requestBuilder.headers().toString() );
-        if (HttpDataLogLevel.isRecordRequest( httpDataLogLevel ) && StringUtils.isNotBlank( requestBody )) {
-            httpData.setRequestData( requestBody );
+        httpData.setRequestDate(new Date());
+        httpData.setRequestUrl(requestBuilder.url().toString());
+        httpData.setRequestMethod(requestBuilder.method());
+        httpData.setRequestHeader(requestBuilder.headers().toString());
+        if (HttpDataLogLevel.isRecordRequest(httpDataLogLevel) && StringUtils.isNotBlank(requestBody)) {
+            httpData.setRequestData(requestBody);
             if (httpData.getRequestData() != null) {
-                httpData.setRequestSize( httpData.getRequestData().length() );
+                httpData.setRequestSize(httpData.getRequestData().length());
             }
         }
-        try (Response response = okHttpClient.newCall( requestBuilder ).execute()) {
-            httpData.setResponseDate( new Date() );
-            httpData.setStatusCode( response.code() );
-            httpData.setResponseType( response.header( "Content-Type" ) );
-            httpData.setResponseBytes( response.body().bytes() );
+        try (Response response = okHttpClient.newCall(requestBuilder).execute()) {
+            httpData.setResponseDate(new Date());
+            httpData.setStatusCode(response.code());
+            httpData.setResponseType(response.header("Content-Type"));
+            httpData.setResponseBytes(response.body().bytes());
             if (httpData.getResponseBytes() != null) {
-                httpData.setResponseSize( httpData.getResponseBytes().length );
+                httpData.setResponseSize(httpData.getResponseBytes().length);
             }
             if (this.httpDataProcessor != null) {
-                this.httpDataProcessor.responseProcess( httpData, response.headers() );
+                this.httpDataProcessor.responseProcess(httpData, response.headers());
             }
         } catch (IOException e) {
 
-            throw new TaskPartnerException( e.getMessage(), e );
+            throw new HttpRequestException(e.getMessage(), e);
         }
         return httpData;
     }
@@ -2007,44 +2003,44 @@ public class HttpInterface {
     private <D extends HttpData> D patchFormData(String url, Map<String, String> headers, Map<String, String> formData) {
         //request过滤器。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.requestProcess( null, formData, headers );
+            this.httpDataProcessor.requestProcess(null, formData, headers);
         }
-        Request.Builder requestBuilder = new Request.Builder().url( url );
+        Request.Builder requestBuilder = new Request.Builder().url(url);
         if (headers != null) {
-            requestBuilder.headers( Headers.of( headers ) );
+            requestBuilder.headers(Headers.of(headers));
         }
         FormBody.Builder formBodyBuilder = new FormBody.Builder();
         if (formData != null) {
             //表单数据。
             for (Map.Entry<String, String> param : formData.entrySet()) {
-                formBodyBuilder.add( param.getKey(), param.getValue() );
+                formBodyBuilder.add(param.getKey(), param.getValue());
             }
         }
-        Request request = requestBuilder.patch( formBodyBuilder.build() ).build();
+        Request request = requestBuilder.patch(formBodyBuilder.build()).build();
         D httpData = initHttpData();
-        httpData.setRequestDate( new Date() );
-        httpData.setRequestUrl( request.url().toString() );
-        httpData.setRequestMethod( request.method() );
-        httpData.setRequestHeader( request.headers().toString() );
-        if (HttpDataLogLevel.isRecordRequest( httpDataLogLevel ) && formData != null && formData.size() > 0) {
-            httpData.setRequestData( JsonInterfaceHelper.JSON_CONVERTER.toString( formData ) );
+        httpData.setRequestDate(new Date());
+        httpData.setRequestUrl(request.url().toString());
+        httpData.setRequestMethod(request.method());
+        httpData.setRequestHeader(request.headers().toString());
+        if (HttpDataLogLevel.isRecordRequest(httpDataLogLevel) && formData != null && formData.size() > 0) {
+            httpData.setRequestData(JsonInterfaceHelper.JSON_CONVERTER.toString(formData));
             if (httpData.getRequestData() != null) {
-                httpData.setRequestSize( httpData.getRequestData().length() );
+                httpData.setRequestSize(httpData.getRequestData().length());
             }
         }
-        try (Response response = okHttpClient.newCall( request ).execute()) {
-            httpData.setResponseDate( new Date() );
-            httpData.setStatusCode( response.code() );
-            httpData.setResponseType( response.header( "Content-Type" ) );
-            httpData.setResponseBytes( response.body().bytes() );
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            httpData.setResponseDate(new Date());
+            httpData.setStatusCode(response.code());
+            httpData.setResponseType(response.header("Content-Type"));
+            httpData.setResponseBytes(response.body().bytes());
             if (httpData.getResponseBytes() != null) {
-                httpData.setResponseSize( httpData.getResponseBytes().length );
+                httpData.setResponseSize(httpData.getResponseBytes().length);
             }
             if (this.httpDataProcessor != null) {
-                this.httpDataProcessor.responseProcess( httpData, response.headers() );
+                this.httpDataProcessor.responseProcess(httpData, response.headers());
             }
         } catch (IOException e) {
-            throw new TaskPartnerException( e.getMessage(), e );
+            throw new HttpRequestException(e.getMessage(), e);
         }
         return httpData;
     }
@@ -2061,41 +2057,41 @@ public class HttpInterface {
      */
     private <D extends HttpData> D patchBodyData(String url, Map<String, String> headers, Object requestData) {
         //请求体。
-        String requestBody = this.objectMapper.toString( requestData );
+        String requestBody = this.objectMapper.toString(requestData);
         //request过滤器。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.requestProcess( requestBody, null, headers );
+            this.httpDataProcessor.requestProcess(requestBody, null, headers);
         }
-        Request.Builder builder = new Request.Builder().url( url );
+        Request.Builder builder = new Request.Builder().url(url);
         if (headers != null) {
-            builder.headers( Headers.of( headers ) );
+            builder.headers(Headers.of(headers));
         }
-        Request requestBuilder = builder.patch( RequestBody.create( requestBody, this.mediaType ) ).build();
+        Request requestBuilder = builder.patch(RequestBody.create(requestBody, this.mediaType)).build();
         D httpData = initHttpData();
-        httpData.setRequestDate( new Date() );
-        httpData.setRequestUrl( requestBuilder.url().toString() );
-        httpData.setRequestMethod( requestBuilder.method() );
-        httpData.setRequestHeader( requestBuilder.headers().toString() );
-        if (HttpDataLogLevel.isRecordRequest( httpDataLogLevel ) && StringUtils.isNotBlank( requestBody )) {
-            httpData.setRequestData( requestBody );
+        httpData.setRequestDate(new Date());
+        httpData.setRequestUrl(requestBuilder.url().toString());
+        httpData.setRequestMethod(requestBuilder.method());
+        httpData.setRequestHeader(requestBuilder.headers().toString());
+        if (HttpDataLogLevel.isRecordRequest(httpDataLogLevel) && StringUtils.isNotBlank(requestBody)) {
+            httpData.setRequestData(requestBody);
             if (httpData.getRequestData() != null) {
-                httpData.setRequestSize( httpData.getRequestData().length() );
+                httpData.setRequestSize(httpData.getRequestData().length());
             }
         }
-        try (Response response = okHttpClient.newCall( requestBuilder ).execute()) {
-            httpData.setResponseDate( new Date() );
-            httpData.setStatusCode( response.code() );
-            httpData.setResponseType( response.header( "Content-Type" ) );
-            httpData.setResponseBytes( response.body().bytes() );
+        try (Response response = okHttpClient.newCall(requestBuilder).execute()) {
+            httpData.setResponseDate(new Date());
+            httpData.setStatusCode(response.code());
+            httpData.setResponseType(response.header("Content-Type"));
+            httpData.setResponseBytes(response.body().bytes());
             if (httpData.getResponseBytes() != null) {
-                httpData.setResponseSize( httpData.getResponseBytes().length );
+                httpData.setResponseSize(httpData.getResponseBytes().length);
             }
             if (this.httpDataProcessor != null) {
-                this.httpDataProcessor.responseProcess( httpData, response.headers() );
+                this.httpDataProcessor.responseProcess(httpData, response.headers());
             }
         } catch (IOException e) {
 
-            throw new TaskPartnerException( e.getMessage(), e );
+            throw new HttpRequestException(e.getMessage(), e);
         }
         return httpData;
     }
@@ -2113,31 +2109,31 @@ public class HttpInterface {
     private <D extends HttpData> D deleteData(String url, Map<String, String> headers, Map<String, String> queryParam) {
         //request过滤器。
         if (this.httpDataProcessor != null) {
-            this.httpDataProcessor.requestProcess( null, queryParam, headers );
+            this.httpDataProcessor.requestProcess(null, queryParam, headers);
         }
-        Request.Builder requestBuilder = new Request.Builder().url( buildUrl( url, queryParam ) );
+        Request.Builder requestBuilder = new Request.Builder().url(buildUrl(url, queryParam));
         if (headers != null) {
-            requestBuilder.headers( Headers.of( headers ) );
+            requestBuilder.headers(Headers.of(headers));
         }
         Request request = requestBuilder.delete().build();
         D httpData = initHttpData();
-        httpData.setRequestDate( new Date() );
-        httpData.setRequestUrl( request.url().toString() );
-        httpData.setRequestMethod( request.method() );
-        httpData.setRequestHeader( request.headers().toString() );
-        try (Response response = okHttpClient.newCall( request ).execute()) {
-            httpData.setResponseDate( new Date() );
-            httpData.setStatusCode( response.code() );
-            httpData.setResponseType( response.header( "Content-Type" ) );
-            httpData.setResponseBytes( response.body().bytes() );
+        httpData.setRequestDate(new Date());
+        httpData.setRequestUrl(request.url().toString());
+        httpData.setRequestMethod(request.method());
+        httpData.setRequestHeader(request.headers().toString());
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            httpData.setResponseDate(new Date());
+            httpData.setStatusCode(response.code());
+            httpData.setResponseType(response.header("Content-Type"));
+            httpData.setResponseBytes(response.body().bytes());
             if (httpData.getResponseBytes() != null) {
-                httpData.setResponseSize( httpData.getResponseBytes().length );
+                httpData.setResponseSize(httpData.getResponseBytes().length);
             }
             if (this.httpDataProcessor != null) {
-                this.httpDataProcessor.responseProcess( httpData, response.headers() );
+                this.httpDataProcessor.responseProcess(httpData, response.headers());
             }
         } catch (IOException e) {
-            throw new TaskPartnerException( e.getMessage(), e );
+            throw new HttpRequestException(e.getMessage(), e);
         }
 
         return httpData;
@@ -2151,17 +2147,17 @@ public class HttpInterface {
      * @return HttpUrl url
      */
     private HttpUrl buildUrl(String url, Map<String, String> queryParam) {
-        HttpUrl httpUrl = HttpUrl.parse( url );
+        HttpUrl httpUrl = HttpUrl.parse(url);
         if (httpUrl == null) {
-            throw new RuntimeException( "url:[" + url + "] is invalid!" );
+            throw new RuntimeException("url:[" + url + "] is invalid!");
         }
         if (queryParam != null) {
             HttpUrl.Builder urlBuilder = httpUrl.newBuilder();
-            queryParam.forEach( (key, value) -> {
-                if (StringUtils.isNotBlank( value )) {
-                    urlBuilder.addQueryParameter( key, value );
+            queryParam.forEach((key, value) -> {
+                if (StringUtils.isNotBlank(value)) {
+                    urlBuilder.addQueryParameter(key, value);
                 }
-            } );
+            });
             httpUrl = urlBuilder.build();
         }
         return httpUrl;
@@ -2178,7 +2174,7 @@ public class HttpInterface {
             try {
                 httpLog = this.httpDataCls.getDeclaredConstructor().newInstance();
             } catch (Exception e) {
-                throw new RuntimeException( e );
+                throw new RuntimeException(e);
             }
         }
         if (httpLog == null) {

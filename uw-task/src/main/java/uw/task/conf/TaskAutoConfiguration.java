@@ -180,13 +180,11 @@ public class TaskAutoConfiguration {
         CachingConnectionFactory connFactory = null;
         try {
             connFactory = new CachingConnectionFactory( factoryBean.getObject() );
+            map.from( rabbitProperties::determineAddresses ).to( connFactory::setAddresses );
         } catch (Exception e) {
             log.error( "获取ConnectionFactory出错", e );
         }
-        map.from( rabbitProperties::determineAddresses ).to( connFactory::setAddresses );
-        // 消息确认
-        // map.from(rabbitProperties::isPublisherConfirms).to(connFactory::setPublisherConfirms);
-        map.from( rabbitProperties::getPublisherConfirmType ).to( connFactory::setPublisherConfirmType );
+        map.from( rabbitProperties::getPublisherConfirmType ).whenNonNull().to( connFactory::setPublisherConfirmType );
         map.from( rabbitProperties::isPublisherReturns ).to( connFactory::setPublisherReturns );
         RabbitProperties.Cache.Channel channel = rabbitProperties.getCache().getChannel();
         map.from( channel::getSize ).whenNonNull().to( connFactory::setChannelCacheSize );

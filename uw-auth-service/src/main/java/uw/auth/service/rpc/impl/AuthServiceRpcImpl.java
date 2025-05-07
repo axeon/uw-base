@@ -15,7 +15,6 @@ import uw.auth.service.vo.MscUserVo;
 import uw.common.dto.ResponseData;
 
 import java.net.URI;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -76,7 +75,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
      * @return
      */
     @Override
-    public TokenResponse genGuestToken(String loginAgent, String clientAgent, int loginType, String loginId, long saasId, long mchId, long userId, String userName, String nickName, String realName, String mobile, String email,String userIp, String remark, boolean checkDoubleLogin) {
+    public TokenResponse genGuestToken(String loginAgent, String clientAgent, int loginType, String loginId, long saasId, long mchId, long userId, String userName, String nickName, String realName, String mobile, String email, String userIp, String remark, boolean checkDoubleLogin) {
         URI targetUrl = UriComponentsBuilder.fromHttpUrl(authServiceProperties.getAuthCenterHost()).path("/rpc/service/genGuestToken").queryParam("loginAgent", loginAgent).queryParam("clientAgent", clientAgent).queryParam("loginType", loginType).queryParam("loginId", loginId).queryParam("saasId", saasId).queryParam("mchId", mchId).queryParam("userId", userId).queryParam("userName", userName).queryParam("nickName", nickName).queryParam("realName", realName).queryParam("mobile", mobile).queryParam("email", email).queryParam("userIp", userIp).queryParam("remark", remark).queryParam("checkDoubleLogin", checkDoubleLogin).build().encode().toUri();
         return authRestTemplate.exchange(targetUrl, HttpMethod.POST, HttpEntity.EMPTY, TokenResponse.class).getBody();
     }
@@ -154,6 +153,19 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     public ResponseData updateSaasName(long saasId, String saasName) {
         URI targetUrl = UriComponentsBuilder.fromHttpUrl(authServiceProperties.getAuthCenterHost()).path("/rpc/service/updateSaasName").queryParam("saasId", saasId).queryParam("saasName", saasName).build().encode().toUri();
         return authRestTemplate.exchange(targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class).getBody();
+    }
+
+    /**
+     * 根据saasHost获取saasId。
+     *
+     * @param saasHost
+     * @return
+     */
+    @Override
+    public ResponseData<Long> getSaasIdByHost(String saasHost) {
+        URI targetUrl = UriComponentsBuilder.fromHttpUrl(authServiceProperties.getAuthCenterHost()).path("/rpc/service/getSaasIdByHost").queryParam("saasHost", saasHost).build().encode().toUri();
+        return authRestTemplate.exchange(targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<Long>>() {
+        }).getBody();
     }
 
     /**
@@ -288,7 +300,6 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
         return authRestTemplate.exchange(targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<List<MscUserGroupVo>>>() {
         }).getBody();
     }
-
 
 
 }

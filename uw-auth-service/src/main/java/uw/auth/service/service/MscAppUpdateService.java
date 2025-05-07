@@ -231,6 +231,10 @@ public class MscAppUpdateService {
                     if (userType < UserType.ROOT.getValue()) {
                         continue;
                     }
+                    // 只做权限的权限记录，其他不做。
+                    if (authType < AuthType.PERM.getValue()) {
+                        continue;
+                    }
                     //如果没有配置name和desc，则使用swagger注解。
                     if (StringUtils.isBlank(permName) && operation != null) {
                         permName = operation.summary();
@@ -239,27 +243,28 @@ public class MscAppUpdateService {
                     if (StringUtils.isBlank(permDesc) && operation != null) {
                         permDesc = operation.description();
                     }
-                    RequestMappingInfo info = entry.getKey();
-                    Set<RequestMethod> requestMethods = info.getMethodsCondition().getMethods();
+                    RequestMappingInfo requestMappingInfo = entry.getKey();
+                    Set<RequestMethod> requestMethods = requestMappingInfo.getMethodsCondition().getMethods();
                     if (requestMethods.isEmpty()) {
                         logger.warn("http method: {} no explicit @RequestMapping Method mapping ", method.getMethod().toString());
                     } else {
                         // 映射多个方法或者多个URI
-                        Set<PathPattern> patterns = info.getPathPatternsCondition().getPatterns();
+                        Set<PathPattern> patterns = requestMappingInfo.getPathPatternsCondition().getPatterns();
                         for (PathPattern pattern : patterns) {
                             for (RequestMethod requestMethod : requestMethods) {
                                 MscAppRegRequest.PermVo permVo = new MscAppRegRequest.PermVo();
+                                permVo.setName(permName);
+                                permVo.setDesc(permDesc);
+                                permVo.setUser(userType);
+                                //权限路径
                                 String permPath = MscUtils.sanitizeUrl(pattern.getPatternString());
                                 int permLevel = countLevel(permPath);
                                 //解决$PackageInfo$的问题。
                                 if (permLevel < 3) {
                                     permVo.setCode(permPath);
-                                } else if (authType >= AuthType.PERM.getValue()) {
+                                } else {
                                     permVo.setCode(permPath + ":" + requestMethodToString(requestMethod));
                                 }
-                                permVo.setName(permName);
-                                permVo.setDesc(permDesc);
-                                permVo.setUser(userType);
                                 permVoList.add(permVo);
                             }
                         }
@@ -269,7 +274,7 @@ public class MscAppUpdateService {
             //过滤menu,保留perm的menu。
             for (MscAppRegRequest.PermVo menuVo : menuVoList) {
                 for (MscAppRegRequest.PermVo permVo : permVoList) {
-                    if (permVo.getCode().startsWith(menuVo.getCode())) {
+                    if (StringUtils.startsWith(permVo.getCode(), menuVo.getCode())) {
                         allVoList.add(menuVo);
                         break;
                     }
@@ -280,8 +285,7 @@ public class MscAppUpdateService {
             appRegRequest.setPerms(allVoList);
             appRegResponse = authAppRpc.regApp(appRegRequest);
         }
-        logger.info("AuthService RegApp: {}, version: {}, auth-center response state: {}, msg: {}", authServiceProperties.getAppName(), authServiceProperties.getAppVersion(),
-                appRegResponse.getState(), appRegResponse.getMsg());
+        logger.info("AuthService RegApp: {}, version: {}, auth-center response state: {}, msg: {}", authServiceProperties.getAppName(), authServiceProperties.getAppVersion(), appRegResponse.getState(), appRegResponse.getMsg());
         if (appRegResponse.getState() == MscAppRegResponse.STATE_FAIL) {
             throw new RuntimeException("AuthService RegApp failed: " + appRegResponse.getMsg());
         }

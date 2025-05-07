@@ -92,6 +92,12 @@ public interface AuthServiceRpc {
      */
     ResponseData updateSaasName(long saasId, String saasName);
 
+    /**
+     * 根据saasHost获取saasId。
+     * @param saasHost
+     * @return
+     */
+    ResponseData<Long> getSaasIdByHost(String saasHost);
 
     /**
      * 添加saas权限。

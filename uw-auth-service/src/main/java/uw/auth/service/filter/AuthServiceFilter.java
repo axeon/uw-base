@@ -238,7 +238,8 @@ public class AuthServiceFilter implements Filter {
             // 执行后续Filter
             chain.doFilter(request, response);
         } catch (Throwable t) {
-            httpServletResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), t.getMessage());
+            logger.error(t.getMessage(), t);
+            httpServletResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), t.toString());
         } finally {
             AuthServiceHelper.destroyContextToken();
             if (mscActionLog != null) {

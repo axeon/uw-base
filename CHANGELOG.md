@@ -1,3 +1,6 @@
+# 2025.0501.1005版本升级说明
+1. uw-auth-service: AuthServiceFilter中过滤器异常增加堆栈输出，并完善报错信息。
+
 # 2025.0501.1003版本升级说明
 1. uw-auth-service: 新增 getSaasIdByHost 方法，用于根据 saasHost 获取 saasId。游客前端可以不强行指定saasId了。
 

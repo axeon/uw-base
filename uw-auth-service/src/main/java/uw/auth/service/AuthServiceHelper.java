@@ -847,15 +847,24 @@ public class AuthServiceHelper {
      */
     private static AuthTokenData parseAnonymousToken(String tokenData) {
         AuthTokenData authToken = new AuthTokenData();
+        //先给定默认值
+        authToken.setSaasId(-1);
+        authToken.setMchId(-1);
+        authToken.setUserId(-1);
         String[] ids = tokenData.split("!0@");
         if (ids.length != 2) {
             //说明数据有问题，直接返回吧。
             return authToken;
         }
         authToken.setUserType(UserType.ANY.getValue());
-        authToken.setSaasId(Long.parseLong(ids[1]));
-        authToken.setMchId(Long.parseLong(ids[0]));
-        authToken.setUserId(0);
+        try {
+            authToken.setSaasId(Long.parseLong(ids[1]));
+        } catch (Exception ignored) {
+        }
+        try {
+            authToken.setMchId(Long.parseLong(ids[0]));
+        } catch (Exception ignored) {
+        }
         return authToken;
     }
 

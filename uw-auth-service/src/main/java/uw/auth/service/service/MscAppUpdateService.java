@@ -32,10 +32,7 @@ import uw.auth.service.vo.MscAppReportResponse;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -233,7 +230,10 @@ public class MscAppUpdateService {
                     }
                     // 只做权限的权限记录，其他不做。
                     if (authType < AuthType.PERM.getValue()) {
-                        continue;
+                        //还需要排除一级菜单扫描的权限。
+                        if (!method.getBeanType().getSimpleName().equals("$PackageInfo$")) {
+                            continue;
+                        }
                     }
                     //如果没有配置name和desc，则使用swagger注解。
                     if (StringUtils.isBlank(permName) && operation != null) {
@@ -282,6 +282,8 @@ public class MscAppUpdateService {
             }
             // 合并menu和perm
             allVoList.addAll(permVoList);
+            // 预排序list
+            allVoList.sort(Comparator.comparing(MscAppRegRequest.PermVo::getCode));
             appRegRequest.setPerms(allVoList);
             appRegResponse = authAppRpc.regApp(appRegRequest);
         }

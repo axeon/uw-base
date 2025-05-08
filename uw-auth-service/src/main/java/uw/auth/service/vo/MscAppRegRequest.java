@@ -68,27 +68,40 @@ public class MscAppRegRequest implements Serializable {
     public static class PermVo {
         /**
          * 权限名称。
+         *
          * @see MscPermDeclare
          */
         private String name;
 
         /**
          * 权限描述。
+         *
          * @see MscPermDeclare
          */
         private String desc;
 
         /**
          * 用户类型
+         *
          * @see MscPermDeclare
          */
         private int user;
 
         /**
          * 权限代码。
-         * @see
+         *
          */
         private String code;
+
+        public PermVo() {
+        }
+
+        public PermVo(String name, String desc, int user, String code) {
+            this.name = name;
+            this.desc = desc;
+            this.user = user;
+            this.code = code;
+        }
 
         public String getName() {
             return name;

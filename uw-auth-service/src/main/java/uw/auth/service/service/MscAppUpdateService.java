@@ -177,7 +177,7 @@ public class MscAppUpdateService {
 
                     String permName = mscPermDeclare.name();
                     String permDesc = mscPermDeclare.description();
-                    String permUri = mscPermDeclare.uri();
+                    String permCode = mscPermDeclare.uri();
                     int userType = mscPermDeclare.user().getValue();
                     int authType = mscPermDeclare.auth().getValue();
 
@@ -192,18 +192,18 @@ public class MscAppUpdateService {
                     if (StringUtils.isBlank(permDesc) && tag != null) {
                         permDesc = tag.description();
                     }
-                    if (StringUtils.isBlank(permUri) && requestMapping != null) {
+                    if (StringUtils.isBlank(permCode) && requestMapping != null) {
                         // 注解在Controller上,只取第一个
-                        permUri = requestMapping.value()[0];
+                        permCode = requestMapping.value()[0];
                     }
-                    if (StringUtils.isBlank(permName) || StringUtils.isBlank(permUri)) {
+                    if (StringUtils.isBlank(permName) || StringUtils.isBlank(permCode)) {
                         logger.warn("AuthService scan warn: package/class [{}] annotation name or uri is blank!!!", controllerClass.getName());
                     }
                     MscAppRegRequest.PermVo permVo = new MscAppRegRequest.PermVo();
                     permVo.setName(permName);
                     permVo.setDesc(permDesc);
-                    permVo.setUser(mscPermDeclare.user().getValue());
-                    permVo.setCode(permUri);
+                    permVo.setUser(userType);
+                    permVo.setCode(permCode);
                     menuVoList.add(permVo);
                 }
             }
@@ -221,20 +221,7 @@ public class MscAppUpdateService {
                     }
                     String permName = mscPermDeclare.name();
                     String permDesc = mscPermDeclare.description();
-
-                    int userType = mscPermDeclare.user().getValue();
-                    int authType = mscPermDeclare.auth().getValue();
-                    //只做root后用户的权限记录，其他不做。
-                    if (userType < UserType.ROOT.getValue()) {
-                        continue;
-                    }
-                    // 只做权限的权限记录，其他不做。
-                    if (authType < AuthType.PERM.getValue()) {
-                        //还需要排除一级菜单扫描的权限。
-                        if (!method.getBeanType().getSimpleName().equals("$PackageInfo$")) {
-                            continue;
-                        }
-                    }
+                    String permCode = mscPermDeclare.uri();
                     //如果没有配置name和desc，则使用swagger注解。
                     if (StringUtils.isBlank(permName) && operation != null) {
                         permName = operation.summary();
@@ -243,32 +230,52 @@ public class MscAppUpdateService {
                     if (StringUtils.isBlank(permDesc) && operation != null) {
                         permDesc = operation.description();
                     }
+
+                    int userType = mscPermDeclare.user().getValue();
+                    int authType = mscPermDeclare.auth().getValue();
+
+                    //只做root后用户的权限记录，其他不做。
+                    if (userType < UserType.ROOT.getValue()) {
+                        continue;
+                    }
+
                     RequestMappingInfo requestMappingInfo = entry.getKey();
+                    // 映射多个方法或者多个URI
+                    Set<PathPattern> pathPatterns = requestMappingInfo.getPathPatternsCondition().getPatterns();
+                    if (pathPatterns.isEmpty()) {
+                        logger.warn("http method: {} no explicit @RequestMapping URI mapping ", method.getMethod().toString());
+                        continue;
+                    }
                     Set<RequestMethod> requestMethods = requestMappingInfo.getMethodsCondition().getMethods();
                     if (requestMethods.isEmpty()) {
                         logger.warn("http method: {} no explicit @RequestMapping Method mapping ", method.getMethod().toString());
-                    } else {
-                        // 映射多个方法或者多个URI
-                        Set<PathPattern> patterns = requestMappingInfo.getPathPatternsCondition().getPatterns();
-                        for (PathPattern pattern : patterns) {
-                            for (RequestMethod requestMethod : requestMethods) {
-                                MscAppRegRequest.PermVo permVo = new MscAppRegRequest.PermVo();
-                                permVo.setName(permName);
-                                permVo.setDesc(permDesc);
-                                permVo.setUser(userType);
-                                //权限路径
-                                String permPath = MscUtils.sanitizeUrl(pattern.getPatternString());
-                                int permLevel = countLevel(permPath);
-                                //解决$PackageInfo$的问题。
-                                if (permLevel < 3) {
-                                    permVo.setCode(permPath);
-                                } else {
-                                    permVo.setCode(permPath + ":" + requestMethodToString(requestMethod));
-                                }
-                                permVoList.add(permVo);
+                        continue;
+                    }
+
+                    for (PathPattern pathPattern : pathPatterns) {
+                        for (RequestMethod requestMethod : requestMethods) {
+                            MscAppRegRequest.PermVo permVo = new MscAppRegRequest.PermVo();
+                            permVo.setName(permName);
+                            permVo.setDesc(permDesc);
+                            permVo.setUser(userType);
+                            //权限路径
+                            permCode = MscUtils.sanitizeUrl(pathPattern.getPatternString());
+                            //一级菜单单独处理
+                            if (method.getBeanType().getSimpleName().equals("$PackageInfo$")) {
+                                permVo.setCode(permCode);
+                                menuVoList.add(permVo);
+                                continue;
                             }
+                            // 只做权限的权限记录，其他不做。
+                            if (authType < AuthType.PERM.getValue()) {
+                                continue;
+                            }
+                            //权限需要加上请求方法
+                            permVo.setCode(permCode + ":" + requestMethodToString(requestMethod));
+                            permVoList.add(permVo);
                         }
                     }
+
                 }
             }
             //过滤menu,保留perm的menu。

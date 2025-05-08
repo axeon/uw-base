@@ -1,3 +1,6 @@
+# 2025.0501.1008版本升级说明
+1. uw-dao: 优化QueryParam的排序功能，添加了 CLEAR_SORT 方法，用于清除排序条件。
+
 # 2025.0501.1005版本升级说明
 1. uw-auth-service: AuthServiceFilter中过滤器异常增加堆栈输出，并完善报错信息。
 

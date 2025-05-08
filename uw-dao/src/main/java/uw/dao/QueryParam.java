@@ -334,6 +334,16 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
     }
 
     /**
+     * 清除排序。
+     * @return
+     */
+    public P CLEAR_SORT() {
+        this.SORT_NAME = null;
+        this.SORT_TYPE = null;
+        return (P) this;
+    }
+
+    /**
      * 生成sort的sql。
      *
      * @return

@@ -1,163 +1,338 @@
 package uw.log.es.vo;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * 查询返回的Response
- *
- * @since 2018-04-25
+ * Elasticsearch _search 接口返回结果的 VO 类
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(title = "SearchResponse", description = "Elasticsearch _search 接口返回结果")
 public class SearchResponse<T> {
 
-    /**
-     *
-     */
-    private Shards shards = new Shards();
-
-    /**
-     *
-     */
-    private HitsResponse<T> hitsResponse = new HitsResponse<T>();
-
-    /**
-     * 聚合结果
-     */
-    private LinkedHashMap<String, AggregationResult> aggregations;
-
-    /**
-     * false
-     */
-    private boolean timedOut;
-
-    /**
-     * 1
-     */
-    private int took;
-
-    @JsonProperty("_shards")
-    public Shards getShards() {
-        return this.shards;
-    }
-
-    public void setShards(Shards shards) {
-        this.shards = shards;
-    }
-
-    public void setHisResponse(HitsResponse<T> hitsResponse) {
-        this.hitsResponse = hitsResponse;
-    }
-
-    @JsonProperty("hits")
-    public HitsResponse<T> getHitsResponse() {
-        return this.hitsResponse;
-    }
-
-    @JsonProperty("aggregations")
-    public LinkedHashMap<String, AggregationResult> getAggregations() {
-        return aggregations;
-    }
-
-    public void setAggregations(LinkedHashMap<String, AggregationResult> aggregations) {
-        this.aggregations = aggregations;
-    }
+    @JsonProperty("took")
+    @Schema(title = "took", description = "请求执行所花费的时间，单位为毫秒")
+    private long took;
 
     @JsonProperty("timed_out")
-    public boolean getTimedOut() {
-        return this.timedOut;
+    @Schema(title = "timedOut", description = "请求是否超时")
+    private boolean timedOut;
+
+    @JsonProperty("_shards")
+    @Schema(title = "_shards", description = "分片信息")
+    private Shards shards;
+
+    @JsonProperty("hits")
+    @Schema(title = "hits", description = "搜索结果")
+    private HitResponse<T> hitResponse = new HitResponse<>();
+
+    @JsonProperty("aggregations")
+    @Schema(title = "aggregations", description = "聚合结果")
+    private Map<String, Aggregation> aggregations;
+
+    public long getTook() {
+        return took;
+    }
+
+    public void setTook(long took) {
+        this.took = took;
+    }
+
+    public boolean isTimedOut() {
+        return timedOut;
     }
 
     public void setTimedOut(boolean timedOut) {
         this.timedOut = timedOut;
     }
 
-    @JsonProperty("took")
-    public int getTook() {
-        return this.took;
+    public Shards getShards() {
+        return shards;
     }
 
-    public void setTook(int took) {
-        this.took = took;
+    public void setShards(Shards shards) {
+        this.shards = shards;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public HitResponse<T> getHitResponse() {
+        return hitResponse;
+    }
+
+    public void setHitResponse(HitResponse<T> hitResponse) {
+        this.hitResponse = hitResponse;
+    }
+
+    public Map<String, Aggregation> getAggregations() {
+        return aggregations;
+    }
+
+    public void setAggregations(Map<String, Aggregation> aggregations) {
+        this.aggregations = aggregations;
+    }
+
+    /**
+     * 分片信息类
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @Schema(title = "Shards", description = "分片信息")
     public static class Shards {
-        /**
-         * 5
-         */
-        private String total;
-
-        /**
-         * 0
-         */
-        private String failed;
-
-        /**
-         * 5
-         */
-        private String successful;
-
-        /**
-         * 0
-         */
-        private String skipped;
 
         @JsonProperty("total")
-        public String getTotal() {
-            return this.total;
+        @Schema(title = "total", description = "总分片数")
+        private int total;
+
+        @JsonProperty("successful")
+        @Schema(title = "successful", description = "成功分片数")
+        private int successful;
+
+        @JsonProperty("skipped")
+        @Schema(title = "skipped", description = "跳过分片数")
+        private int skipped;
+
+        @JsonProperty("failed")
+        @Schema(title = "failed", description = "失败分片数")
+        private int failed;
+
+        public int getTotal() {
+            return total;
         }
 
-        public void setTotal(String total) {
+        public void setTotal(int total) {
             this.total = total;
         }
 
-        @JsonProperty("failed")
-        public String getFailed() {
-            return this.failed;
+        public int getSuccessful() {
+            return successful;
         }
 
-        public void setFailed(String failed) {
-            this.failed = failed;
-        }
-
-        @JsonProperty("successful")
-        public String getSuccessful() {
-            return this.successful;
-        }
-
-        public void setSuccessful(String successful) {
+        public void setSuccessful(int successful) {
             this.successful = successful;
         }
 
-        @JsonProperty("skipped")
-        public String getSkipped() {
-            return this.skipped;
+        public int getSkipped() {
+            return skipped;
         }
 
-        public void setSkipped(String skipped) {
+        public void setSkipped(int skipped) {
             this.skipped = skipped;
         }
 
+        public int getFailed() {
+            return failed;
+        }
+
+        public void setFailed(int failed) {
+            this.failed = failed;
+        }
     }
 
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    /**
+     * 搜索和主体类
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class AggregationResult<T> {
-        private int docCountErrorUpperBound;
+    @Schema(title = "Hits", description = "搜索结果集合")
+    public static class HitResponse<T> {
 
-        private int sumOtherDocCount;
+        @JsonProperty("total")
+        @Schema(title = "total", description = "匹配文档的总数信息")
+        private Total total;
 
-        private BucketInfo[] buckets;
+        @JsonProperty("max_score")
+        @Schema(title = "maxScore", description = "所有匹配文档中的最大分数")
+        private Float maxScore;
+
+        @JsonProperty("hits")
+        @Schema(title = "hits", description = "匹配文档数组")
+        private List<Hit<T>> hits = new ArrayList<>();
+
+        public Total getTotal() {
+            return total;
+        }
+
+        public void setTotal(Total total) {
+            this.total = total;
+        }
+
+        public Float getMaxScore() {
+            return maxScore;
+        }
+
+        public void setMaxScore(Float maxScore) {
+            this.maxScore = maxScore;
+        }
+
+        public List<Hit<T>> getHits() {
+            return this.hits;
+        }
+
+        public void setHits(List<Hit<T>> hits) {
+            this.hits = hits;
+        }
+    }
+
+    /**
+     * 文档总数类
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Schema(title = "Total", description = "匹配文档的总数信息")
+    public static class Total {
+
+        @JsonProperty("value")
+        @Schema(title = "value", description = "文档总数")
+        private int value;
+
+        @JsonProperty("relation")
+        @Schema(title = "relation", description = "计数是否准确（eq 表示准确，gte 表示大于或等于）")
+        private String relation;
+
+        public int getValue() {
+            return value;
+        }
+
+        public void setValue(int value) {
+            this.value = value;
+        }
+
+        public String getRelation() {
+            return relation;
+        }
+
+        public void setRelation(String relation) {
+            this.relation = relation;
+        }
+    }
+
+    /**
+     * 单个匹配文档类
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Schema(title = "Hit", description = "单个匹配文档")
+    public static class Hit<T> {
+
+        @JsonProperty("_index")
+        @Schema(title = "_index", description = "文档所属的索引名")
+        private String index;
+
+        @JsonProperty("_type")
+        @Schema(title = "_type", description = "文档类型")
+        private String type;
+
+        @JsonProperty("_id")
+        @Schema(title = "_id", description = "文档 ID")
+        private String id;
+
+        @JsonProperty("_score")
+        @Schema(title = "_score", description = "文档相关性分数")
+        private Float score;
+
+        @JsonProperty("_source")
+        @Schema(title = "_source", description = "文档源内容")
+        private T source;
+
+        @JsonProperty("fields")
+        @Schema(title = "fields", description = "文档字段内容")
+        private Map<String, Object> fields;
+
+        @JsonProperty("highlight")
+        @Schema(title = "highlight", description = "文档高亮内容")
+        private Map<String, List<String>> highlight;
+
+        public String getIndex() {
+            return index;
+        }
+
+        public void setIndex(String index) {
+            this.index = index;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public Float getScore() {
+            return score;
+        }
+
+        public void setScore(Float score) {
+            this.score = score;
+        }
+
+        public T getSource() {
+            return source;
+        }
+
+        public void setSource(T source) {
+            this.source = source;
+        }
+    }
+
+    /**
+     * 聚合结果基类
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Schema(title = "Aggregation", description = "聚合结果")
+    public static class Aggregation {
 
         @JsonProperty("doc_count_error_upper_bound")
+        @Schema(title = "docCountErrorUpperBound", description = "文档计数错误上限")
+        private int docCountErrorUpperBound;
+
+        @JsonProperty("sum_other_doc_count")
+        @Schema(title = "sumOtherDocCount", description = "其他文档计数")
+        private int sumOtherDocCount;
+
+        @JsonProperty("buckets")
+        @Schema(title = "buckets", description = "桶数组，包含聚合分组信息")
+        private List<Bucket> buckets;
+
+        @JsonProperty("value")
+        @Schema(title = "value", description = "聚合值（用于单值聚合如 sum、avg 等）")
+        private double value;
+
+        @JsonProperty("value_as_string")
+        @Schema(title = "value_as_string", description = "value_as_string")
+        private String valueAsString;
+
+        @JsonProperty("count")
+        @Schema(title = "count", description = "聚合值（用于单值聚合如 sum、avg 等）")
+        private long count;
+
+        @JsonProperty("min")
+        @Schema(title = "min", description = "聚合值（用于单值聚合如 sum、avg 等）")
+        private double min;
+
+        @JsonProperty("max")
+        @Schema(title = "max", description = "聚合值（用于单值聚合如 sum、avg 等）")
+        private double max;
+
+        @JsonProperty("avg")
+        @Schema(title = "avg", description = "聚合值（用于单值聚合如 sum、avg 等）")
+        private double avg;
+
+        @JsonProperty("sum")
+        @Schema(title = "sum", description = "聚合值（用于单值聚合如 sum、avg 等）")
+        private double sum;
+
+
         public int getDocCountErrorUpperBound() {
             return docCountErrorUpperBound;
         }
@@ -166,7 +341,6 @@ public class SearchResponse<T> {
             this.docCountErrorUpperBound = docCountErrorUpperBound;
         }
 
-        @JsonProperty("sum_other_doc_count")
         public int getSumOtherDocCount() {
             return sumOtherDocCount;
         }
@@ -175,163 +349,124 @@ public class SearchResponse<T> {
             this.sumOtherDocCount = sumOtherDocCount;
         }
 
-        @JsonProperty("buckets")
-        public BucketInfo[] getBuckets() {
+        public List<Bucket> getBuckets() {
             return buckets;
         }
 
-        public void setBuckets(BucketInfo[] buckets) {
+        public void setBuckets(List<Bucket> buckets) {
             this.buckets = buckets;
         }
 
-        public static class BucketInfo {
-            String key;
-            int docCount;
-
-            @JsonProperty("key")
-            public String getKey() {
-                return key;
-            }
-
-            public void setKey(String key) {
-                this.key = key;
-            }
-
-            @JsonProperty("doc_count")
-            public int getDocCount() {
-                return docCount;
-            }
-
-            public void setDocCount(int docCount) {
-                this.docCount = docCount;
-            }
+        public double getValue() {
+            return value;
         }
 
+        public void setValue(double value) {
+            this.value = value;
+        }
+
+        public String getValueAsString() {
+            return valueAsString;
+        }
+
+        public void setValueAsString(String valueAsString) {
+            this.valueAsString = valueAsString;
+        }
+
+        public long getCount() {
+            return count;
+        }
+
+        public void setCount(long count) {
+            this.count = count;
+        }
+
+        public double getMin() {
+            return min;
+        }
+
+        public void setMin(double min) {
+            this.min = min;
+        }
+
+        public double getMax() {
+            return max;
+        }
+
+        public void setMax(double max) {
+            this.max = max;
+        }
+
+        public double getAvg() {
+            return avg;
+        }
+
+        public void setAvg(double avg) {
+            this.avg = avg;
+        }
+
+        public double getSum() {
+            return sum;
+        }
+
+        public void setSum(double sum) {
+            this.sum = sum;
+        }
     }
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Hits<T> {
-        /**
-         * 索引
-         */
-        private String index;
-
-        /**
-         * 类型
-         */
-        private String type;
-
-        /**
-         * 记录
-         */
-        private T source;
-
-        /**
-         * 主键
-         */
-        private String id;
-
-        /**
-         * 1.0
-         */
-        private String score;
-
-        @JsonProperty("_index")
-        public String getIndex() {
-            return this.index;
-        }
-
-        public void setIndex(String index) {
-            this.index = index;
-        }
-
-        @JsonProperty("_type")
-        public String getType() {
-            return this.type;
-        }
-
-        public void setType(String type) {
-            this.type = type;
-        }
-
-        @JsonProperty("_source")
-        public T getSource() {
-            return this.source;
-        }
-
-        public void setSource(T source) {
-            this.source = source;
-        }
-
-        @JsonProperty("_id")
-        public String getId() {
-            return this.id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        @JsonProperty("_score")
-        public String getScore() {
-            return this.score;
-        }
-
-        public void setScore(String score) {
-            this.score = score;
-        }
-
-    }
-
     /**
-     * 查询结果集
-     *
-     * @param <T>
+     * 聚合分组桶类（用于 terms 聚合）
      */
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class HitsResponse<T> {
-        /**
-         *
-         */
-        private List<Hits<T>> hits = new ArrayList<Hits<T>>();
+    @Schema(title = "Bucket", description = "聚合分组桶")
+    public static class Bucket {
 
-        /**
-         * 1
-         */
-        private Total total;
+        @JsonProperty("key_as_string")
+        @Schema(title = "key_as_string", description = "key_as_string")
+        private String keyAsString;
 
-        /**
-         * 1.0
-         */
-        private String maxScore;
+        @JsonProperty("key")
+        @Schema(title = "key", description = "桶的键值")
+        private String key;
 
-        @JsonProperty("hits")
-        public List<Hits<T>> getHits() {
-            return this.hits;
+        @JsonProperty("doc_count")
+        @Schema(title = "docCount", description = "桶中的文档数量")
+        private int docCount;
+
+        @JsonAnySetter
+        @Schema(title = "aggregation", description = "嵌套聚合结果")
+        private Map<String, Aggregation> subAggregations = new HashMap<>();
+
+        public String getKeyAsString() {
+            return keyAsString;
         }
 
-        public void setHits(List<Hits<T>> hits) {
-            this.hits = hits;
+        public void setKeyAsString(String keyAsString) {
+            this.keyAsString = keyAsString;
         }
 
-        @JsonProperty("total")
-        public Total getTotal() {
-            return this.total;
+        public String getKey() {
+            return key;
         }
 
-        public void setTotal(Total total) {
-            this.total = total;
+        public void setKey(String key) {
+            this.key = key;
         }
 
-        public void getMaxScore(String maxScore) {
-            this.maxScore = maxScore;
+        public int getDocCount() {
+            return docCount;
         }
 
-        @JsonProperty("max_score")
-        public String getMaxScore() {
-            return this.maxScore;
+        public void setDocCount(int docCount) {
+            this.docCount = docCount;
+        }
+
+        public Map<String, Aggregation> getSubAggregations() {
+            return subAggregations;
+        }
+
+        public void setSubAggregations(Map<String, Aggregation> subAggregations) {
+            this.subAggregations = subAggregations;
         }
     }
+
 }

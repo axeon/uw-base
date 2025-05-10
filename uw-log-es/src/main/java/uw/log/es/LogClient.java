@@ -236,11 +236,11 @@ public class LogClient {
     public <T> ESDataList<T> mapQueryResponseToEDataList(SearchResponse<T> response, int startIndex, int pageSize) {
         ArrayList<T> dataList = new ArrayList<>();
         if (response != null) {
-            SearchResponse.HitsResponse<T> hitsResponse = response.getHitsResponse();
-            List<SearchResponse.Hits<T>> hitsList = hitsResponse.getHits();
+            SearchResponse.HitResponse<T> hitsResponse = response.getHitResponse();
+            List<SearchResponse.Hit<T>> hitsList = hitsResponse.getHits();
             if (!hitsList.isEmpty()) {
-                for (SearchResponse.Hits<T> hits : hitsList) {
-                    dataList.add( hits.getSource() );
+                for (SearchResponse.Hit<T> hit : hitsList) {
+                    dataList.add( hit.getSource() );
                 }
 
                 if (Objects.nonNull( hitsResponse.getTotal() )) {
@@ -258,7 +258,7 @@ public class LogClient {
      */
     @PreDestroy
     void destroy() {
-        logService.destroyLog();
+        logService.destroy();
     }
 
 

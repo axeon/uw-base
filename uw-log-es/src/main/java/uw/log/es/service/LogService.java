@@ -380,7 +380,7 @@ public class LogService {
     /**
      * 关闭写日志系统
      */
-    public void destroyLog() {
+    public void destroy() {
         if (logState) {
             //先关掉log
             logState = false;
@@ -569,37 +569,6 @@ public class LogService {
     }
 
     /**
-     * 将查询结果映射成List
-     *
-     * @param resp
-     * @param tClass
-     * @param <T>
-     * @return
-     */
-    @SuppressWarnings("unchecked")
-    private <T> List<T> mapQueryResponseToList(String resp, Class<T> tClass) {
-        if (StringUtils.isNotBlank( resp )) {
-            SearchResponse<T> response = null;
-            try {
-                response = JsonUtils.parse( resp, JsonUtils.constructParametricType( SearchResponse.class, tClass ) );
-            } catch (Exception e) {
-                log.error( e.getMessage(), e );
-            }
-            if (response != null) {
-                List<SearchResponse.Hits<T>> hitsList = response.getHitsResponse().getHits();
-                if (!hitsList.isEmpty()) {
-                    List<T> dataList = new ArrayList<>();
-                    for (SearchResponse.Hits<T> hits : hitsList) {
-                        dataList.add( hits.getSource() );
-                    }
-                    return dataList;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
      * 根据类名建立索引名称
      *
      * @param logClass
@@ -613,7 +582,7 @@ public class LogService {
             // 偏移一下,把'.'带上
             lastIndex++;
             String canonicalPath = className.substring( 0, lastIndex );
-            String logVoName = className.substring( lastIndex, className.length() );
+            String logVoName = className.substring( lastIndex);
             indexName = CaseFormat.UPPER_CAMEL.to( CaseFormat.LOWER_UNDERSCORE, logVoName );
             indexName = canonicalPath + indexName;
         } else {

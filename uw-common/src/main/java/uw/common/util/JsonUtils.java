@@ -180,17 +180,66 @@ public class JsonUtils {
     }
 
     /**
+     * 转换对象。
+     *
+     * @param object
+     * @param classType
+     * @param <T>
+     * @return
+     */
+    public static <T> T convert(Object object, Class<T> classType) throws RuntimeException {
+        try {
+            return (T) jsonMapper.convertValue( object, classType );
+        } catch (Throwable e) {
+            throw new RuntimeException( e.getMessage() + "! data: " + toString(object), e );
+        }
+    }
+
+    /**
+     * 转换对象。
+     *
+     * @param object
+     * @param typeRef
+     * @param <T>
+     * @return
+     * @throws RuntimeException
+     */
+    public static <T> T convert(Object object, TypeReference<T> typeRef) throws RuntimeException {
+        try {
+            return (T) jsonMapper.convertValue( object, typeRef );
+        } catch (Throwable e) {
+            throw new RuntimeException( e.getMessage() + "! data: " + toString(object), e );
+        }
+    }
+
+    /**
+     * 转换对象。
+     *
+     * @param object
+     * @param type
+     * @param <T>
+     * @return
+     * @throws RuntimeException
+     */
+    public static <T> T convert(Object object, JavaType type) throws RuntimeException {
+        try {
+            return jsonMapper.convertValue( object, type );
+        } catch (Throwable e) {
+            throw new RuntimeException( e.getMessage() + "! data: " + toString(object), e );
+        }
+    }
+    /**
      * 将对象序列化写入输出流。
      *
      * @param object
      * @return
      * @throws RuntimeException
      */
-    public static void write(OutputStream out, Object object) throws RuntimeException {
+    public static void write(Object object, OutputStream out) throws RuntimeException {
         try {
             jsonMapper.writeValue( out, object );
         } catch (Throwable e) {
-            throw new RuntimeException( e.getMessage() + "! data: " + object, e );
+            throw new RuntimeException( e.getMessage() + "! data: " + toString(object), e );
         }
     }
 

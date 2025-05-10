@@ -6,9 +6,7 @@ import org.slf4j.LoggerFactory;
 import uw.log.es.service.LogService;
 import uw.log.es.vo.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * 日志接口服务客户端
@@ -233,7 +231,7 @@ public class LogClient {
      * @param <T>
      * @return
      */
-    public <T> ESDataList<T> mapQueryResponseToEDataList(SearchResponse<T> response, int startIndex, int pageSize) {
+    public static <T> ESDataList<T> mapQueryResponseToEDataList(SearchResponse<T> response, int startIndex, int pageSize) {
         ArrayList<T> dataList = new ArrayList<>();
         if (response != null) {
             SearchResponse.HitResponse<T> hitsResponse = response.getHitResponse();
@@ -252,6 +250,98 @@ public class LogClient {
         }
         return new ESDataList<>( dataList, startIndex, pageSize, 0 );
     }
+
+
+    /**
+     * 获取聚合值。
+     */
+    public static double getAggValue(Map<String, SearchResponse.Aggregation> aggMap, String aggName) {
+        if (aggMap == null) return 0d;
+        SearchResponse.Aggregation aggregation = aggMap.get(aggName);
+        if (aggregation == null) return 0d;
+        return aggregation.getValue();
+    }
+
+    /**
+     * 获取聚合值。
+     * 聚合值下方的Bucket，则放入到子map中。
+     * 结构为agg->bucket。
+     */
+    public static Map<String, List<Map<String, Object>>> convertAggBucketListMap(Map<String, SearchResponse.Aggregation> aggMap) {
+        Map<String, List<Map<String, Object>>> map = new LinkedHashMap<>();
+        if (aggMap == null) return map;
+        aggMap.forEach((k, v) -> {
+            List<Map<String, Object>> list = new ArrayList<>();
+            if (v.getBuckets() != null) {
+                v.getBuckets().forEach(bucket -> {
+                    Map<String, Object> subMap = new LinkedHashMap<>();
+                    subMap.put("name", bucket.getKey());
+                    subMap.put("count", bucket.getDocCount());
+                    if (bucket.getSubAggregations() != null) {
+                        bucket.getSubAggregations().forEach((k1, v1) -> {
+                            subMap.put(k1, v1.getValue());
+                        });
+                    }
+                    list.add(subMap);
+                });
+            }
+            map.put(k, list);
+        });
+        return map;
+    }
+
+    /**
+     * 获取聚合值。
+     * 聚合值中如果有bucket，则将bucket中的值拉平加入到map中。
+     * 结构为agg->bucket->agg+bucket。
+     */
+    public static Map<String, Map<String, Map<String, Double>>> convertAggBucketAggBucketFlatMap(Map<String, SearchResponse.Aggregation> aggMap) {
+        Map<String, Map<String, Map<String, Double>>> map = new LinkedHashMap<>();
+        if (aggMap == null) return map;
+        aggMap.forEach((k, v) -> {
+            if (v.getBuckets() != null) {
+                Map<String, Map<String, Double>> subMap = new LinkedHashMap<>();
+                v.getBuckets().forEach(bucket -> {
+                    if (bucket.getSubAggregations() != null) {
+                        Map<String, Double> subSubMap = new LinkedHashMap<>();
+                        bucket.getSubAggregations().forEach((k1, v1) -> {
+                            if (v1.getBuckets() != null) {
+                                v1.getBuckets().forEach(bucket2 -> {
+                                    subSubMap.put(k1 + bucket2.getKey(), (double) bucket2.getDocCount());
+                                });
+                            } else {
+                                subSubMap.put(k1, v1.getValue());
+                            }
+                        });
+                        subMap.put(bucket.getKey(), subSubMap);
+                    }
+                });
+                map.put(k, subMap);
+            }
+        });
+        return map;
+    }
+
+    /**
+     * 获取聚合值。
+     * 聚合值中如果有bucket，则将bucket中的值拉平加入到map中。
+     * 结构为agg+bucket。
+     */
+    public static Map<String, Double> convertAggBucketFlatMap(Map<String, SearchResponse.Aggregation> aggMap) {
+        Map<String, Double> map = new LinkedHashMap<>();
+        if (aggMap == null) return map;
+        aggMap.forEach((k, v) -> {
+            if (v.getBuckets() != null) {
+                v.getBuckets().forEach(bucket -> {
+                    map.put(k + bucket.getKey(), (double) bucket.getDocCount());
+                });
+            } else {
+                map.put(k, v.getValue());
+            }
+        });
+        return map;
+    }
+
 
     /**
      * 关闭写日志系统

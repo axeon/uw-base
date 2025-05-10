@@ -28,7 +28,9 @@ public class LogClientAutoConfiguration {
     @Value("${spring.cloud.nacos.discovery.ip}:${server.port}")
     private String appHost;
 
-
+    /**
+     * 日志接口服务客户端。
+     */
     private LogClient logClient;
 
     /**

@@ -5,7 +5,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * 组合了互联网应用常见列表所需数据的集合接口。 实现了iterator,Iterable.
@@ -15,6 +18,10 @@ import java.util.Iterator;
  */
 @Schema(title = "DataList数据集", description = "组合了互联网应用常见列表所需数据的集合接口")
 public class ESDataList<T> implements Iterable<T>, Serializable {
+    /**
+     * 空的DataList.
+     */
+    public static final ESDataList<?> EMPTY = new ESDataList<>();
 
     /**
      * 开始的索引.
@@ -66,7 +73,7 @@ public class ESDataList<T> implements Iterable<T>, Serializable {
      */
     @JsonProperty
     @Schema(title = "结果集", description = "结果集")
-    private ArrayList<T> results = null;
+    private List<T> results = Collections.emptyList();
 
 
     /**
@@ -88,7 +95,6 @@ public class ESDataList<T> implements Iterable<T>, Serializable {
         this.startIndex = startIndex;
         this.results = results;
         this.resultNum = resultNum;
-        this.size = this.results.size();
         this.sizeAll = sizeAll;
 
         if (this.results != null) {
@@ -100,6 +106,16 @@ public class ESDataList<T> implements Iterable<T>, Serializable {
             // 计算总页数
             this.pageCount = (int) Math.ceil((double) this.sizeAll / (double) resultNum);
         }
+    }
+
+    /**
+     * 获取空的DataList.
+     *
+     * @param <T>
+     * @return
+     */
+    public static <T> ESDataList<T> empty() {
+        return (ESDataList<T>) EMPTY;
     }
 
     /**
@@ -189,7 +205,7 @@ public class ESDataList<T> implements Iterable<T>, Serializable {
      *
      * @return 结果集
      */
-    public ArrayList<T> results() {
+    public List<T> results() {
         return this.results;
     }
 
@@ -215,5 +231,18 @@ public class ESDataList<T> implements Iterable<T>, Serializable {
         return this.results.iterator();
     }
 
+
+    /**
+     * 获取stream列表.
+     *
+     * @return
+     */
+    public Stream<T> stream() {
+        if (this.results == null) {
+            return Stream.empty();
+        } else {
+            return this.results.stream();
+        }
+    }
 
 }

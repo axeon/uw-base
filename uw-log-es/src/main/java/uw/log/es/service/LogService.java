@@ -280,7 +280,7 @@ public class LogService {
         okb.writeUtf8( "{\"create\":{\"_index\":\"" ).writeUtf8( index ).writeUtf8( "\"},\"_source\":false}" );
         okb.write( LINE_SEPARATOR_BYTES );
         try {
-            JsonUtils.write( okb.outputStream(), source );
+            JsonUtils.write(source, okb.outputStream());
         } catch (Exception e) {
             log.error( e.getMessage(), e );
         }
@@ -330,7 +330,7 @@ public class LogService {
             okb.writeUtf8( "{\"index\":{\"_index\":\"" ).writeUtf8( index ).writeUtf8( "\"}}" );
             okb.write( LINE_SEPARATOR_BYTES );
             try {
-                JsonUtils.write( okb.outputStream(), source );
+                JsonUtils.write(source, okb.outputStream());
             } catch (Exception e) {
                 log.error( e.getMessage(), e );
             }

@@ -1,3 +1,6 @@
+# 2025.0501.1015版本升级说明
+1. uw-cache: FusionCache优化加载数据成功之后，会自动发送一条invalidate通知，同步数据到整个集群中。
+
 # 2025.0501.1012版本升级说明
 1. uw-log-es: 新增了对分组聚合的若干工具方法。
 2. uw-common: JsonUtils新增了convert方法，用于将map转换为vo对象。

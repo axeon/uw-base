@@ -353,8 +353,8 @@ public class GlobalCache {
      * @param channel 通道名。
      * @param message 消息。
      */
-    public static void notifyMsg(String channel, Object message) {
-        cacheRedisTemplate.convertAndSend( channel, KryoUtils.serialize( message ) );
+    public static Long notifyMsg(String channel, Object message) {
+        return cacheRedisTemplate.convertAndSend( channel, KryoUtils.serialize( message ) );
     }
 
     /**

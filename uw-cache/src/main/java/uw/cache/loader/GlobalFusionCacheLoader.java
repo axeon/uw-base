@@ -13,7 +13,7 @@ import uw.cache.vo.CacheProtectedValue;
  */
 public class GlobalFusionCacheLoader<K, V> implements CacheLoader<K, V> {
 
-    private static final Logger logger = LoggerFactory.getLogger( GlobalFusionCacheLoader.class );
+    private static final Logger logger = LoggerFactory.getLogger(GlobalFusionCacheLoader.class);
 
     /**
      * 缓存配置。
@@ -40,12 +40,17 @@ public class GlobalFusionCacheLoader<K, V> implements CacheLoader<K, V> {
     @Override
     public V load(K key) {
         try {
-            return GlobalCache.loadWithProtectedValue( cacheConfig.getCacheName(), key, cacheDataLoader, cacheConfig.getGlobalCacheExpireMillis(),
-                    cacheConfig.getNullProtectMillis(), cacheConfig.getFailProtectMillis(), cacheConfig.getReloadIntervalMillis(), cacheConfig.getReloadMaxTimes() );
+            // 加载数据。
+            V value = GlobalCache.loadWithProtectedValue(cacheConfig.getCacheName(), key, cacheDataLoader, cacheConfig.getGlobalCacheExpireMillis(),
+                    cacheConfig.getNullProtectMillis(), cacheConfig.getFailProtectMillis(), cacheConfig.getReloadIntervalMillis(), cacheConfig.getReloadMaxTimes());
+            //此处通知invalidate缓存。
+            FusionCache.notifyInvalidate(cacheConfig.getCacheName(), key);
+            // 返回数据。
+            return value;
         } catch (Exception e) {
-            logger.error( e.getMessage(), e );
+            logger.error(e.getMessage(), e);
         }
-        return (V) new CacheProtectedValue( cacheConfig.getFailProtectMillis() );
+        return (V) new CacheProtectedValue(cacheConfig.getFailProtectMillis());
     }
 
 

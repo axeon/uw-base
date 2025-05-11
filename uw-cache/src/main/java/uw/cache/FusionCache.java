@@ -726,7 +726,6 @@ public class FusionCache {
             this.failProtectMillis = failProtectMillis;
         }
 
-
         private Config(Builder builder) {
             setCacheName(builder.cacheName);
             setLocalCacheMaxNum(builder.localCacheMaxNum);
@@ -738,8 +737,51 @@ public class FusionCache {
             setReloadMaxTimes(builder.reloadMaxTimes);
         }
 
+        /**
+         * builder构造器。
+         */
         public static Builder builder() {
             return new Builder();
+        }
+
+        /**
+         * builder构造器。
+         * @param cacheName
+         * @return
+         */
+        public static Builder builder(String cacheName) {
+            return new Builder().cacheName(cacheName);
+        }
+
+        /**
+         * builder构造器。
+         * @param entityClass
+         * @return
+         */
+        public static Builder builder(Class<?> entityClass) {
+            return new Builder().cacheName(entityClass.getSimpleName());
+        }
+
+        /**
+         * builder构造器。
+         * @param cacheName
+         * @param localCacheMaxNum
+         * @param globalCacheExpireMillis
+         * @return
+         */
+        public static Builder builder(String cacheName, int localCacheMaxNum, long globalCacheExpireMillis) {
+            return new Builder().cacheName(cacheName).localCacheMaxNum(localCacheMaxNum).globalCacheExpireMillis(globalCacheExpireMillis);
+        }
+
+        /**
+         * builder构造器。
+         * @param entityClass
+         * @param localCacheMaxNum
+         * @param globalCacheExpireMillis
+         * @return
+         */
+        public static Builder builder(Class<?> entityClass, int localCacheMaxNum, long globalCacheExpireMillis) {
+            return new Builder().cacheName(entityClass.getSimpleName()).localCacheMaxNum(localCacheMaxNum).globalCacheExpireMillis(globalCacheExpireMillis);
         }
 
         public static Builder builder(Config copy) {

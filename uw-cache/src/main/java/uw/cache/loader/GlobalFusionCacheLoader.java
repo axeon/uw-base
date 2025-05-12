@@ -44,7 +44,9 @@ public class GlobalFusionCacheLoader<K, V> implements CacheLoader<K, V> {
             V value = GlobalCache.loadWithProtectedValue(cacheConfig.getCacheName(), key, cacheDataLoader, cacheConfig.getGlobalCacheExpireMillis(),
                     cacheConfig.getNullProtectMillis(), cacheConfig.getFailProtectMillis(), cacheConfig.getReloadIntervalMillis(), cacheConfig.getReloadMaxTimes());
             //此处通知invalidate缓存。
-            FusionCache.notifyInvalidate(cacheConfig.getCacheName(), key);
+            if (cacheConfig.isAutoNotifyInvalidate()) {
+                FusionCache.notifyInvalidate(cacheConfig.getCacheName(), key);
+            }
             // 返回数据。
             return value;
         } catch (Exception e) {

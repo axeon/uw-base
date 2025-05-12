@@ -663,6 +663,13 @@ public class FusionCache {
         private int reloadMaxTimes = 10;
 
         /**
+         * 是否自动通知集群缓存失效。
+         * 加载成功的缓存，将会通知集群缓存失效以便更新。
+         * 默认不启用。
+         */
+        private boolean autoNotifyInvalidate = false;
+
+        /**
          * 缓存作废监听器。
          */
         private CacheChangeNotifyListener cacheChangeNotifyListener;
@@ -735,6 +742,7 @@ public class FusionCache {
             setFailProtectMillis(builder.failProtectMillis);
             setReloadIntervalMillis(builder.reloadIntervalMillis);
             setReloadMaxTimes(builder.reloadMaxTimes);
+            setAutoNotifyInvalidate(builder.autoNotifyInvalidate);
         }
 
         /**
@@ -794,6 +802,7 @@ public class FusionCache {
             builder.failProtectMillis = copy.getFailProtectMillis();
             builder.reloadIntervalMillis = copy.getReloadIntervalMillis();
             builder.reloadMaxTimes = copy.getReloadMaxTimes();
+            builder.autoNotifyInvalidate = copy.isAutoNotifyInvalidate();
             return builder;
         }
 
@@ -866,6 +875,14 @@ public class FusionCache {
             this.reloadMaxTimes = reloadMaxTimes;
         }
 
+        public boolean isAutoNotifyInvalidate() {
+            return autoNotifyInvalidate;
+        }
+
+        public void setAutoNotifyInvalidate(boolean autoNotifyInvalidate) {
+            this.autoNotifyInvalidate = autoNotifyInvalidate;
+        }
+
         public static final class Builder {
 
             /**
@@ -916,6 +933,14 @@ public class FusionCache {
              */
             private int reloadMaxTimes = 10;
 
+            /**
+             * 是否自动通知集群缓存失效。
+             * 加载成功的缓存，将会通知集群缓存失效以便更新。
+             * 默认不启用。
+             */
+            private boolean autoNotifyInvalidate = false;
+
+
             private Builder() {
             }
 
@@ -965,6 +990,11 @@ public class FusionCache {
 
             public Builder reloadMaxTimes(int reloadMaxTimes) {
                 this.reloadMaxTimes = reloadMaxTimes;
+                return this;
+            }
+
+            public Builder autoNotifyInvalidate(boolean autoNotifyInvalidate) {
+                this.autoNotifyInvalidate = autoNotifyInvalidate;
                 return this;
             }
 

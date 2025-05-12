@@ -1,3 +1,6 @@
+# 2025.0501.1016版本升级说明
+1. uw-cache: FusionCache.Config新增autoNotifyInvalidate参数，用于优化控制数据更新通知。
+
 # 2025.0501.1015版本升级说明
 1. uw-cache: FusionCache优化加载数据成功之后，会自动发送一条invalidate通知，同步数据到整个集群中。
 

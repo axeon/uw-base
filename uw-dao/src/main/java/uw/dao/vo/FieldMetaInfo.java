@@ -12,7 +12,7 @@ public class FieldMetaInfo {
     /**
      * java属性名.
      */
-    private String propertyName;
+    private String fieldName;
 
     /**
      * 数据库字段名.
@@ -57,17 +57,17 @@ public class FieldMetaInfo {
      *
      * @return java属性名
      */
-    public String getPropertyName() {
-        return propertyName;
+    public String getFieldName() {
+        return fieldName;
     }
 
     /**
      * 设置java属性名.
      *
-     * @param propertyName java属性名
+     * @param fieldName java属性名
      */
-    public void setPropertyName(String propertyName) {
-        this.propertyName = propertyName;
+    public void setFieldName(String fieldName) {
+        this.fieldName = fieldName;
     }
 
     /**

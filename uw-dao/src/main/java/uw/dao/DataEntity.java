@@ -32,21 +32,14 @@ public interface DataEntity {
     Serializable ENTITY_ID();
 
     /**
-     * 获取更改的字段列表。
-     *
-     * @return 字段列表
-     */
-    Set<String> GET_UPDATED_COLUMN();
-
-    /**
-     * 获取文本变更信息。
+     * 获取更新信息。
      *
      * @return String
      */
-    String GET_UPDATED_INFO();
+    DataUpdateInfo GET_UPDATED_INFO();
 
     /**
-     * 清理更新信息，同时清除更新列信息。
+     * 清除更新信息。
      */
     void CLEAR_UPDATED_INFO();
 }

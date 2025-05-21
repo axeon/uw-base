@@ -431,8 +431,6 @@ public class DaoFactoryImpl extends DaoFactory {
         } catch (Exception e) {
             throw new TransactionException("FieldMetaInfo@[" + entity.getClass() + "] get error! " + e.toString(), e);
         }
-        //清除
-        entity.CLEAR_UPDATED_INFO();
         sb.append(queryParamResult.getSql());
         Object[] allParamList = ArrayUtils.addAll(paramList, queryParamResult.getParamList());
         return SQLCommandImpl.executeSQL(this, connName, sb.toString(), allParamList);

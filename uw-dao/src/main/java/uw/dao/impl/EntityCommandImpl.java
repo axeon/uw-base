@@ -1,11 +1,13 @@
 package uw.dao.impl;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.util.SystemClock;
 import uw.dao.DataEntity;
 import uw.dao.DataList;
+import uw.dao.DataUpdateInfo;
 import uw.dao.TransactionException;
 import uw.dao.conf.DaoConfigManager;
 import uw.dao.connectionpool.ConnectionManager;
@@ -23,8 +25,8 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 /**
  * 实体类命令实现.
@@ -60,29 +62,27 @@ public class EntityCommandImpl {
         if (emi == null) {
             throw new TransactionException("TableMetaInfo[" + entity.getClass() + "] not found! ");
         }
-        if (tableName == null || tableName.equals("")) {
+        if (StringUtils.isBlank(tableName)) {
             tableName = emi.getTableName();
         }
 
-        if (connName == null || connName.equals("")) {
+        if (StringUtils.isBlank(connName)) {
             connName = DaoConfigManager.getRouteMapping(tableName, "write");
         }
         StringBuilder sb = new StringBuilder();
         // 写入所有的列
-        Set<String> cols = emi.getColumnMap().keySet();
+        Collection<FieldMetaInfo> fieldMetaInfos = emi.getFieldInfoMap().values();
         //参数列表。
-        Object[] paramList = new Object[cols.size()];
-        if (cols.size() > 0) {
-            sb.append("insert into ").append(tableName).append(" (");
-            for (String col : cols) {
-                sb.append(col).append(",");
-            }
-            sb.deleteCharAt(sb.length() - 1);
-            sb.append(") values (");
-            sb.append("?,".repeat(cols.size()));
-            sb.deleteCharAt(sb.length() - 1);
-            sb.append(")");
+        Object[] paramList = new Object[fieldMetaInfos.size()];
+        sb.append("insert into ").append(tableName).append(" (");
+        for (FieldMetaInfo fmi : fieldMetaInfos) {
+            sb.append(fmi.getColumnName()).append(",");
         }
+        sb.deleteCharAt(sb.length() - 1);
+        sb.append(") values (");
+        sb.append("?,".repeat(fieldMetaInfos.size()));
+        sb.deleteCharAt(sb.length() - 1);
+        sb.append(")");
         Connection con = null;
         PreparedStatement pstmt = null;
         int effectedNum = 0;
@@ -91,11 +91,7 @@ public class EntityCommandImpl {
             connId = con.hashCode();
             pstmt = dao.getBatchUpdateController().prepareStatement(connName, connId, con, sb.toString());
             int seq = 0;
-            for (String col : cols) {
-                FieldMetaInfo fmi = emi.getFieldMetaInfo(col);
-                if (fmi == null) {
-                    throw new TransactionException("FieldMetaInfo[" + col + "@" + entity.getClass() + "] not found! ");
-                }
+            for (FieldMetaInfo fmi : fieldMetaInfos) {
                 paramList[seq] = DaoReflectUtils.DAOLiteSaveReflect(pstmt, entity, fmi, seq + 1);
                 seq++;
             }
@@ -162,34 +158,31 @@ public class EntityCommandImpl {
         if (emi == null) {
             throw new TransactionException("TableMetaInfo[" + tClass + "] not found! ");
         }
-        if (tableName == null || tableName.equals("")) {
+        if (StringUtils.isBlank(tableName)) {
             tableName = emi.getTableName();
         }
-
-        if (connName == null || connName.equals("")) {
+        if (StringUtils.isBlank(connName)) {
             connName = DaoConfigManager.getRouteMapping(tableName, "write");
         }
         StringBuilder sb = new StringBuilder();
         // 写入所有的列
-        Set<String> cols = emi.getColumnMap().keySet();
-        //参数列表。 输出日志和统计使用
-        Object[] paramList = new Object[cols.size() * entityList.size()];
-        if (cols.size() > 0) {
-            sb.append("insert into ").append(tableName).append(" (");
-            for (String col : cols) {
-                sb.append(col).append(",");
-            }
-            sb.deleteCharAt(sb.length() - 1);
-            sb.append(") values ");
-            sb.deleteCharAt(sb.length() - 1);
-            for (T entity : entityList) {
-                sb.append("(");
-                sb.append("?,".repeat(cols.size()));
-                sb.deleteCharAt(sb.length() - 1);
-                sb.append("),");
-            }
-            sb.deleteCharAt(sb.length() - 1);
+        Collection<FieldMetaInfo> fieldMetaInfos = emi.getFieldInfoMap().values();
+        //参数列表。
+        Object[] paramList = new Object[fieldMetaInfos.size() * entityList.size()];
+        sb.append("insert into ").append(tableName).append(" (");
+        for (FieldMetaInfo fmi : fieldMetaInfos) {
+            sb.append(fmi.getColumnName()).append(",");
         }
+        sb.deleteCharAt(sb.length() - 1);
+        sb.append(") values ");
+        sb.deleteCharAt(sb.length() - 1);
+        for (T entity : entityList) {
+            sb.append("(");
+            sb.append("?,".repeat(fieldMetaInfos.size()));
+            sb.deleteCharAt(sb.length() - 1);
+            sb.append("),");
+        }
+        sb.deleteCharAt(sb.length() - 1);
         Connection con = null;
         PreparedStatement pstmt = null;
         int effectedNum = 0;
@@ -199,11 +192,7 @@ public class EntityCommandImpl {
             pstmt = dao.getBatchUpdateController().prepareStatement(connName, connId, con, sb.toString());
             int seq = 0;
             for (T entity : entityList) {
-                for (String col : cols) {
-                    FieldMetaInfo fmi = emi.getFieldMetaInfo(col);
-                    if (fmi == null) {
-                        throw new TransactionException("FieldMetaInfo[" + col + "@" + tClass + "] not found! ");
-                    }
+                for (FieldMetaInfo fmi : fieldMetaInfos) {
                     paramList[seq] = DaoReflectUtils.DAOLiteSaveReflect(pstmt, entity, fmi, seq + 1);
                     seq++;
                 }
@@ -269,11 +258,11 @@ public class EntityCommandImpl {
         if (emi == null) {
             throw new TransactionException("TableMetaInfo[" + cls + "] not found! ");
         }
-        if (tableName == null || tableName.equals("")) {
+        if (StringUtils.isBlank(tableName)) {
             tableName = emi.getTableName();
         }
 
-        if (connName == null || connName.equals("")) {
+        if (StringUtils.isBlank(connName)) {
             connName = DaoConfigManager.getRouteMapping(tableName, "write");
         }
         StringBuilder sb = new StringBuilder();
@@ -301,19 +290,15 @@ public class EntityCommandImpl {
             // 获取字段列表
             ResultSetMetaData rsm = rs.getMetaData();
             int colsCount = rsm.getColumnCount();
-            String[] cols = new String[colsCount];
+            FieldMetaInfo[] fmiList = new FieldMetaInfo[colsCount];
             for (int k = 0; k < colsCount; k++) {
-                cols[k] = rsm.getColumnLabel(k + 1).toLowerCase();
+                fmiList[k] = emi.getInfoByColumnName(rsm.getColumnLabel(k + 1).toLowerCase());
             }
-
             if (rs.next()) {
                 rowNum = 1;
                 entity = cls.getDeclaredConstructor().newInstance();
-                for (String col : cols) {
-                    FieldMetaInfo fmi = emi.getFieldMetaInfo(col);
-                    if (fmi != null) {
-                        DaoReflectUtils.DAOLiteLoadReflect(rs, entity, fmi);
-                    }
+                for (FieldMetaInfo fmi : fmiList) {
+                    DaoReflectUtils.DAOLiteLoadReflect(rs, entity, fmi);
                 }
                 // 设置主键值
                 emi.setLoadFlag(entity);
@@ -379,7 +364,7 @@ public class EntityCommandImpl {
             connId = con.hashCode();
             pstmt = con.prepareStatement(selectSql);
             int seq = 0;
-            if (paramList != null && paramList.length > 0) {
+            if (paramList.length > 0) {
                 for (seq = 0; seq < paramList.length; seq++) {
                     DaoReflectUtils.CommandUpdateReflect(pstmt, seq + 1, paramList[seq]);
                 }
@@ -392,19 +377,16 @@ public class EntityCommandImpl {
             // 获取字段列表
             ResultSetMetaData rsm = rs.getMetaData();
             int colsCount = rsm.getColumnCount();
-            String[] cols = new String[colsCount];
+            FieldMetaInfo[] fmiList = new FieldMetaInfo[colsCount];
             for (int k = 0; k < colsCount; k++) {
-                cols[k] = rsm.getColumnLabel(k + 1).toLowerCase();
+                fmiList[k] = emi.getInfoByColumnName(rsm.getColumnLabel(k + 1).toLowerCase());
             }
 
             if (rs.next()) {
                 rowNum = 1;
                 entity = cls.getDeclaredConstructor().newInstance();
-                for (String col : cols) {
-                    FieldMetaInfo fmi = emi.getFieldMetaInfo(col);
-                    if (fmi != null) {
-                        DaoReflectUtils.DAOLiteLoadReflect(rs, entity, fmi);
-                    }
+                for (FieldMetaInfo fmi : fmiList) {
+                    DaoReflectUtils.DAOLiteLoadReflect(rs, entity, fmi);
                 }
                 // 设置主键值
                 emi.setLoadFlag(entity);
@@ -447,7 +429,7 @@ public class EntityCommandImpl {
      */
     static int update(DaoFactoryImpl dao, String connName, DataEntity entity, String tableName) throws TransactionException {
         // 有时候从数据库中load数据，并无实质更新，此时直接返回-1.
-        if (entity.GET_UPDATED_COLUMN() == null) {
+        if (!DataUpdateInfo.hasUpdateInfo(entity.GET_UPDATED_INFO())) {
             return 0;
         }
         long start = SystemClock.now();
@@ -465,14 +447,15 @@ public class EntityCommandImpl {
         if (connName == null || connName.isEmpty()) {
             connName = DaoConfigManager.getRouteMapping(tableName, "write");
         }
-        StringBuilder sb = new StringBuilder();
-        ArrayList<String> cols = new ArrayList<String>(entity.GET_UPDATED_COLUMN());
+        StringBuilder sb = new StringBuilder(256);
+        DataUpdateInfo dataUpdateInfo = entity.GET_UPDATED_INFO();
+        List<FieldMetaInfo> updatedFields = emi.buildFieldMetaInfoList(dataUpdateInfo.getUpdateFieldSet());
         List<FieldMetaInfo> pks = emi.getPkList();
         //参数列表。
-        Object[] paramList = new Object[cols.size() + pks.size()];
+        Object[] paramList = new Object[updatedFields.size() + pks.size()];
         sb.append("update ").append(tableName).append(" set ");
-        for (String col : cols) {
-            sb.append(col).append("=?,");
+        for (FieldMetaInfo fmi : updatedFields) {
+            sb.append(fmi.getColumnName()).append("=?,");
         }
         sb.deleteCharAt(sb.length() - 1);
         sb.append(" where ");
@@ -492,11 +475,7 @@ public class EntityCommandImpl {
             connId = con.hashCode();
             pstmt = dao.getBatchUpdateController().prepareStatement(connName, connId, con, sb.toString());
             int seq = 0;
-            for (String col : cols) {
-                FieldMetaInfo fmi = emi.getFieldMetaInfo(col);
-                if (fmi == null) {
-                    throw new TransactionException("FieldMetaInfo[" + col + "@" + entity.getClass() + "] not found! ");
-                }
+            for (FieldMetaInfo fmi : updatedFields) {
                 paramList[seq] = DaoReflectUtils.DAOLiteSaveReflect(pstmt, entity, fmi, seq + 1);
                 seq++;
             }
@@ -562,11 +541,11 @@ public class EntityCommandImpl {
         if (emi == null) {
             throw new TransactionException("TableMetaInfo[" + entity.getClass() + "] not found! ");
         }
-        if (tableName == null || tableName.equals("")) {
+        if (StringUtils.isBlank(tableName)) {
             tableName = emi.getTableName();
         }
 
-        if (connName == null || connName.equals("")) {
+        if (StringUtils.isBlank(connName)) {
             connName = DaoConfigManager.getRouteMapping(tableName, "write");
         }
 
@@ -706,18 +685,14 @@ public class EntityCommandImpl {
             // 获取字段列表
             ResultSetMetaData rsm = rs.getMetaData();
             int colsCount = rsm.getColumnCount();
-            String[] cols = new String[colsCount];
+            FieldMetaInfo[] fmiList = new FieldMetaInfo[colsCount];
             for (int k = 0; k < colsCount; k++) {
-                cols[k] = rsm.getColumnLabel(k + 1).toLowerCase();
+                fmiList[k] = emi.getInfoByColumnName(rsm.getColumnLabel(k + 1).toLowerCase());
             }
-
             while (rs.next()) {
                 T entity = cls.getDeclaredConstructor().newInstance();
-                for (String col : cols) {
-                    FieldMetaInfo fmi = emi.getFieldMetaInfo(col);
-                    if (fmi != null) {
-                        DaoReflectUtils.DAOLiteLoadReflect(rs, entity, fmi);
-                    }
+                for (FieldMetaInfo fmi : fmiList) {
+                    DaoReflectUtils.DAOLiteLoadReflect(rs, entity, fmi);
                 }
                 // 设置主键值
                 emi.setLoadFlag(entity);

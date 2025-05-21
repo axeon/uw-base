@@ -52,7 +52,7 @@ public class EntityMetaUtils {
                     ColumnMeta meta = field.getAnnotation(ColumnMeta.class);
                     if (meta != null) {
                         FieldMetaInfo fieldInfo = new FieldMetaInfo();
-                        fieldInfo.setPropertyName(field.getName());
+                        fieldInfo.setFieldName(field.getName());
                         fieldInfo.setColumnName(meta.columnName());
                         fieldInfo.setPrimaryKey(meta.primaryKey());
                         fieldInfo.setField(field);
@@ -60,7 +60,8 @@ public class EntityMetaUtils {
                         if (fieldInfo.isPrimaryKey()) {
                             emi.addPkList(fieldInfo);
                         }
-                        emi.addColumnMap(meta.columnName(), fieldInfo);
+                        emi.addFieldInfo(fieldInfo.getFieldName(), fieldInfo);
+                        emi.addColumnInfo(fieldInfo.getColumnName(), fieldInfo);
                     }
                 }
             }

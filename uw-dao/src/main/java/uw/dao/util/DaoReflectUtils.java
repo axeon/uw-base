@@ -34,29 +34,21 @@ public class DaoReflectUtils {
         Field fd = fmi.getField();
         Class<?> cls = fd.getType();
         Object value = fd.get(entity);
-        if (cls == int.class) {
-            pstmt.setInt(sequence, (Integer) value);
-        } else if (cls == String.class) {
-            pstmt.setObject(sequence, value);
-        } else if (cls == Date.class) {
-            pstmt.setTimestamp(sequence, DaoValueUtils.dateToTimestamp((Date) value));
-        } else if (cls == long.class) {
-            pstmt.setLong(sequence, (Long) value);
-        } else if (cls == double.class) {
-            pstmt.setDouble(sequence, (Double) value);
-        } else if (cls == float.class) {
-            pstmt.setFloat(sequence, (Float) value);
-        } else if (cls == short.class) {
-            pstmt.setShort(sequence, (Short) value);
-        } else if (cls == byte.class) {
-            pstmt.setByte(sequence, (Byte) value);
-        } else if (cls == boolean.class) {
-            pstmt.setBoolean(sequence, (Boolean) value);
-        } else {
-            pstmt.setObject(sequence, value);
+        switch (cls.getSimpleName()) {
+            case "int", "Integer" -> pstmt.setInt(sequence, (Integer) value);
+            case "String" -> pstmt.setString(sequence, (String) value);
+            case "Date" -> pstmt.setTimestamp(sequence, DaoValueUtils.dateToTimestamp((Date) value));
+            case "long", "Long" -> pstmt.setLong(sequence, (Long) value);
+            case "double", "Double" -> pstmt.setDouble(sequence, (Double) value);
+            case "float", "Float" -> pstmt.setFloat(sequence, (Float) value);
+            case "short", "Short" -> pstmt.setShort(sequence, (Short) value);
+            case "byte", "Byte" -> pstmt.setByte(sequence, (Byte) value);
+            case "boolean", "Boolean" -> pstmt.setBoolean(sequence, (Boolean) value);
+            default -> pstmt.setObject(sequence, value);
         }
         return value;
     }
+
 
     /**
      * 通用的反射更新方法.
@@ -85,28 +77,19 @@ public class DaoReflectUtils {
     public static void DAOLiteLoadReflect(ResultSet rs, Object entity, FieldMetaInfo fmi) throws SQLException, IllegalAccessException {
         Field fd = fmi.getField();
         Class<?> cls = fd.getType();
-        if (cls == int.class) {
-            fd.setInt(entity, rs.getInt(fmi.getColumnName()));
-        } else if (cls == long.class) {
-            fd.setLong(entity, rs.getLong(fmi.getColumnName()));
-        } else if (cls == String.class) {
-            fd.set(entity, DaoValueUtils.nullToStr(rs.getString(fmi.getColumnName())));
-        } else if (cls == Date.class) {
-            fd.set(entity, rs.getTimestamp(fmi.getColumnName()));
-        } else if (cls == double.class) {
-            fd.setDouble(entity, rs.getDouble(fmi.getColumnName()));
-        } else if (cls == float.class) {
-            fd.setFloat(entity, rs.getFloat(fmi.getColumnName()));
-        } else if (cls == short.class) {
-            fd.setShort(entity, rs.getShort(fmi.getColumnName()));
-        } else if (cls == byte.class) {
-            fd.setByte(entity, rs.getByte(fmi.getColumnName()));
-        } else if (cls == boolean.class) {
-            fd.setBoolean(entity, rs.getBoolean(fmi.getColumnName()));
-        } else {
-            fd.set(entity, rs.getObject(fmi.getColumnName()));
+        String columnName = fmi.getColumnName();
+        switch (cls.getSimpleName()) {
+            case "int", "Integer" -> fd.setInt(entity, rs.getInt(columnName));
+            case "long", "Long" -> fd.setLong(entity, rs.getLong(columnName));
+            case "String" -> fd.set(entity, DaoValueUtils.nullToStr(rs.getString(columnName)));
+            case "Date" -> fd.set(entity, rs.getTimestamp(columnName));
+            case "double", "Double" -> fd.setDouble(entity, rs.getDouble(columnName));
+            case "float", "Float" -> fd.setFloat(entity, rs.getFloat(columnName));
+            case "short", "Short" -> fd.setShort(entity, rs.getShort(columnName));
+            case "byte", "Byte" -> fd.setByte(entity, rs.getByte(columnName));
+            case "boolean", "Boolean" -> fd.setBoolean(entity, rs.getBoolean(columnName));
+            default -> fd.set(entity, rs.getObject(columnName));
         }
-
     }
 
 }

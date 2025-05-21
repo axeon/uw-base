@@ -9,6 +9,7 @@ import uw.dao.conf.DaoConfigManager;
 import uw.dao.service.DaoService;
 import uw.dao.util.EntityMetaUtils;
 import uw.dao.util.QueryParamUtils;
+import uw.dao.vo.FieldMetaInfo;
 import uw.dao.vo.QueryParamResult;
 import uw.dao.vo.SqlExecuteStats;
 import uw.dao.vo.TableMetaInfo;
@@ -18,7 +19,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * DAOFactory实现类.
@@ -400,7 +400,7 @@ public class DaoFactoryImpl extends DaoFactory {
     @Override
     public <T extends DataEntity> int update(String connName, T entity, String tableName, QueryParam queryParam) throws TransactionException {
         // 有时候从数据库中load数据，并无实质更新，此时直接返回-1.
-        if (entity.GET_UPDATED_COLUMN() == null) {
+        if (!DataUpdateInfo.hasUpdateInfo(entity.GET_UPDATED_INFO())) {
             return 0;
         }
         // 解析查询参数。
@@ -416,16 +416,17 @@ public class DaoFactoryImpl extends DaoFactory {
         if (StringUtils.isBlank(connName)) {
             connName = DaoConfigManager.getRouteMapping(tableName, "write");
         }
-        StringBuilder sb = new StringBuilder(256 + queryParamResult.getSql().length());
-        Set<String> cols = entity.GET_UPDATED_COLUMN();
+        StringBuilder sb = new StringBuilder(128 + queryParamResult.getSql().length());
+        DataUpdateInfo dataUpdateInfo = entity.GET_UPDATED_INFO();
+        List<FieldMetaInfo> updatedFields = emi.buildFieldMetaInfoList(dataUpdateInfo.getUpdateFieldSet());
         //参数列表。
-        Object[] paramList = new Object[cols.size()];
+        Object[] paramList = new Object[updatedFields.size()];
         try {
             sb.append("update ").append(tableName).append(" set ");
             int pos = 0;
-            for (String col : cols) {
-                sb.append(col).append("=?,");
-                paramList[pos++] = emi.getFieldMetaInfo(col).getField().get(entity);
+            for (FieldMetaInfo fmi : updatedFields) {
+                sb.append(fmi.getColumnName()).append("=?,");
+                paramList[pos++] = fmi.getField().get(entity);
             }
             sb.deleteCharAt(sb.length() - 1);
         } catch (Exception e) {

@@ -1,23 +1,19 @@
 package uw.dao.impl;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.util.SystemClock;
 import uw.dao.DataEntity;
 import uw.dao.DataList;
-import uw.dao.QueryParam;
 import uw.dao.TransactionException;
 import uw.dao.conf.DaoConfigManager;
 import uw.dao.connectionpool.ConnectionManager;
 import uw.dao.dialect.Dialect;
 import uw.dao.util.DaoReflectUtils;
 import uw.dao.util.EntityMetaUtils;
-import uw.dao.util.QueryParamUtils;
 import uw.dao.util.SQLUtils;
 import uw.dao.vo.FieldMetaInfo;
-import uw.dao.vo.QueryParamResult;
 import uw.dao.vo.TableMetaInfo;
 
 import java.io.Serializable;
@@ -321,10 +317,6 @@ public class EntityCommandImpl {
                 }
                 // 设置主键值
                 emi.setLoadFlag(entity);
-                // 清除更新标记
-                if (entity instanceof DataEntity dataEntity) {
-                    dataEntity.CLEAR_UPDATED_INFO();
-                }
             }
             rs.close();
         } catch (Exception e) {
@@ -416,10 +408,6 @@ public class EntityCommandImpl {
                 }
                 // 设置主键值
                 emi.setLoadFlag(entity);
-                // 清除更新标记
-                if (entity instanceof DataEntity dataEntity) {
-                    dataEntity.CLEAR_UPDATED_INFO();
-                }
             }
             rs.close();
         } catch (Exception e) {
@@ -527,8 +515,8 @@ public class EntityCommandImpl {
             dbTime = SystemClock.now() - dbStart;
             // 设置主键值
             emi.setLoadFlag(entity);
-            // 清除更新标记
-            entity.CLEAR_UPDATED_INFO();
+            // 注释掉，否则历史记录无法正常记录信息。
+            // entity.CLEAR_UPDATED_INFO();
         } catch (Exception e) {
             exception = e.toString();
             throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + Arrays.toString(paramList), e);
@@ -733,10 +721,6 @@ public class EntityCommandImpl {
                 }
                 // 设置主键值
                 emi.setLoadFlag(entity);
-                // 清除更新标记
-                if (entity instanceof DataEntity dataEntity) {
-                    dataEntity.CLEAR_UPDATED_INFO();
-                }
                 list.add(entity);
             }
             rs.close();

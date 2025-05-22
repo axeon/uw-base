@@ -154,7 +154,7 @@ public class TableMetaInfo {
      * 向fieldMap中加入FieldMetaInfo信息.
      *
      * @param fieldName 属性名
-     * @param fmi        FieldMetaInfo对象
+     * @param fmi       FieldMetaInfo对象
      */
     public void addFieldInfo(String fieldName, FieldMetaInfo fmi) {
         this.fieldInfoMap.put(fieldName, fmi);
@@ -164,7 +164,7 @@ public class TableMetaInfo {
      * 向columnInfoMap中加入FieldMetaInfo信息.
      *
      * @param columnName 属性名
-     * @param fmi         FieldMetaInfo对象
+     * @param fmi        FieldMetaInfo对象
      */
     public void addColumnInfo(String columnName, FieldMetaInfo fmi) {
         this.columnInfoMap.put(columnName, fmi);
@@ -179,8 +179,10 @@ public class TableMetaInfo {
     public List<FieldMetaInfo> buildFieldMetaInfoList(Set<String> fieldNames) {
         List<FieldMetaInfo> fieldInfoList = new ArrayList<>();
         for (String fieldName : fieldNames) {
-            FieldMetaInfo fieldMetaInfo = fieldInfoMap.get(fieldName);
-            fieldInfoList.add(fieldMetaInfo);
+            FieldMetaInfo fmi = fieldInfoMap.get(fieldName);
+            if (fmi != null) {
+                fieldInfoList.add(fmi);
+            }
         }
         return fieldInfoList;
     }

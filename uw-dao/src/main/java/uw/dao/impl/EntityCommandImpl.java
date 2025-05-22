@@ -290,10 +290,14 @@ public class EntityCommandImpl {
             // 获取字段列表
             ResultSetMetaData rsm = rs.getMetaData();
             int colsCount = rsm.getColumnCount();
-            FieldMetaInfo[] fmiList = new FieldMetaInfo[colsCount];
+            List<FieldMetaInfo> fmiList = new ArrayList<>(colsCount);
             for (int k = 0; k < colsCount; k++) {
-                fmiList[k] = emi.getInfoByColumnName(rsm.getColumnLabel(k + 1).toLowerCase());
+                FieldMetaInfo fmi = emi.getInfoByColumnName(rsm.getColumnLabel(k + 1).toLowerCase());
+                if (fmi != null){
+                    fmiList.add(fmi);
+                }
             }
+
             if (rs.next()) {
                 rowNum = 1;
                 entity = cls.getDeclaredConstructor().newInstance();
@@ -377,9 +381,12 @@ public class EntityCommandImpl {
             // 获取字段列表
             ResultSetMetaData rsm = rs.getMetaData();
             int colsCount = rsm.getColumnCount();
-            FieldMetaInfo[] fmiList = new FieldMetaInfo[colsCount];
+            List<FieldMetaInfo> fmiList = new ArrayList<>(colsCount);
             for (int k = 0; k < colsCount; k++) {
-                fmiList[k] = emi.getInfoByColumnName(rsm.getColumnLabel(k + 1).toLowerCase());
+                FieldMetaInfo fmi = emi.getInfoByColumnName(rsm.getColumnLabel(k + 1).toLowerCase());
+                if (fmi != null){
+                    fmiList.add(fmi);
+                }
             }
 
             if (rs.next()) {
@@ -685,10 +692,14 @@ public class EntityCommandImpl {
             // 获取字段列表
             ResultSetMetaData rsm = rs.getMetaData();
             int colsCount = rsm.getColumnCount();
-            FieldMetaInfo[] fmiList = new FieldMetaInfo[colsCount];
+            List<FieldMetaInfo> fmiList = new ArrayList<>(colsCount);
             for (int k = 0; k < colsCount; k++) {
-                fmiList[k] = emi.getInfoByColumnName(rsm.getColumnLabel(k + 1).toLowerCase());
+                FieldMetaInfo fmi = emi.getInfoByColumnName(rsm.getColumnLabel(k + 1).toLowerCase());
+                if (fmi != null){
+                    fmiList.add(fmi);
+                }
             }
+
             while (rs.next()) {
                 T entity = cls.getDeclaredConstructor().newInstance();
                 for (FieldMetaInfo fmi : fmiList) {

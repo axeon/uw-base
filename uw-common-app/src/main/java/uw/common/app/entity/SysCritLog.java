@@ -258,7 +258,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置ID。
      */
     public void setId(long id) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "id", this.id, id, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "id", this.id, id, !_IS_LOADED);
         this.id = id;
     }
 
@@ -273,7 +273,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置saasId。
      */
     public void setSaasId(long saasId) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "saasId", this.saasId, saasId, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "saasId", this.saasId, saasId, !_IS_LOADED);
         this.saasId = saasId;
     }
 
@@ -288,7 +288,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置商户ID。
      */
     public void setMchId(long mchId) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "mchId", this.mchId, mchId, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "mchId", this.mchId, mchId, !_IS_LOADED);
         this.mchId = mchId;
     }
 
@@ -303,7 +303,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置用户id。
      */
     public void setUserId(long userId) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "userId", this.userId, userId, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "userId", this.userId, userId, !_IS_LOADED);
         this.userId = userId;
     }
 
@@ -318,7 +318,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置用户类型。
      */
     public void setUserType(int userType) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "userType", this.userType, userType, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "userType", this.userType, userType, !_IS_LOADED);
         this.userType = userType;
     }
 
@@ -333,7 +333,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置用户组ID。
      */
     public void setGroupId(long groupId) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "groupId", this.groupId, groupId, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "groupId", this.groupId, groupId, !_IS_LOADED);
         this.groupId = groupId;
     }
 
@@ -348,7 +348,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置用户名。
      */
     public void setUserName(String userName) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "userName", this.userName, userName, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "userName", this.userName, userName, !_IS_LOADED);
         this.userName = userName;
     }
 
@@ -363,7 +363,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置用户昵称。
      */
     public void setNickName(String nickName) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "nickName", this.nickName, nickName, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "nickName", this.nickName, nickName, !_IS_LOADED);
         this.nickName = nickName;
     }
 
@@ -378,7 +378,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置真实名称。
      */
     public void setRealName(String realName) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "realName", this.realName, realName, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "realName", this.realName, realName, !_IS_LOADED);
         this.realName = realName;
     }
 
@@ -393,7 +393,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置用户ip。
      */
     public void setUserIp(String userIp) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "userIp", this.userIp, userIp, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "userIp", this.userIp, userIp, !_IS_LOADED);
         this.userIp = userIp;
     }
 
@@ -408,7 +408,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置请求uri。
      */
     public void setApiUri(String apiUri) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "apiUri", this.apiUri, apiUri, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "apiUri", this.apiUri, apiUri, !_IS_LOADED);
         this.apiUri = apiUri;
     }
 
@@ -423,7 +423,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置API名称。
      */
     public void setApiName(String apiName) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "apiName", this.apiName, apiName, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "apiName", this.apiName, apiName, !_IS_LOADED);
         this.apiName = apiName;
     }
 
@@ -438,7 +438,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置业务类型。
      */
     public void setBizType(String bizType) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "bizType", this.bizType, bizType, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "bizType", this.bizType, bizType, !_IS_LOADED);
         this.bizType = bizType;
     }
 
@@ -453,7 +453,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置业务ID。
      */
     public void setBizId(String bizId) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "bizId", this.bizId, bizId, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "bizId", this.bizId, bizId, !_IS_LOADED);
         this.bizId = bizId;
     }
 
@@ -468,7 +468,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置业务日志。
      */
     public void setBizLog(String bizLog) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "bizLog", this.bizLog, bizLog, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "bizLog", this.bizLog, bizLog, !_IS_LOADED);
         this.bizLog = bizLog;
     }
 
@@ -483,7 +483,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置请求时间。
      */
     public void setRequestDate(java.util.Date requestDate) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "requestDate", this.requestDate, requestDate, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "requestDate", this.requestDate, requestDate, !_IS_LOADED);
         this.requestDate = requestDate;
     }
 
@@ -498,7 +498,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置请求参数。
      */
     public void setRequestBody(String requestBody) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "requestBody", this.requestBody, requestBody, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "requestBody", this.requestBody, requestBody, !_IS_LOADED);
         this.requestBody = requestBody;
     }
 
@@ -513,7 +513,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置响应状态。
      */
     public void setResponseState(String responseState) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "responseState", this.responseState, responseState, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "responseState", this.responseState, responseState, !_IS_LOADED);
         this.responseState = responseState;
     }
 
@@ -528,7 +528,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置响应代码。
      */
     public void setResponseCode(String responseCode) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "responseCode", this.responseCode, responseCode, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "responseCode", this.responseCode, responseCode, !_IS_LOADED);
         this.responseCode = responseCode;
     }
 
@@ -543,7 +543,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置响应消息。
      */
     public void setResponseMsg(String responseMsg) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "responseMsg", this.responseMsg, responseMsg, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "responseMsg", this.responseMsg, responseMsg, !_IS_LOADED);
         this.responseMsg = responseMsg;
     }
 
@@ -558,7 +558,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置响应日志。
      */
     public void setResponseBody(String responseBody) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "responseBody", this.responseBody, responseBody, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "responseBody", this.responseBody, responseBody, !_IS_LOADED);
         this.responseBody = responseBody;
     }
 
@@ -573,7 +573,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置请求毫秒数。
      */
     public void setResponseMillis(long responseMillis) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "responseMillis", this.responseMillis, responseMillis, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "responseMillis", this.responseMillis, responseMillis, !_IS_LOADED);
         this.responseMillis = responseMillis;
     }
 
@@ -588,7 +588,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置响应状态码。
      */
     public void setStatusCode(int statusCode) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "statusCode", this.statusCode, statusCode, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "statusCode", this.statusCode, statusCode, !_IS_LOADED);
         this.statusCode = statusCode;
     }
 
@@ -603,7 +603,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置应用信息。
      */
     public void setAppInfo(String appInfo) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "appInfo", this.appInfo, appInfo, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "appInfo", this.appInfo, appInfo, !_IS_LOADED);
         this.appInfo = appInfo;
     }
 
@@ -618,7 +618,7 @@ public class SysCritLog implements DataEntity, Serializable {
      * 设置应用主机。
      */
     public void setAppHost(String appHost) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "appHost", this.appHost, appHost, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "appHost", this.appHost, appHost, !_IS_LOADED);
         this.appHost = appHost;
     }
 

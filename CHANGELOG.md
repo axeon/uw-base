@@ -1,6 +1,7 @@
-# 2025.0501.1016版本升级说明
-1. uw-dao: 优化DataEntity返回结构化变更信息。优化DataEntity代码量，增强执行性能。
+# 2025.0501.1020版本升级说明
+1. uw-dao: 优化DataEntity结构化变更信息。优化DataEntity代码量，增强执行性能。
 2. uw-dao: 优化底层反射调用，提升性能。
+3. uw-common: 优化JsonUtils对日期的处理，默认显示为ISO8601格式。
 
 # 2025.0501.1016版本升级说明
 1. uw-cache: FusionCache.Config新增autoNotifyInvalidate参数，用于优化控制数据更新通知。

@@ -204,7 +204,7 @@ public class SysDataHistory implements DataEntity, Serializable {
      * 设置ID。
      */
     public void setId(long id) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "id", this.id, id, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "id", this.id, id, !_IS_LOADED);
         this.id = id;
     }
 
@@ -219,7 +219,7 @@ public class SysDataHistory implements DataEntity, Serializable {
      * 设置saasId。
      */
     public void setSaasId(long saasId) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "saasId", this.saasId, saasId, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "saasId", this.saasId, saasId, !_IS_LOADED);
         this.saasId = saasId;
     }
 
@@ -234,7 +234,7 @@ public class SysDataHistory implements DataEntity, Serializable {
      * 设置商户ID。
      */
     public void setMchId(long mchId) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "mchId", this.mchId, mchId, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "mchId", this.mchId, mchId, !_IS_LOADED);
         this.mchId = mchId;
     }
 
@@ -249,7 +249,7 @@ public class SysDataHistory implements DataEntity, Serializable {
      * 设置用户ID。
      */
     public void setUserId(long userId) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "userId", this.userId, userId, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "userId", this.userId, userId, !_IS_LOADED);
         this.userId = userId;
     }
 
@@ -264,7 +264,7 @@ public class SysDataHistory implements DataEntity, Serializable {
      * 设置用户类型。
      */
     public void setUserType(int userType) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "userType", this.userType, userType, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "userType", this.userType, userType, !_IS_LOADED);
         this.userType = userType;
     }
 
@@ -279,7 +279,7 @@ public class SysDataHistory implements DataEntity, Serializable {
      * 设置用户的组ID。
      */
     public void setGroupId(long groupId) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "groupId", this.groupId, groupId, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "groupId", this.groupId, groupId, !_IS_LOADED);
         this.groupId = groupId;
     }
 
@@ -294,7 +294,7 @@ public class SysDataHistory implements DataEntity, Serializable {
      * 设置用户名称。
      */
     public void setUserName(String userName) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "userName", this.userName, userName, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "userName", this.userName, userName, !_IS_LOADED);
         this.userName = userName;
     }
 
@@ -309,7 +309,7 @@ public class SysDataHistory implements DataEntity, Serializable {
      * 设置用户昵称。
      */
     public void setNickName(String nickName) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "nickName", this.nickName, nickName, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "nickName", this.nickName, nickName, !_IS_LOADED);
         this.nickName = nickName;
     }
 
@@ -324,7 +324,7 @@ public class SysDataHistory implements DataEntity, Serializable {
      * 设置真实名称。
      */
     public void setRealName(String realName) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "realName", this.realName, realName, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "realName", this.realName, realName, !_IS_LOADED);
         this.realName = realName;
     }
 
@@ -339,7 +339,7 @@ public class SysDataHistory implements DataEntity, Serializable {
      * 设置实体类。
      */
     public void setEntityClass(String entityClass) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "entityClass", this.entityClass, entityClass, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "entityClass", this.entityClass, entityClass, !_IS_LOADED);
         this.entityClass = entityClass;
     }
 
@@ -354,7 +354,7 @@ public class SysDataHistory implements DataEntity, Serializable {
      * 设置实体ID。
      */
     public void setEntityId(String entityId) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "entityId", this.entityId, entityId, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "entityId", this.entityId, entityId, !_IS_LOADED);
         this.entityId = entityId;
     }
 
@@ -369,7 +369,7 @@ public class SysDataHistory implements DataEntity, Serializable {
      * 设置实体名。
      */
     public void setEntityName(String entityName) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "entityName", this.entityName, entityName, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "entityName", this.entityName, entityName, !_IS_LOADED);
         this.entityName = entityName;
     }
 
@@ -384,7 +384,7 @@ public class SysDataHistory implements DataEntity, Serializable {
      * 设置实体数据。
      */
     public void setEntityData(String entityData) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "entityData", this.entityData, entityData, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "entityData", this.entityData, entityData, !_IS_LOADED);
         this.entityData = entityData;
     }
 
@@ -399,7 +399,7 @@ public class SysDataHistory implements DataEntity, Serializable {
      * 设置实体修改信息。
      */
     public void setEntityUpdateInfo(String entityUpdateInfo) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "entityUpdateInfo", this.entityUpdateInfo, entityUpdateInfo, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "entityUpdateInfo", this.entityUpdateInfo, entityUpdateInfo, !_IS_LOADED);
         this.entityUpdateInfo = entityUpdateInfo;
     }
 
@@ -414,7 +414,7 @@ public class SysDataHistory implements DataEntity, Serializable {
      * 设置备注信息。
      */
     public void setRemark(String remark) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "remark", this.remark, remark, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "remark", this.remark, remark, !_IS_LOADED);
         this.remark = remark;
     }
 
@@ -429,7 +429,7 @@ public class SysDataHistory implements DataEntity, Serializable {
      * 设置用户IP。
      */
     public void setUserIp(String userIp) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "userIp", this.userIp, userIp, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "userIp", this.userIp, userIp, !_IS_LOADED);
         this.userIp = userIp;
     }
 
@@ -444,7 +444,7 @@ public class SysDataHistory implements DataEntity, Serializable {
      * 设置创建日期。
      */
     public void setCreateDate(java.util.Date createDate) {
-        DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "createDate", this.createDate, createDate, !_IS_LOADED);
+        _UPDATED_INFO = DataUpdateInfo.addUpdateInfo(_UPDATED_INFO, "createDate", this.createDate, createDate, !_IS_LOADED);
         this.createDate = createDate;
     }
 

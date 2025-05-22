@@ -81,7 +81,7 @@ public class SysDataHistoryHelper {
         try {
             history.setEntityData(JsonUtils.toString(dataEntity));
             if (dataEntity instanceof DataEntity de) {
-                history.setEntityUpdateInfo(JsonUtils.toString(de.GET_UPDATED_INFO()));
+                history.setEntityUpdateInfo(JsonUtils.toString(de.GET_UPDATED_INFO().getUpdatedMap()));
                 // 清除更新信息.
                 de.CLEAR_UPDATED_INFO();
             }

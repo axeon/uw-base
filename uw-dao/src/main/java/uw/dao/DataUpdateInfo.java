@@ -1,6 +1,7 @@
 package uw.dao;
 
 import org.apache.commons.lang3.tuple.Pair;
+import uw.common.util.JsonUtils;
 
 import java.util.LinkedHashMap;
 import java.util.Objects;
@@ -27,11 +28,11 @@ public class DataUpdateInfo {
      * @param newValue
      * @param isForce    是否强制添加更新信息。
      */
-    public static void addUpdateInfo(DataUpdateInfo updateInfo, String fieldName, Object oldValue, Object newValue, boolean isForce) {
+    public static DataUpdateInfo addUpdateInfo(DataUpdateInfo updateInfo, String fieldName, Object oldValue, Object newValue, boolean isForce) {
         if (updateInfo == null) {
             updateInfo = new DataUpdateInfo();
         }
-        updateInfo.addUpdateInfo(fieldName, oldValue, newValue, isForce);
+        return updateInfo.addUpdateInfo(fieldName, oldValue, newValue, isForce);
     }
 
     /**
@@ -55,10 +56,11 @@ public class DataUpdateInfo {
      * @param newValue
      * @param isForce   是否强制添加更新信息。
      */
-    public void addUpdateInfo(String fieldName, Object oldValue, Object newValue, boolean isForce) {
+    public DataUpdateInfo addUpdateInfo(String fieldName, Object oldValue, Object newValue, boolean isForce) {
         if (isForce || !Objects.equals(oldValue, newValue)) {
             updatedMap.put(fieldName, Pair.of(oldValue, newValue));
         }
+        return this;
     }
 
     /**
@@ -77,6 +79,15 @@ public class DataUpdateInfo {
      */
     public Set<String> getUpdateFieldSet() {
         return updatedMap.keySet();
+    }
+
+    /**
+     * 转为JSON字符串。
+     * @return
+     */
+    @Override
+    public String toString() {
+        return JsonUtils.toString(updatedMap);
     }
 
 }

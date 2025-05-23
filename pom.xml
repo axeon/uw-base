@@ -12,11 +12,11 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.11</version>
+        <version>3.3.12</version>
     </parent>
 
     <properties>
-        <revision>2025.0501.1021</revision>
+        <revision>2025.0501.1022</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
@@ -29,7 +29,7 @@
         <uw-auth-service.version>6.1.33</uw-auth-service.version>
         <uw-cache.version>1.1.83</uw-cache.version>
         <uw-common.version>1.0.65</uw-common.version>
-        <uw-common-app.version>1.0.68</uw-common-app.version>
+        <uw-common-app.version>1.0.69</uw-common-app.version>
         <uw-dao.version>5.2.21</uw-dao.version>
         <uw-gateway-client.version>1.0.0</uw-gateway-client.version>
         <uw-httpclient.version>2.1.122</uw-httpclient.version>

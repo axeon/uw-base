@@ -7,8 +7,6 @@ import uw.common.app.entity.SysDataHistory;
 import uw.common.util.JsonUtils;
 import uw.dao.DaoFactory;
 import uw.dao.DataEntity;
-import uw.dao.TransactionException;
-import uw.httpclient.exception.DataMapperException;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -50,48 +48,46 @@ public class SysDataHistoryHelper {
      * @param remark     备注信息
      */
     public static void saveHistory(Serializable entityId, Object dataEntity, String entityName, String remark) {
-        SysDataHistory history = new SysDataHistory();
-        history.setId(dao.getSequenceId(SysDataHistory.class));
-        history.setEntityId(String.valueOf(entityId));
-        history.setEntityClass(dataEntity.getClass().getName());
-        history.setEntityName(entityName);
-        history.setRemark(remark);
-        if (AuthServiceHelper.getContextToken() != null) {
-            history.setSaasId(AuthServiceHelper.getSaasId());
-            history.setMchId(AuthServiceHelper.getMchId());
-            history.setUserId(AuthServiceHelper.getUserId());
-            history.setGroupId(AuthServiceHelper.getGroupId());
-            history.setUserType(AuthServiceHelper.getUserType());
-            history.setUserName(AuthServiceHelper.getUserName());
-            history.setNickName(AuthServiceHelper.getNickName());
-            history.setRealName(AuthServiceHelper.getRealName());
-            history.setUserIp(AuthServiceHelper.getRemoteIp());
-        } else {
-            history.setSaasId(0);
-            history.setMchId(0);
-            history.setUserId(0);
-            history.setGroupId(0);
-            history.setUserType(-1);
-            history.setUserName(null);
-            history.setNickName(null);
-            history.setRealName(null);
-            history.setUserIp(null);
-        }
-        history.setCreateDate(new Date());
         try {
+            SysDataHistory history = new SysDataHistory();
+            history.setId(dao.getSequenceId(SysDataHistory.class));
+            history.setEntityId(String.valueOf(entityId));
+            history.setEntityClass(dataEntity.getClass().getName());
+            history.setEntityName(entityName);
+            history.setRemark(remark);
+            if (AuthServiceHelper.getContextToken() != null) {
+                history.setSaasId(AuthServiceHelper.getSaasId());
+                history.setMchId(AuthServiceHelper.getMchId());
+                history.setUserId(AuthServiceHelper.getUserId());
+                history.setGroupId(AuthServiceHelper.getGroupId());
+                history.setUserType(AuthServiceHelper.getUserType());
+                history.setUserName(AuthServiceHelper.getUserName());
+                history.setNickName(AuthServiceHelper.getNickName());
+                history.setRealName(AuthServiceHelper.getRealName());
+                history.setUserIp(AuthServiceHelper.getRemoteIp());
+            } else {
+                history.setSaasId(0);
+                history.setMchId(0);
+                history.setUserId(0);
+                history.setGroupId(0);
+                history.setUserType(-1);
+                history.setUserName(null);
+                history.setNickName(null);
+                history.setRealName(null);
+                history.setUserIp(null);
+            }
+            history.setCreateDate(new Date());
             history.setEntityData(JsonUtils.toString(dataEntity));
             if (dataEntity instanceof DataEntity de) {
-                history.setEntityUpdateInfo(JsonUtils.toString(de.GET_UPDATED_INFO().getUpdatedMap()));
-                // 清除更新信息.
-                de.CLEAR_UPDATED_INFO();
+                if (de.GET_UPDATED_INFO() != null) {
+                    history.setEntityUpdateInfo(JsonUtils.toString(de.GET_UPDATED_INFO().getUpdatedMap()));
+                    // 清除更新信息.
+                    de.CLEAR_UPDATED_INFO();
+                }
             }
-        } catch (DataMapperException e) {
-            log.error(e.getMessage(), e);
-        }
-        history.setCreateDate(new Date());
-        try {
+            history.setCreateDate(new Date());
             dao.save(history);
-        } catch (TransactionException e) {
+        } catch (Throwable e) {
             log.error(e.getMessage(), e);
         }
     }

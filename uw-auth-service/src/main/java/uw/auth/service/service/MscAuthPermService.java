@@ -102,7 +102,7 @@ public class MscAuthPermService {
      * @param uri
      * @return
      */
-    public ResponseData hasPerm(AuthTokenData authTokenData, MscPermDeclare mscPermDeclare, String uri) {
+    public ResponseData<?> hasPerm(AuthTokenData authTokenData, MscPermDeclare mscPermDeclare, String uri) {
         //没有加注解或者uri为空的，直接返回true。从调用关系看，貌似不会为null。
         //优先判定主要是为了尽量直通。
         if (mscPermDeclare == null) {

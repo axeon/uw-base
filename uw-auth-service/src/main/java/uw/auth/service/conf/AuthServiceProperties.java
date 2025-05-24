@@ -27,7 +27,7 @@ public class AuthServiceProperties {
     /**
      * 认证保护路径。 即受保护的资源，多个请用英文逗号分隔。
      */
-    private String authProtectedPaths = "/rpc/*,/root/*,/ops/*,/admin/*,/saas/*,/mch/*,/guest/*,/user/*,/api/*";
+    private String authProtectedPaths = "/*";
 
     /**
      * IP保护路径。 即受保护的资源，多个请用英文逗号分隔。

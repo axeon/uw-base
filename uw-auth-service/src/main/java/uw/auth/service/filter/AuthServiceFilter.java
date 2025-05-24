@@ -154,8 +154,11 @@ public class AuthServiceFilter implements Filter {
             invokeCounter.increment();
             // 获取HandlerExecutionChain
             HandlerExecutionChain handlerExecutionChain = null;
-            handlerExecutionChain = requestMappingHandlerMapping.getHandler((HttpServletRequest) request);
-            // 404
+            try {
+                handlerExecutionChain = requestMappingHandlerMapping.getHandler((HttpServletRequest) request);
+            } catch (Exception ignored) {
+            }
+            // web mvc处理链异常，直接放行到GlobalExceptionHandler处理。
             if (handlerExecutionChain == null) {
                 chain.doFilter(request, response);
                 return;

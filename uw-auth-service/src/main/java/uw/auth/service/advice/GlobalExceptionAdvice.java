@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import uw.auth.service.constant.AuthServiceConstants;
+import uw.auth.service.exception.*;
 import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.util.MscUtils;
 import uw.common.dto.ResponseData;
@@ -27,12 +29,24 @@ public class GlobalExceptionAdvice {
     public ResponseData<String> exceptionHandle(Throwable ex, HttpServletRequest request, HttpServletResponse response) {
         //针对不同类型异常，设置不同的详细消息。
         String userIp = IpWebUtils.getRealIp(request);
-        String msg = "UserIp: [" + userIp + "], RequestPath: [" + request.getRequestURI() + "], RequestMethod: [" + request.getMethod() + "], Msg: " + ex.toString();
+        String msg = "UserIp: [" + userIp + "], Request Path: [" + request.getRequestURI() + "], Method: [" + request.getMethod() + "], Msg: " + ex.toString();
         String data = null;
         // 针对ErrorResponse异常，设置不同的状态码。
         if (ex instanceof ErrorResponse errorResponse) {
             response.setStatus(errorResponse.getStatusCode().value());
             log.warn(msg);
+        } else if (ex instanceof TokenInvalidException) {
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        } else if (ex instanceof TokenExpiredException) {
+            response.setStatus(Integer.parseInt(AuthServiceConstants.HTTP_TOKEN_EXPIRED_CODE));
+        } else if (ex instanceof TokenPermException) {
+            response.setStatus(Integer.parseInt(AuthServiceConstants.HTTP_FORBIDDEN_CODE));
+        } else if (ex instanceof TokenPayException) {
+            response.setStatus(Integer.parseInt(AuthServiceConstants.HTTP_PAYMENT_REQUIRED_CODE));
+        } else if (ex instanceof TokenServiceException) {
+            response.setStatus(Integer.parseInt(AuthServiceConstants.HTTP_SERVICE_UNAVAILABLE_CODE));
+        } else if (ex instanceof TokenSudoException) {
+            response.setStatus(Integer.parseInt(AuthServiceConstants.HTTP_UPGRADE_REQUIRED_CODE));
         } else {
             //其它错误都当做500类异常。
             response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());

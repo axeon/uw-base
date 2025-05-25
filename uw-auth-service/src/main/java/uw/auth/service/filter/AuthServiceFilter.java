@@ -7,8 +7,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.HandlerExecutionChain;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import uw.auth.service.AuthServiceHelper;
@@ -18,6 +18,7 @@ import uw.auth.service.constant.ActionLog;
 import uw.auth.service.constant.AuthServiceConstants;
 import uw.auth.service.constant.AuthType;
 import uw.auth.service.constant.UserType;
+import uw.auth.service.exception.AuthExceptionHelper;
 import uw.auth.service.log.AuthCriticalLogStorage;
 import uw.auth.service.service.MscAuthPermService;
 import uw.auth.service.token.AuthTokenData;
@@ -64,6 +65,10 @@ public class AuthServiceFilter implements Filter {
      */
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
     /**
+     * 异常处理器。
+     */
+    private final HandlerExceptionResolver exceptionResolver;
+    /**
      * 权限服务。
      */
     private final MscAuthPermService authPermService;
@@ -84,10 +89,12 @@ public class AuthServiceFilter implements Filter {
      */
     private String[] ipProtectedPaths;
 
-    public AuthServiceFilter(final AuthServiceProperties authServiceProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping,
+
+    public AuthServiceFilter(final AuthServiceProperties authServiceProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping, HandlerExceptionResolver exceptionResolver,
                              final MscAuthPermService authPermService, final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage) {
         this.authServiceProperties = authServiceProperties;
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
+        this.exceptionResolver = exceptionResolver;
         this.authPermService = authPermService;
         this.logClient = logClient;
         this.authCriticalLogStorage = authCriticalLogStorage;
@@ -127,7 +134,7 @@ public class AuthServiceFilter implements Filter {
      * @throws ServletException
      */
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException {
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         // 请求对象和响应对象
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
@@ -140,16 +147,17 @@ public class AuthServiceFilter implements Filter {
         //执行IP保护。
         if (ipProtectedPaths != null && ipWhiteList != null) {
             if (StringUtils.startsWithAny(uri, ipProtectedPaths) && !IpMatchUtils.matches(ipWhiteList, userIp)) {
-                httpServletResponse.sendError(HttpStatus.FORBIDDEN.value(), "IP protected.");
+                throwException(httpServletRequest, httpServletResponse, ResponseData.errorCode(AuthServiceConstants.HTTP_FORBIDDEN_CODE, "IP protected."));
+                return;
             }
         }
-        //操作日志
-        boolean hasMscPermDeclare = false;
-        MscActionLog mscActionLog = null;
         //整理权限信息
+        MscPermDeclare mscPermDeclare = null;
         UserType permUserType = UserType.ANY;
         AuthType permAuthType = AuthType.NONE;
         ActionLog permLogType = ActionLog.NONE;
+        //操作日志对象。
+        MscActionLog mscActionLog = null;
         try {
             invokeCounter.increment();
             // 获取HandlerExecutionChain
@@ -166,17 +174,16 @@ public class AuthServiceFilter implements Filter {
             // 查询接口方法
             HandlerMethod handler = (HandlerMethod) handlerExecutionChain.getHandler();
             Method javaMethod = handler.getMethod();
-            MscPermDeclare mscPermDeclare = javaMethod.getAnnotation(MscPermDeclare.class);
+            mscPermDeclare = javaMethod.getAnnotation(MscPermDeclare.class);
             // 有权限注解的，才检测权限。
             if (mscPermDeclare != null) {
-                hasMscPermDeclare = true;
                 // 获取原始token
                 String rawToken = httpServletRequest.getHeader(AuthServiceConstants.TOKEN_HEADER_PARAM);
                 // 解析token
                 ResponseData<AuthTokenData> authTokenDataResponse = AuthServiceHelper.parseRawToken(userIp, rawToken);
                 // token异常直接抛出
                 if (authTokenDataResponse.isNotSuccess()) {
-                    httpServletResponse.sendError(Integer.parseInt(authTokenDataResponse.getCode()), authTokenDataResponse.getMsg());
+                    throwException(httpServletRequest, httpServletResponse, authTokenDataResponse);
                     return;
                 }
                 // 取出tokenData
@@ -189,7 +196,7 @@ public class AuthServiceFilter implements Filter {
                 ResponseData<?> authPermResponse = authPermService.hasPerm(authTokenData, mscPermDeclare, permCode);
                 // 鉴权异常直接抛出
                 if (authPermResponse.isNotSuccess()) {
-                    httpServletResponse.sendError(Integer.parseInt(authPermResponse.getCode()), authPermResponse.getMsg());
+                    throwException(httpServletRequest, httpServletResponse, authPermResponse);
                     return;
                 }
                 //准备操作日志内容，关键日志必须记录，并记录操作人员日志。
@@ -232,11 +239,8 @@ public class AuthServiceFilter implements Filter {
             }
             // 执行后续Filter
             chain.doFilter(request, response);
-        } catch (Throwable t) {
-            logger.error(t.getMessage(), t);
-            httpServletResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), t.toString());
         } finally {
-            if (hasMscPermDeclare) {
+            if (mscPermDeclare != null) {
                 AuthServiceHelper.destroyContextToken();
                 if (mscActionLog != null) {
                     // 因为性能问题,返回大数据量时不建议记录RESPONSE
@@ -285,9 +289,22 @@ public class AuthServiceFilter implements Filter {
         }
     }
 
-
     @Override
     public void destroy() {
         logger.info("Destroy AuthServiceFilter.");
+    }
+
+    /**
+     * 抛出转换异常。
+     *
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param responseData
+     */
+    private void throwException(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, ResponseData<?> responseData) {
+        RuntimeException ex = AuthExceptionHelper.convertException(responseData);
+        if (ex != null) {
+            exceptionResolver.resolveException(httpServletRequest, httpServletResponse, null, ex);
+        }
     }
 }

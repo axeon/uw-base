@@ -22,6 +22,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import uw.auth.service.AuthServiceHelper;
 import uw.auth.service.advice.GlobalExceptionAdvice;
@@ -82,9 +83,9 @@ public class AuthServiceAutoConfiguration {
      * @return
      */
     @Bean
-    public FilterRegistrationBean<AuthServiceFilter> authServiceFilter(final AuthServiceProperties authServiceProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping, final MscAuthPermService authPermService, final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage) {
+    public FilterRegistrationBean<AuthServiceFilter> authServiceFilter(final AuthServiceProperties authServiceProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping, @Qualifier("handlerExceptionResolver") final HandlerExceptionResolver exceptionResolver, final MscAuthPermService authPermService, final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage) {
         FilterRegistrationBean<AuthServiceFilter> registrationBean = new FilterRegistrationBean<AuthServiceFilter>();
-        AuthServiceFilter authServiceFilter = new AuthServiceFilter(authServiceProperties, requestMappingHandlerMapping, authPermService, logClient, authCriticalLogStorage);
+        AuthServiceFilter authServiceFilter = new AuthServiceFilter(authServiceProperties, requestMappingHandlerMapping, exceptionResolver, authPermService, logClient, authCriticalLogStorage);
         registrationBean.setFilter(authServiceFilter);
         registrationBean.setName("AuthServiceFilter");
         registrationBean.setOrder(TOKEN_FILTER_ORDER);

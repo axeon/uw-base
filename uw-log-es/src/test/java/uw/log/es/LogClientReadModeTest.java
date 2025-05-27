@@ -25,8 +25,9 @@ public class LogClientReadModeTest {
     public static void setUp() {
         LogClientProperties logClientProperties = new LogClientProperties();
         LogClientProperties.EsConfig esConfig = new LogClientProperties.EsConfig();
-        esConfig.setServer("http://localhost:9200");
-        esConfig.setMode(LogClientProperties.LogMode.READ_ONLY);
+        esConfig.setServer("http://192.168.88.21:9200");
+        esConfig.setUsername("elastic");
+        esConfig.setPassword("espasswd");
         esConfig.setAppInfoOverwrite(false);
         logClientProperties.setEs(esConfig);
         logClient = new LogClient(new LogService(logClientProperties, null, null));
@@ -53,6 +54,11 @@ public class LogClientReadModeTest {
             logInterface.setResponseBody("吃了");
             logClient.log(logInterface);
             count++;
+        }
+        try {
+            Thread.sleep(500000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
         System.out.println("elapsed wall time " + stopwatch.elapsed(TimeUnit.MILLISECONDS));
     }

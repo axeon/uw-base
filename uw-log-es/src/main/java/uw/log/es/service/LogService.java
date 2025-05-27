@@ -20,14 +20,14 @@ import uw.httpclient.util.BufferRequestBody;
 import uw.httpclient.util.MediaTypes;
 import uw.log.es.LogClientProperties;
 import uw.log.es.util.IndexConfigVo;
-import uw.log.es.vo.DeleteScrollResponse;
-import uw.log.es.vo.LogBaseVo;
-import uw.log.es.vo.ScrollResponse;
-import uw.log.es.vo.SearchResponse;
+import uw.log.es.vo.*;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -40,7 +40,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class LogService {
 
-    private static final Logger log = LoggerFactory.getLogger( LogService.class );
+    private static final Logger log = LoggerFactory.getLogger(LogService.class);
 
     /**
      * 日志编码
@@ -50,12 +50,12 @@ public class LogService {
     /**
      * 换行符字节
      */
-    private static final byte[] LINE_SEPARATOR_BYTES = System.lineSeparator().getBytes( LOG_CHARSET );
+    private static final byte[] LINE_SEPARATOR_BYTES = System.lineSeparator().getBytes(LOG_CHARSET);
 
     /**
      * 时间序列格式化
      */
-    private static final FastDateFormat DATE_FORMAT = FastDateFormat.getInstance( "yyyy-MM-dd'T'HH:mm:ss.SSSZZ", (TimeZone) null );
+    private static final FastDateFormat DATE_FORMAT = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss.SSSZZ", (TimeZone) null);
 
     /**
      * scroll api
@@ -154,13 +154,13 @@ public class LogService {
         this.esServer = logClientProperties.getEs().getServer();
         this.esUsername = logClientProperties.getEs().getUsername();
         this.esPassword = logClientProperties.getEs().getPassword();
-        if (StringUtils.isBlank( this.esServer )) {
-            log.error( "ElasticSearch server config is null! LogClient can't log anything!!!" );
+        if (StringUtils.isBlank(this.esServer)) {
+            log.error("ElasticSearch server config is null! LogClient can't log anything!!!");
             this.logState = false;
             return;
         }
-        this.needBasicAuth = StringUtils.isNotBlank( esUsername ) && StringUtils.isNotBlank( esPassword );
-        this.httpInterface = new JsonInterfaceHelper( HttpConfig.builder().retryOnConnectionFailure( true ).connectTimeout( logClientProperties.getEs().getConnectTimeout() ).readTimeout( logClientProperties.getEs().getReadTimeout() ).writeTimeout( logClientProperties.getEs().getWriteTimeout() ).build() );
+        this.needBasicAuth = StringUtils.isNotBlank(esUsername) && StringUtils.isNotBlank(esPassword);
+        this.httpInterface = new JsonInterfaceHelper(HttpConfig.builder().retryOnConnectionFailure(true).connectTimeout(logClientProperties.getEs().getConnectTimeout()).readTimeout(logClientProperties.getEs().getReadTimeout()).writeTimeout(logClientProperties.getEs().getWriteTimeout()).build());
         this.esBulk = logClientProperties.getEs().getEsBulk();
         this.maxFlushInMilliseconds = logClientProperties.getEs().getMaxFlushInSeconds() * 1000L;
         this.maxBytesOfBatch = logClientProperties.getEs().getMaxKiloBytesOfBatch() * 1024L;
@@ -172,16 +172,16 @@ public class LogService {
         // 如果
         if (mode == LogClientProperties.LogMode.READ_WRITE) {
             this.logState = true;
-            batchExecutor = new ThreadPoolExecutor( 1, maxBatchThreads, 30, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>( maxBatchQueueSize ),
-                    new ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "log-es-batch-%d" ).build(), new RejectedExecutionHandler() {
+            batchExecutor = new ThreadPoolExecutor(1, maxBatchThreads, 30, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(maxBatchQueueSize),
+                    new ThreadFactoryBuilder().setDaemon(true).setNameFormat("log-es-batch-%d").build(), new RejectedExecutionHandler() {
                 @Override
                 public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                    log.error( "Log ES Batch Task {} rejected from {}", r.toString(), executor.toString() );
+                    log.error("Log ES Batch Task {} rejected from {}", r.toString(), executor.toString());
                 }
-            } );
+            });
             daemonExporter = new ElasticsearchDaemonExporter();
-            daemonExporter.setName( "log-es-monitor" );
-            daemonExporter.setDaemon( true );
+            daemonExporter.setName("log-es-monitor");
+            daemonExporter.setDaemon(true);
             daemonExporter.init();
             daemonExporter.start();
         } else {
@@ -195,15 +195,15 @@ public class LogService {
      * @param logClass
      */
     public void regLogObject(Class<?> logClass, String index, String indexPattern) {
-        String rawIndex = index == null ? buildIndexName( logClass ) : index;
+        String rawIndex = index == null ? buildIndexName(logClass) : index;
         FastDateFormat dateFormat = null;
         String queryName = rawIndex;
-        if (StringUtils.isNotBlank( indexPattern )) {
-            dateFormat = FastDateFormat.getInstance( indexPattern, (TimeZone) null );
+        if (StringUtils.isNotBlank(indexPattern)) {
+            dateFormat = FastDateFormat.getInstance(indexPattern, (TimeZone) null);
             queryName = queryName + "_*";
         }
-        IndexConfigVo indexConfigVo = new IndexConfigVo( rawIndex, queryName, dateFormat );
-        regMap.put( logClass, indexConfigVo );
+        IndexConfigVo indexConfigVo = new IndexConfigVo(rawIndex, queryName, dateFormat);
+        regMap.put(logClass, indexConfigVo);
     }
 
     /**
@@ -212,7 +212,7 @@ public class LogService {
      * @param logClass
      */
     public String getRawIndexName(Class<?> logClass) {
-        IndexConfigVo configVo = regMap.get( logClass );
+        IndexConfigVo configVo = regMap.get(logClass);
         if (configVo == null) {
             return null;
         }
@@ -227,7 +227,7 @@ public class LogService {
      */
 
     public String getQuotedRawIndexName(Class<?> logClass) {
-        return '"' + getRawIndexName( logClass ) + '"';
+        return '"' + getRawIndexName(logClass) + '"';
     }
 
     /**
@@ -236,7 +236,7 @@ public class LogService {
      * @param logClass
      */
     public String getQueryIndexName(Class<?> logClass) {
-        IndexConfigVo configVo = regMap.get( logClass );
+        IndexConfigVo configVo = regMap.get(logClass);
         if (configVo == null) {
             return null;
         }
@@ -251,7 +251,7 @@ public class LogService {
      */
 
     public String getQuotedQueryIndexName(Class<?> logClass) {
-        return "\\\"" + getQueryIndexName( logClass ) + "\\\"";
+        return "\\\"" + getQueryIndexName(logClass) + "\\\"";
     }
 
     /**
@@ -264,32 +264,32 @@ public class LogService {
             return;
         }
         long now = SystemClock.now();
-        String index = getIndex( source.getClass(), now );
-        if (StringUtils.isBlank( index )) {
-            log.warn( "LogClass[{}] not registry!!!", source.getClass().getName() );
+        String index = getIndex(source.getClass(), now);
+        if (StringUtils.isBlank(index)) {
+            log.warn("LogClass[{}] not registry!!!", source.getClass().getName());
             return;
         }
         // 写上时间戳
-        source.setTimestamp( DATE_FORMAT.format( now ) );
+        source.setTimestamp(DATE_FORMAT.format(now));
         // 是否需要覆写
         if (appInfoOverwrite) {
-            source.setAppInfo( appName );
-            source.setAppHost( appHost );
+            source.setAppInfo(appName);
+            source.setAppHost(appHost);
         }
         okio.Buffer okb = new okio.Buffer();
-        okb.writeUtf8( "{\"create\":{\"_index\":\"" ).writeUtf8( index ).writeUtf8( "\"},\"_source\":false}" );
-        okb.write( LINE_SEPARATOR_BYTES );
+        okb.writeUtf8("{\"create\":{\"_index\":\"").writeUtf8(index).writeUtf8("\"},\"_source\":false}");
+        okb.write(LINE_SEPARATOR_BYTES);
         try {
             JsonUtils.write(source, okb.outputStream());
         } catch (Exception e) {
-            log.error( e.getMessage(), e );
+            log.error(e.getMessage(), e);
         }
-        okb.write( LINE_SEPARATOR_BYTES );
+        okb.write(LINE_SEPARATOR_BYTES);
         batchLock.lock();
         try {
-            buffer.writeAll( okb );
+            buffer.writeAll(okb);
         } catch (Exception e) {
-            log.error( e.getMessage(), e );
+            log.error(e.getMessage(), e);
         } finally {
             batchLock.unlock();
         }
@@ -312,35 +312,35 @@ public class LogService {
 
         Class<? extends LogBaseVo> logClass = sourceList.getFirst().getClass();
         long now = SystemClock.now();
-        String index = getIndex( logClass, now );
+        String index = getIndex(logClass, now);
 
-        if (StringUtils.isBlank( index )) {
-            log.warn( "LogClass[{}] not registry!!!", logClass.getName() );
+        if (StringUtils.isBlank(index)) {
+            log.warn("LogClass[{}] not registry!!!", logClass.getName());
             return;
         }
         okio.Buffer okb = new okio.Buffer();
         for (T source : sourceList) {
             // 写上时间戳
-            source.setTimestamp( DATE_FORMAT.format( now ) );
+            source.setTimestamp(DATE_FORMAT.format(now));
             // 是否需要覆写
             if (appInfoOverwrite) {
-                source.setAppInfo( appName );
-                source.setAppHost( appHost );
+                source.setAppInfo(appName);
+                source.setAppHost(appHost);
             }
-            okb.writeUtf8( "{\"index\":{\"_index\":\"" ).writeUtf8( index ).writeUtf8( "\"}}" );
-            okb.write( LINE_SEPARATOR_BYTES );
+            okb.writeUtf8("{\"index\":{\"_index\":\"").writeUtf8(index).writeUtf8("\"}}");
+            okb.write(LINE_SEPARATOR_BYTES);
             try {
                 JsonUtils.write(source, okb.outputStream());
             } catch (Exception e) {
-                log.error( e.getMessage(), e );
+                log.error(e.getMessage(), e);
             }
-            okb.write( LINE_SEPARATOR_BYTES );
+            okb.write(LINE_SEPARATOR_BYTES);
         }
         batchLock.lock();
         try {
-            buffer.writeAll( okb );
+            buffer.writeAll(okb);
         } catch (Exception e) {
-            log.error( e.getMessage(), e );
+            log.error(e.getMessage(), e);
         } finally {
             batchLock.unlock();
         }
@@ -364,16 +364,20 @@ public class LogService {
             return;
         }
         try {
-            Request.Builder requestBuilder = new Request.Builder().url( esServer + esBulk );
+            Request.Builder requestBuilder = new Request.Builder().url(esServer + esBulk);
             if (needBasicAuth) {
-                requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
+                requestBuilder.header("Authorization", Credentials.basic(esUsername, esPassword));
             }
-            HttpData httpData = httpInterface.requestForData( requestBuilder.post( BufferRequestBody.create( bufferData, MediaTypes.JSON_UTF8 ) ).build() );
+            HttpData httpData = httpInterface.requestForData(requestBuilder.post(BufferRequestBody.create(bufferData, MediaTypes.JSON_UTF8)).build());
             if (httpData.getStatusCode() != 200) {
-                log.warn( "LogClient ES Batch process error! code:{}, response:{}", httpData.getStatusCode(), httpData.getResponseData() );
+                log.error("LogClient ES Batch process error! code:{}, response:{}", httpData.getStatusCode(), httpData.getResponseData());
+            }
+            BulkResponse bulkResponse = JsonUtils.parse(httpData.getResponseData(), BulkResponse.class);
+            if (bulkResponse.isErrors()){
+                log.error("LogClient ES Batch process error! code:{}, response:{}", httpData.getStatusCode(), httpData.getResponseData());
             }
         } catch (Exception e) {
-            log.error( e.getMessage(), e );
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -400,22 +404,22 @@ public class LogService {
      */
     @SuppressWarnings("unchecked")
     public <T> SearchResponse<T> dslQuery(Class<T> tClass, String index, String dslQuery) {
-        if (StringUtils.isBlank( esServer )) {
+        if (StringUtils.isBlank(esServer)) {
             return null;
         }
-        StringBuilder urlBuilder = new StringBuilder( esServer );
-        urlBuilder.append( "/" ).append( index ).append( "/" ).append( "_search" );
+        StringBuilder urlBuilder = new StringBuilder(esServer);
+        urlBuilder.append("/").append(index).append("/").append("_search");
         SearchResponse<T> resp = null;
-        JavaType javaType = JsonUtils.constructParametricType( SearchResponse.class, tClass );
+        JavaType javaType = JsonUtils.constructParametricType(SearchResponse.class, tClass);
 
         try {
-            Request.Builder requestBuilder = new Request.Builder().url( urlBuilder.toString() );
+            Request.Builder requestBuilder = new Request.Builder().url(urlBuilder.toString());
             if (needBasicAuth) {
-                requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
+                requestBuilder.header("Authorization", Credentials.basic(esUsername, esPassword));
             }
-            resp = (SearchResponse<T>) httpInterface.requestForEntity( requestBuilder.post( RequestBody.create( dslQuery, MediaTypes.JSON_UTF8 ) ).build(), javaType ).getValue();
+            resp = (SearchResponse<T>) httpInterface.requestForEntity(requestBuilder.post(RequestBody.create(dslQuery, MediaTypes.JSON_UTF8)).build(), javaType).getValue();
         } catch (Exception e) {
-            log.error( e.getMessage(), e );
+            log.error(e.getMessage(), e);
         }
         return resp;
     }
@@ -430,24 +434,24 @@ public class LogService {
      * @return
      */
     public <T> ScrollResponse<T> scrollQueryOpen(Class<T> tClass, String index, int scrollExpireSeconds, String dslQuery) {
-        if (StringUtils.isBlank( esServer )) {
+        if (StringUtils.isBlank(esServer)) {
             return null;
         }
         if (scrollExpireSeconds <= 0) {
             scrollExpireSeconds = 60;
         }
-        StringBuilder urlBuilder = new StringBuilder( esServer );
-        urlBuilder.append( "/" ).append( index ).append( "/" ).append( "_search?" ).append( SCROLL ).append( "=" ).append( scrollExpireSeconds ).append( "s" );
+        StringBuilder urlBuilder = new StringBuilder(esServer);
+        urlBuilder.append("/").append(index).append("/").append("_search?").append(SCROLL).append("=").append(scrollExpireSeconds).append("s");
         ScrollResponse<T> resp = null;
         try {
-            Request.Builder requestBuilder = new Request.Builder().url( urlBuilder.toString() );
+            Request.Builder requestBuilder = new Request.Builder().url(urlBuilder.toString());
             if (needBasicAuth) {
-                requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
+                requestBuilder.header("Authorization", Credentials.basic(esUsername, esPassword));
             }
-            JavaType javaType = JsonUtils.constructParametricType( ScrollResponse.class, tClass );
-            resp = (ScrollResponse<T>) httpInterface.requestForEntity( requestBuilder.post( RequestBody.create( dslQuery, MediaTypes.JSON_UTF8 ) ).build(), javaType ).getValue();
+            JavaType javaType = JsonUtils.constructParametricType(ScrollResponse.class, tClass);
+            resp = (ScrollResponse<T>) httpInterface.requestForEntity(requestBuilder.post(RequestBody.create(dslQuery, MediaTypes.JSON_UTF8)).build(), javaType).getValue();
         } catch (Exception e) {
-            log.error( e.getMessage(), e );
+            log.error(e.getMessage(), e);
         }
         return resp;
     }
@@ -462,26 +466,26 @@ public class LogService {
      * @return
      */
     public <T> ScrollResponse<T> scrollQueryNext(Class<T> tClass, String scrollId, int scrollExpireSeconds) {
-        if (StringUtils.isBlank( esServer )) {
+        if (StringUtils.isBlank(esServer)) {
             return null;
         }
         if (scrollExpireSeconds <= 0) {
             scrollExpireSeconds = 60;
         }
-        StringBuilder urlBuilder = new StringBuilder( esServer );
-        urlBuilder.append( "/_search/" ).append( SCROLL );
-        String requestBody = String.format( "{\"scroll_id\" : \"%s\",\"scroll\": \"%s\"}", scrollId, scrollExpireSeconds + "s" );
+        StringBuilder urlBuilder = new StringBuilder(esServer);
+        urlBuilder.append("/_search/").append(SCROLL);
+        String requestBody = String.format("{\"scroll_id\" : \"%s\",\"scroll\": \"%s\"}", scrollId, scrollExpireSeconds + "s");
         ScrollResponse<T> resp = null;
-        JavaType javaType = JsonUtils.constructParametricType( ScrollResponse.class, tClass );
+        JavaType javaType = JsonUtils.constructParametricType(ScrollResponse.class, tClass);
 
         try {
-            Request.Builder requestBuilder = new Request.Builder().url( urlBuilder.toString() );
+            Request.Builder requestBuilder = new Request.Builder().url(urlBuilder.toString());
             if (needBasicAuth) {
-                requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
+                requestBuilder.header("Authorization", Credentials.basic(esUsername, esPassword));
             }
-            resp = (ScrollResponse<T>) httpInterface.requestForEntity( requestBuilder.post( RequestBody.create( requestBody, MediaTypes.JSON_UTF8 ) ).build(), javaType ).getValue();
+            resp = (ScrollResponse<T>) httpInterface.requestForEntity(requestBuilder.post(RequestBody.create(requestBody, MediaTypes.JSON_UTF8)).build(), javaType).getValue();
         } catch (Exception e) {
-            log.error( e.getMessage(), e );
+            log.error(e.getMessage(), e);
         }
         return resp;
     }
@@ -493,22 +497,22 @@ public class LogService {
      * @return
      */
     public DeleteScrollResponse scrollQueryClose(String scrollId) {
-        if (StringUtils.isBlank( esServer )) {
+        if (StringUtils.isBlank(esServer)) {
             return null;
         }
-        StringBuilder urlBuilder = new StringBuilder( esServer );
-        urlBuilder.append( "/_search/" ).append( SCROLL );
-        String requestBody = String.format( "{\"scroll_id\":\"%s\"}", scrollId );
+        StringBuilder urlBuilder = new StringBuilder(esServer);
+        urlBuilder.append("/_search/").append(SCROLL);
+        String requestBody = String.format("{\"scroll_id\":\"%s\"}", scrollId);
         DeleteScrollResponse resp;
         try {
-            Request.Builder requestBuilder = new Request.Builder().url( urlBuilder.toString() );
+            Request.Builder requestBuilder = new Request.Builder().url(urlBuilder.toString());
             if (needBasicAuth) {
-                requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
+                requestBuilder.header("Authorization", Credentials.basic(esUsername, esPassword));
             }
-            resp = httpInterface.requestForEntity( requestBuilder.delete( RequestBody.create( requestBody, MediaTypes.JSON_UTF8 ) ).build(), DeleteScrollResponse.class ).getValue();
+            resp = httpInterface.requestForEntity(requestBuilder.delete(RequestBody.create(requestBody, MediaTypes.JSON_UTF8)).build(), DeleteScrollResponse.class).getValue();
         } catch (Exception e) {
             resp = new DeleteScrollResponse();
-            log.error( e.getMessage(), e );
+            log.error(e.getMessage(), e);
         }
 
         return resp;
@@ -522,48 +526,48 @@ public class LogService {
      * @return
      */
     public String translateSqlToDsl(String sql, int startIndex, int resultNum, boolean isTrueCount) {
-        if (StringUtils.isBlank( esServer )) {
-            throw new IllegalArgumentException( "es server is blank!" );
+        if (StringUtils.isBlank(esServer)) {
+            throw new IllegalArgumentException("es server is blank!");
         }
-        if (StringUtils.isBlank( sql )) {
-            throw new IllegalArgumentException( "sql is blank!" );
+        if (StringUtils.isBlank(sql)) {
+            throw new IllegalArgumentException("sql is blank!");
         }
-        if (sql.contains( "limit" )) {
-            throw new IllegalArgumentException( "sql contains limit, please remove limit." );
+        if (sql.contains("limit")) {
+            throw new IllegalArgumentException("sql contains limit, please remove limit.");
         }
         sql = sql.trim();
         String dsl = null;
-        StringBuilder urlBuilder = new StringBuilder( esServer );
-        urlBuilder.append( "/" ).append( "_sql/translate" );
+        StringBuilder urlBuilder = new StringBuilder(esServer);
+        urlBuilder.append("/").append("_sql/translate");
         // 这里支持count(*) 无需limit
         if (resultNum > 0) {
             sql = sql + " limit " + resultNum;
         }
-        sql = String.format( "{\"query\": \"%s\"}", sql );
-        Request.Builder requestBuilder = new Request.Builder().url( urlBuilder.toString() );
+        sql = String.format("{\"query\": \"%s\"}", sql);
+        Request.Builder requestBuilder = new Request.Builder().url(urlBuilder.toString());
         if (needBasicAuth) {
-            requestBuilder.header( "Authorization", Credentials.basic( esUsername, esPassword ) );
+            requestBuilder.header("Authorization", Credentials.basic(esUsername, esPassword));
         }
-        dsl = httpInterface.requestForEntity( requestBuilder.post( RequestBody.create( sql, MediaTypes.JSON_UTF8 ) ).build(), String.class ).getValue();
+        dsl = httpInterface.requestForEntity(requestBuilder.post(RequestBody.create(sql, MediaTypes.JSON_UTF8)).build(), String.class).getValue();
 
         if (startIndex > 0) {
-            dsl = "{" + " \"from\" : " + startIndex + "," + dsl.substring( 1, dsl.length() );
+            dsl = "{" + " \"from\" : " + startIndex + "," + dsl.substring(1, dsl.length());
         }
-        if (isTrueCount && !dsl.contains( "\"track_total_hits\"" )) {
-            dsl = "{" + "\"track_total_hits\": true," + dsl.substring( 1, dsl.length() );
-        } else if (isTrueCount && dsl.contains( "\"track_total_hits\"" )) {
+        if (isTrueCount && !dsl.contains("\"track_total_hits\"")) {
+            dsl = "{" + "\"track_total_hits\": true," + dsl.substring(1, dsl.length());
+        } else if (isTrueCount && dsl.contains("\"track_total_hits\"")) {
             // es8 track_total_hits为-1、换为true
-            dsl = dsl.replace( "\"track_total_hits\":-1", "\"track_total_hits\":true" );
+            dsl = dsl.replace("\"track_total_hits\":-1", "\"track_total_hits\":true");
         }
 
         // es8.x返回_source为false, 设置为true兼容
-        dsl = dsl.replace( "\"_source\":false", "\"_source\":true" );
+        dsl = dsl.replace("\"_source\":false", "\"_source\":true");
 
         // 删除无用的fields相关字段。
-        int fStart = dsl.indexOf( "\"fields\":[" );
-        int fEnd = dsl.indexOf( "],", fStart ) + 2;
+        int fStart = dsl.indexOf("\"fields\":[");
+        int fEnd = dsl.indexOf("],", fStart) + 2;
         if (fStart > 0 && fEnd > 0 && fEnd > fStart) {
-            dsl = dsl.substring( 0, fStart ) + dsl.substring( fEnd );
+            dsl = dsl.substring(0, fStart) + dsl.substring(fEnd);
         }
         return dsl;
     }
@@ -576,17 +580,17 @@ public class LogService {
      */
     private String buildIndexName(Class<?> logClass) {
         String className = logClass.getName();
-        int lastIndex = className.lastIndexOf( "." );
+        int lastIndex = className.lastIndexOf(".");
         String indexName = "";
         if (lastIndex > 0) {
             // 偏移一下,把'.'带上
             lastIndex++;
-            String canonicalPath = className.substring( 0, lastIndex );
-            String logVoName = className.substring( lastIndex);
-            indexName = CaseFormat.UPPER_CAMEL.to( CaseFormat.LOWER_UNDERSCORE, logVoName );
+            String canonicalPath = className.substring(0, lastIndex);
+            String logVoName = className.substring(lastIndex);
+            indexName = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, logVoName);
             indexName = canonicalPath + indexName;
         } else {
-            indexName = CaseFormat.UPPER_CAMEL.to( CaseFormat.LOWER_UNDERSCORE, className );
+            indexName = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, className);
         }
         return indexName;
     }
@@ -596,7 +600,7 @@ public class LogService {
      * @return
      */
     private String getIndex(Class<?> logClass, long timestamp) {
-        IndexConfigVo configVo = regMap.get( logClass );
+        IndexConfigVo configVo = regMap.get(logClass);
         if (configVo == null) {
             return null;
         }
@@ -604,7 +608,7 @@ public class LogService {
         if (indexPattern == null) {
             return configVo.getRawName();
         }
-        return configVo.getRawName() + '_' + indexPattern.format( timestamp );
+        return configVo.getRawName() + '_' + indexPattern.format(timestamp);
     }
 
     /**
@@ -643,16 +647,16 @@ public class LogService {
                     long now = SystemClock.now();
                     if (buffer.size() > maxBytesOfBatch || now > nextScanTime) {
                         nextScanTime = now + maxFlushInMilliseconds;
-                        batchExecutor.submit( new Runnable() {
+                        batchExecutor.submit(new Runnable() {
                             @Override
                             public void run() {
                                 processLogBuffer();
                             }
-                        } );
+                        });
                     }
-                    Thread.sleep( 500 );
+                    Thread.sleep(500);
                 } catch (Exception e) {
-                    log.error( "Exception processing log entries", e );
+                    log.error("Exception processing log entries", e);
                 }
             }
         }

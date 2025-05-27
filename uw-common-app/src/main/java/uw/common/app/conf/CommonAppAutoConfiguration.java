@@ -1,8 +1,16 @@
 package uw.common.app.conf;
 
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
@@ -17,6 +25,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.format.FormatterRegistry;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -25,9 +36,13 @@ import uw.auth.service.conf.AuthServiceAutoConfiguration;
 import uw.auth.service.log.AuthCriticalLogStorage;
 import uw.common.app.constant.CommonConstants;
 import uw.common.app.service.SysCritLogStorageService;
+import uw.common.util.DateUtils;
 
+import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * 启动配置。
@@ -36,12 +51,17 @@ import java.util.Locale;
 @AutoConfigureBefore({WebMvcAutoConfiguration.class})
 @AutoConfigureAfter(AuthServiceAutoConfiguration.class)
 @EnableConfigurationProperties({CommonAppProperties.class})
-public class CommonAppAutoConfiguration {
+public class CommonAppAutoConfiguration implements WebMvcConfigurer {
 
     /**
      * 日志.
      */
     private static final Logger logger = LoggerFactory.getLogger(CommonAppAutoConfiguration.class);
+
+    /**
+     * 对象映射器.
+     */
+    private final ObjectMapper objectMapper;
 
     /**
      * 默认语言.
@@ -85,9 +105,10 @@ public class CommonAppAutoConfiguration {
      *
      * @param commonAppProperties
      */
-    public CommonAppAutoConfiguration(CommonAppProperties commonAppProperties) {
+    public CommonAppAutoConfiguration(CommonAppProperties commonAppProperties, ObjectMapper objectMapper) {
         this.DEFAULT_LOCALE = commonAppProperties.getLocaleDefault();
         this.LOCALE_LIST = commonAppProperties.getLocaleList();
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -146,6 +167,48 @@ public class CommonAppAutoConfiguration {
     public AuthCriticalLogStorage SysCritLogStorageService(CommonAppProperties uwAppBaseProperties) {
         logger.info("Init SysCritLogStorageService.");
         return new SysCritLogStorageService(uwAppBaseProperties);
+    }
+
+
+    /**
+     * 添加mvc的Date格式转换器.
+     *
+     * @param registry
+     */
+    @Override
+    public void addFormatters(FormatterRegistry registry) {
+        registry.addConverter(String.class, Date.class, DateUtils::stringToDate);
+    }
+
+    /**
+     * 移除XML消息转换器
+     *
+     * @param converters
+     */
+    @Override
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+        converters.removeIf(x -> x instanceof MappingJackson2XmlHttpMessageConverter);
+    }
+
+    /**
+     * 配置ObjectMapper.
+     */
+    @PostConstruct
+    public void configureObjectMapper() {
+        // 设置日期格式
+        SimpleModule dateUtilModule = new SimpleModule();
+        dateUtilModule.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
+                String dateString = jsonParser.getText();
+                return DateUtils.stringToDate(dateString);
+            }
+        });
+        // 不设置日期序列化的原因，是为了使用系统设置。
+        objectMapper.registerModule(dateUtilModule);
+        objectMapper.setTimeZone(TimeZone.getDefault());
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
     }
 
 }

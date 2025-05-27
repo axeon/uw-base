@@ -1,13 +1,20 @@
 package uw.httpclient.xml;
 
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import uw.common.util.DateUtils;
 import uw.httpclient.exception.DataMapperException;
 import uw.httpclient.http.DataObjectMapper;
 
+import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Date;
+import java.util.TimeZone;
 
 /**
  * 基于Jackson Xml 的ObjectMapper
@@ -85,9 +92,26 @@ public class XmlObjectMapperImpl implements DataObjectMapper {
      */
     private static com.fasterxml.jackson.dataformat.xml.XmlMapper xmlMapperInit() {
         com.fasterxml.jackson.dataformat.xml.XmlMapper xmlMapper = new com.fasterxml.jackson.dataformat.xml.XmlMapper();
-        // Java时间模块
-        xmlMapper.registerModule( new JavaTimeModule() );
-        xmlMapper.configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false );
+        xmlMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        xmlMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        // 设置日期格式
+        SimpleModule dateUtilModule = new SimpleModule();
+        dateUtilModule.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
+                String dateString = jsonParser.getText();
+                return DateUtils.stringToDate(dateString);
+            }
+        });
+        dateUtilModule.addSerializer(Date.class, new JsonSerializer<Date>() {
+            @Override
+            public void serialize(Date date, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JacksonException {
+                jsonGenerator.writeString(DateUtils.dateToString(date, DateUtils.DATE_MILLIS_ISO));
+            }
+        });
+        xmlMapper.registerModule(dateUtilModule);
+        xmlMapper.setTimeZone(TimeZone.getDefault());
+        xmlMapper.registerModule(new JavaTimeModule());
         return xmlMapper;
     }
 }

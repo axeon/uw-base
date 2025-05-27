@@ -8,7 +8,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.TimeZone;
 
 /**
  * 基于Jackson2 的Json工具类。
@@ -288,6 +291,8 @@ public class JsonUtils {
         jsonMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         jsonMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         jsonMapper.registerModule(new JavaTimeModule());
+        jsonMapper.setTimeZone(TimeZone.getDefault());
         return jsonMapper;
     }
+
 }

@@ -1,6 +1,6 @@
 package uw.dao;
 
-import org.apache.commons.lang3.tuple.Pair;
+import io.swagger.v3.oas.annotations.media.Schema;
 import uw.common.util.JsonUtils;
 
 import java.util.LinkedHashMap;
@@ -17,7 +17,7 @@ public class DataUpdateInfo {
      * key: 更新字段。
      * Value: left:oldValue; right:newValue;
      */
-    private final LinkedHashMap<String, Pair<?, ?>> updatedMap = new LinkedHashMap<>();
+    private final LinkedHashMap<String, UpdateInfo> updatedMap = new LinkedHashMap<>();
 
     /**
      * 添加更新信息。
@@ -58,7 +58,7 @@ public class DataUpdateInfo {
      */
     public DataUpdateInfo addUpdateInfo(String fieldName, Object oldValue, Object newValue, boolean isForce) {
         if (isForce || !Objects.equals(oldValue, newValue)) {
-            updatedMap.put(fieldName, Pair.of(oldValue, newValue));
+            updatedMap.put(fieldName, new UpdateInfo(oldValue, newValue));
         }
         return this;
     }
@@ -68,7 +68,7 @@ public class DataUpdateInfo {
      *
      * @return
      */
-    public LinkedHashMap<String, Pair<?, ?>> getUpdatedMap() {
+    public LinkedHashMap<String, UpdateInfo> getUpdatedMap() {
         return updatedMap;
     }
 
@@ -83,6 +83,7 @@ public class DataUpdateInfo {
 
     /**
      * 转为JSON字符串。
+     *
      * @return
      */
     @Override
@@ -90,4 +91,44 @@ public class DataUpdateInfo {
         return JsonUtils.toString(updatedMap);
     }
 
+    /**
+     * 更新信息。
+     */
+    @Schema(title = "更新信息", description = "更新信息")
+    public static class UpdateInfo {
+        /**
+         * 旧值。
+         */
+        @Schema(title = "旧值", description = "旧值")
+        private Object oldValue;
+        /**
+         * 新值。
+         */
+        @Schema(title = "新值", description = "新值")
+        private Object newValue;
+
+        public UpdateInfo(Object oldValue, Object newValue) {
+            this.oldValue = oldValue;
+            this.newValue = newValue;
+        }
+
+        public UpdateInfo() {
+        }
+
+        public Object getOldValue() {
+            return oldValue;
+        }
+
+        public void setOldValue(Object oldValue) {
+            this.oldValue = oldValue;
+        }
+
+        public Object getNewValue() {
+            return newValue;
+        }
+
+        public void setNewValue(Object newValue) {
+            this.newValue = newValue;
+        }
+    }
 }

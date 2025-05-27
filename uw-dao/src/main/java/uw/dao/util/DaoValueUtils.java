@@ -10,8 +10,7 @@ import java.util.Arrays;
  */
 public class DaoValueUtils {
 
-    private static final FastDateFormat dateFormat = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-
+    private static final FastDateFormat dateFormat = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss.SSSZZ");
 
     /**
      * 从日期类型转换为java.sql.Timestamp.

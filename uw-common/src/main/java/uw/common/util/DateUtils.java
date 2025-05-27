@@ -11,11 +11,17 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 日期工具类
  */
 public class DateUtils {
+
+    /**
+     * 时区格式：ZZ
+     */
+    public static final String ZONE_OFFSET = "ZZ";
 
     /**
      * 时间格式：yyyy-MM-dd
@@ -33,6 +39,26 @@ public class DateUtils {
     public static final String DATE_SLASH = "yyyy/MM/dd";
 
     /**
+     * 月份格式：yyyy-MM
+     */
+    public static final String MONTH = "yyyy-MM";
+
+    /**
+     * 月份格式：yyyy/MM
+     */
+    public static final String MONTH_SLASH = "yyyy/MM";
+
+    /**
+     * 月份格式：yyyyMM
+     */
+    public static final String MONTH_SIMPLE = "yyyyMM";
+
+    /**
+     * 月份格式：yyMM
+     */
+    public static final String MONTH_SHORT = "yyMM";
+
+    /**
      * 时间格式：HH:mm:ss
      */
     public static final String TIME = "HH:mm:ss";
@@ -45,12 +71,12 @@ public class DateUtils {
     /**
      * 时间格式： HH:mm
      */
-    public static final String DATE_MINUTE = "HH:mm";
+    public static final String TIME_MINUTE = "HH:mm";
 
     /**
      * 时间格式： HHmm
      */
-    public static final String DATE_MINUTE_SIMPLE = "HHmm";
+    public static final String TIME_MINUTE_SIMPLE = "HHmm";
 
     /**
      * 时间格式：HH:mm:ss.SSS
@@ -70,12 +96,27 @@ public class DateUtils {
     /**
      * 时间格式：yyyy-MM-dd HH:mm
      */
-    public static final String DATE_TIME_MINUTE = "yyyy-MM-dd HH:mm";
+    public static final String DATE_MINUTE = "yyyy-MM-dd HH:mm";
 
     /**
      * 时间格式：yyyy-MM-dd HH:mm:ss.SSS
      */
-    public static final String DATE_TIME_MILLIS = "yyyy-MM-dd HH:mm:ss.SSS";
+    public static final String DATE_MILLIS = "yyyy-MM-dd HH:mm:ss.SSS";
+
+    /**
+     * 时间格式：yyyy-MM-dd'T'HH:mm:ss
+     */
+    public static final String DATE_TIME_T = "yyyy-MM-dd'T'HH:mm:ss";
+
+    /**
+     * 时间格式：yyyy-MM-dd'T'HH:mm
+     */
+    public static final String DATE_MINUTE_T = "yyyy-MM-dd'T'HH:mm";
+
+    /**
+     * 时间格式：yyyy-MM-dd'T'HH:mm:ss.SSS
+     */
+    public static final String DATE_MILLIS_T = "yyyy-MM-dd'T'HH:mm:ss.SSS";
 
     /**
      * 时间格式：yyyyMMddHHmmss
@@ -85,17 +126,17 @@ public class DateUtils {
     /**
      * 时间格式：yyyy-MM-dd HH:mm
      */
-    public static final String DATE_TIME_MINUTE_SIMPLE = "yyyyMMddHHmm";
+    public static final String DATE_MINUTE_SIMPLE = "yyyyMMddHHmm";
 
     /**
      * 时间格式：yyyyMMddHHmmssSSS
      */
-    public static final String DATE_TIME_MILLIS_SIMPLE = "yyyyMMddHHmmssSSS";
+    public static final String DATE_MILLIS_SIMPLE = "yyyyMMddHHmmssSSS";
 
     /**
      * 时间格式：yyyy/MM/dd HH:mm
      */
-    public static final String DATE_TIME_MINUTE_SLASH = "yyyy/MM/dd HH:mm";
+    public static final String DATE_MINUTE_SLASH = "yyyy/MM/dd HH:mm";
 
     /**
      * 时间格式：yyyy/MM/dd HH:mm:ss
@@ -105,30 +146,80 @@ public class DateUtils {
     /**
      * 时间格式：yyyy/MM/dd HH:mm:ss.SSS
      */
-    public static final String DATE_TIME_MILLIS_SLASH = "yyyy/MM/dd HH:mm:ss.SSS";
+    public static final String DATE_MILLIS_SLASH = "yyyy/MM/dd HH:mm:ss.SSS";
 
     /**
-     * 时间格式：yyyy-MM-dd'T'HH:mm:ss
+     * 时间格式：yyyy-MM-dd'T'HH:mm:ssZZ
      */
-    public static final String DATE_TIME_ISO = "yyyy-MM-dd'T'HH:mm:ss";
+    public static final String DATE_TIME_ISO = "yyyy-MM-dd'T'HH:mm:ssZZ";
 
     /**
-     * 时间格式：yyyy-MM-dd'T'HH:mm
+     * 时间格式：yyyy-MM-dd'T'HH:mmZZ
      */
-    public static final String DATE_TIME_MINUTE_ISO = "yyyy-MM-dd'T'HH:mm";
+    public static final String DATE_MINUTE_ISO = "yyyy-MM-dd'T'HH:mmZZ";
 
     /**
-     * 时间格式：yyyy-MM-dd'T'HH:mm:ss.SSS
+     * 时间格式：yyyy-MM-dd'T'HH:mm:ss.SSSZZ
      */
-    public static final String DATE_TIME_MILLIS_ISO = "yyyy-MM-dd'T'HH:mm:ss.SSS";
+    public static final String DATE_MILLIS_ISO = "yyyy-MM-dd'T'HH:mm:ss.SSSZZ";
+
+    /**
+     * 时间格式：yyyy-MM-dd'T'HH:mm:ssZ
+     */
+    public static final String DATE_TIME_ISO2 = "yyyy-MM-dd'T'HH:mm:ssZ";
+
+    /**
+     * 时间格式：yyyy-MM-dd'T'HH:mmZ
+     */
+    public static final String DATE_MINUTE_ISO2 = "yyyy-MM-dd'T'HH:mmZ";
+
+    /**
+     * 时间格式：yyyy-MM-dd'T'HH:mm:ss.SSSZ
+     */
+    public static final String DATE_MILLIS_ISO2 = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
     /**
      * 默认时区
      */
-    public static final ZoneId DEFAULT_ZONE_ID = TimeZone.getTimeZone( "GMT" ).toZoneId();
+    public static final ZoneId DEFAULT_ZONE_ID = TimeZone.getDefault().toZoneId();
 
+    public static final Map<String, String> DATE_FORMAT_MAP = new LinkedHashMap<>() {
+        {
+            put(DATE, "DATE");
+            put(DATE_SIMPLE, "DATE_SIMPLE");
+            put(DATE_SLASH, "DATE_SLASH");
+            put(MONTH, "MONTH");
+            put(MONTH_SLASH, "MONTH_SLASH");
+            put(MONTH_SIMPLE, "MONTH_SIMPLE");
+            put(MONTH_SHORT, "MONTH_SHORT");
+            put(TIME, "TIME");
+            put(TIME_SIMPLE, "TIME_SIMPLE");
+            put(TIME_MINUTE, "TIME_MINUTE");
+            put(TIME_MINUTE_SIMPLE, "TIME_MINUTE_SIMPLE");
+            put(TIME_MILLIS, "TIME_MILLIS");
+            put(TIME_MILLIS_SIMPLE, "TIME_MILLIS_SIMPLE");
+            put(DATE_TIME, "DATE_TIME");
+            put(DATE_MINUTE, "DATE_MINUTE");
+            put(DATE_MILLIS, "DATE_MILLIS");
+            put(DATE_TIME_T, "DATE_TIME_T");
+            put(DATE_MINUTE_T, "DATE_MINUTE_T");
+            put(DATE_MILLIS_T, "DATE_MILLIS_T");
+            put(DATE_TIME_SIMPLE, "DATE_TIME_SIMPLE");
+            put(DATE_MINUTE_SIMPLE, "DATE_MINUTE_SIMPLE");
+            put(DATE_MILLIS_SIMPLE, "DATE_MILLIS_SIMPLE");
+            put(DATE_MINUTE_SLASH, "DATE_MINUTE_SLASH");
+            put(DATE_TIME_SLASH, "DATE_TIME_SLASH");
+            put(DATE_MILLIS_SLASH, "DATE_MILLIS_SLASH");
+            put(DATE_TIME_ISO, "DATE_TIME_ISO");
+            put(DATE_MINUTE_ISO, "DATE_MINUTE_ISO");
+            put(DATE_MILLIS_ISO, "DATE_MILLIS_ISO");
+            put(DATE_TIME_ISO2, "DATE_TIME_ISO2");
+            put(DATE_MINUTE_ISO2, "DATE_MINUTE_ISO2");
+            put(DATE_MILLIS_ISO2, "DATE_MILLIS_ISO2");
+        }
+    };
 
-    private static final Logger logger = LoggerFactory.getLogger( DateUtils.class );
+    private static final Logger logger = LoggerFactory.getLogger(DateUtils.class);
 
 
     //-------------------------------------------------------------------日期格式转换---------------------------------------------------------------
@@ -145,8 +236,8 @@ public class DateUtils {
         if (date == null) {
             return null;
         }
-        FastDateFormat fastDateFormat = FastDateFormat.getInstance( format );
-        return fastDateFormat.format( date );
+        FastDateFormat fastDateFormat = FastDateFormat.getInstance(format);
+        return fastDateFormat.format(date);
     }
 
     /**
@@ -158,11 +249,11 @@ public class DateUtils {
      */
     public static Date stringToDate(String dateString, String format) {
         Date date = null;
-        FastDateFormat fastDateFormat = FastDateFormat.getInstance( format );
+        FastDateFormat fastDateFormat = FastDateFormat.getInstance(format);
         try {
-            date = fastDateFormat.parse( dateString );
+            date = fastDateFormat.parse(dateString);
         } catch (ParseException e) {
-            logger.error( e.getMessage(), e );
+            logger.error(e.getMessage(), e);
         }
         return date;
     }
@@ -175,7 +266,8 @@ public class DateUtils {
      * @return 2017-06-06
      */
     public static String simpleDateStringFormat(String simpleDate) {
-        if (StringUtils.isNotBlank( simpleDate )) return simpleDate.substring( 0, 4 ) + "-" + simpleDate.substring( 4, 6 ) + "-" + simpleDate.substring( 6, 8 );
+        if (StringUtils.isNotBlank(simpleDate))
+            return simpleDate.substring(0, 4) + "-" + simpleDate.substring(4, 6) + "-" + simpleDate.substring(6, 8);
         else return null;
     }
 
@@ -186,8 +278,8 @@ public class DateUtils {
      * @return 2017-06-06
      */
     public static String dateStringSimplify(String simpleDate) {
-        if (StringUtils.isNotBlank( simpleDate ) && simpleDate.length() >= 10)
-            return simpleDate.substring( 0, 4 ) + simpleDate.substring( 5, 7 ) + "-" + simpleDate.substring( 8, 10 );
+        if (StringUtils.isNotBlank(simpleDate) && simpleDate.length() >= 10)
+            return simpleDate.substring(0, 4) + simpleDate.substring(5, 7) + "-" + simpleDate.substring(8, 10);
         else return null;
     }
 
@@ -201,9 +293,9 @@ public class DateUtils {
     public static LocalDate dateToLocalDate(Date date, ZoneId zoneId) {
         Instant instant = date.toInstant();
         if (zoneId == null) {
-            return dateToLocalDate( date );
+            return dateToLocalDate(date);
         }
-        return instant.atZone( zoneId ).toLocalDate();
+        return instant.atZone(zoneId).toLocalDate();
     }
 
     /**
@@ -214,7 +306,7 @@ public class DateUtils {
      */
     public static LocalDate dateToLocalDate(Date date) {
         Instant instant = date.toInstant();
-        return instant.atZone( DEFAULT_ZONE_ID ).toLocalDate();
+        return instant.atZone(DEFAULT_ZONE_ID).toLocalDate();
     }
 
 
@@ -227,10 +319,10 @@ public class DateUtils {
      */
     public static Date localDateToDate(LocalDate localDate, ZoneId zoneId) {
         if (zoneId == null) {
-            return localDateToDate( localDate );
+            return localDateToDate(localDate);
         }
-        ZonedDateTime zonedDateTime = localDate.atStartOfDay( zoneId );
-        return Date.from( zonedDateTime.toInstant() );
+        ZonedDateTime zonedDateTime = localDate.atStartOfDay(zoneId);
+        return Date.from(zonedDateTime.toInstant());
     }
 
 
@@ -241,8 +333,8 @@ public class DateUtils {
      * @return Date
      */
     public static Date localDateToDate(LocalDate localDate) {
-        ZonedDateTime zonedDateTime = localDate.atStartOfDay( DEFAULT_ZONE_ID );
-        return Date.from( zonedDateTime.toInstant() );
+        ZonedDateTime zonedDateTime = localDate.atStartOfDay(DEFAULT_ZONE_ID);
+        return Date.from(zonedDateTime.toInstant());
     }
 
 
@@ -256,7 +348,7 @@ public class DateUtils {
      * @return 偏移后的日期
      */
     public static Date offsetYear(Date date, int offset) {
-        return offset( date, Calendar.YEAR, offset );
+        return offset(date, Calendar.YEAR, offset);
     }
 
     /**
@@ -267,7 +359,7 @@ public class DateUtils {
      * @return 偏移后的日期
      */
     public static Date offsetMonth(Date date, int offset) {
-        return offset( date, Calendar.MONTH, offset );
+        return offset(date, Calendar.MONTH, offset);
     }
 
     /**
@@ -278,7 +370,7 @@ public class DateUtils {
      * @return 偏移后的日期
      */
     public static Date offsetWeek(Date date, int offset) {
-        return offset( date, Calendar.WEEK_OF_YEAR, offset );
+        return offset(date, Calendar.WEEK_OF_YEAR, offset);
     }
 
     /**
@@ -289,7 +381,7 @@ public class DateUtils {
      * @return 偏移后的日期
      */
     public static Date offsetDay(Date date, int offset) {
-        return offset( date, Calendar.DAY_OF_YEAR, offset );
+        return offset(date, Calendar.DAY_OF_YEAR, offset);
     }
 
 
@@ -301,7 +393,7 @@ public class DateUtils {
      * @return 偏移后的日期
      */
     public static Date offsetHour(Date date, int offset) {
-        return offset( date, Calendar.HOUR_OF_DAY, offset );
+        return offset(date, Calendar.HOUR_OF_DAY, offset);
     }
 
     /**
@@ -312,7 +404,7 @@ public class DateUtils {
      * @return 偏移后的日期
      */
     public static Date offsetMinute(Date date, int offset) {
-        return offset( date, Calendar.MINUTE, offset );
+        return offset(date, Calendar.MINUTE, offset);
     }
 
 
@@ -324,7 +416,7 @@ public class DateUtils {
      * @return 偏移后的日期
      */
     public static Date offsetSecond(Date date, int offset) {
-        return offset( date, Calendar.SECOND, offset );
+        return offset(date, Calendar.SECOND, offset);
     }
 
 
@@ -338,8 +430,8 @@ public class DateUtils {
      */
     public static Date offset(Date date, int dateField, int offset) {
         Calendar calendar = Calendar.getInstance();
-        calendar.setTime( date );
-        calendar.add( dateField, offset );
+        calendar.setTime(date);
+        calendar.add(dateField, offset);
         return calendar.getTime();
     }
 
@@ -356,9 +448,9 @@ public class DateUtils {
     public static boolean isSameDay(Date day1, Date day2) {
         Calendar firstCal = Calendar.getInstance();
         Calendar secondCal = Calendar.getInstance();
-        firstCal.setTime( day1 );
-        secondCal.setTime( day2 );
-        return (firstCal.get( Calendar.YEAR ) == secondCal.get( Calendar.YEAR )) && (firstCal.get( Calendar.MONTH ) == secondCal.get( Calendar.MONTH )) && (firstCal.get( Calendar.DAY_OF_MONTH ) == secondCal.get( Calendar.DAY_OF_MONTH ));
+        firstCal.setTime(day1);
+        secondCal.setTime(day2);
+        return (firstCal.get(Calendar.YEAR) == secondCal.get(Calendar.YEAR)) && (firstCal.get(Calendar.MONTH) == secondCal.get(Calendar.MONTH)) && (firstCal.get(Calendar.DAY_OF_MONTH) == secondCal.get(Calendar.DAY_OF_MONTH));
     }
 
 
@@ -381,7 +473,7 @@ public class DateUtils {
      * @return
      */
     public static long minutesDiff(Date firstDate, Date secondDate) {
-        return Math.abs( secondDate.getTime() - firstDate.getTime() ) / (1000 * 60);
+        return Math.abs(secondDate.getTime() - firstDate.getTime()) / (1000 * 60);
     }
 
 
@@ -395,13 +487,13 @@ public class DateUtils {
     public static List<LocalDate> getDatesBetween(Date startDate, Date endDate) {
         List<LocalDate> dates = new ArrayList<>();
 
-        LocalDate startLocalDate = dateToLocalDate( startDate );
-        LocalDate endLocalDate = dateToLocalDate( endDate );
+        LocalDate startLocalDate = dateToLocalDate(startDate);
+        LocalDate endLocalDate = dateToLocalDate(endDate);
         LocalDate currentDate = startLocalDate;
 
-        while (!currentDate.isAfter( endLocalDate )) {
-            dates.add( currentDate );
-            currentDate = currentDate.plusDays( 1 );
+        while (!currentDate.isAfter(endLocalDate)) {
+            dates.add(currentDate);
+            currentDate = currentDate.plusDays(1);
         }
         return dates;
     }
@@ -419,9 +511,9 @@ public class DateUtils {
     public static int dayOfMonth(Date date) {
         // 使用 Calendar 获取日期信息
         Calendar calendar = Calendar.getInstance();
-        calendar.setTime( date );
+        calendar.setTime(date);
         // 获取该日期是所在月份的第几天
-        return calendar.get( Calendar.DAY_OF_MONTH );
+        return calendar.get(Calendar.DAY_OF_MONTH);
     }
 
     /**
@@ -433,9 +525,9 @@ public class DateUtils {
     public static int getDayOfWeek(Date date) {
         // 使用 Calendar 获取日期信息
         Calendar calendar = Calendar.getInstance();
-        calendar.setTime( date );
+        calendar.setTime(date);
 
-        int dayInt = calendar.get( Calendar.DAY_OF_WEEK ) - 1;
+        int dayInt = calendar.get(Calendar.DAY_OF_WEEK) - 1;
         if (dayInt == 0) {
             dayInt = 7;
         }
@@ -461,14 +553,14 @@ public class DateUtils {
      */
     public static Date beginOfYear(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) );
-        cal.set( Calendar.MONTH, 0 );
-        cal.set( Calendar.DATE, 1 );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, 0);
+        cal.set(Calendar.DATE, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -480,14 +572,14 @@ public class DateUtils {
      */
     public static Date beginOfLastYear(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) - 1 );
-        cal.set( Calendar.MONTH, 0 );
-        cal.set( Calendar.DATE, 1 );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR) - 1);
+        cal.set(Calendar.MONTH, 0);
+        cal.set(Calendar.DATE, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -500,14 +592,14 @@ public class DateUtils {
      */
     public static Date beginOfNextYear(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) + 1 );
-        cal.set( Calendar.MONTH, 0 );
-        cal.set( Calendar.DATE, 1 );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR) + 1);
+        cal.set(Calendar.MONTH, 0);
+        cal.set(Calendar.DATE, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -520,14 +612,14 @@ public class DateUtils {
      */
     public static Date beginOfMonth(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) );
-        cal.set( Calendar.MONTH, cal.get( Calendar.MONTH ) );
-        cal.set( Calendar.DATE, 1 );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+        cal.set(Calendar.DATE, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -539,14 +631,14 @@ public class DateUtils {
      */
     public static Date beginOfLastMonth(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) );
-        cal.set( Calendar.MONTH, cal.get( Calendar.MONTH ) - 1 );
-        cal.set( Calendar.DATE, 1 );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH) - 1);
+        cal.set(Calendar.DATE, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -559,14 +651,14 @@ public class DateUtils {
      */
     public static Date beginOfNextMonth(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) );
-        cal.set( Calendar.MONTH, cal.get( Calendar.MONTH ) + 1 );
-        cal.set( Calendar.DATE, 1 );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH) + 1);
+        cal.set(Calendar.DATE, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -578,14 +670,14 @@ public class DateUtils {
      */
     public static Date beginOfToday(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) );
-        cal.set( Calendar.MONTH, cal.get( Calendar.MONTH ) );
-        cal.set( Calendar.DATE, cal.get( Calendar.DAY_OF_MONTH ) );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+        cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH));
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -597,14 +689,14 @@ public class DateUtils {
      */
     public static Date beginOfYesterday(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) );
-        cal.set( Calendar.MONTH, cal.get( Calendar.MONTH ) );
-        cal.set( Calendar.DATE, cal.get( Calendar.DAY_OF_MONTH ) - 1 );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+        cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH) - 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -617,14 +709,14 @@ public class DateUtils {
      */
     public static Date beginOfTomorrow(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) );
-        cal.set( Calendar.MONTH, cal.get( Calendar.MONTH ) );
-        cal.set( Calendar.DATE, cal.get( Calendar.DAY_OF_MONTH ) + 1 );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+        cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH) + 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -637,15 +729,15 @@ public class DateUtils {
      */
     public static Date endOfYear(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) + 1 );
-        cal.set( Calendar.MONTH, 0 );
-        cal.set( Calendar.DATE, 1 );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
-        return new Date( cal.getTimeInMillis() - 1 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR) + 1);
+        cal.set(Calendar.MONTH, 0);
+        cal.set(Calendar.DATE, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
 
     /**
@@ -656,15 +748,15 @@ public class DateUtils {
      */
     public static Date endOfLastYear(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) );
-        cal.set( Calendar.MONTH, 0 );
-        cal.set( Calendar.DATE, 1 );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
-        return new Date( cal.getTimeInMillis() - 1 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, 0);
+        cal.set(Calendar.DATE, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
 
 
@@ -676,15 +768,15 @@ public class DateUtils {
      */
     public static Date endOfNextYear(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) + 2 );
-        cal.set( Calendar.MONTH, 0 );
-        cal.set( Calendar.DATE, 1 );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
-        return new Date( cal.getTimeInMillis() - 1 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR) + 2);
+        cal.set(Calendar.MONTH, 0);
+        cal.set(Calendar.DATE, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
 
 
@@ -696,15 +788,15 @@ public class DateUtils {
      */
     public static Date endOfMonth(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) );
-        cal.set( Calendar.MONTH, cal.get( Calendar.MONTH ) + 1 );
-        cal.set( Calendar.DATE, 1 );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
-        return new Date( cal.getTimeInMillis() - 1 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH) + 1);
+        cal.set(Calendar.DATE, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
 
     /**
@@ -715,15 +807,15 @@ public class DateUtils {
      */
     public static Date endOfLastMonth(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) );
-        cal.set( Calendar.MONTH, cal.get( Calendar.MONTH ) );
-        cal.set( Calendar.DATE, 1 );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
-        return new Date( cal.getTimeInMillis() - 1 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+        cal.set(Calendar.DATE, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
 
 
@@ -735,15 +827,15 @@ public class DateUtils {
      */
     public static Date endOfNextMonth(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) );
-        cal.set( Calendar.MONTH, cal.get( Calendar.MONTH ) + 2 );
-        cal.set( Calendar.DATE, 1 );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
-        return new Date( cal.getTimeInMillis() - 1 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH) + 2);
+        cal.set(Calendar.DATE, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
 
     /**
@@ -754,15 +846,15 @@ public class DateUtils {
      */
     public static Date endOfToday(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) );
-        cal.set( Calendar.MONTH, cal.get( Calendar.MONTH ) );
-        cal.set( Calendar.DATE, cal.get( Calendar.DAY_OF_MONTH ) + 1 );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
-        return new Date( cal.getTimeInMillis() - 1 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+        cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH) + 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
 
     /**
@@ -773,15 +865,15 @@ public class DateUtils {
      */
     public static Date endOfYesterday(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) );
-        cal.set( Calendar.MONTH, cal.get( Calendar.MONTH ) );
-        cal.set( Calendar.DATE, cal.get( Calendar.DAY_OF_MONTH ) );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
-        return new Date( cal.getTimeInMillis() - 1 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+        cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH));
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
 
 
@@ -793,15 +885,184 @@ public class DateUtils {
      */
     public static Date endOfTomorrow(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set( Calendar.YEAR, cal.get( Calendar.YEAR ) );
-        cal.set( Calendar.MONTH, cal.get( Calendar.MONTH ) );
-        cal.set( Calendar.DATE, cal.get( Calendar.DAY_OF_MONTH ) + 2 );
-        cal.set( Calendar.HOUR_OF_DAY, 0 );
-        cal.set( Calendar.MINUTE, 0 );
-        cal.set( Calendar.SECOND, 0 );
-        cal.set( Calendar.MILLISECOND, 0 );
-        return new Date( cal.getTimeInMillis() - 1 );
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+        cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH) + 2);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
 
+    /**
+     * 生成自动匹配的日期格式的代码。
+     * 内部使用。
+     *
+     * @return
+     */
+    private static String genFitPatternCode() {
+        Map<Integer, List<String>> map = DATE_FORMAT_MAP.keySet().stream().collect(Collectors.groupingBy(p -> {
+            String t = p.replace("'T'", "T");
+            if (t.contains("Z")) {
+                return t.length() + 4;
+            } else {
+                return t.length();
+            }
+        }, Collectors.toList()));
+        StringBuilder sb = new StringBuilder();
+        sb.append("switch(dateString.length()) {\n");
+        for (Map.Entry<Integer, List<String>> entry : map.entrySet()) {
+            sb.append("\tcase ").append(entry.getKey()).append(" ->\n");
+            sb.append("\t\t// ");
+            List<String> formatList = entry.getValue();
+            for (String format : formatList) {
+                sb.append(DATE_FORMAT_MAP.get(format)).append("(");
+                sb.append(format).append(") ");
+            }
+            sb.append("\n");
+            sb.append("\t\t").append(DATE_FORMAT_MAP.get(formatList.getFirst())).append(";");
+            sb.append("\n");
+        }
+        sb.append("\tdefault: \n\t\treturn null;\n");
+        sb.append("}");
+        return sb.toString();
+    }
+
+    /**
+     * 根据日期字符串获取匹配的格式化模式。
+     *
+     * @param dateString
+     * @return
+     */
+    public static String getFitFormatPatten(String dateString) {
+        if (dateString == null) {
+            return null;
+        }
+        return switch (dateString.length()) {
+            case 4 ->
+                // TIME_MINUTE_SIMPLE(HHmm)
+                    TIME_MINUTE_SIMPLE;
+            case 5 ->
+                // TIME_MINUTE(HH:mm)
+                    TIME_MINUTE;
+            case 6 ->
+                // TIME_SIMPLE(HHmmss)
+                    MONTH_SIMPLE;
+            case 7 ->
+                // MONTH(yyyy-MM) MONTH_SLASH(yyyy/MM)
+                    dateString.contains("/") ? MONTH_SLASH : MONTH;
+            case 8 ->
+                // DATE_SIMPLE(yyyyMMdd) TIME(HH:mm:ss)
+                    dateString.contains(":") ? TIME : DATE_SIMPLE;
+            case 9 ->
+                // TIME_MILLIS_SIMPLE(HHmmssSSS)
+                    TIME_MILLIS_SIMPLE;
+            case 10 ->
+                // DATE(yyyy-MM-dd) DATE_SLASH(yyyy/MM/dd)
+                    dateString.contains("/") ? DATE_SLASH : DATE;
+            case 12 ->
+                // TIME_MILLIS(HH:mm:ss.SSS) DATE_MINUTE_SIMPLE(yyyyMMddHHmm)
+                    dateString.contains(":") ? DATE_MILLIS_SIMPLE : DATE_MINUTE_SIMPLE;
+            case 14 ->
+                // DATE_TIME_SIMPLE(yyyyMMddHHmmss)
+                    DATE_TIME_SIMPLE;
+            case 16 ->
+                // DATE_MINUTE(yyyy-MM-dd HH:mm) DATE_MINUTE_SLASH(yyyy/MM/dd HH:mm)
+                    dateString.contains("T") ? DATE_MINUTE_T : dateString.contains("/") ? DATE_MINUTE_SLASH : DATE_MINUTE;
+            case 17 ->
+                // DATE_MILLIS_SIMPLE(yyyyMMddHHmmssSSS)
+                    DATE_MILLIS_SIMPLE;
+            case 19 ->
+                // DATE_TIME(yyyy-MM-dd HH:mm:ss) DATE_TIME_SLASH(yyyy/MM/dd HH:mm:ss)
+                    dateString.contains("T") ? DATE_TIME_T : dateString.contains("-") ? DATE_TIME : DATE_TIME_SLASH;
+            case 21 ->
+                // DATE_MINUTE_ISO2(yyyy-MM-dd'T'HH:mmZ)
+                    DATE_MINUTE_ISO2;
+            case 22 ->
+                // DATE_MINUTE_ISO(yyyy-MM-dd'T'HH:mmZZ)
+                    DATE_MINUTE_ISO;
+            case 23 ->
+                // DATE_MILLIS(yyyy-MM-dd HH:mm:ss.SSS) DATE_MILLIS_SLASH(yyyy/MM/dd HH:mm:ss.SSS)
+                    dateString.contains("T") ? DATE_MILLIS_T : dateString.contains("-") ? DATE_MILLIS : DATE_MILLIS_SLASH;
+            case 24 ->
+                // DATE_TIME_ISO2(yyyy-MM-dd'T'HH:mm:ssZ)
+                    DATE_TIME_ISO2;
+            case 25 ->
+                // DATE_TIME_ISO(yyyy-MM-dd'T'HH:mm:ssZZ)
+                    DATE_TIME_ISO;
+            case 28 ->
+                // DATE_MILLIS_ISO2(yyyy-MM-dd'T'HH:mm:ss.SSSZ)
+                    DATE_MILLIS_ISO2;
+            case 29 ->
+                // DATE_MILLIS_ISO(yyyy-MM-dd'T'HH:mm:ss.SSSZZ)
+                    DATE_MILLIS_ISO;
+            default -> null;
+        };
+    }
+
+    /**
+     * 将字符串转换为Date实例。
+     *
+     * @param dateString 2016-10-12
+     * @return Date实例
+     */
+    public static Date stringToDate(String dateString) {
+        if (dateString == null) {
+            return null;
+        }
+        //  处理UTC时区的特殊情况
+        if (dateString.endsWith("Z")) {
+            dateString = dateString.substring(0, dateString.length() - 1) + "+00:00";
+        }
+        //  根据字符串获取匹配的格式化模式。
+        String formatPatten = getFitFormatPatten(dateString);
+        if (formatPatten == null) {
+            return null;
+        }
+        return stringToDate(dateString, formatPatten);
+    }
+
+//    public static void main(String[] args) {
+////        System.out.println(genFitPatternCode());
+//
+//        String[] testDates = {
+//                "2023-10-05",
+//                "20231005",
+//                "2023/10/05",
+//                "2023-10",
+//                "2023/10",
+//                "202310",
+//                "2310",
+//                "12:34:56",
+//                "123456",
+//                "12:34",
+//                "1234",
+//                "2023-10-05 12:34:56",
+//                "2023-10-05 12:34",
+//                "2023-10-05 12:34:56.789",
+//                "20231005123456",
+//                "202310051234",
+//                "20231005123456789",
+//                "2023/10/05 12:34",
+//                "2023/10/05 12:34:56",
+//                "2023/10/05 12:34:56.789",
+//                "2023-10-05T12:34:56+0800",
+//                "2023-10-05T12:34+0800",
+//                "2023-10-05T12:34:56.789+0800",
+//                "2023-10-05T12:34:56Z",
+//                "2023-10-05T12:34Z",
+//                "2023-10-05T12:34:56.789Z"
+//        };
+//
+//        for (String dateStr : testDates) {
+//            java.util.Date parsedDate = stringToDate(dateStr);
+//            if (parsedDate != null) {
+//                System.out.println(dateStr + " -> " + parsedDate);
+//            } else {
+//                System.out.println(dateStr + " -> 解析失败");
+//            }
+//        }
+//    }
 }

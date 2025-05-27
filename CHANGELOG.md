@@ -1,3 +1,12 @@
+# 2025.0501.1026版本升级说明
+1. uw-common: DateUtils新增stringToDate()新增自动高效解析日期格式的方法，可以自动识别日期格式。 
+2. uw-common: JsonUtils针对日期格式进行处理，使用默认时区，可以自动解析日期格式。 
+3. uw-common-app: 优化spring mvc的RequestParam和Json对于多种日期格式的适配处理。 
+4. uw-dao: DataUpdateInfo变更对象由Pair更换为UpdateInfo，解决初始值为null导致的异常。 
+5. uw-httpclient: 更新了ObjectMapper的初始化参数，和JsonUtils同步。
+6. uw-log-es: 优化批量插入后的逻辑，增加在状态码200但逻辑报错情况下的错误日志。
+7. uw-logback-es: 优化日期格式的处理，默认使用ISO8601格式。
+
 # 2025.0501.1025版本升级说明
 1. uw-auth-service: 将默认受保护路径修改为全局匹配，全面接管权限控制。
 2. uw-auth-service: 重构权限验证流程，支持无权限模式。

@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * 编码工具类
  */
-public class EncoderUtils {
+public class JsonEncoderUtils {
 
     /**
      * 日志编码
@@ -26,7 +26,7 @@ public class EncoderUtils {
     /**
      * 换行符字节
      */
-    public static final byte[] LINE_SEPARATOR_BYTES = LINE_SEPARATOR.getBytes(EncoderUtils.LOG_CHARSET);
+    public static final byte[] LINE_SEPARATOR_BYTES = LINE_SEPARATOR.getBytes(JsonEncoderUtils.LOG_CHARSET);
 
     /**
      * 转义引号。

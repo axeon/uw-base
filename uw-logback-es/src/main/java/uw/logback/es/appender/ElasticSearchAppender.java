@@ -15,7 +15,7 @@ import uw.httpclient.http.HttpInterface;
 import uw.httpclient.json.JsonInterfaceHelper;
 import uw.httpclient.util.BufferRequestBody;
 import uw.httpclient.util.MediaTypes;
-import uw.logback.es.util.EncoderUtils;
+import uw.logback.es.util.JsonEncoderUtils;
 import uw.logback.es.util.ThrowableProxyUtils;
 
 import javax.management.MBeanServer;
@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -162,138 +161,263 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
         processLogBucket();
     }
 
+    /**
+     * 获取刷新Bucket时间秒数
+     */
     @Override
     public long getMaxFlushInSeconds() {
         return maxFlushInSeconds;
     }
 
+    /**
+     * 设置刷新Bucket时间秒数
+     * @param maxFlushInSeconds
+     */
+    @Override
     public void setMaxFlushInSeconds(long maxFlushInSeconds) {
         this.maxFlushInSeconds = maxFlushInSeconds;
     }
 
-    @Override
-    public void changeMaxFlushInSeconds(long maxFlushInSeconds) {
-        setMaxFlushInSeconds(maxFlushInSeconds);
-    }
-
+    /**
+     * 获取允许最大Bucket字节数。
+     */
     @Override
     public long getMaxKiloBytesOfBatch() {
         return maxKiloBytesOfBatch;
     }
 
+    /**
+     * 设置允许最大Bucket字节数。
+     * @param maxKiloBytesOfBatch
+     */
     @Override
-    public void changeMaxBytesOfBatch(long maxKiloBytesOfBatch) {
-        setMaxKiloBytesOfBatch(maxKiloBytesOfBatch);
-    }
-
     public void setMaxKiloBytesOfBatch(long maxKiloBytesOfBatch) {
         this.maxKiloBytesOfBatch = maxKiloBytesOfBatch;
     }
 
+    /**
+     * 获取Elasticsearch Web API endpoint
+     * @return
+     */
+    @Override
     public String getEsServer() {
         return esServer;
     }
 
+    /**
+     * 设置Elasticsearch Web API endpoint
+     * @param esServer
+     */
     public void setEsServer(String esServer) {
         this.esServer = esServer;
     }
 
+    /**
+     * 获取Elasticsearch bulk api endpoint
+     * @return
+     */
+    @Override
     public String getEsBulk() {
         return esBulk;
     }
 
+    /**
+     * 设置Elasticsearch bulk api endpoint
+     * @param esBulk
+     */
     public void setEsBulk(String esBulk) {
         this.esBulk = esBulk;
     }
 
+    /**
+     * 获取es用户名
+     * @return
+     */
+    @Override
     public String getEsUsername() {
         return esUsername;
     }
 
+    /**
+     * 设置es用户名
+     * @param esUsername
+     */
     public void setEsUsername(String esUsername) {
         this.esUsername = esUsername;
     }
 
+    /**
+     * 获取es密码
+     * @return
+     */
     public String getEsPassword() {
         return esPassword;
     }
 
+    /**
+     * 设置es密码
+     * @param esPassword
+     */
     public void setEsPassword(String esPassword) {
         this.esPassword = esPassword;
     }
 
+    /**
+     * 获取ES索引
+     * @return
+     */
+    @Override
     public String getEsIndex() {
         return esIndex;
     }
 
+    /**
+     * 设置ES索引
+     * @param esIndex
+     */
     public void setEsIndex(String esIndex) {
         this.esIndex = esIndex;
     }
 
+    /**
+     * 获取ES索引后缀
+     * @return
+     */
+    @Override
     public String getEsIndexSuffix() {
         return esIndexSuffix;
     }
 
+    /**
+     * 设置ES索引后缀
+     * @param esIndexSuffix
+     */
     public void setEsIndexSuffix(String esIndexSuffix) {
         this.esIndexSuffix = esIndexSuffix;
     }
 
+    /**
+     * 获取批量线程数
+     * @return
+     */
+    @Override
     public int getMaxBatchThreads() {
         return maxBatchThreads;
     }
 
+    /**
+     * 设置批量线程数
+     * @param maxBatchThreads
+     */
     public void setMaxBatchThreads(int maxBatchThreads) {
         this.maxBatchThreads = maxBatchThreads;
     }
 
+    /**
+     * 获取批量线程队列数
+     * @return
+     */
+    @Override
     public int getMaxBatchQueueSize() {
         return maxBatchQueueSize;
     }
 
+    /**
+     * 设置批量线程队列数
+     * @param maxBatchQueueSize
+     */
     public void setMaxBatchQueueSize(int maxBatchQueueSize) {
         this.maxBatchQueueSize = maxBatchQueueSize;
     }
 
+    /**
+     * 是否开启JMX监控
+     * @return
+     */
     public boolean isJmxMonitoring() {
         return jmxMonitoring;
     }
 
+    /**
+     * 设置是否开启JMX监控
+     * @param jmxMonitoring
+     */
     public void setJmxMonitoring(boolean jmxMonitoring) {
         this.jmxMonitoring = jmxMonitoring;
     }
 
+    /**
+     * 获取应用主机名
+     * @return
+     */
+    @Override
     public String getAppHost() {
         return appHost;
     }
 
+    /**
+     * 设置应用主机名
+     * @param appHost
+     */
     public void setAppHost(String appHost) {
         this.appHost = appHost;
     }
 
+    /**
+     * 获取应用信息
+     * @return
+     */
+    @Override
     public String getAppInfo() {
         return appInfo;
     }
 
+    /**
+     * 设置应用信息
+     * @param appInfo
+     */
     public void setAppInfo(String appInfo) {
         this.appInfo = appInfo;
     }
 
+    /**
+     * 获取Throwable最大堆栈深度
+     * @return
+     */
+    @Override
     public int getMaxDepthPerThrowable() {
         return maxDepthPerThrowable;
     }
 
+    /**
+     * 设置Throwable最大堆栈深度
+     * @param maxDepthPerThrowable
+     */
     public void setMaxDepthPerThrowable(int maxDepthPerThrowable) {
         this.maxDepthPerThrowable = maxDepthPerThrowable;
     }
 
+    /**
+     * 获取Throwable排除的key
+     * @return
+     */
+    @Override
     public String getExcludeThrowableKeys() {
         return excludeThrowableKeys;
     }
 
+    /**
+     * 设置Throwable排除的key
+     * @param excludeThrowableKeys
+     */
     public void setExcludeThrowableKeys(String excludeThrowableKeys) {
         this.excludeThrowableKeys = excludeThrowableKeys;
     }
 
+    /**
+     * 附加日志。
+     * @param event
+     */
     @Override
     protected void append(Event event) {
         if (!isStarted()) {
@@ -321,6 +445,9 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
         }
     }
 
+    /**
+     * 启动。
+     */
     @Override
     public void start() {
         if (StringUtils.isBlank(esServer)) {
@@ -345,7 +472,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
             ThrowableProxyUtils.ExcludeThrowableKeys = excludeThrowableKeys.split(",");
         }
         if (jmxMonitoring) {
-            String objectName = "uw.logback.es:type=ElasticsearchBatchAppender,name=ElasticsearchBatchAppender@" + System.identityHashCode(this);
+            String objectName = "uw.logback.es:type=ElasticsearchAppender,name=ElasticsearchAppender@" + System.identityHashCode(this);
             try {
                 registeredObjectName = mbeanServer.registerMBean(this, new ObjectName(objectName)).getObjectName();
             } catch (Exception e) {
@@ -353,13 +480,8 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
             }
         }
         this.needBasicAuth = StringUtils.isNotBlank(esUsername) && StringUtils.isNotBlank(esPassword);
-        batchExecutor = new ThreadPoolExecutor(1, maxBatchThreads, 30, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(maxBatchQueueSize),
-                new ThreadFactoryBuilder().setDaemon(true).setNameFormat("logback-es-batch-%d").build(), new RejectedExecutionHandler() {
-            @Override
-            public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                addError("Logback ES Batch Task " + r.toString() + " rejected from " + executor.toString());
-            }
-        });
+        batchExecutor = new ThreadPoolExecutor(1, maxBatchThreads, 30, TimeUnit.SECONDS, new ArrayBlockingQueue<>(maxBatchQueueSize),
+                new ThreadFactoryBuilder().setDaemon(true).setNameFormat("logback-es-batch-%d").build(), (r, executor) -> addError("Logback ES Batch Task " + r.toString() + " rejected from " + executor.toString()));
 
         daemonExporter = new ElasticsearchDaemonExporter();
         daemonExporter.setName("logback-es-monitor");
@@ -369,6 +491,9 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
         super.start();
     }
 
+    /**
+     * 停止。
+     */
     @Override
     public void stop() {
         if (!isStarted()) {
@@ -400,13 +525,13 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
      */
     private okio.Buffer fillBuffer(Event event) throws IOException {
         okio.Buffer okb = new okio.Buffer();
-        okb.writeUtf8("{\"create\":{\"_index\":\"").writeUtf8(esIndexFullName).writeUtf8("\"},\"_source\":false}").write(EncoderUtils.LINE_SEPARATOR_BYTES);
-        okb.writeUtf8("{\"@timestamp\":\"").writeUtf8(EncoderUtils.DATE_FORMAT.format(event.getTimeStamp())).writeUtf8("\",");
+        okb.writeUtf8("{\"create\":{\"_index\":\"").writeUtf8(esIndexFullName).writeUtf8("\"},\"_source\":false}").write(JsonEncoderUtils.LINE_SEPARATOR_BYTES);
+        okb.writeUtf8("{\"@timestamp\":\"").writeUtf8(JsonEncoderUtils.DATE_FORMAT.format(event.getTimeStamp())).writeUtf8("\",");
         okb.writeUtf8("\"appName\":\"").writeUtf8(appInfo).writeUtf8("\",");
         okb.writeUtf8("\"appHost\":\"").writeUtf8(appHost).writeUtf8("\",");
         okb.writeUtf8("\"level\":\"").writeUtf8(event.getLevel().toString()).writeUtf8("\",");
         okb.writeUtf8("\"logger\":\"").writeUtf8(event.getLoggerName()).writeUtf8("\",");
-        okb.writeUtf8("\"message\":\"").writeUtf8(EncoderUtils.escapeJSON(event.getFormattedMessage())).writeUtf8("\",");
+        okb.writeUtf8("\"message\":\"").writeUtf8(JsonEncoderUtils.escapeJSON(event.getFormattedMessage())).writeUtf8("\",");
         okb.writeUtf8("\"thread\":\"").writeUtf8(event.getThreadName()).writeUtf8("\"");
         IThrowableProxy throwableProxy = event.getThrowableProxy();
         if (throwableProxy != null) {
@@ -415,7 +540,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
             okb.writeUtf8("\"");
         }
         okb.writeUtf8("}");
-        okb.write(EncoderUtils.LINE_SEPARATOR_BYTES);
+        okb.write(JsonEncoderUtils.LINE_SEPARATOR_BYTES);
         return okb;
     }
 
@@ -433,7 +558,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
     }
 
     /**
-     * Send buffer to Elasticsearch
+     * 处理日志桶。
      */
     private void processLogBucket() {
         okio.Buffer bufferData = null;

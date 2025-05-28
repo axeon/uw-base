@@ -44,19 +44,19 @@ public class ResponseData<T> {
     /**
      * 成功常量，不带时间戳。
      */
-    public static final ResponseData SUCCESS = new ResponseData(0, null, STATE_SUCCESS, null, null);
+    public static final ResponseData<?> SUCCESS = new ResponseData<>(0, null, STATE_SUCCESS, null, null);
     /**
      * 警告常量，不带时间戳。
      */
-    public static final ResponseData WARN = new ResponseData(0, STATE_WARN, null, null);
+    public static final ResponseData<?> WARN = new ResponseData<>(0, null, STATE_WARN, null, null);
     /**
      * 失败常量，不带时间戳。
      */
-    public static final ResponseData ERROR = new ResponseData(0, STATE_ERROR, null, null);
+    public static final ResponseData<?> ERROR = new ResponseData<>(0, null, STATE_ERROR, null, null);
     /**
      * 严重错误常量，不带时间戳。
      */
-    public static final ResponseData FATAL = new ResponseData(0, STATE_FATAL, null, null);
+    public static final ResponseData<?> FATAL = new ResponseData<>(0, null, STATE_FATAL, null, null);
     /**
      * 响应时间
      */
@@ -133,7 +133,7 @@ public class ResponseData<T> {
      * @param msg
      */
     public static <T> ResponseData<T> of(long time, T data, String state, String code, String msg) {
-        return new ResponseData<T>(time, data, state, code, msg);
+        return new ResponseData<>(time, data, state, code, msg);
     }
 
     /**
@@ -147,7 +147,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> of(T data, String state, String code, String msg) {
-        return new ResponseData<T>(SystemClock.now(), data, state, code, msg);
+        return new ResponseData<>(SystemClock.now(), data, state, code, msg);
     }
 
     /**
@@ -160,7 +160,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> of(String state, String code, String msg) {
-        return new ResponseData<T>(SystemClock.now(), null, state, code, msg);
+        return new ResponseData<>(SystemClock.now(), null, state, code, msg);
     }
 
     /**
@@ -169,7 +169,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> success() {
-        return new ResponseData<T>(null, STATE_SUCCESS, null, null);
+        return new ResponseData<>(null, STATE_SUCCESS, null, null);
     }
 
     /**
@@ -178,7 +178,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> success(T t) {
-        return new ResponseData<T>(t, STATE_SUCCESS, null, null);
+        return new ResponseData<>(t, STATE_SUCCESS, null, null);
     }
 
     /**
@@ -187,7 +187,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> success(T t, String code) {
-        return new ResponseData<T>(t, STATE_SUCCESS, code, null);
+        return new ResponseData<>(t, STATE_SUCCESS, code, null);
     }
 
     /**
@@ -196,7 +196,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> success(T t, String code, String msg) {
-        return new ResponseData<T>(t, STATE_SUCCESS, code, msg);
+        return new ResponseData<>(t, STATE_SUCCESS, code, msg);
     }
 
     /**
@@ -204,8 +204,8 @@ public class ResponseData<T> {
      *
      * @return
      */
-    public static <T> ResponseData<T> success(T t, ResponseData responseData) {
-        return new ResponseData<T>(t, STATE_SUCCESS, responseData.getCode(), responseData.getMsg());
+    public static <T> ResponseData<T> success(T t, ResponseData<?> responseData) {
+        return new ResponseData<>(t, STATE_SUCCESS, responseData.getCode(), responseData.getMsg());
     }
 
     /**
@@ -214,7 +214,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> success(T t, ResponseCode responseCode) {
-        return new ResponseData<T>(t, STATE_SUCCESS, responseCode.getFullCode(), responseCode.getLocalizedMessage());
+        return new ResponseData<>(t, STATE_SUCCESS, responseCode.getFullCode(), responseCode.getLocalizedMessage());
     }
 
     /**
@@ -237,7 +237,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> successCode(String code) {
-        return new ResponseData<T>(null, STATE_SUCCESS, code, null);
+        return new ResponseData<>(null, STATE_SUCCESS, code, null);
     }
 
     /**
@@ -247,7 +247,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> successCode(String code, String msg) {
-        return new ResponseData<T>(null, STATE_SUCCESS, code, msg);
+        return new ResponseData<>(null, STATE_SUCCESS, code, msg);
     }
 
     /**
@@ -256,7 +256,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> successCode(ResponseCode responseCode) {
-        return new ResponseData<T>(null, STATE_SUCCESS, responseCode.getFullCode(), responseCode.getLocalizedMessage());
+        return new ResponseData<>(null, STATE_SUCCESS, responseCode.getFullCode(), responseCode.getLocalizedMessage());
     }
 
     /**
@@ -276,8 +276,8 @@ public class ResponseData<T> {
      *
      * @return
      */
-    public static <T> ResponseData<T> successCode(ResponseData responseData) {
-        return new ResponseData<T>(null, STATE_SUCCESS, responseData.getCode(), responseData.getMsg());
+    public static <T> ResponseData<T> successCode(ResponseData<?> responseData) {
+        return new ResponseData<>(null, STATE_SUCCESS, responseData.getCode(), responseData.getMsg());
     }
 
     /**
@@ -287,7 +287,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> successMsg(String msg) {
-        return new ResponseData<T>(null, STATE_SUCCESS, null, msg);
+        return new ResponseData<>(null, STATE_SUCCESS, null, msg);
     }
 
     /**
@@ -296,7 +296,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> warn() {
-        return new ResponseData<T>(null, STATE_WARN, null, null);
+        return new ResponseData<>(null, STATE_WARN, null, null);
     }
 
     /**
@@ -305,7 +305,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> warn(T t) {
-        return new ResponseData<T>(t, STATE_WARN, null, null);
+        return new ResponseData<>(t, STATE_WARN, null, null);
     }
 
     /**
@@ -314,7 +314,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> warn(T t, String code) {
-        return new ResponseData<T>(t, STATE_WARN, code, null);
+        return new ResponseData<>(t, STATE_WARN, code, null);
     }
 
     /**
@@ -323,7 +323,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> warn(T t, String code, String msg) {
-        return new ResponseData<T>(t, STATE_WARN, code, msg);
+        return new ResponseData<>(t, STATE_WARN, code, msg);
     }
 
     /**
@@ -334,8 +334,8 @@ public class ResponseData<T> {
      * @param <T>
      * @return
      */
-    public static <T> ResponseData<T> warn(T t, ResponseData responseData) {
-        return new ResponseData<T>(t, STATE_WARN, responseData.getCode(), responseData.getMsg());
+    public static <T> ResponseData<T> warn(T t, ResponseData<?> responseData) {
+        return new ResponseData<>(t, STATE_WARN, responseData.getCode(), responseData.getMsg());
     }
 
     /**
@@ -347,7 +347,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> warn(T t, ResponseCode responseCode) {
-        return new ResponseData<T>(t, STATE_WARN, responseCode.getFullCode(), responseCode.getLocalizedMessage());
+        return new ResponseData<>(t, STATE_WARN, responseCode.getFullCode(), responseCode.getLocalizedMessage());
     }
 
     /**
@@ -370,7 +370,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> warnCode(String code) {
-        return new ResponseData<T>(null, STATE_WARN, code, null);
+        return new ResponseData<>(null, STATE_WARN, code, null);
     }
 
     /**
@@ -380,7 +380,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> warnCode(String code, String msg) {
-        return new ResponseData<T>(null, STATE_WARN, code, msg);
+        return new ResponseData<>(null, STATE_WARN, code, msg);
     }
 
     /**
@@ -390,8 +390,8 @@ public class ResponseData<T> {
      * @param <T>
      * @return
      */
-    public static <T> ResponseData<T> warnCode(ResponseData responseData) {
-        return new ResponseData<T>(null, STATE_WARN, responseData.getCode(), responseData.getMsg());
+    public static <T> ResponseData<T> warnCode(ResponseData<?> responseData) {
+        return new ResponseData<>(null, STATE_WARN, responseData.getCode(), responseData.getMsg());
     }
 
     /**
@@ -402,7 +402,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> warnCode(ResponseCode responseCode) {
-        return new ResponseData<T>(null, STATE_WARN, responseCode.getFullCode(), responseCode.getLocalizedMessage());
+        return new ResponseData<>(null, STATE_WARN, responseCode.getFullCode(), responseCode.getLocalizedMessage());
     }
 
     /**
@@ -424,7 +424,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> warnMsg(String msg) {
-        return new ResponseData<T>(null, STATE_WARN, null, msg);
+        return new ResponseData<>(null, STATE_WARN, null, msg);
     }
 
     /**
@@ -433,7 +433,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> error() {
-        return new ResponseData<T>(null, STATE_ERROR, null, null);
+        return new ResponseData<>(null, STATE_ERROR, null, null);
     }
 
     /**
@@ -442,7 +442,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> error(T t) {
-        return new ResponseData<T>(t, STATE_ERROR,null, null);
+        return new ResponseData<>(t, STATE_ERROR, null, null);
     }
 
     /**
@@ -452,7 +452,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> error(T t, String code) {
-        return new ResponseData<T>(t, STATE_ERROR, code, null);
+        return new ResponseData<>(t, STATE_ERROR, code, null);
     }
 
     /**
@@ -461,7 +461,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> error(T t, String code, String msg) {
-        return new ResponseData<T>(t, STATE_ERROR, code, msg);
+        return new ResponseData<>(t, STATE_ERROR, code, msg);
     }
 
     /**
@@ -471,8 +471,8 @@ public class ResponseData<T> {
      * @param <T>
      * @return
      */
-    public static <T> ResponseData<T> error(T t, ResponseData responseData) {
-        return new ResponseData<T>(t, STATE_ERROR, responseData.getCode(), responseData.getMsg());
+    public static <T> ResponseData<T> error(T t, ResponseData<?> responseData) {
+        return new ResponseData<>(t, STATE_ERROR, responseData.getCode(), responseData.getMsg());
     }
 
     /**
@@ -484,7 +484,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> error(T t, ResponseCode responseCode) {
-        return new ResponseData<T>(t, STATE_ERROR, responseCode.getFullCode(), responseCode.getLocalizedMessage());
+        return new ResponseData<>(t, STATE_ERROR, responseCode.getFullCode(), responseCode.getLocalizedMessage());
     }
 
     /**
@@ -507,7 +507,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> errorCode(String code) {
-        return new ResponseData<T>(null, STATE_ERROR, code, null);
+        return new ResponseData<>(null, STATE_ERROR, code, null);
     }
 
     /**
@@ -517,7 +517,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> errorCode(String code, String msg) {
-        return new ResponseData<T>(null, STATE_ERROR, code, msg);
+        return new ResponseData<>(null, STATE_ERROR, code, msg);
     }
 
     /**
@@ -527,8 +527,8 @@ public class ResponseData<T> {
      * @param <T>
      * @return
      */
-    public static <T> ResponseData<T> errorCode(ResponseData responseData) {
-        return new ResponseData<T>(null, STATE_ERROR, responseData.getCode(), responseData.getMsg());
+    public static <T> ResponseData<T> errorCode(ResponseData<?> responseData) {
+        return new ResponseData<>(null, STATE_ERROR, responseData.getCode(), responseData.getMsg());
     }
 
 
@@ -540,7 +540,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> errorCode(ResponseCode responseCode) {
-        return new ResponseData<T>(null, STATE_ERROR, responseCode.getFullCode(), responseCode.getLocalizedMessage());
+        return new ResponseData<>(null, STATE_ERROR, responseCode.getFullCode(), responseCode.getLocalizedMessage());
     }
 
     /**
@@ -562,7 +562,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> errorMsg(String msg) {
-        return new ResponseData<T>(null, STATE_ERROR, null, msg);
+        return new ResponseData<>(null, STATE_ERROR, null, msg);
     }
 
     /**
@@ -571,7 +571,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> fatal() {
-        return new ResponseData<T>(null, STATE_FATAL, null, null);
+        return new ResponseData<>(null, STATE_FATAL, null, null);
     }
 
     /**
@@ -580,7 +580,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> fatal(T t) {
-        return new ResponseData<T>(t, STATE_FATAL,null, null);
+        return new ResponseData<>(t, STATE_FATAL, null, null);
     }
 
 
@@ -591,7 +591,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> fatal(T t, String code) {
-        return new ResponseData<T>(t, STATE_FATAL, code, null);
+        return new ResponseData<>(t, STATE_FATAL, code, null);
     }
 
     /**
@@ -600,7 +600,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> fatal(T t, String code, String msg) {
-        return new ResponseData<T>(t, STATE_FATAL, code, msg);
+        return new ResponseData<>(t, STATE_FATAL, code, msg);
     }
 
     /**
@@ -610,8 +610,8 @@ public class ResponseData<T> {
      * @param <T>
      * @return
      */
-    public static <T> ResponseData<T> fatal(T t, ResponseData responseData) {
-        return new ResponseData<T>(t, STATE_ERROR, responseData.getCode(), responseData.getMsg());
+    public static <T> ResponseData<T> fatal(T t, ResponseData<?> responseData) {
+        return new ResponseData<>(t, STATE_ERROR, responseData.getCode(), responseData.getMsg());
     }
 
     /**
@@ -623,7 +623,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> fatal(T t, ResponseCode responseCode) {
-        return new ResponseData<T>(t, STATE_FATAL, responseCode.getFullCode(), responseCode.getLocalizedMessage());
+        return new ResponseData<>(t, STATE_FATAL, responseCode.getFullCode(), responseCode.getLocalizedMessage());
     }
 
     /**
@@ -646,7 +646,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> fatalCode(String code) {
-        return new ResponseData<T>(null, STATE_FATAL, code, null);
+        return new ResponseData<>(null, STATE_FATAL, code, null);
     }
 
     /**
@@ -656,7 +656,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> fatalCode(String code, String msg) {
-        return new ResponseData<T>(null, STATE_FATAL, code, msg);
+        return new ResponseData<>(null, STATE_FATAL, code, msg);
     }
 
     /**
@@ -666,8 +666,8 @@ public class ResponseData<T> {
      * @param <T>
      * @return
      */
-    public static <T> ResponseData<T> fatalCode(ResponseData responseData) {
-        return new ResponseData<T>(null, STATE_FATAL, responseData.getCode(), responseData.getMsg());
+    public static <T> ResponseData<T> fatalCode(ResponseData<?> responseData) {
+        return new ResponseData<>(null, STATE_FATAL, responseData.getCode(), responseData.getMsg());
     }
 
     /**
@@ -678,7 +678,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> fatalCode(ResponseCode responseCode) {
-        return new ResponseData<T>(null, STATE_FATAL, responseCode.getFullCode(), responseCode.getLocalizedMessage());
+        return new ResponseData<>(null, STATE_FATAL, responseCode.getFullCode(), responseCode.getLocalizedMessage());
     }
 
     /**
@@ -700,7 +700,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> fatalMsg(String msg) {
-        return new ResponseData<T>(null, STATE_FATAL, null, msg);
+        return new ResponseData<>(null, STATE_FATAL, null, msg);
     }
 
     /**
@@ -1032,7 +1032,7 @@ public class ResponseData<T> {
      */
     @JsonIgnore
     public <R> R map(Function<ResponseData<T>, R> function) {
-            return function.apply(this);
+        return function.apply(this);
     }
 
     /**

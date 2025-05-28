@@ -58,7 +58,7 @@ public class DigestUtils {
      * @param bytes
      * @return
      */
-    private static String bytesToHex(byte[] bytes) {
+    public static String bytesToHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
         for (byte b : bytes) {
             sb.append( String.format( "%02x", b ) );
@@ -78,7 +78,14 @@ public class DigestUtils {
         SHA3_256( "SHA3-256", "最新标准，推荐使用" ),
         SHA3_512( "SHA3-512", "最新标准，最高强度" );
 
+        /**
+         * Digest算法名称
+         */
         private final String algorithm;
+
+        /**
+         * Digest算法描述
+         */
         private final String description;
 
         Algorithm(String algorithm, String description) {

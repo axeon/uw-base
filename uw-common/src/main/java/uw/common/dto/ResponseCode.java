@@ -15,21 +15,18 @@ public interface ResponseCode {
     /**
      * 获取响应码.
      *
-     * @return
      */
     String getCode();
 
     /**
      * 获取响应消息.
      *
-     * @return
      */
     String getMessage();
 
     /**
      * 获取消息源.
      *
-     * @return
      */
     default MessageSource getMessageSource() {
         return null;
@@ -38,7 +35,6 @@ public interface ResponseCode {
     /**
      * 获取配置前缀.
      *
-     * @return
      */
     default String codePrefix() {
         return null;
@@ -48,7 +44,6 @@ public interface ResponseCode {
      * 获取响应消息。
      *
      * @param params 参数数组
-     * @return
      */
     default String getMessage(Object... params) {
         String message = getMessage();
@@ -62,7 +57,6 @@ public interface ResponseCode {
     /**
      * 获取完整响应码。
      *
-     * @return
      */
     default String getFullCode() {
         return getFullCode(getCode());
@@ -71,7 +65,6 @@ public interface ResponseCode {
     /**
      * 获取完整响应码。
      *
-     * @return
      */
     default String getFullCode(String code) {
         if (codePrefix() != null) {
@@ -86,7 +79,6 @@ public interface ResponseCode {
      *
      * @param locale 语言环境
      * @param params 参数数组
-     * @return
      */
     default String getLocalizedMessage(Locale locale, Object... params) {
         String message = getMessage();
@@ -112,7 +104,6 @@ public interface ResponseCode {
      * 获取I18n响应消息。
      *
      * @param params 参数数组
-     * @return
      */
     default String getLocalizedMessage(Object... params) {
         return getLocalizedMessage(LocaleContextHolder.getLocale(), params);
@@ -121,7 +112,6 @@ public interface ResponseCode {
     /**
      * 获取I18n响应消息。
      *
-     * @return
      */
     default String getLocalizedMessage() {
         return getLocalizedMessage(LocaleContextHolder.getLocale());

@@ -13,11 +13,16 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
+/**
+ * AES加解密工具类。
+ */
 public class AESUtils {
 
     private static final Logger log = LoggerFactory.getLogger(AESUtils.class);
 
-    // AES分组大小（128位）
+    /**
+     * 初始化向量字节数。
+     */
     private static final int IV_SIZE = 16;
 
     /**
@@ -74,8 +79,8 @@ public class AESUtils {
     /**
      * AES解密。
      *
-     * @param key          AES密钥字节数组
-     * @param encrypted    密文字节数组（需包含前16字节IV）
+     * @param key       AES密钥字节数组
+     * @param encrypted 密文字节数组（需包含前16字节IV）
      * @return 明文字节数组
      */
     public static byte[] decrypt(byte[] key, byte[] encrypted) {

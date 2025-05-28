@@ -183,6 +183,11 @@ public class DateUtils {
      */
     public static final ZoneId DEFAULT_ZONE_ID = TimeZone.getDefault().toZoneId();
 
+    /**
+     * 时间格式映射.
+     * key: 时间格式
+     * value: 时间格式映射名称
+     */
     public static final Map<String, String> DATE_FORMAT_MAP = new LinkedHashMap<>() {
         {
             put(DATE, "DATE");
@@ -260,27 +265,31 @@ public class DateUtils {
 
 
     /**
-     * 简化字符串日期恢复横杠。
+     * 恢复简化日期字符串。
      *
-     * @param simpleDate 20170606
+     * @param simpleDate 2017-06-06
      * @return 2017-06-06
      */
-    public static String simpleDateStringFormat(String simpleDate) {
-        if (StringUtils.isNotBlank(simpleDate))
+    public static String unsimplifyDateString(String simpleDate) {
+        if (StringUtils.isNotBlank(simpleDate) && simpleDate.length() >= 8) {
             return simpleDate.substring(0, 4) + "-" + simpleDate.substring(4, 6) + "-" + simpleDate.substring(6, 8);
-        else return null;
+        } else {
+            return null;
+        }
     }
 
     /**
-     * 字符串日期简化去除横杠。
+     * 简化日期字符串(去除横杠)。
      *
      * @param simpleDate 20170606
      * @return 2017-06-06
      */
-    public static String dateStringSimplify(String simpleDate) {
-        if (StringUtils.isNotBlank(simpleDate) && simpleDate.length() >= 10)
-            return simpleDate.substring(0, 4) + simpleDate.substring(5, 7) + "-" + simpleDate.substring(8, 10);
-        else return null;
+    public static String simplifyDateString(String simpleDate) {
+        if (StringUtils.isNotBlank(simpleDate) && simpleDate.length() >= 10) {
+            return simpleDate.substring(0, 4) + simpleDate.substring(5, 7) + simpleDate.substring(8, 10);
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -941,7 +950,7 @@ public class DateUtils {
         if (dateString == null) {
             return null;
         }
-        //  处理UTC时区的特殊情况
+        //  处理ISO8601 UTC时区的特殊情况
         if (dateString.endsWith("Z")) {
             dateString = dateString.substring(0, dateString.length() - 1) + "+00:00";
         }
@@ -1005,13 +1014,13 @@ public class DateUtils {
                 // DATE_TIME_SIMPLE(yyyyMMddHHmmss)
                     stringToDate(dateString, DATE_TIME_SIMPLE);
             case 16 ->
-                // DATE_MINUTE(yyyy-MM-dd HH:mm) DATE_MINUTE_SLASH(yyyy/MM/dd HH:mm)
+                // DATE_MINUTE_T(yyyy-MM-dd'T'HH:mm) DATE_MINUTE(yyyy-MM-dd HH:mm) DATE_MINUTE_SLASH(yyyy/MM/dd HH:mm)
                     dateString.contains("T") ? stringToDate(dateString, DATE_MINUTE_T) : dateString.contains("-") ? stringToDate(dateString, DATE_MINUTE) : stringToDate(dateString, DATE_MINUTE_SLASH);
             case 17 ->
                 // DATE_MILLIS_SIMPLE(yyyyMMddHHmmssSSS)
                     stringToDate(dateString, DATE_MILLIS_SIMPLE);
             case 19 ->
-                // DATE_TIME(yyyy-MM-dd HH:mm:ss) DATE_TIME_SLASH(yyyy/MM/dd HH:mm:ss)
+                // DATE_TIME_T(yyyy-MM-dd'T'HH:mm:ss) DATE_TIME(yyyy-MM-dd HH:mm:ss) DATE_TIME_SLASH(yyyy/MM/dd HH:mm:ss)
                     dateString.contains("T") ? stringToDate(dateString, DATE_TIME_T) : dateString.contains("-") ? stringToDate(dateString, DATE_TIME) : stringToDate(dateString, DATE_TIME_SLASH);
             case 21 ->
                 // DATE_MINUTE_ISO2(yyyy-MM-dd'T'HH:mmZ)
@@ -1020,7 +1029,7 @@ public class DateUtils {
                 // DATE_MINUTE_ISO(yyyy-MM-dd'T'HH:mmZZ)
                     stringToDate(dateString, DATE_MINUTE_ISO);
             case 23 ->
-                // DATE_MILLIS(yyyy-MM-dd HH:mm:ss.SSS) DATE_MILLIS_SLASH(yyyy/MM/dd HH:mm:ss.SSS)
+                // DATE_MILLIS_T(yyyy-MM-dd'T'HH:mm:ss.SSS) DATE_MILLIS(yyyy-MM-dd HH:mm:ss.SSS) DATE_MILLIS_SLASH(yyyy/MM/dd HH:mm:ss.SSS)
                     dateString.contains("T") ? stringToDate(dateString, DATE_MILLIS_T) : dateString.contains("-") ? stringToDate(dateString, DATE_MILLIS) : stringToDate(dateString, DATE_MILLIS_SLASH);
             case 24 ->
                 // DATE_TIME_ISO2(yyyy-MM-dd'T'HH:mm:ssZ)
@@ -1039,39 +1048,7 @@ public class DateUtils {
     }
 
 //    public static void main(String[] args) {
-//
-//        System.out.println(System.currentTimeMillis());
-//        System.out.println(System.currentTimeMillis()/1000);
-//        String[] testDates = {
-//                "2023-10-05",
-//                "20231005",
-//                "2023/10/05",
-//                "2023-10",
-//                "2023/10",
-//                "202310",
-//                "2310",
-//                "12:34:56",
-//                "123456",
-//                "12:34",
-//                "1234",
-//                "2023-10-05 12:34:56",
-//                "2023-10-05 12:34",
-//                "2023-10-05 12:34:56.789",
-//                "20231005123456",
-//                "202310051234",
-//                "1748406880150",
-//                "1748406880",
-//                "20231005123456789",
-//                "2023/10/05 12:34",
-//                "2023/10/05 12:34:56",
-//                "2023/10/05 12:34:56.789",
-//                "2023-10-05T12:34:56+0800",
-//                "2023-10-05T12:34+0800",
-//                "2023-10-05T12:34:56.789+0800",
-//                "2023-10-05T12:34:56Z",
-//                "2023-10-05T12:34Z",
-//                "2023-10-05T12:34:56.789Z"
-//        };
+//        String[] testDates = {"2023-10-05", "20231005", "2023/10/05", "2023-10", "2023/10", "202310", "2310", "12:34:56", "123456", "12:34", "1234", "2023-10-05 12:34:56", "2023-10-05 12:34", "2023-10-05 12:34:56.789", "202310051234", "20231005123456", "20231005123456789", "1748406880150", "1748406880", "2023/10/05 12:34", "2023/10/05 12:34:56", "2023/10/05 12:34:56.789", "2023-10-05T12:34:56+0800", "2023-10-05T12:34+0800", "2023-10-05T12:34:56.789+0800", "2023-10-05T12:34:56Z", "2023-10-05T12:34Z", "2023-10-05T12:34:56.789Z"};
 //
 //        for (String dateStr : testDates) {
 //            java.util.Date parsedDate = stringToDate(dateStr);
@@ -1082,4 +1059,5 @@ public class DateUtils {
 //            }
 //        }
 //    }
+
 }

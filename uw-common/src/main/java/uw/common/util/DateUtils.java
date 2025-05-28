@@ -931,82 +931,11 @@ public class DateUtils {
     }
 
     /**
-     * 根据日期字符串获取匹配的格式化模式。
+     * 将字符串转换为Date实例。
+     * 将会自动的根据日期格式进行匹配。
      *
      * @param dateString
      * @return
-     */
-    public static String getFitFormatPatten(String dateString) {
-        if (dateString == null) {
-            return null;
-        }
-        return switch (dateString.length()) {
-            case 4 ->
-                // TIME_MINUTE_SIMPLE(HHmm)
-                    TIME_MINUTE_SIMPLE;
-            case 5 ->
-                // TIME_MINUTE(HH:mm)
-                    TIME_MINUTE;
-            case 6 ->
-                // TIME_SIMPLE(HHmmss)
-                    MONTH_SIMPLE;
-            case 7 ->
-                // MONTH(yyyy-MM) MONTH_SLASH(yyyy/MM)
-                    dateString.contains("/") ? MONTH_SLASH : MONTH;
-            case 8 ->
-                // DATE_SIMPLE(yyyyMMdd) TIME(HH:mm:ss)
-                    dateString.contains(":") ? TIME : DATE_SIMPLE;
-            case 9 ->
-                // TIME_MILLIS_SIMPLE(HHmmssSSS)
-                    TIME_MILLIS_SIMPLE;
-            case 10 ->
-                // DATE(yyyy-MM-dd) DATE_SLASH(yyyy/MM/dd)
-                    dateString.contains("/") ? DATE_SLASH : DATE;
-            case 12 ->
-                // TIME_MILLIS(HH:mm:ss.SSS) DATE_MINUTE_SIMPLE(yyyyMMddHHmm)
-                    dateString.contains(":") ? DATE_MILLIS_SIMPLE : DATE_MINUTE_SIMPLE;
-            case 14 ->
-                // DATE_TIME_SIMPLE(yyyyMMddHHmmss)
-                    DATE_TIME_SIMPLE;
-            case 16 ->
-                // DATE_MINUTE(yyyy-MM-dd HH:mm) DATE_MINUTE_SLASH(yyyy/MM/dd HH:mm)
-                    dateString.contains("T") ? DATE_MINUTE_T : dateString.contains("/") ? DATE_MINUTE_SLASH : DATE_MINUTE;
-            case 17 ->
-                // DATE_MILLIS_SIMPLE(yyyyMMddHHmmssSSS)
-                    DATE_MILLIS_SIMPLE;
-            case 19 ->
-                // DATE_TIME(yyyy-MM-dd HH:mm:ss) DATE_TIME_SLASH(yyyy/MM/dd HH:mm:ss)
-                    dateString.contains("T") ? DATE_TIME_T : dateString.contains("-") ? DATE_TIME : DATE_TIME_SLASH;
-            case 21 ->
-                // DATE_MINUTE_ISO2(yyyy-MM-dd'T'HH:mmZ)
-                    DATE_MINUTE_ISO2;
-            case 22 ->
-                // DATE_MINUTE_ISO(yyyy-MM-dd'T'HH:mmZZ)
-                    DATE_MINUTE_ISO;
-            case 23 ->
-                // DATE_MILLIS(yyyy-MM-dd HH:mm:ss.SSS) DATE_MILLIS_SLASH(yyyy/MM/dd HH:mm:ss.SSS)
-                    dateString.contains("T") ? DATE_MILLIS_T : dateString.contains("-") ? DATE_MILLIS : DATE_MILLIS_SLASH;
-            case 24 ->
-                // DATE_TIME_ISO2(yyyy-MM-dd'T'HH:mm:ssZ)
-                    DATE_TIME_ISO2;
-            case 25 ->
-                // DATE_TIME_ISO(yyyy-MM-dd'T'HH:mm:ssZZ)
-                    DATE_TIME_ISO;
-            case 28 ->
-                // DATE_MILLIS_ISO2(yyyy-MM-dd'T'HH:mm:ss.SSSZ)
-                    DATE_MILLIS_ISO2;
-            case 29 ->
-                // DATE_MILLIS_ISO(yyyy-MM-dd'T'HH:mm:ss.SSSZZ)
-                    DATE_MILLIS_ISO;
-            default -> null;
-        };
-    }
-
-    /**
-     * 将字符串转换为Date实例。
-     *
-     * @param dateString 2016-10-12
-     * @return Date实例
      */
     public static Date stringToDate(String dateString) {
         if (dateString == null) {
@@ -1016,17 +945,103 @@ public class DateUtils {
         if (dateString.endsWith("Z")) {
             dateString = dateString.substring(0, dateString.length() - 1) + "+00:00";
         }
-        //  根据字符串获取匹配的格式化模式。
-        String formatPatten = getFitFormatPatten(dateString);
-        if (formatPatten == null) {
-            return null;
-        }
-        return stringToDate(dateString, formatPatten);
+        return switch (dateString.length()) {
+            case 4 ->
+                // TIME_MINUTE_SIMPLE(HHmm)
+                    stringToDate(dateString, TIME_MINUTE_SIMPLE);
+            case 5 ->
+                // TIME_MINUTE(HH:mm)
+                    stringToDate(dateString, TIME_MINUTE);
+            case 6 ->
+                // TIME_SIMPLE(HHmmss)
+                    stringToDate(dateString, MONTH_SIMPLE);
+            case 7 ->
+                // MONTH(yyyy-MM) MONTH_SLASH(yyyy/MM)
+                    dateString.contains("-") ? stringToDate(dateString, MONTH) : stringToDate(dateString, MONTH_SLASH);
+            case 8 ->
+                // DATE_SIMPLE(yyyyMMdd) TIME(HH:mm:ss)
+                    dateString.contains(":") ? stringToDate(dateString, TIME) : stringToDate(dateString, DATE_SIMPLE);
+            case 9 ->
+                // TIME_MILLIS_SIMPLE(HHmmssSSS)
+                    stringToDate(dateString, TIME_MILLIS_SIMPLE);
+            case 10 -> {
+                // DATE(yyyy-MM-dd) DATE_SLASH(yyyy/MM/dd)
+                if (dateString.contains("-")) {
+                    yield stringToDate(dateString, DATE);
+                } else if (dateString.contains("/")) {
+                    yield stringToDate(dateString, DATE_SLASH);
+                } else {
+                    long timestamp = 0;
+                    try {
+                        timestamp = Long.parseLong(dateString);
+                    } catch (Exception e) {
+                        //ignore
+                    }
+                    if (timestamp > 0) {
+                        yield new Date(timestamp * 1000L);
+                    } else {
+                        yield null;
+                    }
+                }
+            }
+            case 12 ->
+                // TIME_MILLIS(HH:mm:ss.SSS) DATE_MINUTE_SIMPLE(yyyyMMddHHmm)
+                    dateString.contains(":") ? stringToDate(dateString, TIME_MILLIS) : stringToDate(dateString, DATE_MINUTE_SIMPLE);
+            case 13 -> {
+                //timestamp millis
+                long timestamp = 0;
+                try {
+                    timestamp = Long.parseLong(dateString);
+                } catch (Exception e) {
+                    //ignore
+                }
+                if (timestamp > 0) {
+                    yield new Date(timestamp);
+                } else {
+                    yield null;
+                }
+            }
+            case 14 ->
+                // DATE_TIME_SIMPLE(yyyyMMddHHmmss)
+                    stringToDate(dateString, DATE_TIME_SIMPLE);
+            case 16 ->
+                // DATE_MINUTE(yyyy-MM-dd HH:mm) DATE_MINUTE_SLASH(yyyy/MM/dd HH:mm)
+                    dateString.contains("T") ? stringToDate(dateString, DATE_MINUTE_T) : dateString.contains("-") ? stringToDate(dateString, DATE_MINUTE) : stringToDate(dateString, DATE_MINUTE_SLASH);
+            case 17 ->
+                // DATE_MILLIS_SIMPLE(yyyyMMddHHmmssSSS)
+                    stringToDate(dateString, DATE_MILLIS_SIMPLE);
+            case 19 ->
+                // DATE_TIME(yyyy-MM-dd HH:mm:ss) DATE_TIME_SLASH(yyyy/MM/dd HH:mm:ss)
+                    dateString.contains("T") ? stringToDate(dateString, DATE_TIME_T) : dateString.contains("-") ? stringToDate(dateString, DATE_TIME) : stringToDate(dateString, DATE_TIME_SLASH);
+            case 21 ->
+                // DATE_MINUTE_ISO2(yyyy-MM-dd'T'HH:mmZ)
+                    stringToDate(dateString, DATE_MINUTE_ISO2);
+            case 22 ->
+                // DATE_MINUTE_ISO(yyyy-MM-dd'T'HH:mmZZ)
+                    stringToDate(dateString, DATE_MINUTE_ISO);
+            case 23 ->
+                // DATE_MILLIS(yyyy-MM-dd HH:mm:ss.SSS) DATE_MILLIS_SLASH(yyyy/MM/dd HH:mm:ss.SSS)
+                    dateString.contains("T") ? stringToDate(dateString, DATE_MILLIS_T) : dateString.contains("-") ? stringToDate(dateString, DATE_MILLIS) : stringToDate(dateString, DATE_MILLIS_SLASH);
+            case 24 ->
+                // DATE_TIME_ISO2(yyyy-MM-dd'T'HH:mm:ssZ)
+                    stringToDate(dateString, DATE_TIME_ISO2);
+            case 25 ->
+                // DATE_TIME_ISO(yyyy-MM-dd'T'HH:mm:ssZZ)
+                    stringToDate(dateString, DATE_TIME_ISO);
+            case 28 ->
+                // DATE_MILLIS_ISO2(yyyy-MM-dd'T'HH:mm:ss.SSSZ)
+                    stringToDate(dateString, DATE_MILLIS_ISO2);
+            case 29 ->
+                // DATE_MILLIS_ISO(yyyy-MM-dd'T'HH:mm:ss.SSSZZ)
+                    stringToDate(dateString, DATE_MILLIS_ISO);
+            default -> null;
+        };
     }
 
 //    public static void main(String[] args) {
-////        System.out.println(genFitPatternCode());
 //
+//        System.out.println(System.currentTimeMillis());
+//        System.out.println(System.currentTimeMillis()/1000);
 //        String[] testDates = {
 //                "2023-10-05",
 //                "20231005",
@@ -1044,6 +1059,8 @@ public class DateUtils {
 //                "2023-10-05 12:34:56.789",
 //                "20231005123456",
 //                "202310051234",
+//                "1748406880150",
+//                "1748406880",
 //                "20231005123456789",
 //                "2023/10/05 12:34",
 //                "2023/10/05 12:34:56",

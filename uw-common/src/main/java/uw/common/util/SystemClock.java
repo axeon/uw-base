@@ -22,10 +22,8 @@ public class SystemClock {
      */
     private static final AtomicLong NOW = new AtomicLong(System.currentTimeMillis());
 
-    /**
-     * 默认构造器。
-     */
     static {
+        // 1ms更新一次时间戳。
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, runnable -> {
             Thread thread = new Thread(runnable, "system.clock");
             thread.setDaemon(true);

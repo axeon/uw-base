@@ -1,3 +1,8 @@
+# 2025.0501.1028版本升级说明
+1. uw-common: DateUtils 新增stringToDate()新增自动高效解析时间戳格式。
+2. uw-log-es: 移除重复的@PreDestory指令。
+3. uw-log-back: 增强JMXBean功能。
+
 # 2025.0501.1026版本升级说明
 1. uw-common: DateUtils新增stringToDate()新增自动高效解析日期格式的方法，可以自动识别日期格式。 
 2. uw-common: JsonUtils针对日期格式进行处理，使用默认时区，可以自动解析日期格式。 

@@ -33,12 +33,10 @@
         <!-- 开启JMX监控支持,默认未开启 -->
         <jmxMonitoring>false</jmxMonitoring>
     </appender>
-    <!-- 对于非生产环境，都打印console -->
-    <springProfile name="!(prod|stab)">
-        <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
-        </root>
-    </springProfile>
+    <!-- 默认输出CONSOLE -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
     <!-- 对于非本地开发，都打印到ES -->
     <springProfile name="!dev">
         <root level="INFO">

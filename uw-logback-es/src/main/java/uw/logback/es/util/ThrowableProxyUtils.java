@@ -60,9 +60,9 @@ public class ThrowableProxyUtils {
             buf.writeUtf8( prefix );
         }
         if (tp.isCyclic()) {
-            buf.writeUtf8( "[CIRCULAR REFERENCE: " ).writeUtf8( tp.getClassName() ).writeUtf8( ": " ).writeUtf8( EncoderUtils.escapeJSON( tp.getMessage() ) ).writeUtf8( "]" );
+            buf.writeUtf8( "[CIRCULAR REFERENCE: " ).writeUtf8( tp.getClassName() ).writeUtf8( ": " ).writeUtf8( JsonEncoderUtils.escapeJSON( tp.getMessage() ) ).writeUtf8( "]" );
         } else {
-            buf.writeUtf8( tp.getClassName() ).writeUtf8( ": " ).writeUtf8( EncoderUtils.escapeJSON( tp.getMessage() ) );
+            buf.writeUtf8( tp.getClassName() ).writeUtf8( ": " ).writeUtf8( JsonEncoderUtils.escapeJSON( tp.getMessage() ) );
         }
     }
 

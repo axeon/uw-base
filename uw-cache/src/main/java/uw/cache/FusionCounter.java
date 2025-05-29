@@ -45,7 +45,7 @@ public class FusionCounter {
      * @param entityType       entity类型(主要用于构造counterType)。
      * @param syncGlobalMillis 同步全局间隔毫秒数
      */
-    public static void config(final Class entityType, final long syncGlobalMillis) {
+    public static void config(final Class<?> entityType, final long syncGlobalMillis) {
         config(entityType.getSimpleName(), syncGlobalMillis);
     }
 
@@ -57,7 +57,7 @@ public class FusionCounter {
      * @param syncGlobalMillis 同步全局间隔毫秒数
      */
     public static void config(final String counterType, final long syncGlobalMillis) {
-        configMap.put(counterType, new LocalCounter.Config(counterType, syncGlobalMillis, 0));
+        configMap.put(counterType, new LocalCounter.Config(counterType, syncGlobalMillis));
     }
 
     /**
@@ -66,10 +66,10 @@ public class FusionCounter {
      * @param entityType       entity类型(主要用于构造counterType)。
      * @param syncGlobalMillis 同步全局间隔毫秒数
      * @param writeBackMillis  回写数据库间隔毫秒数
-     * @param callbackConsumer 回写函数，可以在此函数中写入数据库。
+     * @param writeBackConsumer 回写函数，可以在此函数中写入数据库。
      */
-    public static void config(final Class entityType, final long syncGlobalMillis, final long writeBackMillis, final BiConsumer<Object, Long> callbackConsumer) {
-        config(entityType.getSimpleName(), syncGlobalMillis, writeBackMillis, callbackConsumer);
+    public static void config(final Class<?> entityType, final long syncGlobalMillis, final long writeBackMillis, final BiConsumer<Object, Long> writeBackConsumer) {
+        config(entityType.getSimpleName(), syncGlobalMillis, writeBackMillis, writeBackConsumer);
     }
 
     /**
@@ -90,7 +90,7 @@ public class FusionCounter {
      * @param entityType entity类型(主要用于构造counterType)。
      * @param counterId  计数器ID
      */
-    public static long increment(Class entityType, Object counterId) {
+    public static long increment(Class<?> entityType, Object counterId) {
         return increment(entityType.getSimpleName(), counterId);
     }
 
@@ -111,7 +111,7 @@ public class FusionCounter {
      * @param counterId    计数器ID
      * @param incrementNum 增加的计数。
      */
-    public static long increment(Class entityType, Object counterId, long incrementNum) {
+    public static long increment(Class<?> entityType, Object counterId, long incrementNum) {
         return increment(entityType.getSimpleName(), counterId, incrementNum);
     }
 
@@ -124,7 +124,7 @@ public class FusionCounter {
      */
     public static long increment(String counterType, Object counterId, long incrementNum) {
         LocalCounter localCounter = counterMap.computeIfAbsent(counterType + RedisKeyUtils.KEY_SPLITTER + counterId,
-                key -> new LocalCounter(configMap.computeIfAbsent(counterType, config -> new LocalCounter.Config(counterType, DEFAULT_SYNC_GLOBAL_MILLIS, 0)), counterId,
+                key -> new LocalCounter(configMap.computeIfAbsent(counterType, config -> new LocalCounter.Config(counterType, DEFAULT_SYNC_GLOBAL_MILLIS)), counterId,
                         0));
         return localCounter.increment(incrementNum);
     }
@@ -135,7 +135,7 @@ public class FusionCounter {
      * @param entityType entity类型(主要用于构造counterType)。
      * @param counterId  计数器ID
      */
-    public static long decrement(Class entityType, Object counterId) {
+    public static long decrement(Class<?> entityType, Object counterId) {
         return decrement(entityType.getSimpleName(), counterId);
     }
 
@@ -156,7 +156,7 @@ public class FusionCounter {
      * @param counterId    计数器ID
      * @param incrementNum 增加的计数。
      */
-    public static long decrement(Class entityType, Object counterId, long incrementNum) {
+    public static long decrement(Class<?> entityType, Object counterId, long incrementNum) {
         return decrement(entityType.getSimpleName(), counterId, incrementNum);
     }
 
@@ -169,7 +169,7 @@ public class FusionCounter {
      */
     public static long decrement(String counterType, Object counterId, long incrementNum) {
         LocalCounter localCounter = counterMap.computeIfAbsent(counterType + RedisKeyUtils.KEY_SPLITTER + counterId,
-                key -> new LocalCounter(configMap.computeIfAbsent(counterType, config -> new LocalCounter.Config(counterType, DEFAULT_SYNC_GLOBAL_MILLIS, 0)), counterId,
+                key -> new LocalCounter(configMap.computeIfAbsent(counterType, config -> new LocalCounter.Config(counterType, DEFAULT_SYNC_GLOBAL_MILLIS)), counterId,
                         0));
         return localCounter.decrement(incrementNum);
     }
@@ -183,7 +183,7 @@ public class FusionCounter {
      * @param counterId  计数器ID
      * @param initNum    初始值。
      */
-    public static LocalCounter init(Class entityType, Object counterId, long initNum) {
+    public static LocalCounter init(Class<?> entityType, Object counterId, long initNum) {
         return init(entityType.getSimpleName(), counterId, initNum);
     }
 
@@ -197,7 +197,7 @@ public class FusionCounter {
      */
     public static LocalCounter init(String counterType, Object counterId, long initNum) {
         return counterMap.computeIfAbsent(counterType + RedisKeyUtils.KEY_SPLITTER + counterId, key -> new LocalCounter(configMap.computeIfAbsent(counterType,
-                config -> new LocalCounter.Config(counterType, DEFAULT_SYNC_GLOBAL_MILLIS, 0)), counterId, initNum));
+                config -> new LocalCounter.Config(counterType, DEFAULT_SYNC_GLOBAL_MILLIS)), counterId, initNum));
     }
 
     /**
@@ -207,7 +207,7 @@ public class FusionCounter {
      * @param counterId  计数器ID
      * @return 计数数值。
      */
-    public static long get(Class entityType, Object counterId) {
+    public static long get(Class<?> entityType, Object counterId) {
         return get(entityType.getSimpleName(), counterId);
     }
 
@@ -230,7 +230,7 @@ public class FusionCounter {
      * @param forceSync  强制同步。
      * @return 计数数值。
      */
-    public static long get(Class entityType, Object counterId, boolean forceSync) {
+    public static long get(Class<?> entityType, Object counterId, boolean forceSync) {
         return get(entityType.getSimpleName(), counterId, forceSync);
     }
 
@@ -244,7 +244,7 @@ public class FusionCounter {
      */
     public static long get(String counterType, Object counterId, boolean forceSync) {
         LocalCounter localCounter = counterMap.computeIfAbsent(counterType + RedisKeyUtils.KEY_SPLITTER + counterId,
-                key -> new LocalCounter(configMap.computeIfAbsent(counterType, config -> new LocalCounter.Config(counterType, DEFAULT_SYNC_GLOBAL_MILLIS, 0)), counterId,
+                key -> new LocalCounter(configMap.computeIfAbsent(counterType, config -> new LocalCounter.Config(counterType, DEFAULT_SYNC_GLOBAL_MILLIS)), counterId,
                         0));
         if (forceSync) {
             localCounter.sync(true);
@@ -259,7 +259,7 @@ public class FusionCounter {
      * @param counterId  计数器ID
      * @return 是否成功
      */
-    public static boolean delete(Class entityType, Object counterId) {
+    public static boolean delete(Class<?> entityType, Object counterId) {
         return delete(entityType.getSimpleName(), counterId);
     }
 
@@ -286,7 +286,7 @@ public class FusionCounter {
      * @param counterId  计数器ID
      * @return 计数数值
      */
-    public static long getAndDelete(Class entityType, Object counterId) {
+    public static long getAndDelete(Class<?> entityType, Object counterId) {
         return getAndDelete(entityType.getSimpleName(), counterId);
     }
 
@@ -305,35 +305,33 @@ public class FusionCounter {
         return GlobalCounter.getAndDelete(counterType, counterId);
     }
 
+
     /**
      * 本地计数器。
      */
-    private static class LocalCounter {
+    public static class LocalCounter {
 
         /**
          * 计数器配置。
          */
-        private Config config;
+        private final Config config;
 
         /**
          * 计数器ID。
          */
-        private Object counterId;
-
+        private final Object counterId;
+        /**
+         * 递增计数器
+         */
+        private final AtomicLong counter = new AtomicLong();
         /**
          * 上次同步时间。
          */
         private long lastSyncTime = 0;
-
         /**
          * 上次同步数值。
          */
         private long lastSyncNum = 0;
-
-        /**
-         * 递增计数器
-         */
-        private AtomicLong counter = new AtomicLong();
 
         public LocalCounter(Config config, Object counterId, long initNum) {
             this.config = config;
@@ -344,16 +342,16 @@ public class FusionCounter {
         /**
          * 获取当前计数。
          *
-         * @return
+         * @return 当前计数。
          */
         public long get() {
             return lastSyncNum + counter.get();
         }
 
         /**
-         * increment
+         * 递增计数。
          *
-         * @param incrementNum
+         * @param incrementNum 递增数值
          */
         public long increment(long incrementNum) {
             long num = counter.addAndGet(incrementNum);
@@ -362,9 +360,9 @@ public class FusionCounter {
         }
 
         /**
-         * decrement
+         * 递减计数。
          *
-         * @param incrementNum
+         * @param incrementNum 递减数值
          */
         public long decrement(long incrementNum) {
             long num = counter.addAndGet(-incrementNum);
@@ -383,7 +381,7 @@ public class FusionCounter {
                 if ((num = counter.getAndSet(0)) != 0) {
                     lastSyncNum = GlobalCounter.increment(config.counterType, counterId, num);
                     //异步执行回写函数
-                    if (config.writeBackConsumer != null && now > lastSyncTime + config.syncGlobalMillis) {
+                    if (config.writeBackConsumer != null && now > lastSyncTime + config.writeBackMillis) {
                         executorService.submit(() -> config.writeBackConsumer.accept(counterId, lastSyncNum));
                     }
                     //设置同步时间
@@ -404,31 +402,32 @@ public class FusionCounter {
             lastSyncTime = SystemClock.now();
         }
 
-        private static class Config {
+        public static class Config {
             /**
              * 计数器类型。
              */
-            private String counterType;
+            private final String counterType;
 
             /**
              * 同步redis时间间隔。
              */
-            private long syncGlobalMillis;
+            private final long syncGlobalMillis;
 
             /**
              * 回写数据库时间间隔。
              */
-            private long writeBackMillis;
+            private final long writeBackMillis;
 
             /**
              * 回写库表的方法。
              */
-            private BiConsumer<Object, Long> writeBackConsumer;
+            private final BiConsumer<Object, Long> writeBackConsumer;
 
-            public Config(String counterType, long syncGlobalMillis, long writeBackMillis) {
+            public Config(String counterType, long syncGlobalMillis) {
                 this.counterType = counterType;
                 this.syncGlobalMillis = syncGlobalMillis;
-                this.writeBackMillis = writeBackMillis;
+                this.writeBackMillis = 0;
+                this.writeBackConsumer = null;
             }
 
             public Config(String counterType, long syncGlobalMillis, long writeBackMillis, BiConsumer<Object, Long> writeBackConsumer) {
@@ -436,6 +435,22 @@ public class FusionCounter {
                 this.syncGlobalMillis = syncGlobalMillis;
                 this.writeBackMillis = writeBackMillis;
                 this.writeBackConsumer = writeBackConsumer;
+            }
+
+            public String getCounterType() {
+                return counterType;
+            }
+
+            public long getSyncGlobalMillis() {
+                return syncGlobalMillis;
+            }
+
+            public long getWriteBackMillis() {
+                return writeBackMillis;
+            }
+
+            public BiConsumer<Object, Long> getWriteBackConsumer() {
+                return writeBackConsumer;
             }
         }
 

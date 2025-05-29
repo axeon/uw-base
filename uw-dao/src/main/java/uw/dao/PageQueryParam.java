@@ -53,7 +53,7 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
      * 请求类型。
      */
     @JsonProperty("requestType")
-    @Schema(name = "$rt", title = "请求类型", description = "请求类型。0:仅分页信息, 1:仅数据, 2:全部", defaultValue = "2")
+    @Schema(name = "$rt", title = "请求类型", description = "请求类型。0:仅分页信息, 1:仅数据, 2:全部", defaultValue = "1")
     private int REQUEST_TYPE = REQUEST_DATA;
 
     public PageQueryParam() {

@@ -1,4 +1,4 @@
-# 2025.0601.0000版本升级说明
+# 2025.0601.0001版本升级说明
 1. 升级到spring boot 3.5.0 & spring cloud 2025.0.0
 2. uw-cache: GlobalCache,GlobalCounter,GlobalHashSet,GlobalLocker,GlobalSortedSet 新增通过key前缀获取key列表功能。
 3. uw-cache: 优化FusionCounter相关功能，修复了数据库回写逻辑。

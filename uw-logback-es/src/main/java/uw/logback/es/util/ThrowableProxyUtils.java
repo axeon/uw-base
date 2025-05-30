@@ -26,7 +26,6 @@ public class ThrowableProxyUtils {
      *
      * @param buf
      * @param tp
-     * @return
      */
     public static void writeThrowable(okio.Buffer buf, IThrowableProxy tp) {
         recursiveAppend( buf, null, 0, tp );

@@ -67,8 +67,6 @@ public class ESDataList<T> implements Iterable<T>, Serializable {
 
     /**
      * 返回的value object数组.
-     *
-     * @param <T>
      * 映射的类型
      */
     @JsonProperty

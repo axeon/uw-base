@@ -191,7 +191,8 @@ public class TaskFactory {
     }
 
     /**
-     * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获取数据，可以使用futrue.get()来获取。
+     * 远程运行任务，并返回future。
+     * 如果需要获取数据，可以使用future.get()来获取。
      * 此方法要谨慎使用，因为task存在限速，大并发下可能会导致线程数超。
      * 在调用的时候，尤其要注意，taskData对象不可改变！
      *

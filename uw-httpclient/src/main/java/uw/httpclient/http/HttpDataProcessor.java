@@ -25,7 +25,6 @@ public interface HttpDataProcessor<D extends HttpData, T> {
      * 在接受到数据之后，对数据进行处理。
      *
      * @param httpData
-     * @return
      */
     void responseProcess(D httpData, Headers headers) throws DataMapperException;
 

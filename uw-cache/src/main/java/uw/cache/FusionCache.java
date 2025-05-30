@@ -109,7 +109,6 @@ public class FusionCache {
      * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key         缓存主键
      * @param value       数值
-     * @return
      */
     public static void put(Class<?> entityClass, Object key, Object value) {
         put(entityClass.getSimpleName(), key, value, false);
@@ -122,7 +121,6 @@ public class FusionCache {
      * @param key         缓存主键
      * @param value       数值
      * @param onlyLocal   只更新到本地缓存
-     * @return
      */
     public static void put(Class<?> entityClass, Object key, Object value, boolean onlyLocal) {
         put(entityClass.getSimpleName(), key, value, onlyLocal);
@@ -134,7 +132,6 @@ public class FusionCache {
      * @param cacheName 缓存名
      * @param key       缓存主键
      * @param value     数值
-     * @return
      */
     public static void put(String cacheName, Object key, Object value) {
         put(cacheName, key, value, false);
@@ -147,7 +144,6 @@ public class FusionCache {
      * @param key       缓存主键
      * @param value     数值
      * @param onlyLocal 只更新到本地缓存
-     * @return
      */
     public static void put(String cacheName, Object key, Object value, boolean onlyLocal) {
         Config config = configMap.get(cacheName);

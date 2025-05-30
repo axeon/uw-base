@@ -67,9 +67,6 @@ public class DataList<T> implements Iterable<T>, Serializable {
 
     /**
      * 返回的value object数组.
-     *
-     * @param <T>
-     * 映射的类型
      */
     @JsonProperty
     @Schema(title = "结果集", description = "结果集")

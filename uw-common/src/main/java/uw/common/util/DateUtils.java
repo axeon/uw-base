@@ -448,43 +448,160 @@ public class DateUtils {
     //-------------------------------------------------------------------判断两个时间关系---------------------------------------------------------------
 
     /**
-     * 判断两个时间是不是在同一天
+     * 计算两个日期之间的分钟数差异。
      *
-     * @param day1 第一个日期
-     * @param day2 第二个日期
-     * @return
+     * @param startDate 开始日期
+     * @param endDate   结束日期
+     * @return 两个日期之间的分钟数差异
      */
-    public static boolean isSameDay(Date day1, Date day2) {
-        Calendar firstCal = Calendar.getInstance();
-        Calendar secondCal = Calendar.getInstance();
-        firstCal.setTime(day1);
-        secondCal.setTime(day2);
-        return (firstCal.get(Calendar.YEAR) == secondCal.get(Calendar.YEAR)) && (firstCal.get(Calendar.MONTH) == secondCal.get(Calendar.MONTH)) && (firstCal.get(Calendar.DAY_OF_MONTH) == secondCal.get(Calendar.DAY_OF_MONTH));
-    }
+    public static long minutesDiff(Date startDate, Date endDate) {
 
+        // 获取两个日期的毫秒值
+        long startTime = startDate.getTime();
+        long endTime = endDate.getTime();
 
-    /**
-     * 获取日期相距天数，默认返回0，
-     *
-     * @param startDate 较大时结果为负数
-     * @param endDate   较大时结果为正数
-     * @return 4
-     */
-    public static int getDaysBetweenDate(Date startDate, Date endDate) {
-        return (int) (startDate.getTime() - endDate.getTime() + 1000) / (24 * 60 * 60 * 1000);
+        // 计算毫秒差，然后转换为分钟
+        long diffInMinutes = (endTime - startTime) / (60 * 1000);
+
+        return diffInMinutes;
     }
 
     /**
-     * 判断两个时间相差多少分钟
+     * 计算两个日期之间的小时数差异。
      *
-     * @param firstDate
-     * @param secondDate
-     * @return
+     * @param startDate 开始日期
+     * @param endDate   结束日期
+     * @return 两个日期之间的小时数差异
      */
-    public static long minutesDiff(Date firstDate, Date secondDate) {
-        return Math.abs(secondDate.getTime() - firstDate.getTime()) / (1000 * 60);
+    public static long hoursDiff(Date startDate, Date endDate) {
+
+        // 获取两个日期的毫秒值
+        long startTime = startDate.getTime();
+        long endTime = endDate.getTime();
+
+        // 计算毫秒差，然后转换为小时
+        long diffInHours = endTime / (60 * 60 * 1000) - startTime / (60 * 60 * 1000);
+
+        return diffInHours;
     }
 
+    /**
+     * 计算两个日期之间的日数差异。
+     *
+     * @param startDate 开始日期
+     * @param endDate   结束日期
+     * @return 两个日期之间的日数差异
+     */
+    public static long daysDiff(Date startDate, Date endDate) {
+
+        // 将日期设置为当天的午夜（00:00:00）
+        Calendar calStart = Calendar.getInstance();
+        calStart.setTime(startDate);
+        calStart.set(Calendar.HOUR_OF_DAY, 0);
+        calStart.set(Calendar.MINUTE, 0);
+        calStart.set(Calendar.SECOND, 0);
+        calStart.set(Calendar.MILLISECOND, 0);
+
+        Calendar calEnd = Calendar.getInstance();
+        calEnd.setTime(endDate);
+        calEnd.set(Calendar.HOUR_OF_DAY, 0);
+        calEnd.set(Calendar.MINUTE, 0);
+        calEnd.set(Calendar.SECOND, 0);
+        calEnd.set(Calendar.MILLISECOND, 0);
+
+        // 计算两个日期的毫秒差
+        long diffInMillis = calEnd.getTimeInMillis() - calStart.getTimeInMillis();
+
+        // 将毫秒差转换为天数
+        long diffInDays = diffInMillis / (24 * 60 * 60 * 1000);
+
+        return diffInDays;
+    }
+
+    /**
+     * 计算两个日期之间的星期数差异。
+     *
+     * @param startDate 开始日期
+     * @param endDate   结束日期
+     * @return 两个日期之间的星期数差异
+     */
+    public static long weeksDiff(Date startDate, Date endDate) {
+        // 将日期设置为当天的午夜（00:00:00）
+        Calendar calStart = Calendar.getInstance();
+        calStart.setTime(startDate);
+        calStart.set(Calendar.HOUR_OF_DAY, 0);
+        calStart.set(Calendar.MINUTE, 0);
+        calStart.set(Calendar.SECOND, 0);
+        calStart.set(Calendar.MILLISECOND, 0);
+
+        Calendar calEnd = Calendar.getInstance();
+        calEnd.setTime(endDate);
+        calEnd.set(Calendar.HOUR_OF_DAY, 0);
+        calEnd.set(Calendar.MINUTE, 0);
+        calEnd.set(Calendar.SECOND, 0);
+        calEnd.set(Calendar.MILLISECOND, 0);
+
+        // 计算两个日期的星期数
+        long week1 = calStart.get(Calendar.WEEK_OF_YEAR);
+        long week2 = calEnd.get(Calendar.WEEK_OF_YEAR);
+        long year1 = calStart.get(Calendar.YEAR);
+        long year2 = calEnd.get(Calendar.YEAR);
+
+        // 如果两个日期的年份不同，则计算跨越年份的周数差异
+        if (year2 - year1 > 0) {
+            return week2 + (year2 - year1) * 52 - week1;
+        } else {
+            return week2 - week1;
+        }
+    }
+
+    /**
+     * 计算两个日期之间的月数差异。
+     *
+     * @param startDate 开始日期
+     * @param endDate   结束日期
+     * @return 两个日期之间的月数差异
+     */
+    public static long monthsDiff(Date startDate, Date endDate) {
+
+        // 获取两个日期的年份和月份
+        Calendar calStart = Calendar.getInstance();
+        calStart.setTime(startDate);
+        int year1 = calStart.get(Calendar.YEAR);
+        int month1 = calStart.get(Calendar.MONTH);
+
+        Calendar calEnd = Calendar.getInstance();
+        calEnd.setTime(endDate);
+        int year2 = calEnd.get(Calendar.YEAR);
+        int month2 = calEnd.get(Calendar.MONTH);
+
+        // 计算月份差
+        long diffInMonths = (year2 - year1) * 12L + (month2 - month1);
+
+        return diffInMonths;
+    }
+
+    /**
+     * 计算两个日期之间的年数差异。
+     *
+     * @param startDate 开始日期
+     * @param endDate   结束日期
+     * @return 两个日期之间的年数差异
+     */
+    public static long yearsDiff(Date startDate, Date endDate) {
+
+        // 获取两个日期的年份
+        Calendar calStart = Calendar.getInstance();
+        calStart.setTime(startDate);
+        int year1 = calStart.get(Calendar.YEAR);
+
+        Calendar calEnd = Calendar.getInstance();
+        calEnd.setTime(endDate);
+        int year2 = calEnd.get(Calendar.YEAR);
+
+        // 计算年份差
+        return year2 - year1;
+    }
 
     /**
      * 获取两个日期之间的所有日期
@@ -531,7 +648,7 @@ public class DateUtils {
      * @param date
      * @return
      */
-    public static int getDayOfWeek(Date date) {
+    public static int dayOfWeek(Date date) {
         // 使用 Calendar 获取日期信息
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
@@ -549,10 +666,9 @@ public class DateUtils {
      * @param day n天
      * @return
      */
-    public static long getTimestampOfDay(int day) {
+    public static long getMillisOfDay(int day) {
         return day * (24L * 60 * 60 * 1000);
     }
-
 
     /**
      * 给出一个日期的当年开年第一天时间。

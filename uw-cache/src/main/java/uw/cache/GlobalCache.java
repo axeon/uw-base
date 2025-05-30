@@ -91,7 +91,6 @@ public class GlobalCache {
      * @param value        数据
      * @param expireMillis 有效期毫秒数。
      * @param <V> 数据类型
-     * @return void
      */
     public static <K, V> void put(String cacheName, K key, V value, long expireMillis) {
         String redisKey = RedisKeyUtils.buildTypeId(REDIS_PREFIX, cacheName, key);

@@ -148,7 +148,6 @@ public class FusionSequenceFactory {
      * 通过传入entityClass名，重置sequenceId.
      *
      * @param entityCls
-     * @return
      */
     public static void resetSequenceId(Class<?> entityCls, long seqId) {
         resetSequenceId(entityCls.getSimpleName(), seqId);

@@ -34,7 +34,7 @@ public class SequenceFactory {
      * @param cls
      * @return
      */
-    public static long getCurrentId(Class cls) {
+    public static long getCurrentId(Class<?> cls) {
         if (DaoConfigManager.getConfig().getRedis() != null) {
             return FusionSequenceFactory.getCurrentId( cls.getSimpleName() );
         } else {
@@ -61,7 +61,7 @@ public class SequenceFactory {
      * @param cls
      * @return
      */
-    public static long getSequenceId(Class cls) {
+    public static long getSequenceId(Class<?> cls) {
         if (DaoConfigManager.getConfig().getRedis() != null) {
             return FusionSequenceFactory.getSequenceId( cls.getSimpleName() );
         } else {
@@ -72,7 +72,6 @@ public class SequenceFactory {
     /**
      * 重置SequenceId。
      *
-     * @return
      */
     public static void resetSequenceId(String seqName, long seqId) {
         if (DaoConfigManager.getConfig().getRedis() != null) {
@@ -85,9 +84,8 @@ public class SequenceFactory {
     /**
      * 重置SequenceId。
      *
-     * @return
      */
-    public static void resetSequenceId(Class cls, long seqId) {
+    public static void resetSequenceId(Class<?> cls, long seqId) {
         if (DaoConfigManager.getConfig().getRedis() != null) {
             FusionSequenceFactory.resetSequenceId( cls.getSimpleName(), seqId );
         } else {

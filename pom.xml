@@ -27,7 +27,7 @@
         <uw-ai.version>1.0.9</uw-ai.version>
         <uw-auth-client.version>6.1.10</uw-auth-client.version>
         <uw-auth-service.version>6.1.36</uw-auth-service.version>
-        <uw-cache.version>1.1.83</uw-cache.version>
+        <uw-cache.version>1.1.85</uw-cache.version>
         <uw-common.version>1.0.68</uw-common.version>
         <uw-common-app.version>1.0.80</uw-common-app.version>
         <uw-dao.version>5.2.23</uw-dao.version>

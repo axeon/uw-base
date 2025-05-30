@@ -1,5 +1,5 @@
 # 2025.0601.0002版本升级说明
-1. knife4j已经装死两年，直接替换为springdoc，目测速度明显提升。
+1. knife4j由于兼容性问题不再使用，项目已经装死两年，直接替换为springdoc，目测速度明显提升。
 2. uw-common: DateUtils新增minutesDiff,hoursDiff,daysDiff,weeksDiff,monthsDiff,yearsDiff方法。
 
 # 2025.0601.0001版本升级说明

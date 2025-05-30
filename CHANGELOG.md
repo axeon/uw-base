@@ -1,7 +1,9 @@
-# 2025.0501.1029版本升级说明
-1. uw-cache: GlobalCache,GlobalCounter,GlobalHashSet,GlobalLocker,GlobalSortedSet 新增通过key前缀获取key列表功能。
-2. uw-cache: 优化FusionCounter相关功能，修复了数据库回写逻辑。
-3. uw-cache: 优化FusionCache相关功能，增加了keys相关方法。
+# 2025.0601.0000版本升级说明
+1. 升级到spring boot 3.5.0 & spring cloud 2025.0.0
+2. uw-cache: GlobalCache,GlobalCounter,GlobalHashSet,GlobalLocker,GlobalSortedSet 新增通过key前缀获取key列表功能。
+3. uw-cache: 优化FusionCounter相关功能，修复了数据库回写逻辑。
+4. uw-cache: 优化FusionCache相关功能，增加了keys相关方法。
+5. uw-httpclient: 适配spring boot 3.5.0
 
 # 2025.0501.1028版本升级说明
 1. uw-common: DateUtils 新增stringToDate()新增自动高效解析时间戳格式。

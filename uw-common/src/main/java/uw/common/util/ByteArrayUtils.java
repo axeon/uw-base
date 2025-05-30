@@ -45,7 +45,6 @@ public class ByteArrayUtils {
      * 将value转化为byte数组
      *
      * @param num
-     * @return
      */
     public static void shortToByteArray(short num, byte[] data, int start, int end) {
         for (int i = start; i < end; i++) {
@@ -57,7 +56,6 @@ public class ByteArrayUtils {
      * 将value转化为byte数组
      *
      * @param num
-     * @return
      */
     public static void shortToByteArrayForLittleEndian(short num, byte[] data, int start, int end) {
         for (int i = end - 1; i >= start; i--) {
@@ -152,8 +150,6 @@ public class ByteArrayUtils {
     /**
      * 将value转化为byte数组
      *
-     * @param num
-     * @return
      */
     public static void intToByteArray(int num, byte[] data, int start, int end) {
         for (int i = start; i < end; i++) {
@@ -165,8 +161,6 @@ public class ByteArrayUtils {
     /**
      * 将value转化为byte数组
      *
-     * @param num
-     * @return
      */
     public static void intToByteArrayForLittleEndian(int num, byte[] data, int start, int end) {
         for (int i = end - 1; i >= start; i--) {
@@ -261,7 +255,6 @@ public class ByteArrayUtils {
      * 将value转化为byte数组
      *
      * @param num
-     * @return
      */
     public static void longToByteArray(long num, byte[] data, int start, int end) {
         for (int i = start; i < end; i++) {
@@ -273,7 +266,6 @@ public class ByteArrayUtils {
      * 将value转化为byte数组
      *
      * @param num
-     * @return
      */
     public static void longToByteArrayForLittleEndian(long num, byte[] data, int start, int end) {
         for (int i = end - 1; i >= start; i--) {
@@ -357,7 +349,6 @@ public class ByteArrayUtils {
      * 将value转化为float数组
      *
      * @param num
-     * @return
      */
     public static void floatToByteArray(float num, byte[] data, int start, int end) {
         intToByteArray(Float.floatToIntBits(num), data, start, end);
@@ -367,7 +358,6 @@ public class ByteArrayUtils {
      * 将value转化为float数组
      *
      * @param num
-     * @return
      */
     public static void floatToByteArrayForLittleEndian(float num, byte[] data, int start, int end) {
         intToByteArrayForLittleEndian(Float.floatToIntBits(num), data, start, end);
@@ -434,7 +424,6 @@ public class ByteArrayUtils {
      * 将value转化为double数组
      *
      * @param num
-     * @return
      */
     public static void doubleToByteArray(double num, byte[] data, int start, int end) {
         longToByteArray(Double.doubleToLongBits(num), data, start, end);
@@ -444,27 +433,23 @@ public class ByteArrayUtils {
      * 将value转化为double数组
      *
      * @param num
-     * @return
      */
     public static void doubleToByteArrayForLittleEndian(double num, byte[] data, int start, int end) {
         longToByteArrayForLittleEndian(Double.doubleToLongBits(num), data, start, end);
     }
 
     /**
-     * 将value转化为double数组
+     * 将value转化为float数组
      *
      * @param num
-     * @return
      */
     public static void floatToByteArray(double num, byte[] data, int start, int end) {
         longToByteArray(Double.doubleToLongBits(num), data, start, end);
     }
 
     /**
-     * 将value转化为double数组
+     * 将value转化为float数组
      *
-     * @param num
-     * @return
      */
     public static void floatToByteArrayForLittleEndian(double num, byte[] data, int start, int end) {
         longToByteArrayForLittleEndian(Double.doubleToLongBits(num), data, start, end);
@@ -910,7 +895,7 @@ public class ByteArrayUtils {
     }
 
     /**
-     * 把一个16禁止表示的0x字符串转换为byte数组。
+     * 把一个16进制表示的0x字符串转换为byte数组。
      */
     public static byte[] hexToByteArray(String str) {
         if (str.length() % 2 != 0)
@@ -921,12 +906,6 @@ public class ByteArrayUtils {
             data[i] = (byte) Integer.parseInt(str.substring(i * 2, i * 2 + 2), 16);
         }
         return data;
-    }
-
-
-    public static void main(String[] args) {
-        System.out.println("new String(new byte[]{"+ ByteArrayUtils.byteArrayToString("s".getBytes())+"})");
-        System.out.println((int)'*');
     }
 
 }

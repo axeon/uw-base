@@ -23,7 +23,6 @@ import uw.common.util.SystemClock;
 import uw.log.es.LogClient;
 
 import java.io.Serializable;
-import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -577,7 +576,7 @@ public class AuthServiceHelper {
         mscActionLog.setApiUri(apiCode);
         mscActionLog.setApiName(apiName);
         mscActionLog.setUserIp(apiIp);
-        mscActionLog.setRequestDate(new Date());
+        mscActionLog.setRequestDate(SystemClock.nowDate());
         mscActionLog.setRequestBody(requestBody);
         mscActionLog.setResponseBody(responseBody);
         mscActionLog.setResponseState(responseData.getState());

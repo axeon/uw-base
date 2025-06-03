@@ -1,10 +1,9 @@
 package uw.log.es;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import uw.common.util.SystemClock;
 import uw.log.es.service.LogService;
 import uw.log.es.vo.LogInterface;
-
-import java.util.Date;
 
 /**
  * 
@@ -38,9 +37,9 @@ public class LogClientWriteModeMain {
             logInterface.setProductId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
             logInterface.setInterfaceProductId(RandomStringUtils.randomNumeric(11));
             logInterface.setInterfaceFunction("zwy.common.log.client.logInterface");
-            logInterface.setRequestDate(new Date());
+            logInterface.setRequestDate(SystemClock.nowDate());
             logInterface.setRequestBody("你吃饭了吗?");
-            logInterface.setResponseDate(new Date());
+            logInterface.setResponseDate(SystemClock.nowDate());
             logInterface.setResponseBody("吃了");
             logClient.log(logInterface);
         }

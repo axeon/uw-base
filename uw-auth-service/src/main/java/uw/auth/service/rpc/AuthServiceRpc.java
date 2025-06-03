@@ -7,7 +7,6 @@ import uw.auth.service.vo.MscUserRegister;
 import uw.auth.service.vo.MscUserVo;
 import uw.common.dto.ResponseData;
 
-import java.util.Date;
 import java.util.List;
 
 /**

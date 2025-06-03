@@ -35,7 +35,6 @@ import uw.log.es.LogClient;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
@@ -227,7 +226,7 @@ public class AuthServiceFilter implements Filter {
                     mscActionLog.setApiUri(permCode);
                     mscActionLog.setApiName(apiName);
                     mscActionLog.setUserIp(userIp);
-                    mscActionLog.setRequestDate(new Date());
+                    mscActionLog.setRequestDate(SystemClock.nowDate());
                     if (permLogType == ActionLog.REQUEST || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT || permAuthType == AuthType.SUDO) {
                         request = new LoggingHttpServletRequestWrapper(httpServletRequest);
                     }

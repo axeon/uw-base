@@ -11,11 +11,11 @@ import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.Throughput)//基准测试类型
 @OutputTimeUnit(TimeUnit.MILLISECONDS)//基准测试结果的时间类型
-@Warmup(iterations = 1, time = 5)//预热的迭代次数
+@Warmup(iterations = 1, time = 10)//预热的迭代次数
 @Threads(100)//测试线程数量
 @State(Scope.Benchmark)//该状态为每个线程独享
 //度量:iterations进行测试的轮次，time每轮进行的时长，timeUnit时长单位,batchSize批次数量
-@Measurement(iterations = 3, time = 5)
+@Measurement(iterations = 3, time = 10)
 public class SystemClockTest {
 
     public static void main(String[] args) throws RunnerException {
@@ -27,19 +27,20 @@ public class SystemClockTest {
         new Runner(opt).run();
     }
 
+//    @Benchmark
+//    public long currentTimeMillis() {
+//        return System.currentTimeMillis();
+//    }
+//
     @Benchmark
-    public long currentTimeMillis() {
-        return SystemClock.now();
-    }
-
-    @Benchmark
-    public long systemClock() {
-        return SystemClock.now();
+    public long nanoTime() {
+        return System.nanoTime();
     }
 
 //    @Benchmark
-//    public long nanoTime() {
-//        return System.nanoTime();
+//    public long systemClock() {
+//        return SystemClock.now();
 //    }
+
 
 }

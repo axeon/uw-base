@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
+import uw.common.util.SystemClock;
 import uw.task.TaskCroner;
 import uw.task.TaskData;
 import uw.task.TaskListenerManager;
@@ -137,7 +138,7 @@ public class TaskCronerContainer {
             taskCronerLog.setRunType( taskCronerConfig.getRunType() );
             taskCronerLog.setRunTarget( taskCronerConfig.getRunTarget() );
             taskCronerLog.setTaskId( taskCronerConfig.getId() );
-            taskCronerLog.setRunDate( new Date() );
+            taskCronerLog.setRunDate( SystemClock.nowDate() );
             // 执行监听器操作
             ArrayList<CronerTaskListener> cronerListenerList = taskListenerManager.getCronerListenerList();
             if (cronerListenerList != null && cronerListenerList.size() > 0) {
@@ -177,7 +178,7 @@ public class TaskCronerContainer {
                     }
                 }
             }
-            taskCronerLog.setFinishDate( new Date() );
+            taskCronerLog.setFinishDate( SystemClock.nowDate() );
             taskCronerLog.setResultData( resultData );
             taskCronerLog.setRefObject( null );
         }, triggerContext -> {

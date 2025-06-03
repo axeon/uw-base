@@ -53,7 +53,7 @@ public class TestSQLGenBenchmark {
         stateList.add(1);
         stateList.add(2);
         queryParam.setAppInfo("%test%");
-        queryParam.setCreateDate(new Date[]{new Date(SystemClock.now()-86400000),new Date()});
+        queryParam.setCreateDate(new Date[]{new Date(SystemClock.now()-86400000),SystemClock.nowDate()});
         queryParam.setStateList(stateList);
         queryParam.setStateOn(true);
         queryParam.ADD_EXT_COND("test>?",1);

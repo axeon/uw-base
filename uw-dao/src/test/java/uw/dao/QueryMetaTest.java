@@ -1,5 +1,6 @@
 package uw.dao;
 
+import uw.common.util.SystemClock;
 import uw.dao.annotation.QueryMeta;
 import uw.dao.annotation.TableMeta;
 import uw.dao.vo.QueryParamResult;
@@ -18,8 +19,8 @@ public class QueryMetaTest {
         a.id = 1L;
         a.name = URLEncoder.encode( "JTR" , StandardCharsets.UTF_8);
         a.stateGte = 1;
-        a.date = Arrays.asList( new Date[]{new Date(1), new Date()} );
-        a.ADD_EXT_COND( "create_date>?" ,new Date());
+        a.date = Arrays.asList( new Date[]{new Date(1), SystemClock.nowDate()} );
+        a.ADD_EXT_COND( "create_date>?" ,SystemClock.nowDate());
         a.ADD_EXT_COND_SQL( "x>0" );
         a.SORT_NAME( "id");
         a.SORT_TYPE( QueryParam.SORT_ASC);

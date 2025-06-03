@@ -8,6 +8,7 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import uw.common.util.SystemClock;
 import uw.task.conf.TaskMetaInfoManager;
 import uw.task.conf.TaskProperties;
 import uw.task.container.TaskQueueLocalExecutor;
@@ -15,7 +16,6 @@ import uw.task.container.TaskRunnerContainer;
 import uw.task.exception.TaskRuntimeException;
 import uw.task.util.TaskSequenceManager;
 
-import java.util.Date;
 import java.util.concurrent.*;
 
 /**
@@ -25,7 +25,7 @@ import java.util.concurrent.*;
  */
 public class TaskFactory {
 
-    private static final Logger log = LoggerFactory.getLogger( TaskFactory.class );
+    private static final Logger log = LoggerFactory.getLogger(TaskFactory.class);
 
     /**
      * 最大重试次数。
@@ -66,10 +66,10 @@ public class TaskFactory {
         this.taskRunnerContainer = taskRunnerContainer;
         this.taskSequenceManager = taskSequenceManager;
         this.taskMetaInfoManager = taskMetaInfoManager;
-        taskRpcService = new ThreadPoolExecutor( taskProperties.getTaskRpcThreadMinNum(), taskProperties.getTaskRpcThreadMaxNum(), 20L, TimeUnit.SECONDS,
-                new SynchronousQueue<>(), new ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "TaskRpc-%d" ).build(), new ThreadPoolExecutor.CallerRunsPolicy() );
-        taskQueueService = new ThreadPoolExecutor( taskProperties.getTaskLocalThreadMinNum(), taskProperties.getTaskLocalThreadMaxNum(), 20L, TimeUnit.SECONDS,
-                new SynchronousQueue<>(), new ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "TaskQueue-%d" ).build(), new TaskQueueLocalExecutor.SendToQueuePolicy() );
+        taskRpcService = new ThreadPoolExecutor(taskProperties.getTaskRpcThreadMinNum(), taskProperties.getTaskRpcThreadMaxNum(), 20L, TimeUnit.SECONDS,
+                new SynchronousQueue<>(), new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskRpc-%d").build(), new ThreadPoolExecutor.CallerRunsPolicy());
+        taskQueueService = new ThreadPoolExecutor(taskProperties.getTaskLocalThreadMinNum(), taskProperties.getTaskLocalThreadMaxNum(), 20L, TimeUnit.SECONDS,
+                new SynchronousQueue<>(), new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskQueue-%d").build(), new TaskQueueLocalExecutor.SendToQueuePolicy());
         taskFactory = this;
     }
 
@@ -88,21 +88,21 @@ public class TaskFactory {
      * @param taskData 执行任务对象
      */
     public void sendToQueue(final TaskData<?, ?> taskData) {
-        Message message = buildTaskQueueMessage( taskData );
+        Message message = buildTaskQueueMessage(taskData);
         String queue = message.getMessageProperties().getConsumerQueue();
         //此处可能出现The channelMax limit is reached.报错，所以进行重试。
         for (int i = 0; i < MAX_RETRY_TIMES; i++) {
             try {
                 if (i > 0) {
-                    Thread.sleep( i * 500 );
+                    Thread.sleep(i * 500);
                 }
-                rabbitTemplate.send( queue, queue, message );
+                rabbitTemplate.send(queue, queue, message);
                 return;
             } catch (Exception e) {
-                log.error( e.getMessage(), e );
+                log.error(e.getMessage(), e);
             }
         }
-        throw new TaskRuntimeException( "The channelMax limit is reached!" );
+        throw new TaskRuntimeException("The channelMax limit is reached!");
     }
 
     /**
@@ -114,10 +114,10 @@ public class TaskFactory {
      * @param taskData 任务数据
      */
     public void runQueue(final TaskData<?, ?> taskData) {
-        if (taskData.getTaskDelay()>0){
-            this.sendToQueue( taskData );
-        }else {
-            taskQueueService.submit( new TaskQueueLocalExecutor( this, taskData ) );
+        if (taskData.getTaskDelay() > 0) {
+            this.sendToQueue(taskData);
+        } else {
+            taskQueueService.submit(new TaskQueueLocalExecutor(this, taskData));
         }
     }
 
@@ -130,39 +130,39 @@ public class TaskFactory {
      */
     @SuppressWarnings("unchecked")
     public <TP, RD> TaskData<TP, RD> runTask(final TaskData<TP, RD> taskData) {
-        taskData.setId( taskSequenceManager.nextId( "TaskRunnerLog" ) );
-        taskData.setQueueDate( new Date() );
+        taskData.setId(taskSequenceManager.nextId("TaskRunnerLog"));
+        taskData.setQueueDate(SystemClock.nowDate());
         // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
-        if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && taskMetaInfoManager.checkRunnerRunLocal( taskData )) {
+        if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && taskMetaInfoManager.checkRunnerRunLocal(taskData)) {
             // 启动本地运行模式。
-            taskData.setRunType( TaskData.RUN_TYPE_LOCAL );
+            taskData.setRunType(TaskData.RUN_TYPE_LOCAL);
         }
         if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
-            taskRunnerContainer.process( taskData );
+            taskRunnerContainer.process(taskData);
             return taskData;
         } else {
-            taskData.setRunType( TaskData.RUN_TYPE_GLOBAL_RPC );
+            taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
             //加入优先级信息。
             MessageProperties messageProperties = new MessageProperties();
-            messageProperties.setPriority( 10 );
-            messageProperties.setDeliveryMode( MessageDeliveryMode.NON_PERSISTENT );
-            messageProperties.setExpiration( "180000" );
-            Message message = rabbitTemplate.getMessageConverter().toMessage( taskData, messageProperties );
+            messageProperties.setPriority(10);
+            messageProperties.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
+            messageProperties.setExpiration("180000");
+            Message message = rabbitTemplate.getMessageConverter().toMessage(taskData, messageProperties);
             // 全局运行模式
-            String queue = taskMetaInfoManager.getFitQueue( taskData );
+            String queue = taskMetaInfoManager.getFitQueue(taskData);
             //此处可能出现The channelMax limit is reached.报错，所以进行重试。
             for (int i = 0; i < MAX_RETRY_TIMES; i++) {
                 try {
                     if (i > 0) {
-                        Thread.sleep( i * 500 );
+                        Thread.sleep(i * 500);
                     }
-                    Message retMessage = rabbitTemplate.sendAndReceive( queue, queue, message );
-                    return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage( retMessage );
+                    Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
+                    return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
                 } catch (Exception e) {
-                    log.error( e.getMessage(), e );
+                    log.error(e.getMessage(), e);
                 }
             }
-            throw new TaskRuntimeException( "The channelMax limit is reached!" );
+            throw new TaskRuntimeException("The channelMax limit is reached!");
         }
     }
 
@@ -175,18 +175,18 @@ public class TaskFactory {
      */
     @SuppressWarnings("unchecked")
     public <TP, RD> TaskData<TP, RD> runTaskLocal(final TaskData<TP, RD> taskData) {
-        taskData.setId( taskSequenceManager.nextId( "TaskRunnerLog" ) );
-        taskData.setQueueDate( new Date() );
+        taskData.setId(taskSequenceManager.nextId("TaskRunnerLog"));
+        taskData.setQueueDate(SystemClock.nowDate());
         // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
-        if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && taskMetaInfoManager.checkRunnerRunLocal( taskData )) {
+        if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && taskMetaInfoManager.checkRunnerRunLocal(taskData)) {
             // 启动本地运行模式。
-            taskData.setRunType( TaskData.RUN_TYPE_LOCAL );
+            taskData.setRunType(TaskData.RUN_TYPE_LOCAL);
         }
         if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
-            taskRunnerContainer.process( taskData );
+            taskRunnerContainer.process(taskData);
             return taskData;
         } else {
-            throw new TaskRuntimeException( taskData.getClass().getName() + " is not a local task! " );
+            throw new TaskRuntimeException(taskData.getClass().getName() + " is not a local task! ");
         }
     }
 
@@ -201,45 +201,45 @@ public class TaskFactory {
      */
     @SuppressWarnings("unchecked")
     public <TP, RD> Future<TaskData<TP, RD>> runTaskAsync(final TaskData<TP, RD> taskData) {
-        taskData.setId( taskSequenceManager.nextId( "TaskRunnerLog" ) );
-        taskData.setQueueDate( new Date() );
+        taskData.setId(taskSequenceManager.nextId("TaskRunnerLog"));
+        taskData.setQueueDate(SystemClock.nowDate());
 
         // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
-        if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && taskMetaInfoManager.checkRunnerRunLocal( taskData )) {
+        if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && taskMetaInfoManager.checkRunnerRunLocal(taskData)) {
             // 启动本地运行模式。
-            taskData.setRunType( TaskData.RUN_TYPE_LOCAL );
+            taskData.setRunType(TaskData.RUN_TYPE_LOCAL);
         }
         if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
             // 启动本地运行模式。
-            return taskRpcService.submit( () -> {
-                taskRunnerContainer.process( taskData );
+            return taskRpcService.submit(() -> {
+                taskRunnerContainer.process(taskData);
                 return taskData;
-            } );
+            });
         } else {
             // 全局运行模式
-            taskData.setRunType( TaskData.RUN_TYPE_GLOBAL_RPC );
+            taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
             //加入优先级信息。
             MessageProperties messageProperties = new MessageProperties();
-            messageProperties.setPriority( 10 );
-            messageProperties.setDeliveryMode( MessageDeliveryMode.NON_PERSISTENT );
-            messageProperties.setExpiration( "180000" );
-            Message message = rabbitTemplate.getMessageConverter().toMessage( taskData, messageProperties );
-            String queue = taskMetaInfoManager.getFitQueue( taskData );
-            return taskRpcService.submit( () -> {
+            messageProperties.setPriority(10);
+            messageProperties.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
+            messageProperties.setExpiration("180000");
+            Message message = rabbitTemplate.getMessageConverter().toMessage(taskData, messageProperties);
+            String queue = taskMetaInfoManager.getFitQueue(taskData);
+            return taskRpcService.submit(() -> {
                 //此处可能出现The channelMax limit is reached.报错，所以进行重试。
                 for (int i = 0; i < MAX_RETRY_TIMES; i++) {
                     try {
                         if (i > 0) {
-                            Thread.sleep( i * 500 );
+                            Thread.sleep(i * 500);
                         }
-                        Message retMessage = rabbitTemplate.sendAndReceive( queue, queue, message );
-                        return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage( retMessage );
+                        Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
+                        return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
                     } catch (Exception e) {
-                        log.error( e.getMessage(), e );
+                        log.error(e.getMessage(), e);
                     }
                 }
-                throw new TaskRuntimeException( "The channelMax limit is reached!" );
-            } );
+                throw new TaskRuntimeException("The channelMax limit is reached!");
+            });
         }
     }
 
@@ -250,7 +250,7 @@ public class TaskFactory {
      * @return 0 是消息数量 1 是消费者数量
      */
     public int[] getQueueInfo(String queueName) {
-        AMQP.Queue.DeclareOk declareOk = this.rabbitTemplate.execute( channel -> channel.queueDeclarePassive( queueName ) );
+        AMQP.Queue.DeclareOk declareOk = this.rabbitTemplate.execute(channel -> channel.queueDeclarePassive(queueName));
         return new int[]{declareOk.getMessageCount(), declareOk.getConsumerCount()};
     }
 
@@ -261,10 +261,10 @@ public class TaskFactory {
      * @return 被清除的队列数
      */
     public int purgeQueue(String queueName) {
-        return this.rabbitTemplate.execute( channel -> {
-            AMQP.Queue.PurgeOk queuePurged = channel.queuePurge( queueName );
+        return this.rabbitTemplate.execute(channel -> {
+            AMQP.Queue.PurgeOk queuePurged = channel.queuePurge(queueName);
             return queuePurged.getMessageCount();
-        } );
+        });
     }
 
     /**
@@ -274,16 +274,16 @@ public class TaskFactory {
      * @return Message 发送的队列信息
      */
     private Message buildTaskQueueMessage(final TaskData taskData) {
-        taskData.setId( taskSequenceManager.nextId( "TaskRunnerLog" ) );
-        taskData.setQueueDate( new Date() );
-        taskData.setRunType( TaskData.RUN_TYPE_GLOBAL );
+        taskData.setId(taskSequenceManager.nextId("TaskRunnerLog"));
+        taskData.setQueueDate(SystemClock.nowDate());
+        taskData.setRunType(TaskData.RUN_TYPE_GLOBAL);
         MessageProperties messageProperties = new MessageProperties();
-        messageProperties.setConsumerQueue( taskMetaInfoManager.getFitQueue( taskData ) );
+        messageProperties.setConsumerQueue(taskMetaInfoManager.getFitQueue(taskData));
         // 没法拿到配置信息，除非返回。暂时先用taskDelay > 0处理
         if (taskData.getTaskDelay() > 0) {
-            messageProperties.setExpiration( String.valueOf( taskData.getTaskDelay() ) );
+            messageProperties.setExpiration(String.valueOf(taskData.getTaskDelay()));
         }
-        return rabbitTemplate.getMessageConverter().toMessage( taskData, messageProperties );
+        return rabbitTemplate.getMessageConverter().toMessage(taskData, messageProperties);
     }
 
 }

@@ -5,11 +5,11 @@ import org.slf4j.LoggerFactory;
 import uw.auth.service.AuthServiceHelper;
 import uw.common.app.entity.SysDataHistory;
 import uw.common.util.JsonUtils;
+import uw.common.util.SystemClock;
 import uw.dao.DaoFactory;
 import uw.dao.DataEntity;
 
 import java.io.Serializable;
-import java.util.Date;
 
 /**
  * 系统公用的历史记录存储Helper。
@@ -76,7 +76,7 @@ public class SysDataHistoryHelper {
                 history.setRealName(null);
                 history.setUserIp(null);
             }
-            history.setCreateDate(new Date());
+            history.setCreateDate(SystemClock.nowDate());
             history.setEntityData(JsonUtils.toString(dataEntity));
             if (dataEntity instanceof DataEntity de) {
                 if (de.GET_UPDATED_INFO() != null) {
@@ -85,7 +85,6 @@ public class SysDataHistoryHelper {
                     de.CLEAR_UPDATED_INFO();
                 }
             }
-            history.setCreateDate(new Date());
             dao.save(history);
         } catch (Throwable e) {
             log.error(e.getMessage(), e);

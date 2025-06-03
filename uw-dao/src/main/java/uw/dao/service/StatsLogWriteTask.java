@@ -2,6 +2,7 @@ package uw.dao.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.JsonUtils;
 import uw.dao.DaoFactory;
 import uw.dao.util.DaoValueUtils;
 import uw.dao.util.ShardingTableUtils;
@@ -11,7 +12,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -49,11 +49,11 @@ public class StatsLogWriteTask implements Runnable {
     private void writeStatsList(List<SqlExecuteStats> list) {
 
         String tableName = ShardingTableUtils.getTableNameByDate(DaoService.STATS_BASE_TABLE,
-                list.get(0).getActionDate());
+                list.getFirst().getActionDate());
         Connection conn = null;
         PreparedStatement pstmt = null;
         String pdsql = "INSERT INTO " + tableName
-                + "(conn_name,conn_id,sql_info,sql_param,row_num,conn_time,db_time,all_time,exception,exe_date) values "
+                + "(conn_name,conn_id,sql_info,sql_param,row_num,conn_millis,db_millis,all_millis,exception,exe_date) values "
                 + "(?,?,?,?,?,?,?,?,?,?) ";
         int pos = 0;
         try {
@@ -72,14 +72,21 @@ public class StatsLogWriteTask implements Runnable {
                 }
                 pstmt.setString(1, ss.getConnName());
                 pstmt.setInt(2, ss.getConnId());
+                if (ss.getSql() != null && ss.getSql().length() > 2000) {
+                    ss.setSql(ss.getSql().substring(0, 2000));
+                }
                 pstmt.setString(3, ss.getSql());
-                pstmt.setString(4, Arrays.toString(ss.getParamList()));
+                String paramSqlInfo = JsonUtils.toString(ss.getParamList());
+                if (paramSqlInfo != null && paramSqlInfo.length() > 2000) {
+                    paramSqlInfo = paramSqlInfo.substring(0, 2000);
+                }
+                pstmt.setString(4, paramSqlInfo);
                 pstmt.setInt(5, ss.getRowNum());
-                pstmt.setInt(6, (int) ss.getConnTime());
-                pstmt.setInt(7, (int) ss.getDbTime());
-                pstmt.setInt(8, (int) ss.getAllTime());
-                if (ss.getException() != null && ss.getException().length() > 500) {
-                    ss.setException(ss.getException().substring(0, 100));
+                pstmt.setInt(6, (int) ss.getConnMillis());
+                pstmt.setInt(7, (int) ss.getDbMillis());
+                pstmt.setInt(8, (int) ss.getAllMillis());
+                if (ss.getException() != null && ss.getException().length() > 1000) {
+                    ss.setException(ss.getException().substring(0, 1000));
                 }
                 pstmt.setString(9, ss.getException());
                 pstmt.setTimestamp(10, DaoValueUtils.dateToTimestamp(ss.getActionDate()));

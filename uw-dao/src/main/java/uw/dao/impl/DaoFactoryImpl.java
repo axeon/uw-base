@@ -55,16 +55,17 @@ public class DaoFactoryImpl extends DaoFactory {
     /**
      * 添加性能统计数据.
      *
-     * @param connName  连接名称
-     * @param sql       sql
-     * @param paramList sql参数
-     * @param rowNum    返回/影响的行数
-     * @param dbTime    数据库层操作数据库消耗的时间
-     * @param allTime   数据库层消耗的时间
-     * @param exception 异常信息
+     * @param connName   连接名称
+     * @param sql        sql
+     * @param paramList  sql参数
+     * @param rowNum     返回/影响的行数
+     * @param connMillis 数据库层建立连接消耗的时间
+     * @param dbMillis   数据库层操作数据库消耗的时间
+     * @param allMillis  数据库层消耗的总时间
+     * @param exception  异常信息
      */
-    SqlExecuteStats addSqlExecuteStats(String connName, int connId, String sql, Object[] paramList, int rowNum, long connTime, long dbTime, long allTime, String exception) {
-        SqlExecuteStats ses = new SqlExecuteStats(connName, connId, sql, paramList, rowNum, connTime, dbTime, allTime, exception);
+    SqlExecuteStats addSqlExecuteStats(String connName, int connId, String sql, Object[] paramList, int rowNum, long connMillis, long dbMillis, long allMillis, String exception) {
+        SqlExecuteStats ses = new SqlExecuteStats(connName, connId, sql, paramList, rowNum, connMillis, dbMillis, allMillis, exception);
 
         if (log.isDebugEnabled()) {
             log.debug(ses.genFullSqlInfo());

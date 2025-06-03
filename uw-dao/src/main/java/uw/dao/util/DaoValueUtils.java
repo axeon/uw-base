@@ -10,6 +10,9 @@ import java.util.Arrays;
  */
 public class DaoValueUtils {
 
+    /**
+     * 日期格式化.
+     */
     private static final FastDateFormat dateFormat = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss.SSSZZ");
 
     /**

@@ -34,7 +34,7 @@ public class StatsCleanDataTask implements Runnable {
      * @return HashSet对象
      */
     private HashSet<String> getCurrentTableSet() {
-        HashSet<String> set = new HashSet<String>();
+        HashSet<String> set = new HashSet<>();
         List<String> list = null;
         try {
             list = dao.queryForSingleList(dao.getConnectionName(DaoService.STATS_BASE_TABLE, "all"), String.class,
@@ -59,20 +59,20 @@ public class StatsCleanDataTask implements Runnable {
     public void run() {
         logger.info("StatsInfo Clean Task is run start!");
         HashSet<String> tableSet = getCurrentTableSet();
-        ArrayList<String> list = new ArrayList<String>(tableSet);
+        ArrayList<String> list = new ArrayList<>(tableSet);
         // 自然顺序排序
         Collections.sort(list);
         // 保留100天数据，假设
         int start = 100;
         try {
             start = DaoConfigManager.getConfig().getSqlStats().getDataKeepDays();
-        } catch (Throwable e) {
+        } catch (Throwable ignored) {
         }
         // 循环删除过期数据
         for (int i = start; i < list.size(); i++) {
             try {
                 dao.executeCommand("DROP TABLE IF EXISTS " + list.get(i));
-                logger.info( "删除数据表[{}].", list.get( i ) );
+                logger.info( "DROP TABLE IF EXISTS [{}].", list.get( i ) );
             } catch (TransactionException e) {
                 logger.error(e.getMessage());
             }

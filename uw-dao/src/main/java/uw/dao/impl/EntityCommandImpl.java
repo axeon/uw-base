@@ -54,8 +54,8 @@ public class EntityCommandImpl {
      */
     @SuppressWarnings("resource")
     static <T extends DataEntity> T save(DaoFactoryImpl dao, String connName, T entity, String tableName) throws TransactionException {
-        long start = SystemClock.now();
-        long connTime = 0, dbTime = 0;
+        long startMillis = SystemClock.now();
+        long connMillis = 0, dbMillis = 0, allMillis = 0;
         int connId = 0;
         String exception = null;
         TableMetaInfo emi = EntityMetaUtils.loadEntityMetaInfo(entity.getClass());
@@ -95,14 +95,14 @@ public class EntityCommandImpl {
                 paramList[seq] = DaoReflectUtils.DAOLiteSaveReflect(pstmt, entity, fmi, seq + 1);
                 seq++;
             }
-            connTime = SystemClock.now() - start;
-            long dbStart = SystemClock.now();
+            long dbStartMillis = SystemClock.now();
+            connMillis = dbStartMillis - startMillis;
             if (dao.getBatchUpdateController().getBatchStatus()) {
                 pstmt.addBatch();
             } else {
                 effectedNum = pstmt.executeUpdate();
             }
-            dbTime = SystemClock.now() - dbStart;
+            dbMillis = SystemClock.now() - dbStartMillis;
             // 设置主键值
             emi.setLoadFlag(entity);
             // 清除更新标记
@@ -125,9 +125,9 @@ public class EntityCommandImpl {
                     logger.error(e.getMessage(), e);
                 }
             }
-            long allTime = SystemClock.now() - start;
+            allMillis = SystemClock.now() - startMillis;
             if (!dao.getBatchUpdateController().getBatchStatus()) {
-                dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effectedNum, connTime, dbTime, allTime, exception);
+                dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effectedNum, connMillis, dbMillis, allMillis, exception);
             }
         }
         return entity;
@@ -146,8 +146,8 @@ public class EntityCommandImpl {
      */
     @SuppressWarnings("resource")
     static <T extends DataEntity> List<T> save(DaoFactoryImpl dao, String connName, List<T> entityList, String tableName) throws TransactionException {
-        long start = SystemClock.now();
-        long connTime = 0, dbTime = 0;
+        long startMillis = SystemClock.now();
+        long connMillis = 0, dbMillis = 0, allMillis = 0;
         int connId = 0;
         String exception = null;
         if (entityList == null || entityList.size() == 0) {
@@ -197,14 +197,14 @@ public class EntityCommandImpl {
                     seq++;
                 }
             }
-            connTime = SystemClock.now() - start;
-            long dbStart = SystemClock.now();
+            long dbStartMillis = SystemClock.now();
+            connMillis = dbStartMillis - startMillis;
             if (dao.getBatchUpdateController().getBatchStatus()) {
                 pstmt.addBatch();
             } else {
                 effectedNum = pstmt.executeUpdate();
             }
-            dbTime = SystemClock.now() - dbStart;
+            dbMillis = SystemClock.now() - dbStartMillis;
             for (T entity : entityList) {
                 // 设置主键值
                 emi.setLoadFlag(entity);
@@ -229,9 +229,9 @@ public class EntityCommandImpl {
                     logger.error(e.getMessage(), e);
                 }
             }
-            long allTime = SystemClock.now() - start;
+            allMillis = SystemClock.now() - startMillis;
             if (!dao.getBatchUpdateController().getBatchStatus()) {
-                dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effectedNum, connTime, dbTime, allTime, exception);
+                dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effectedNum, connMillis, dbMillis, allMillis, exception);
             }
         }
         return entityList;
@@ -250,8 +250,8 @@ public class EntityCommandImpl {
      * @throws TransactionException 事务异常
      */
     static <T> T load(DaoFactoryImpl dao, String connName, Class<T> cls, String tableName, Serializable id) throws TransactionException {
-        long start = SystemClock.now();
-        long connTime = 0, dbTime = 0;
+        long startMillis = SystemClock.now();
+        long connMillis = 0, dbMillis = 0, allMillis = 0;
         int connId = 0, rowNum = 0;
         String exception = null;
         TableMetaInfo emi = EntityMetaUtils.loadEntityMetaInfo(cls);
@@ -269,7 +269,7 @@ public class EntityCommandImpl {
         List<FieldMetaInfo> pks = emi.getPkList();
         sb.append("select * from ").append(tableName).append(" where ");
         if (pks.size() > 0) {
-            FieldMetaInfo fmi = pks.get(0);
+            FieldMetaInfo fmi = pks.getFirst();
             sb.append(fmi.getColumnName()).append("=? ");
         }
 
@@ -282,10 +282,10 @@ public class EntityCommandImpl {
             connId = con.hashCode();
             pstmt = con.prepareStatement(sb.toString());
             DaoReflectUtils.CommandUpdateReflect(pstmt, 1, id);
-            connTime = SystemClock.now() - start;
-            long dbStart = SystemClock.now();
+            long dbStartMillis = SystemClock.now();
+            connMillis = dbStartMillis - startMillis;
             ResultSet rs = pstmt.executeQuery();
-            dbTime = SystemClock.now() - dbStart;
+            dbMillis = SystemClock.now() - dbStartMillis;
 
             // 获取字段列表
             ResultSetMetaData rsm = rs.getMetaData();
@@ -326,8 +326,8 @@ public class EntityCommandImpl {
                     logger.error(e.getMessage(), e);
                 }
             }
-            long allTime = SystemClock.now() - start;
-            dao.addSqlExecuteStats(connName, connId, sb.toString(), new Object[]{id}, rowNum, connTime, dbTime, allTime, exception);
+            allMillis = SystemClock.now() - startMillis;
+            dao.addSqlExecuteStats(connName, connId, sb.toString(), new Object[]{id}, rowNum, connMillis, dbMillis, allMillis, exception);
         }
         return entity;
     }
@@ -345,8 +345,8 @@ public class EntityCommandImpl {
      * @throws TransactionException 事务异常
      */
     static <T> T listSingle(DaoFactoryImpl dao, String connName, Class<T> cls, String selectSql, Object[] paramList) throws TransactionException {
-        long start = SystemClock.now();
-        long connTime = 0, dbTime = 0;
+        long startMillis = SystemClock.now();
+        long connMillis = 0, dbMillis = 0, allMillis = 0;
         int connId = 0, rowNum = 0;
         String exception = null;
         if (connName == null) {
@@ -373,10 +373,10 @@ public class EntityCommandImpl {
                     DaoReflectUtils.CommandUpdateReflect(pstmt, seq + 1, paramList[seq]);
                 }
             }
-            connTime = SystemClock.now() - start;
-            long dbStart = SystemClock.now();
+            long dbStartMillis = SystemClock.now();
+            connMillis = dbStartMillis - startMillis;
             ResultSet rs = pstmt.executeQuery();
-            dbTime = SystemClock.now() - dbStart;
+            dbMillis = SystemClock.now() - dbStartMillis;
 
             // 获取字段列表
             ResultSetMetaData rsm = rs.getMetaData();
@@ -417,8 +417,8 @@ public class EntityCommandImpl {
                     logger.error(e.getMessage(), e);
                 }
             }
-            long allTime = SystemClock.now() - start;
-            dao.addSqlExecuteStats(connName, connId, selectSql, paramList, rowNum, connTime, dbTime, allTime, exception);
+            allMillis = SystemClock.now() - startMillis;
+            dao.addSqlExecuteStats(connName, connId, selectSql, paramList, rowNum, connMillis, dbMillis, allMillis, exception);
         }
         return entity;
     }
@@ -439,8 +439,8 @@ public class EntityCommandImpl {
         if (!DataUpdateInfo.hasUpdateInfo(entity.GET_UPDATED_INFO())) {
             return 0;
         }
-        long start = SystemClock.now();
-        long connTime = 0, dbTime = 0;
+        long startMillis = SystemClock.now();
+        long connMillis = 0, dbMillis = 0, allMillis = 0;
         int connId = 0;
         String exception = null;
         TableMetaInfo emi = EntityMetaUtils.loadEntityMetaInfo(entity.getClass());
@@ -491,14 +491,14 @@ public class EntityCommandImpl {
                 paramList[seq] = DaoReflectUtils.DAOLiteSaveReflect(pstmt, entity, fmi, seq + 1);
                 seq++;
             }
-            connTime = SystemClock.now() - start;
-            long dbStart = SystemClock.now();
+            long dbStartMillis = SystemClock.now();
+            connMillis = dbStartMillis - startMillis;
             if (dao.getBatchUpdateController().getBatchStatus()) {
                 pstmt.addBatch();
             } else {
                 effectedNum = pstmt.executeUpdate();
             }
-            dbTime = SystemClock.now() - dbStart;
+            dbMillis = SystemClock.now() - dbStartMillis;
             // 设置主键值
             emi.setLoadFlag(entity);
             // 注释掉，否则历史记录无法正常记录信息。
@@ -521,9 +521,9 @@ public class EntityCommandImpl {
                     logger.error(e.getMessage(), e);
                 }
             }
-            long allTime = SystemClock.now() - start;
+            allMillis = SystemClock.now() - startMillis;
             if (!dao.getBatchUpdateController().getBatchStatus()) {
-                dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effectedNum, connTime, dbTime, allTime, exception);
+                dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effectedNum, connMillis, dbMillis, allMillis, exception);
             }
         }
         return effectedNum;
@@ -540,8 +540,8 @@ public class EntityCommandImpl {
      * @throws TransactionException 事务异常
      */
     static int delete(DaoFactoryImpl dao, String connName, DataEntity entity, String tableName) throws TransactionException {
-        long start = SystemClock.now();
-        long connTime = 0, dbTime = 0;
+        long startMillis = SystemClock.now();
+        long connMillis = 0, dbMillis = 0, allMillis = 0;
         int connId = 0;
         String exception = null;
         TableMetaInfo emi = EntityMetaUtils.loadEntityMetaInfo(entity.getClass());
@@ -583,14 +583,14 @@ public class EntityCommandImpl {
                 paramList[seq] = DaoReflectUtils.DAOLiteSaveReflect(pstmt, entity, fmi, seq + 1);
                 seq++;
             }
-            connTime = SystemClock.now() - start;
-            long dbStart = SystemClock.now();
+            long dbStartMillis = SystemClock.now();
+            connMillis = dbStartMillis - startMillis;
             if (dao.getBatchUpdateController().getBatchStatus()) {
                 pstmt.addBatch();
             } else {
                 effectedNum = pstmt.executeUpdate();
             }
-            dbTime = SystemClock.now() - dbStart;
+            dbMillis = SystemClock.now() - dbStartMillis;
         } catch (Exception e) {
             exception = e.toString();
             throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + Arrays.toString(paramList), e);
@@ -609,9 +609,9 @@ public class EntityCommandImpl {
                     logger.error(e.getMessage(), e);
                 }
             }
-            long allTime = SystemClock.now() - start;
+            allMillis = SystemClock.now() - startMillis;
             if (!dao.getBatchUpdateController().getBatchStatus()) {
-                dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effectedNum, connTime, dbTime, allTime, exception);
+                dao.addSqlExecuteStats(connName, connId, sb.toString(), paramList, effectedNum, connMillis, dbMillis, allMillis, exception);
             }
         }
         return effectedNum;
@@ -633,8 +633,8 @@ public class EntityCommandImpl {
      * @throws TransactionException 事务异常
      */
     static <T> DataList<T> list(DaoFactoryImpl dao, String connName, Class<T> cls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
-        long start = SystemClock.now();
-        long connTime = 0, dbTime = 0;
+        long startMillis = SystemClock.now();
+        long connMillis = 0, dbMillis = 0, allMillis = 0;
         int connId = 0;
         String exception = null;
         if (connName == null) {
@@ -679,10 +679,10 @@ public class EntityCommandImpl {
                 pstmt.setInt(seq + 1, (Integer) paramList[seq]);
                 pstmt.setInt(seq + 2, (Integer) paramList[seq + 1]);
             }
-            connTime = SystemClock.now() - start;
-            long dbStart = SystemClock.now();
+            long dbStartMillis = SystemClock.now();
+            connMillis = dbStartMillis - startMillis;
             ResultSet rs = pstmt.executeQuery();
-            dbTime = SystemClock.now() - dbStart;
+            dbMillis = SystemClock.now() - dbStartMillis;
 
             // 获取字段列表
             ResultSetMetaData rsm = rs.getMetaData();
@@ -722,14 +722,18 @@ public class EntityCommandImpl {
                     logger.error(e.getMessage(), e);
                 }
             }
-            long allTime = SystemClock.now() - start;
-            dao.addSqlExecuteStats(connName, connId, selectSql, paramList, list.size(), connTime, dbTime, allTime, exception);
+            allMillis = SystemClock.now() - startMillis;
+            dao.addSqlExecuteStats(connName, connId, selectSql, paramList, list.size(), connMillis, dbMillis, allMillis, exception);
         }
-        //如果设置自动Count，并且列表长度等于结果集长度，才进行Count
-        if (autoCount && list.size() >= resultNum) {
-            String countSql = "select count(1) from (" + selectSql + ") must_alias";
-            allSize = SQLCommandImpl.selectForSingleValue(dao, connName, Integer.class, countSql, paramList);
+        //自动Count场景下，如果数据长度小于结果集长度，直接使用数据长度作为allSize，否则去数据库count
+        if (autoCount) {
+            if (startIndex == 0 && list.size() < resultNum) {
+                allSize = list.size();
+            } else {
+                String countSql = "select count(1) from (" + selectSql + ") must_alias";
+                allSize = SQLCommandImpl.selectForSingleValue(dao, connName, Integer.class, countSql, paramList);
+            }
         }
-        return new DataList<T>(list, startIndex, resultNum, allSize);
+        return new DataList<>(list, startIndex, resultNum, allSize);
     }
 }

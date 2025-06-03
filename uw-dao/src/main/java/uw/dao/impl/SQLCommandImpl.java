@@ -42,8 +42,8 @@ public class SQLCommandImpl {
      */
     @SuppressWarnings("unchecked")
     public static <T> T selectForSingleValue(DaoFactoryImpl dao, String connName, Class<T> cls, String selectSql, Object[] paramList) throws TransactionException {
-        long start = SystemClock.now();
-        long connTime = 0, dbTime = 0;
+        long startMillis = SystemClock.now();
+        long connMillis = 0, dbMillis = 0, allMillis = 0;
         int connId = 0;
         String exception = null;
         if (connName == null) {
@@ -65,10 +65,10 @@ public class SQLCommandImpl {
                     DaoReflectUtils.CommandUpdateReflect(pstmt, i + 1, paramList[i]);
                 }
             }
-            connTime = SystemClock.now() - start;
-            long dbStart = SystemClock.now();
+            long dbStartMillis = SystemClock.now();
+            connMillis = dbStartMillis - startMillis;
             ResultSet rs = pstmt.executeQuery();
-            dbTime = SystemClock.now() - dbStart;
+            dbMillis = SystemClock.now() - dbStartMillis;
             if (rs.next()) {
                 if (cls == int.class || cls == Integer.class) {
                     value = rs.getInt(1);
@@ -111,8 +111,8 @@ public class SQLCommandImpl {
                     logger.error(e.getMessage(), e);
                 }
             }
-            long allTime = SystemClock.now() - start;
-            dao.addSqlExecuteStats(connName, connId, selectSql, paramList, value == null ? 0 : 1, connTime, dbTime, allTime, exception);
+            allMillis = SystemClock.now() - startMillis;
+            dao.addSqlExecuteStats(connName, connId, selectSql, paramList, value == null ? 0 : 1, connMillis, dbMillis, allMillis, exception);
         }
         return (T) value;
     }
@@ -131,8 +131,8 @@ public class SQLCommandImpl {
      */
     @SuppressWarnings("unchecked")
     public static <T> ArrayList<T> selectForSingleList(DaoFactoryImpl dao, String connName, Class<T> cls, String selectSql, Object[] paramList) throws TransactionException {
-        long start = SystemClock.now();
-        long connTime = 0, dbTime = 0;
+        long startMillis = SystemClock.now();
+        long connMillis = 0, dbMillis = 0, allMillis = 0;
         int connId = 0;
         String exception = null;
         if (connName == null) {
@@ -155,10 +155,10 @@ public class SQLCommandImpl {
                     DaoReflectUtils.CommandUpdateReflect(pstmt, i + 1, paramList[i]);
                 }
             }
-            connTime = SystemClock.now() - start;
-            long dbStart = SystemClock.now();
+            long dbStartMillis = SystemClock.now();
+            connMillis = dbStartMillis - startMillis;
             ResultSet rs = pstmt.executeQuery();
-            dbTime = SystemClock.now() - dbStart;
+            dbMillis = SystemClock.now() - dbStartMillis;
 
             if (cls == int.class || cls == Integer.class) {
                 while (rs.next()) {
@@ -220,8 +220,8 @@ public class SQLCommandImpl {
                     logger.error(e.getMessage(), e);
                 }
             }
-            long allTime = SystemClock.now() - start;
-            dao.addSqlExecuteStats(connName, connId, selectSql, paramList, list.size(), connTime, dbTime, allTime, exception);
+            allMillis = SystemClock.now() - startMillis;
+            dao.addSqlExecuteStats(connName, connId, selectSql, paramList, list.size(), connMillis, dbMillis, allMillis, exception);
         }
         return (ArrayList<T>) list;
     }
@@ -240,8 +240,8 @@ public class SQLCommandImpl {
      * @throws TransactionException 事务异常
      */
     public static DataSet selectForDataSet(DaoFactoryImpl dao, String connName, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
-        long start = SystemClock.now();
-        long connTime = 0, dbTime = 0;
+        long startMillis = SystemClock.now();
+        long connMillis = 0, dbMillis = 0, allMillis = 0;
         int connId = 0, dsSize = 0;
         String exception = null;
         if (connName == null) {
@@ -251,7 +251,7 @@ public class SQLCommandImpl {
             paramList = new Object[0];
         }
 
-        int allsize = 0;
+        int allSize = 0;
 
         //原始参数长度
         int originParamSize = paramList.length;
@@ -281,11 +281,11 @@ public class SQLCommandImpl {
                 pstmt.setInt(seq + 1, (Integer) paramList[seq]);
                 pstmt.setInt(seq + 2, (Integer) paramList[seq + 1]);
             }
-            connTime = SystemClock.now() - start;
-            long dbStart = SystemClock.now();
+            long dbStartMillis = SystemClock.now();
+            connMillis = dbStartMillis - startMillis;
             ResultSet rs = pstmt.executeQuery();
-            dbTime = SystemClock.now() - dbStart;
-            ds = new DataSet(rs, startIndex, resultNum, allsize);
+            dbMillis = SystemClock.now() - dbStartMillis;
+            ds = new DataSet(rs, startIndex, resultNum, allSize);
             rs.close();
             dsSize = ds.size();
         } catch (Exception e) {
@@ -306,14 +306,18 @@ public class SQLCommandImpl {
                     logger.error(e.getMessage(), e);
                 }
             }
-            long allTime = SystemClock.now() - start;
-            dao.addSqlExecuteStats(connName, connId, selectSql, paramList, dsSize, connTime, dbTime, allTime, exception);
+            allMillis = SystemClock.now() - startMillis;
+            dao.addSqlExecuteStats(connName, connId, selectSql, paramList, dsSize, connMillis, dbMillis, allMillis, exception);
         }
-        //如果设置自动Count，并且列表长度等于结果集长度，才进行Count
-        if (autoCount && ds.size() >= ds.resultNum()) {
-            String countSql = "select count(1) from (" + selectSql + ") must_alias";
-            allsize = SQLCommandImpl.selectForSingleValue(dao, connName, Integer.class, countSql, paramList);
-            ds.calcPages(allsize);
+        //自动Count场景下，如果数据长度小于结果集长度，直接使用数据长度作为allSize，否则去数据库count
+        if (autoCount) {
+            if (startIndex == 0 && ds.size() < resultNum) {
+                allSize = ds.size();
+            } else {
+                String countSql = "select count(1) from (" + selectSql + ") must_alias";
+                allSize = SQLCommandImpl.selectForSingleValue(dao, connName, Integer.class, countSql, paramList);
+            }
+            ds.calcPages(allSize);
         }
         return ds;
     }
@@ -329,8 +333,8 @@ public class SQLCommandImpl {
      * @throws TransactionException 事务异常
      */
     public static int executeSQL(DaoFactoryImpl dao, String connName, String executesql, Object[] paramList) throws TransactionException {
-        long start = SystemClock.now();
-        long connTime = 0, dbTime = 0;
+        long startMillis = SystemClock.now();
+        long connMillis = 0, dbMillis = 0, allMillis = 0;
         int connId = 0;
         String exception = null;
 
@@ -353,14 +357,14 @@ public class SQLCommandImpl {
                     DaoReflectUtils.CommandUpdateReflect(pstmt, i + 1, paramList[i]);
                 }
             }
-            connTime = SystemClock.now() - start;
-            long dbStart = SystemClock.now();
+            long dbStartMillis = SystemClock.now();
+            connMillis = dbStartMillis - startMillis;
             if (dao.getBatchUpdateController().getBatchStatus()) {
                 pstmt.addBatch();
             } else {
                 effectedNum = pstmt.executeUpdate();
             }
-            dbTime = SystemClock.now() - dbStart;
+            dbMillis = SystemClock.now() - dbStartMillis;
         } catch (Exception e) {
             exception = e.toString();
             throw new TransactionException(exception + connName + "@" + connId + ": " + executesql + "#" + Arrays.toString(paramList), e);
@@ -379,9 +383,9 @@ public class SQLCommandImpl {
                     logger.error(e.getMessage(), e);
                 }
             }
-            long allTime = SystemClock.now() - start;
+            allMillis = SystemClock.now() - startMillis;
             if (!dao.getBatchUpdateController().getBatchStatus()) {
-                dao.addSqlExecuteStats(connName, connId, executesql, paramList, effectedNum, connTime, dbTime, allTime, exception);
+                dao.addSqlExecuteStats(connName, connId, executesql, paramList, effectedNum, connMillis, dbMillis, allMillis, exception);
             }
         }
         return effectedNum;

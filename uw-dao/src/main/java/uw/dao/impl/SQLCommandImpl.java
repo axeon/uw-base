@@ -253,11 +253,6 @@ public class SQLCommandImpl {
 
         int allsize = 0;
 
-        //自动count
-        if (autoCount) {
-            String countSql = "select count(1) from (" + selectSql + ") must_alias";
-            allsize = SQLCommandImpl.selectForSingleValue(dao, connName, Integer.class, countSql, paramList);
-        }
         //原始参数长度
         int originParamSize = paramList.length;
         //判断是否需要分页
@@ -313,6 +308,12 @@ public class SQLCommandImpl {
             }
             long allTime = SystemClock.now() - start;
             dao.addSqlExecuteStats(connName, connId, selectSql, paramList, dsSize, connTime, dbTime, allTime, exception);
+        }
+        //如果设置自动Count，并且列表长度等于结果集长度，才进行Count
+        if (autoCount && ds.size() >= ds.resultNum()) {
+            String countSql = "select count(1) from (" + selectSql + ") must_alias";
+            allsize = SQLCommandImpl.selectForSingleValue(dao, connName, Integer.class, countSql, paramList);
+            ds.calcPages(allsize);
         }
         return ds;
     }

@@ -240,7 +240,6 @@ public class JsonUtils {
      * 将对象序列化写入输出流。
      *
      * @param object
-     * @return
      * @throws RuntimeException
      */
     public static void write(Object object, OutputStream out) throws RuntimeException {

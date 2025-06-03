@@ -1,5 +1,6 @@
 package uw.common.util;
 
+import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -40,6 +41,15 @@ public class SystemClock {
      */
     public static long now() {
         return NOW.get();
+    }
+
+    /**
+     * 获取当前Date。
+     *
+     * @return 当前时间戳
+     */
+    public static Date nowDate() {
+        return new Date(NOW.get());
     }
 
     /**

@@ -1,8 +1,8 @@
 package uw.dao.vo;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
+import uw.common.util.JsonUtils;
+import uw.common.util.SystemClock;
 import uw.dao.util.DaoValueUtils;
 
 import java.util.Arrays;
@@ -41,17 +41,17 @@ public class SqlExecuteStats {
     /**
      * Conn时间.
      */
-    private long connTime;
+    private long connMillis;
 
     /**
      * 数据库操作消耗的时间.
      */
-    private long dbTime;
+    private long dbMillis;
 
     /**
      * 数据库层消耗的时间.
      */
-    private long allTime;
+    private long allMillis;
 
     /**
      * 异常类.
@@ -66,24 +66,25 @@ public class SqlExecuteStats {
     /**
      * SqlExecuteStats对象.
      *
-     * @param connName  连接名
-     * @param sql       SQL语句
-     * @param paramList 参数
-     * @param rowNum    返回/影响的行数
-     * @param dbTime    数据库操作消耗的时间
-     * @param allTime   数据库层消耗的时间
-     * @param exception 异常
+     * @param connName   连接名
+     * @param sql        SQL语句
+     * @param paramList  参数
+     * @param rowNum     返回/影响的行数
+     * @param connMillis 数据库层建立连接消耗的时间
+     * @param dbMillis   数据库层操作数据库消耗的时间
+     * @param allMillis  数据库层消耗的总时间
+     * @param exception  异常
      */
-    public SqlExecuteStats(String connName, int connId, String sql, Object[] paramList, int rowNum, long connTime, long dbTime, long allTime,
+    public SqlExecuteStats(String connName, int connId, String sql, Object[] paramList, int rowNum, long connMillis, long dbMillis, long allMillis,
                            String exception) {
         this.connName = connName;
         this.connId = connId;
         this.sql = sql;
         this.paramList = paramList;
         this.rowNum = rowNum;
-        this.connTime = connTime;
-        this.dbTime = dbTime;
-        this.allTime = allTime;
+        this.connMillis = connMillis;
+        this.dbMillis = dbMillis;
+        this.allMillis = allMillis;
         this.exception = exception;
     }
 
@@ -91,10 +92,10 @@ public class SqlExecuteStats {
      * 初始化动作时间。
      */
     public void initActionDate() {
-        if (this.actionDate == null)
-            this.actionDate = new Date();
+        if (this.actionDate == null) {
+            this.actionDate = SystemClock.nowDate();
+        }
     }
-
 
     /**
      * 输出完整sql信息。
@@ -104,7 +105,7 @@ public class SqlExecuteStats {
     public String genFullSqlInfo() {
         StringBuilder sb = new StringBuilder(512);
         sb.append("Connection ").append(connName).append('@').append(connId).append(" run ");
-        sb.append("effectNum:").append(rowNum).append(", connTime:").append(connTime).append(", dbTime:").append(dbTime).append(", allTime:").append(allTime).append(".");
+        sb.append("effectNum:").append(rowNum).append(", connMillis:").append(connMillis).append(", dbMillis:").append(dbMillis).append(", allMillis:").append(allMillis).append(".");
         sb.append("\n\tsql: ").append(DaoValueUtils.combineSqlAndParam(sql, paramList));
         if (StringUtils.isNotBlank(exception)) {
             sb.append("\n\texception: ").append(exception);
@@ -120,7 +121,7 @@ public class SqlExecuteStats {
     public String genParamSqlInfo() {
         StringBuilder sb = new StringBuilder(512);
         sb.append("Connection ").append(connName).append('@').append(connId).append(" run ");
-        sb.append("effectNum:").append(rowNum).append(", connTime:").append(connTime).append(", dbTime:").append(dbTime).append(", allTime:").append(allTime).append(".\n");
+        sb.append("effectNum:").append(rowNum).append(", connMillis:").append(connMillis).append(", dbMillis:").append(dbMillis).append(", allMillis:").append(allMillis).append(".\n");
         sb.append("\n\tsql: ").append(sql);
         if (paramList != null) {
             sb.append("\n\tparam: ").append(Arrays.toString(paramList));
@@ -139,7 +140,7 @@ public class SqlExecuteStats {
      */
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this, ToStringStyle.MULTI_LINE_STYLE);
+        return JsonUtils.toString(this);
     }
 
     /**
@@ -195,29 +196,29 @@ public class SqlExecuteStats {
     /**
      * @return the dbTime
      */
-    public long getDbTime() {
-        return dbTime;
+    public long getDbMillis() {
+        return dbMillis;
     }
 
     /**
-     * @param dbTime the dbTime to set
+     * @param dbMillis the dbTime to set
      */
-    public void setDbTime(long dbTime) {
-        this.dbTime = dbTime;
+    public void setDbMillis(long dbMillis) {
+        this.dbMillis = dbMillis;
     }
 
     /**
      * @return the allTime
      */
-    public long getAllTime() {
-        return allTime;
+    public long getAllMillis() {
+        return allMillis;
     }
 
     /**
-     * @param allTime the allTime to set
+     * @param allMillis the allTime to set
      */
-    public void setAllTime(long allTime) {
-        this.allTime = allTime;
+    public void setAllMillis(long allMillis) {
+        this.allMillis = allMillis;
     }
 
     /**
@@ -256,11 +257,11 @@ public class SqlExecuteStats {
         this.connId = connId;
     }
 
-    public long getConnTime() {
-        return connTime;
+    public long getConnMillis() {
+        return connMillis;
     }
 
-    public void setConnTime(long connTime) {
-        this.connTime = connTime;
+    public void setConnMillis(long connMillis) {
+        this.connMillis = connMillis;
     }
 }

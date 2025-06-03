@@ -131,7 +131,7 @@ public class DaoService {
      * @param ses 用于统计sql执行的性能数据
      */
     public static void logStats(SqlExecuteStats ses) {
-        if (enableSqlStats && ses.getAllTime() >= sqlCostMin) {
+        if (enableSqlStats && ses.getAllMillis() >= sqlCostMin) {
             ses.initActionDate();
             locker.lock();
             try {
@@ -164,11 +164,19 @@ public class DaoService {
      */
     private static void checkForCreatesStatsTable() {
         String sql = "create table if not exists " + STATS_BASE_TABLE + " (\n"
-                + "id bigint(20) NOT NULL AUTO_INCREMENT,\n" + "conn_name varchar(100) DEFAULT NULL,\n" + "conn_id int(11) DEFAULT NULL,\n"
-                + "sql_info varchar(1000) DEFAULT NULL,\n" + "sql_param varchar(1000) DEFAULT NULL,\n"
-                + "row_num int(11) DEFAULT NULL,\n" + "conn_time int(11) DEFAULT NULL,\n" + "db_time int(11) DEFAULT NULL,\n"
-                + "all_time int(11) DEFAULT NULL,\n" + "exception varchar(500) DEFAULT NULL,\n"
-                + "exe_date datetime DEFAULT NULL,\n" + "PRIMARY KEY (id)\n" + ") ENGINE=INNODB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPRESSED";
+                + "id bigint NOT NULL AUTO_INCREMENT,\n"
+                + "conn_name varchar(100) DEFAULT NULL,\n"
+                + "conn_id int DEFAULT NULL,\n"
+                + "sql_info varchar(2000) DEFAULT NULL,\n"
+                + "sql_param varchar(2000) DEFAULT NULL,\n"
+                + "row_num int DEFAULT NULL,\n"
+                + "conn_millis int DEFAULT NULL,\n"
+                + "db_millis int DEFAULT NULL,\n"
+                + "all_millis int DEFAULT NULL,\n"
+                + "exception varchar(1000) DEFAULT NULL,\n"
+                + "exe_date datetime DEFAULT NULL,\n"
+                + "PRIMARY KEY (id)\n"
+                + ") ENGINE=INNODB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPRESSED";
         try {
             dao.executeCommand(dao.getConnectionName(STATS_BASE_TABLE, "all"), sql);
             logger.info("init table: {}", STATS_BASE_TABLE);

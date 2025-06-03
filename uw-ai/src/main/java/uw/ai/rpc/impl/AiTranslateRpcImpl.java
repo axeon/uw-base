@@ -42,7 +42,7 @@ public class AiTranslateRpcImpl implements AiTranslateRpc {
     @Override
     public ResponseData<AiTranslateResultData[]> translateList(AiTranslateListParam param) {
         // 构建请求URL（假设基础路径为 uwAiProperties.getAiCenterHost()）
-        URI url = UriComponentsBuilder.fromHttpUrl(uwAiProperties.getAiCenterHost())
+        URI url = UriComponentsBuilder.fromUriString(uwAiProperties.getAiCenterHost())
                 .path("/rpc/translate/translateList")
                 .build()
                 .encode()
@@ -67,7 +67,7 @@ public class AiTranslateRpcImpl implements AiTranslateRpc {
     @Override
     public ResponseData<AiTranslateResultData[]> translateMap(AiTranslateMapParam param) {
         // 构建请求URL
-        URI url = UriComponentsBuilder.fromHttpUrl(uwAiProperties.getAiCenterHost())
+        URI url = UriComponentsBuilder.fromUriString(uwAiProperties.getAiCenterHost())
                 .path("/rpc/translate/translateMap")
                 .build()
                 .encode()

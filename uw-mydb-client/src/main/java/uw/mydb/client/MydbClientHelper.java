@@ -78,7 +78,7 @@ public class MydbClientHelper {
      */
     public static ResponseData<DataNode> assignSaasNode(String configKey, Serializable saasId, String preferNode) {
         URI targetUrl =
-                UriComponentsBuilder.fromHttpUrl( uwMydbClientProperties.getMydbCenterHost() ).path( "/rpc/app/assignSaasNode" ).queryParam( "configKey", configKey ).queryParam(
+                UriComponentsBuilder.fromUriString( uwMydbClientProperties.getMydbCenterHost() ).path( "/rpc/app/assignSaasNode" ).queryParam( "configKey", configKey ).queryParam(
                         "saasId", saasId ).queryParam( "preferNode", preferNode ).build().encode().toUri();
         return authRestTemplate.exchange( targetUrl, HttpMethod.POST, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<DataNode>>() {
         } ).getBody();

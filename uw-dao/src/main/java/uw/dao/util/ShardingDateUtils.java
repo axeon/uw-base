@@ -11,7 +11,7 @@ import java.util.Date;
 public class ShardingDateUtils {
 
 //    public static void main(String[] args) {
-//        Date now = new Date();
+//        Date now = SystemClock.nowDate();
 //        System.out.println(beginOfYear( now ));
 //        System.out.println(endOfYear( now ));
 //        System.out.println(beginOfLastYear( now ));

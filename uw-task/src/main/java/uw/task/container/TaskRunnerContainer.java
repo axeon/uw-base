@@ -21,7 +21,6 @@ import uw.task.util.TaskLocalRateLimiter;
 import uw.task.util.TaskStatsService;
 
 import java.util.ArrayList;
-import java.util.Date;
 
 /**
  * 在此处接受MQ信息，并进行处理。
@@ -96,7 +95,7 @@ public class TaskRunnerContainer {
             return null;
         }
         // 设置开始消费时间
-        taskData.setConsumeDate( new Date() );
+        taskData.setConsumeDate( SystemClock.nowDate() );
         // 获取任务实例
         TaskRunner<?, ?> taskRunner = taskMetaInfoManager.getRunnerInstance( taskData.getTaskClass() );
         // 获取任务设置数据
@@ -179,7 +178,7 @@ public class TaskRunnerContainer {
             }
         }
         // 设置开始执行时间
-        taskData.setRunDate( new Date() );
+        taskData.setRunDate( SystemClock.nowDate() );
         // 如果允许，则开始执行。
         if (noLimitFlag == 0) {
             ArrayList<RunnerTaskListener> runnerListenerList = taskListenerManager.getRunnerListenerList();
@@ -220,7 +219,7 @@ public class TaskRunnerContainer {
         }
 
         // 不管如何，都给设定结束日期。
-        taskData.setFinishDate( new Date() );
+        taskData.setFinishDate( SystemClock.nowDate() );
         //开始输出统计数据。
         TaskStatsService.updateRunnerStats( taskConfig.getId(), 1,
                 taskData.getState() == TaskData.STATE_FAIL_PROGRAM ? 1 : 0,

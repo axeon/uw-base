@@ -1,8 +1,9 @@
-# 2025.0601.0003版本升级说明
+# 2025.0601.0005版本升级说明
 1. uw-dao: 优化autoCount相关方法，尽量减少数据库count的查询。优化sql执行统计相关代码。
-2. uw-common: SystemClock增加了nowDate()方法，返回当前时间戳对应的Date对象。
+2. uw-common: SystemClock增加了nowDate()方法，优化CPU占用，支持低速模式。
 3. uw-ai,uw-auth-service,uw-gateway-client,uw-mydb-client: UriComponentsBuilder.fromUriString 替代 fromHttpUrl
 4. uw-auth-service: 优化IpWebUtils.getIp()方法，返回正确的IP地址。
+5. 所有模块针对SystemClock的优化。
 
 # 2025.0601.0002版本升级说明
 1. knife4j由于兼容性问题不再使用，项目已经装死两年，直接替换为springdoc，目测速度明显提升。

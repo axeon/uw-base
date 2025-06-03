@@ -5,11 +5,11 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.util.Lists;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import uw.common.util.SystemClock;
 import uw.log.es.service.LogService;
 import uw.log.es.vo.LogInterface;
 import uw.log.es.vo.LogInterfaceOrder;
 
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -48,9 +48,9 @@ public class LogClientReadModeTest {
             logInterface.setProductId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
             logInterface.setInterfaceProductId(RandomStringUtils.randomNumeric(11));
             logInterface.setInterfaceFunction("zwy.common.log.client.logInterface");
-            logInterface.setRequestDate(new Date());
+            logInterface.setRequestDate(SystemClock.nowDate());
             logInterface.setRequestBody("你吃饭了吗?");
-            logInterface.setResponseDate(new Date());
+            logInterface.setResponseDate(SystemClock.nowDate());
             logInterface.setResponseBody("吃了");
             logClient.log(logInterface);
             count++;
@@ -73,9 +73,9 @@ public class LogClientReadModeTest {
         logInterface.setProductId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
         logInterface.setInterfaceProductId(RandomStringUtils.randomNumeric(11));
         logInterface.setInterfaceFunction("zwy.common.log.client.logInterface");
-        logInterface.setRequestDate(new Date());
+        logInterface.setRequestDate(SystemClock.nowDate());
         logInterface.setRequestBody("你吃饭了吗?");
-        logInterface.setResponseDate(new Date());
+        logInterface.setResponseDate(SystemClock.nowDate());
         logInterface.setResponseBody("吃了");
         logClient.log(logInterface);
     }
@@ -92,9 +92,9 @@ public class LogClientReadModeTest {
         logInterface1.setProductId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
         logInterface1.setInterfaceProductId(RandomStringUtils.randomNumeric(11));
         logInterface1.setInterfaceFunction("common.log.client.logInterface");
-        logInterface1.setRequestDate(new Date());
+        logInterface1.setRequestDate(SystemClock.nowDate());
         logInterface1.setRequestBody("你吃饭了吗?");
-        logInterface1.setResponseDate(new Date());
+        logInterface1.setResponseDate(SystemClock.nowDate());
         logInterface1.setResponseBody("吃了");
         dataList.add(logInterface1);
 
@@ -106,9 +106,9 @@ public class LogClientReadModeTest {
         logInterface2.setProductId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
         logInterface2.setInterfaceProductId(RandomStringUtils.randomNumeric(11));
         logInterface2.setInterfaceFunction("common.log.client.logInterface");
-        logInterface2.setRequestDate(new Date());
+        logInterface2.setRequestDate(SystemClock.nowDate());
         logInterface2.setRequestBody("你吃饭了吗?");
-        logInterface2.setResponseDate(new Date());
+        logInterface2.setResponseDate(SystemClock.nowDate());
         logInterface2.setResponseBody("吃了");
         dataList.add(logInterface2);
 

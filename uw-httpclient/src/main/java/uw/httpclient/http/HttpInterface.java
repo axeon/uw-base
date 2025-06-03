@@ -6,13 +6,13 @@ import okhttp3.*;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.SystemClock;
 import uw.httpclient.exception.HttpRequestException;
 import uw.httpclient.json.JsonInterfaceHelper;
 import uw.httpclient.util.MediaTypes;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -1630,7 +1630,7 @@ public class HttpInterface {
             this.httpDataProcessor.requestProcess(null, null, null);
         }
         D httpData = initHttpData();
-        httpData.setRequestDate(new Date());
+        httpData.setRequestDate(SystemClock.nowDate());
         httpData.setRequestUrl(request.url().toString());
         httpData.setRequestMethod(request.method());
         httpData.setRequestHeader(request.headers().toString());
@@ -1651,7 +1651,7 @@ public class HttpInterface {
             }
         }
         try (Response response = okHttpClient.newCall(request).execute()) {
-            httpData.setResponseDate(new Date());
+            httpData.setResponseDate(SystemClock.nowDate());
             httpData.setStatusCode(response.code());
             httpData.setResponseType(response.header("Content-Type"));
             httpData.setResponseBytes(response.body().bytes());
@@ -1690,12 +1690,12 @@ public class HttpInterface {
         }
         Request request = requestBuilder.get().build();
         D httpData = initHttpData();
-        httpData.setRequestDate(new Date());
+        httpData.setRequestDate(SystemClock.nowDate());
         httpData.setRequestUrl(request.url().toString());
         httpData.setRequestMethod(request.method());
         httpData.setRequestHeader(request.headers().toString());
         try (Response response = okHttpClient.newCall(request).execute()) {
-            httpData.setResponseDate(new Date());
+            httpData.setResponseDate(SystemClock.nowDate());
             httpData.setStatusCode(response.code());
             httpData.setResponseType(response.header("Content-Type"));
             httpData.setResponseBytes(response.body().bytes());
@@ -1740,7 +1740,7 @@ public class HttpInterface {
         }
         Request request = requestBuilder.post(formBodyBuilder.build()).build();
         D httpData = initHttpData();
-        httpData.setRequestDate(new Date());
+        httpData.setRequestDate(SystemClock.nowDate());
         httpData.setRequestUrl(request.url().toString());
         httpData.setRequestMethod(request.method());
         httpData.setRequestHeader(request.headers().toString());
@@ -1751,7 +1751,7 @@ public class HttpInterface {
             }
         }
         try (Response response = okHttpClient.newCall(request).execute()) {
-            httpData.setResponseDate(new Date());
+            httpData.setResponseDate(SystemClock.nowDate());
             httpData.setStatusCode(response.code());
             httpData.setResponseType(response.header("Content-Type"));
             httpData.setResponseBytes(response.body().bytes());
@@ -1812,7 +1812,7 @@ public class HttpInterface {
         }
         Request request = requestBuilder.post(formBodyBuilder.build()).build();
         D httpData = initHttpData();
-        httpData.setRequestDate(new Date());
+        httpData.setRequestDate(SystemClock.nowDate());
         httpData.setRequestUrl(request.url().toString());
         httpData.setRequestMethod(request.method());
         httpData.setRequestHeader(request.headers().toString());
@@ -1823,7 +1823,7 @@ public class HttpInterface {
             }
         }
         try (Response response = okHttpClient.newCall(request).execute()) {
-            httpData.setResponseDate(new Date());
+            httpData.setResponseDate(SystemClock.nowDate());
             httpData.setStatusCode(response.code());
             httpData.setResponseType(response.header("Content-Type"));
             httpData.setResponseBytes(response.body().bytes());
@@ -1863,7 +1863,7 @@ public class HttpInterface {
         }
         Request requestBuilder = builder.post(RequestBody.create(requestBody, this.mediaType)).build();
         D httpData = initHttpData();
-        httpData.setRequestDate(new Date());
+        httpData.setRequestDate(SystemClock.nowDate());
         httpData.setRequestUrl(requestBuilder.url().toString());
         httpData.setRequestMethod(requestBuilder.method());
         httpData.setRequestHeader(requestBuilder.headers().toString());
@@ -1874,7 +1874,7 @@ public class HttpInterface {
             }
         }
         try (Response response = okHttpClient.newCall(requestBuilder).execute()) {
-            httpData.setResponseDate(new Date());
+            httpData.setResponseDate(SystemClock.nowDate());
             httpData.setStatusCode(response.code());
             httpData.setResponseType(response.header("Content-Type"));
             httpData.setResponseBytes(response.body().bytes());
@@ -1918,7 +1918,7 @@ public class HttpInterface {
         }
         Request request = requestBuilder.put(formBodyBuilder.build()).build();
         D httpData = initHttpData();
-        httpData.setRequestDate(new Date());
+        httpData.setRequestDate(SystemClock.nowDate());
         httpData.setRequestUrl(request.url().toString());
         httpData.setRequestMethod(request.method());
         httpData.setRequestHeader(request.headers().toString());
@@ -1929,7 +1929,7 @@ public class HttpInterface {
             }
         }
         try (Response response = okHttpClient.newCall(request).execute()) {
-            httpData.setResponseDate(new Date());
+            httpData.setResponseDate(SystemClock.nowDate());
             httpData.setStatusCode(response.code());
             httpData.setResponseType(response.header("Content-Type"));
             httpData.setResponseBytes(response.body().bytes());
@@ -1968,7 +1968,7 @@ public class HttpInterface {
         }
         Request requestBuilder = builder.put(RequestBody.create(requestBody, this.mediaType)).build();
         D httpData = initHttpData();
-        httpData.setRequestDate(new Date());
+        httpData.setRequestDate(SystemClock.nowDate());
         httpData.setRequestUrl(requestBuilder.url().toString());
         httpData.setRequestMethod(requestBuilder.method());
         httpData.setRequestHeader(requestBuilder.headers().toString());
@@ -1979,7 +1979,7 @@ public class HttpInterface {
             }
         }
         try (Response response = okHttpClient.newCall(requestBuilder).execute()) {
-            httpData.setResponseDate(new Date());
+            httpData.setResponseDate(SystemClock.nowDate());
             httpData.setStatusCode(response.code());
             httpData.setResponseType(response.header("Content-Type"));
             httpData.setResponseBytes(response.body().bytes());
@@ -2024,7 +2024,7 @@ public class HttpInterface {
         }
         Request request = requestBuilder.patch(formBodyBuilder.build()).build();
         D httpData = initHttpData();
-        httpData.setRequestDate(new Date());
+        httpData.setRequestDate(SystemClock.nowDate());
         httpData.setRequestUrl(request.url().toString());
         httpData.setRequestMethod(request.method());
         httpData.setRequestHeader(request.headers().toString());
@@ -2035,7 +2035,7 @@ public class HttpInterface {
             }
         }
         try (Response response = okHttpClient.newCall(request).execute()) {
-            httpData.setResponseDate(new Date());
+            httpData.setResponseDate(SystemClock.nowDate());
             httpData.setStatusCode(response.code());
             httpData.setResponseType(response.header("Content-Type"));
             httpData.setResponseBytes(response.body().bytes());
@@ -2074,7 +2074,7 @@ public class HttpInterface {
         }
         Request requestBuilder = builder.patch(RequestBody.create(requestBody, this.mediaType)).build();
         D httpData = initHttpData();
-        httpData.setRequestDate(new Date());
+        httpData.setRequestDate(SystemClock.nowDate());
         httpData.setRequestUrl(requestBuilder.url().toString());
         httpData.setRequestMethod(requestBuilder.method());
         httpData.setRequestHeader(requestBuilder.headers().toString());
@@ -2085,7 +2085,7 @@ public class HttpInterface {
             }
         }
         try (Response response = okHttpClient.newCall(requestBuilder).execute()) {
-            httpData.setResponseDate(new Date());
+            httpData.setResponseDate(SystemClock.nowDate());
             httpData.setStatusCode(response.code());
             httpData.setResponseType(response.header("Content-Type"));
             httpData.setResponseBytes(response.body().bytes());
@@ -2123,12 +2123,12 @@ public class HttpInterface {
         }
         Request request = requestBuilder.delete().build();
         D httpData = initHttpData();
-        httpData.setRequestDate(new Date());
+        httpData.setRequestDate(SystemClock.nowDate());
         httpData.setRequestUrl(request.url().toString());
         httpData.setRequestMethod(request.method());
         httpData.setRequestHeader(request.headers().toString());
         try (Response response = okHttpClient.newCall(request).execute()) {
-            httpData.setResponseDate(new Date());
+            httpData.setResponseDate(SystemClock.nowDate());
             httpData.setStatusCode(response.code());
             httpData.setResponseType(response.header("Content-Type"));
             httpData.setResponseBytes(response.body().bytes());

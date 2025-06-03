@@ -276,7 +276,7 @@ public void sendToQueue(TaskData<?, ?> taskData);
     @SuppressWarnings("unchecked")
     public <TP, RD> TaskData<TP, RD> runTaskLocal(final TaskData<TP, RD> taskData) {
         taskData.setId(globalSequenceManager.nextId("task_runner_log"));
-        taskData.setQueueDate(new Date());
+        taskData.setQueueDate(SystemClock.nowDate());
         // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
         if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && TaskMetaInfoManager.checkRunnerRunLocal(taskData)) {
             // 启动本地运行模式。

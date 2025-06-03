@@ -26,6 +26,10 @@
         </dependency>
         <dependency>
             <groupId>com.umtone</groupId>
+            <artifactId>uw-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.umtone</groupId>
             <artifactId>uw-httpclient</artifactId>
         </dependency>
         <dependency>
@@ -36,10 +40,6 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.umtone</groupId>
-            <artifactId>uw-common</artifactId>
         </dependency>
     </dependencies>
 

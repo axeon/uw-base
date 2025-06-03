@@ -1,7 +1,6 @@
 package uw.dao;
 
 import java.io.Serializable;
-import java.util.Set;
 
 /**
  * 用于dao的save/update操作。 如果需要做save/update操作，则entity必须要实现该接口.

@@ -293,7 +293,7 @@ public class EntityCommandImpl {
             List<FieldMetaInfo> fmiList = new ArrayList<>(colsCount);
             for (int k = 0; k < colsCount; k++) {
                 FieldMetaInfo fmi = emi.getInfoByColumnName(rsm.getColumnLabel(k + 1).toLowerCase());
-                if (fmi != null){
+                if (fmi != null) {
                     fmiList.add(fmi);
                 }
             }
@@ -384,7 +384,7 @@ public class EntityCommandImpl {
             List<FieldMetaInfo> fmiList = new ArrayList<>(colsCount);
             for (int k = 0; k < colsCount; k++) {
                 FieldMetaInfo fmi = emi.getInfoByColumnName(rsm.getColumnLabel(k + 1).toLowerCase());
-                if (fmi != null){
+                if (fmi != null) {
                     fmiList.add(fmi);
                 }
             }
@@ -651,11 +651,6 @@ public class EntityCommandImpl {
 
         int allSize = 0;
 
-        //自动count
-        if (autoCount) {
-            String countSql = "select count(1) from (" + selectSql + ") must_alias";
-            allSize = SQLCommandImpl.selectForSingleValue(dao, connName, Integer.class, countSql, paramList);
-        }
         //原始参数长度
         int originParamSize = paramList.length;
         //判断是否需要分页
@@ -695,11 +690,10 @@ public class EntityCommandImpl {
             List<FieldMetaInfo> fmiList = new ArrayList<>(colsCount);
             for (int k = 0; k < colsCount; k++) {
                 FieldMetaInfo fmi = emi.getInfoByColumnName(rsm.getColumnLabel(k + 1).toLowerCase());
-                if (fmi != null){
+                if (fmi != null) {
                     fmiList.add(fmi);
                 }
             }
-
             while (rs.next()) {
                 T entity = cls.getDeclaredConstructor().newInstance();
                 for (FieldMetaInfo fmi : fmiList) {
@@ -730,6 +724,11 @@ public class EntityCommandImpl {
             }
             long allTime = SystemClock.now() - start;
             dao.addSqlExecuteStats(connName, connId, selectSql, paramList, list.size(), connTime, dbTime, allTime, exception);
+        }
+        //如果设置自动Count，并且列表长度等于结果集长度，才进行Count
+        if (autoCount && list.size() >= resultNum) {
+            String countSql = "select count(1) from (" + selectSql + ") must_alias";
+            allSize = SQLCommandImpl.selectForSingleValue(dao, connName, Integer.class, countSql, paramList);
         }
         return new DataList<T>(list, startIndex, resultNum, allSize);
     }

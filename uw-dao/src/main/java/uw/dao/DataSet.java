@@ -111,22 +111,12 @@ public class DataSet implements Serializable {
         // 设置参数
         this.startIndex = startIndex;
         this.resultNum = resultNum;
-        this.sizeAll = sizeAll;
-
-        if (this.sizeAll > 0 && this.resultNum > 0) {
-            // 计算当前页
-            this.page = (int) Math.ceil((double) startIndex / (double) resultNum);
-            // 计算总页数
-            this.pageCount = (int) Math.ceil((double) sizeAll / (double) resultNum);
-        }
         // 获取字段列表
         ResultSetMetaData rsm = rs.getMetaData();
         int colsCount = rsm.getColumnCount();
-        cols = new String[colsCount];
-        int[] colTypes = new int[colsCount];
+        this.cols = new String[colsCount];
         for (int i = 0; i < colsCount; i++) {
-            cols[i] = rsm.getColumnLabel(i + 1).toLowerCase();
-            colTypes[i] = rsm.getColumnType(i + 1);
+            this.cols[i] = rsm.getColumnLabel(i + 1).toLowerCase();
         }
         // 开始赋值
         if (resultNum > 0) {
@@ -135,14 +125,16 @@ public class DataSet implements Serializable {
             this.results = new ArrayList<>();
         }
         while (rs.next()) {
-            this.size++;
             Object[] result = new Object[cols.length];
             for (int x = 0; x < cols.length; x++) {
                 // 将对应列名的值放入二维数组中
                 result[x] = rs.getObject(x + 1);
             }
-            results.add(result);
+            this.results.add(result);
         }
+        this.size = this.results.size();
+        // 计算页数信息
+        calcPages(sizeAll);
     }
 
     /**
@@ -170,9 +162,9 @@ public class DataSet implements Serializable {
         this.sizeAll = sizeAll;
         if (this.sizeAll > 0 && this.resultNum > 0) {
             // 计算当前页
-            this.page = (int) Math.ceil((double) startIndex / (double) resultNum);
+            this.page = (int) Math.ceil((float) startIndex / (float) resultNum);
             // 计算总页数
-            this.pageCount = (int) Math.ceil((double) sizeAll / (double) resultNum);
+            this.pageCount = (int) Math.ceil((float) sizeAll / (float) resultNum);
         }
     }
 

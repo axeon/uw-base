@@ -92,16 +92,11 @@ public class DataList<T> implements Iterable<T>, Serializable {
 
         this.startIndex = startIndex;
         this.resultNum = resultNum;
-        this.sizeAll = sizeAll;
         if (this.results != null) {
             this.size = this.results.size();
         }
-        if (this.sizeAll > 0 && this.resultNum > 0) {
-            // 计算当前页
-            this.page = (int) Math.ceil((double) startIndex / (double) resultNum);
-            // 计算总页数
-            this.pageCount = (int) Math.ceil((double) this.sizeAll / (double) resultNum);
-        }
+        // 计算页数信息
+        calcPages(sizeAll);
     }
 
     /**
@@ -121,9 +116,9 @@ public class DataList<T> implements Iterable<T>, Serializable {
         this.sizeAll = sizeAll;
         if (this.sizeAll > 0 && this.resultNum > 0) {
             // 计算当前页
-            this.page = (int) Math.ceil((double) startIndex / (double) resultNum);
+            this.page = (int) Math.ceil((float) startIndex / (float) resultNum);
             // 计算总页数
-            this.pageCount = (int) Math.ceil((double) sizeAll / (double) resultNum);
+            this.pageCount = (int) Math.ceil((float) sizeAll / (float) resultNum);
         }
     }
 

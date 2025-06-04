@@ -103,7 +103,7 @@ public class SystemClock {
      */
     public static long now() {
         CALL_COUNT++;
-        if (updateScheduler == null) {
+        if (updateTask == null) {
             return System.currentTimeMillis();
         } else {
             return NOW.get();

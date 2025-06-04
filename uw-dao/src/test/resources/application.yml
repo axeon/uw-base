@@ -3,7 +3,7 @@ uw:
     conn-pool:
       root:
         driver: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://192.168.88.21:3308/auth?allowPublicKeyRetrieval=true&useSSL=false&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true
+        url: jdbc:mysql://192.168.88.21:3308/auth
         username: root
         password: mysqlRootPassword
         min-conn: 3

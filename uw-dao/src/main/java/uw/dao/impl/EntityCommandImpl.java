@@ -4,6 +4,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.JsonUtils;
 import uw.common.util.SystemClock;
 import uw.dao.DataEntity;
 import uw.dao.DataList;
@@ -109,7 +110,7 @@ public class EntityCommandImpl {
             entity.CLEAR_UPDATED_INFO();
         } catch (Exception e) {
             exception = e.toString();
-            throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + Arrays.toString(paramList), e);
+            throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + JsonUtils.toString(paramList), e);
         } finally {
             if (!dao.getBatchUpdateController().getBatchStatus() && pstmt != null) {
                 try {
@@ -213,7 +214,7 @@ public class EntityCommandImpl {
             }
         } catch (Exception e) {
             exception = e.toString();
-            throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + Arrays.toString(paramList), e);
+            throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + JsonUtils.toString(paramList), e);
         } finally {
             if (!dao.getBatchUpdateController().getBatchStatus() && pstmt != null) {
                 try {
@@ -401,7 +402,7 @@ public class EntityCommandImpl {
             rs.close();
         } catch (Exception e) {
             exception = e.toString();
-            throw new TransactionException(exception + connName + "@" + connId + ": " + selectSql + "#" + Arrays.toString(paramList), e);
+            throw new TransactionException(exception + connName + "@" + connId + ": " + selectSql + "#" + JsonUtils.toString(paramList), e);
         } finally {
             if (pstmt != null) {
                 try {
@@ -505,7 +506,7 @@ public class EntityCommandImpl {
             // entity.CLEAR_UPDATED_INFO();
         } catch (Exception e) {
             exception = e.toString();
-            throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + Arrays.toString(paramList), e);
+            throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + JsonUtils.toString(paramList), e);
         } finally {
             if (!dao.getBatchUpdateController().getBatchStatus() && pstmt != null) {
                 try {
@@ -593,7 +594,7 @@ public class EntityCommandImpl {
             dbMillis = SystemClock.now() - dbStartMillis;
         } catch (Exception e) {
             exception = e.toString();
-            throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + Arrays.toString(paramList), e);
+            throw new TransactionException(exception + connName + "@" + connId + ": " + sb.toString() + "#" + JsonUtils.toString(paramList), e);
         } finally {
             if (!dao.getBatchUpdateController().getBatchStatus() && pstmt != null) {
                 try {
@@ -648,18 +649,21 @@ public class EntityCommandImpl {
         if (emi == null) {
             throw new TransactionException("TableMetaInfo[" + cls.getName() + "] not found! ");
         }
-
+        // 总条数
         int allSize = 0;
-
+        // 分页sql
+        String pagedSelectSql = selectSql;
+        // 分页参数
+        Object[] pagedParamList = paramList;
         //原始参数长度
-        int originParamSize = paramList.length;
+        int paramListSize = paramList.length;
         //判断是否需要分页
         boolean needPagination = resultNum > 0 && startIndex >= 0;
         if (needPagination) {
             Dialect dialect = ConnectionManager.getDialect(connName);
             Object[] po = dialect.getPagedSQL(selectSql, startIndex, resultNum);
-            selectSql = po[0].toString();
-            paramList = ArrayUtils.addAll(paramList, po[1], po[2]);
+            pagedSelectSql = po[0].toString();
+            pagedParamList = ArrayUtils.addAll(paramList, po[1], po[2]);
         }
 
         ArrayList<T> list = new ArrayList<T>();
@@ -668,16 +672,14 @@ public class EntityCommandImpl {
         try {
             con = dao.getTransactionController().getConnection(connName);
             connId = con.hashCode();
-            pstmt = con.prepareStatement(selectSql);
-            int seq = 0;
-            if (paramList != null) {
-                for (seq = 0; seq < originParamSize; seq++) {
-                    DaoReflectUtils.CommandUpdateReflect(pstmt, seq + 1, paramList[seq]);
-                }
+            pstmt = con.prepareStatement(pagedSelectSql);
+            int seq;
+            for (seq = 0; seq < paramListSize; seq++) {
+                DaoReflectUtils.CommandUpdateReflect(pstmt, seq + 1, pagedParamList[seq]);
             }
             if (needPagination) {
-                pstmt.setInt(seq + 1, (Integer) paramList[seq]);
-                pstmt.setInt(seq + 2, (Integer) paramList[seq + 1]);
+                pstmt.setInt(seq + 1, (Integer) pagedParamList[seq]);
+                pstmt.setInt(seq + 2, (Integer) pagedParamList[seq + 1]);
             }
             long dbStartMillis = SystemClock.now();
             connMillis = dbStartMillis - startMillis;
@@ -706,7 +708,7 @@ public class EntityCommandImpl {
             rs.close();
         } catch (Exception e) {
             exception = e.toString();
-            throw new TransactionException(exception + connName + "@" + connId + ": " + selectSql + "#" + Arrays.toString(paramList), e);
+            throw new TransactionException(exception + connName + "@" + connId + ": " + pagedSelectSql + "#" + JsonUtils.toString(pagedParamList), e);
         } finally {
             if (pstmt != null) {
                 try {
@@ -723,7 +725,7 @@ public class EntityCommandImpl {
                 }
             }
             allMillis = SystemClock.now() - startMillis;
-            dao.addSqlExecuteStats(connName, connId, selectSql, paramList, list.size(), connMillis, dbMillis, allMillis, exception);
+            dao.addSqlExecuteStats(connName, connId, pagedSelectSql, pagedParamList, list.size(), connMillis, dbMillis, allMillis, exception);
         }
         //自动Count场景下，如果数据长度小于结果集长度，直接使用数据长度作为allSize，否则去数据库count
         if (autoCount) {

@@ -3,6 +3,7 @@ package uw.dao.impl;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.JsonUtils;
 import uw.common.util.SystemClock;
 import uw.dao.DataSet;
 import uw.dao.TransactionException;
@@ -15,7 +16,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 
 /**
@@ -60,10 +60,8 @@ public class SQLCommandImpl {
             con = dao.getTransactionController().getConnection(connName);
             connId = con.hashCode();
             pstmt = con.prepareStatement(selectSql);
-            if (paramList != null && paramList.length > 0) {
-                for (int i = 0; i < paramList.length; i++) {
-                    DaoReflectUtils.CommandUpdateReflect(pstmt, i + 1, paramList[i]);
-                }
+            for (int i = 0; i < paramList.length; i++) {
+                DaoReflectUtils.CommandUpdateReflect(pstmt, i + 1, paramList[i]);
             }
             long dbStartMillis = SystemClock.now();
             connMillis = dbStartMillis - startMillis;
@@ -95,7 +93,7 @@ public class SQLCommandImpl {
             rs.close();
         } catch (Exception e) {
             exception = e.toString();
-            throw new TransactionException(exception + connName + "@" + connId + ": " + selectSql + "#" + Arrays.toString(paramList), e);
+            throw new TransactionException(exception + connName + "@" + connId + ": " + selectSql + "#" + JsonUtils.toString(paramList), e);
         } finally {
             if (pstmt != null) {
                 try {
@@ -149,11 +147,8 @@ public class SQLCommandImpl {
             con = dao.getTransactionController().getConnection(connName);
             connId = con.hashCode();
             pstmt = con.prepareStatement(selectSql);
-            int i = 0;
-            if (paramList != null && paramList.length > 0) {
-                for (i = 0; i < paramList.length; i++) {
-                    DaoReflectUtils.CommandUpdateReflect(pstmt, i + 1, paramList[i]);
-                }
+            for (int i = 0; i < paramList.length; i++) {
+                DaoReflectUtils.CommandUpdateReflect(pstmt, i + 1, paramList[i]);
             }
             long dbStartMillis = SystemClock.now();
             connMillis = dbStartMillis - startMillis;
@@ -204,7 +199,7 @@ public class SQLCommandImpl {
             rs.close();
         } catch (Exception e) {
             exception = e.toString();
-            throw new TransactionException(exception + connName + "@" + connId + ": " + selectSql + "#" + Arrays.toString(paramList), e);
+            throw new TransactionException(exception + connName + "@" + connId + ": " + selectSql + "#" + JsonUtils.toString(paramList), e);
         } finally {
             if (pstmt != null) {
                 try {
@@ -252,16 +247,19 @@ public class SQLCommandImpl {
         }
 
         int allSize = 0;
-
+        // 分页sql
+        String pagedSelectSql = selectSql;
+        // 分页参数
+        Object[] pagedParamList = paramList;
         //原始参数长度
-        int originParamSize = paramList.length;
+        int paramListSize = paramList.length;
         //判断是否需要分页
         boolean needPagination = resultNum > 0 && startIndex >= 0;
         if (needPagination) {
             Dialect dialect = ConnectionManager.getDialect(connName);
             Object[] po = dialect.getPagedSQL(selectSql, startIndex, resultNum);
-            selectSql = po[0].toString();
-            paramList = ArrayUtils.addAll(paramList, po[1], po[2]);
+            pagedSelectSql = po[0].toString();
+            pagedParamList = ArrayUtils.addAll(paramList, po[1], po[2]);
         }
 
         DataSet ds = DataSet.EMPTY;
@@ -270,16 +268,14 @@ public class SQLCommandImpl {
         try {
             con = dao.getTransactionController().getConnection(connName);
             connId = con.hashCode();
-            pstmt = con.prepareStatement(selectSql);
-            int seq = 0;
-            if (paramList != null) {
-                for (seq = 0; seq < originParamSize; seq++) {
-                    DaoReflectUtils.CommandUpdateReflect(pstmt, seq + 1, paramList[seq]);
-                }
+            pstmt = con.prepareStatement(pagedSelectSql);
+            int seq;
+            for (seq = 0; seq < paramListSize; seq++) {
+                DaoReflectUtils.CommandUpdateReflect(pstmt, seq + 1, pagedParamList[seq]);
             }
             if (needPagination) {
-                pstmt.setInt(seq + 1, (Integer) paramList[seq]);
-                pstmt.setInt(seq + 2, (Integer) paramList[seq + 1]);
+                pstmt.setInt(seq + 1, (Integer) pagedParamList[seq]);
+                pstmt.setInt(seq + 2, (Integer) pagedParamList[seq + 1]);
             }
             long dbStartMillis = SystemClock.now();
             connMillis = dbStartMillis - startMillis;
@@ -290,7 +286,7 @@ public class SQLCommandImpl {
             dsSize = ds.size();
         } catch (Exception e) {
             exception = e.toString();
-            throw new TransactionException(exception + connName + "@" + connId + ": " + selectSql + "#" + Arrays.toString(paramList), e);
+            throw new TransactionException(exception + connName + "@" + connId + ": " + pagedSelectSql + "#" + JsonUtils.toString(pagedParamList), e);
         } finally {
             if (pstmt != null) {
                 try {
@@ -307,7 +303,7 @@ public class SQLCommandImpl {
                 }
             }
             allMillis = SystemClock.now() - startMillis;
-            dao.addSqlExecuteStats(connName, connId, selectSql, paramList, dsSize, connMillis, dbMillis, allMillis, exception);
+            dao.addSqlExecuteStats(connName, connId, pagedSelectSql, pagedParamList, dsSize, connMillis, dbMillis, allMillis, exception);
         }
         //自动Count场景下，如果数据长度小于结果集长度，直接使用数据长度作为allSize，否则去数据库count
         if (autoCount) {
@@ -325,21 +321,21 @@ public class SQLCommandImpl {
     /**
      * 执行任意sql.
      *
-     * @param dao        DAOFactoryImpl对象
-     * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
-     * @param executesql 执行的SQL
-     * @param paramList  执行SQL的绑定参数
+     * @param dao       DAOFactoryImpl对象
+     * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
+     * @param exeSql    执行的SQL
+     * @param paramList 执行SQL的绑定参数
      * @return int
      * @throws TransactionException 事务异常
      */
-    public static int executeSQL(DaoFactoryImpl dao, String connName, String executesql, Object[] paramList) throws TransactionException {
+    public static int executeSQL(DaoFactoryImpl dao, String connName, String exeSql, Object[] paramList) throws TransactionException {
         long startMillis = SystemClock.now();
         long connMillis = 0, dbMillis = 0, allMillis = 0;
         int connId = 0;
         String exception = null;
 
         if (connName == null) {
-            connName = SQLUtils.getConnNameFromSQL(executesql);
+            connName = SQLUtils.getConnNameFromSQL(exeSql);
         }
         if (paramList == null) {
             paramList = new Object[0];
@@ -351,8 +347,8 @@ public class SQLCommandImpl {
         try {
             con = dao.getTransactionController().getConnection(connName);
             connId = con.hashCode();
-            pstmt = dao.getBatchUpdateController().prepareStatement(connName, connId, con, executesql);
-            if (paramList != null && paramList.length > 0) {
+            pstmt = dao.getBatchUpdateController().prepareStatement(connName, connId, con, exeSql);
+            if (paramList.length > 0) {
                 for (int i = 0; i < paramList.length; i++) {
                     DaoReflectUtils.CommandUpdateReflect(pstmt, i + 1, paramList[i]);
                 }
@@ -367,7 +363,7 @@ public class SQLCommandImpl {
             dbMillis = SystemClock.now() - dbStartMillis;
         } catch (Exception e) {
             exception = e.toString();
-            throw new TransactionException(exception + connName + "@" + connId + ": " + executesql + "#" + Arrays.toString(paramList), e);
+            throw new TransactionException(exception + connName + "@" + connId + ": " + exeSql + "#" + JsonUtils.toString(paramList), e);
         } finally {
             if (!dao.getBatchUpdateController().getBatchStatus() && pstmt != null) {
                 try {
@@ -385,7 +381,7 @@ public class SQLCommandImpl {
             }
             allMillis = SystemClock.now() - startMillis;
             if (!dao.getBatchUpdateController().getBatchStatus()) {
-                dao.addSqlExecuteStats(connName, connId, executesql, paramList, effectedNum, connMillis, dbMillis, allMillis, exception);
+                dao.addSqlExecuteStats(connName, connId, exeSql, paramList, effectedNum, connMillis, dbMillis, allMillis, exception);
             }
         }
         return effectedNum;

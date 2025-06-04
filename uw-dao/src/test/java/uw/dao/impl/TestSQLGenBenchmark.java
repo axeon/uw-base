@@ -2,6 +2,7 @@ package uw.dao.impl;
 
 import org.apache.commons.lang3.StringUtils;
 import org.openjdk.jmh.annotations.*;
+import uw.common.util.JsonUtils;
 import uw.common.util.SystemClock;
 import uw.dao.util.QueryParamUtils;
 import uw.dao.vo.QueryParamResult;
@@ -33,7 +34,7 @@ public class TestSQLGenBenchmark {
         QueryParamResult result = testQueryParam();
 
         System.out.println("参数化SQL: "+result.getSql());
-        System.out.println("参数列表: "+Arrays.toString(result.getParamList()));
+        System.out.println("参数列表: "+ JsonUtils.toString(result.getParamList()));
         System.out.println("完整SQL: "+result.genFullSql());
 
         System.out.println("占位符数量: "+StringUtils.countMatches(result.getSql(),"?"));

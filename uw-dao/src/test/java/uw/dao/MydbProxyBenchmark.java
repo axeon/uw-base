@@ -40,7 +40,7 @@ public class MydbProxyBenchmark {
         DaoConfig.ConnPool pool = new DaoConfig.ConnPool();
         DaoConfig.ConnPoolConfig poolConfig = new DaoConfig.ConnPoolConfig();
         poolConfig.setDriver( "com.mysql.cj.jdbc.Driver" );
-        poolConfig.setUrl( "jdbc:mysql://192.168.88.21:3300/uw_auth?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true" );
+        poolConfig.setUrl( "jdbc:mysql://192.168.88.21:3300/uw_auth?zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true" );
         poolConfig.setUsername( "root" );
         poolConfig.setPassword( "mysqlRootPassword123" );
         poolConfig.setMinConn( 10 );

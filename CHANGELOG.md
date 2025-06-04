@@ -1,4 +1,4 @@
-# 2025.0601.0005版本升级说明
+# 2025.0601.0006版本升级说明
 1. uw-dao: 优化autoCount相关方法，尽量减少数据库count的查询。优化sql执行统计相关代码。
 2. uw-common: SystemClock增加了nowDate()方法，优化CPU占用，支持低速模式。
 3. uw-ai,uw-auth-service,uw-gateway-client,uw-mydb-client: UriComponentsBuilder.fromUriString 替代 fromHttpUrl

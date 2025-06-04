@@ -124,7 +124,7 @@ public class SqlExecuteStats {
         sb.append("effectNum:").append(rowNum).append(", connMillis:").append(connMillis).append(", dbMillis:").append(dbMillis).append(", allMillis:").append(allMillis).append(".\n");
         sb.append("\n\tsql: ").append(sql);
         if (paramList != null) {
-            sb.append("\n\tparam: ").append(Arrays.toString(paramList));
+            sb.append("\n\tparam: ").append(JsonUtils.toString(paramList));
         }
         if (StringUtils.isNotBlank(exception)) {
             sb.append("\n\texception: ").append(exception);

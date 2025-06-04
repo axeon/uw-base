@@ -2,6 +2,7 @@ package uw.dao.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
+import uw.common.util.JsonUtils;
 
 import java.util.Arrays;
 
@@ -72,7 +73,7 @@ public class DaoValueUtils {
         String[] sqlParts = sql.split("\\?");
         //如果参数长度小于sql分段，说明有问题，分离合并后返回。
         if (paramList.length < sqlParts.length - 1) {
-            return sql + "#" + Arrays.toString(paramList);
+            return sql + "#" + JsonUtils.toString(paramList);
         }
         StringBuilder sb = new StringBuilder(sql.length() * 2);
         for (int i = 0; i < paramList.length; i++) {

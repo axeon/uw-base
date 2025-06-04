@@ -33,7 +33,7 @@ uw:
       # 连接池列表，可以同时配置多个连接池，排在第一个的为默认连接池，名字为必须为default。
       default:
         driver: com.mysql.jdbc.Driver
-        url: jdbc:mysql://localhost:3306/task?characterEncoding=utf-8&useSSL=false&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true
+        url: jdbc:mysql://localhost:3306/task?useSSL=false&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true
         username: root
         password: root
         # 测试sql，用于测试连接是否可用

@@ -1,3 +1,6 @@
+# 2025.0601.0008版本升级说明
+1. uw-dao: 修复autoCount优化过程中产生的bug。
+
 # 2025.0601.0006版本升级说明
 1. uw-dao: 优化autoCount相关方法，尽量减少数据库count的查询。优化sql执行统计相关代码。
 2. uw-common: SystemClock增加了nowDate()方法，优化CPU占用，支持低速模式。

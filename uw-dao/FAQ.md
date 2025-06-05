@@ -97,55 +97,40 @@ List<String> name;
 ```
 
 #### 10.如何正确的使用批量写入？如何优化写入速度？
-
+- mysql连接必须设置rewriteBatchedStatements=true，否则无法生效。
+- 必须开启一个新的DaoFactory实例，不可公用其他DaoFactory实例。
 - 使用dao的beginTransaction()方法获取TransactionManager实例，开启事务；
 - 使用dao的beginBatchUpdate()方法开启批量更新，获取BatchUpdateManager实例；
-- 此时执行save或者update方法，相当于addBatch操作；
-- 使用BatchUpdateManager的submit()方法关闭批量更新，此操作必须在finally中执行；
-- 使用TransactionManager的commit()方法来提交事务，此操作必须在finally中执行；
+- 此时执行save/update.delete方法，相当于addBatch操作；
+- 使用BatchUpdateManager的submit()方法关闭批量更新。
+- 使用TransactionManager的commit()方法来提交事务。
+- 异常中调用TransactionManager的rollback()方法来回退事务。
 
 优化
-
 - 通过BatchUpdateManager的setBatchsize接口设置合理的批量更新数量，控制数据库操作次数以优化性能。
-
-- Mysql jdbc连接参数中，必须带上allowMultiQueries=true参数，否则无法生效。
-
-- 在uw-mydb下，批量写入功能是无法工作。
-
+- 在uw-mydb-proxy下，批量写入功能是无法启用的。
 
 **代码示例如下：**
 
 ```java
-        //获取dao实例
-        private final DaoFactory dao = DaoFactory.getInstance();
-        //开启事务
-        TransactionManager transactionManager = dao.beginTransaction();
-        //开启批量写入
-        BatchUpdateManager batchUpdateManager = dao.beginBatchUpdate();
-        //判断是否有异常
-        boolean hasException = false;
-        try{
-            //执行save方法
-            for (EntityA entityA : entityList) {
-                dao.save(entityA);
-            }
-        }catch (Exception e){
-            //异常处理
-            hasException = true;
-            e.printStackTrace();
-        }finally {
-            //关闭批量写入, 此操作必须在finally中执行
-            batchUpdateManager.submit();
-            if(hasException){
-                //出现异常，回滚事务
-                transactionManager.rollback();
-            }else {
-                //提交事务，此操作必须在finally中执行
-                transactionManager.commit();
-            }
-        }
+//获取dao实例
+DaoFactory batchDao = DaoFactory.getInstance();
+//开启事务
+TransactionManager transactionManager = batchDao.beginTransaction();
+//开启批量写入
+BatchUpdateManager batchUpdateManager = batchDao.beginBatchUpdate();
+try{
+    //执行save方法
+    for (EntityA entityA : entityList) {
+        batchDao.save(entityA);
+    }
+    batchUpdateManager.submit();
+    transactionManager.commit();
+}catch (Exception e){
+    transactionManager.rollback();
+    e.printStackTrace();
+}
 ```
-
 
 #### 11.如何开启使用sql调试和在线sql统计分析功能？如何在日志中输出当前执行的sql?
 

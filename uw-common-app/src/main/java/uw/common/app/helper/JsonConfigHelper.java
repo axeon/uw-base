@@ -126,6 +126,11 @@ public class JsonConfigHelper {
                     errorMessage += "参数不能为空";
                     isValid = false;
                 }
+            } else if (configParam.getType() == JsonConfigParam.ParamType.TEXT) {
+                if (StringUtils.isBlank(paramValue)) {
+                    errorMessage += "参数不能为空";
+                    isValid = false;
+                }
             } else if (configParam.getType() == JsonConfigParam.ParamType.INT) {
                 try {
                     Integer.parseInt(paramValue);
@@ -162,17 +167,17 @@ public class JsonConfigHelper {
                     isValid = false;
                 }
             } else if (configParam.getType() == JsonConfigParam.ParamType.DATE) {
-                if (DateUtils.stringToDate(paramValue, DateUtils.DATE) == null) {
+                if (DateUtils.stringToDate(paramValue) == null) {
                     errorMessage += "日期格式错误（格式：yyyy-MM-dd）";
                     isValid = false;
                 }
             } else if (configParam.getType() == JsonConfigParam.ParamType.TIME) {
-                if (DateUtils.stringToDate(paramValue, DateUtils.TIME) == null) {
+                if (DateUtils.stringToDate(paramValue) == null) {
                     errorMessage += "时间格式错误（格式：HH:mm:ss）";
                     isValid = false;
                 }
             } else if (configParam.getType() == JsonConfigParam.ParamType.DATETIME) {
-                if (DateUtils.stringToDate(paramValue, DateUtils.DATE_TIME) == null) {
+                if (DateUtils.stringToDate(paramValue) == null) {
                     errorMessage += "日期时间格式错误（格式：yyyy-MM-dd HH:mm:ss）";
                     isValid = false;
                 }

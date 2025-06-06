@@ -1,3 +1,6 @@
+# 2025.0601.0009版本升级说明
+1. uw-common-app JsonConfigHelper.ParamType新增TEXT长文本类型，支持多行文本，便于前端正确渲染UI。
+
 # 2025.0601.0008版本升级说明
 1. uw-dao: 修复autoCount优化过程中产生的bug。
 

@@ -8,11 +8,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import uw.auth.service.constant.AuthServiceConstants;
 import uw.auth.service.exception.*;
 import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.util.MscUtils;
 import uw.common.dto.ResponseData;
+
+import java.io.IOException;
 
 /**
  * 全局异常处理，通过此类捕获全局异常。
@@ -47,7 +50,11 @@ public class GlobalExceptionAdvice {
             response.setStatus(Integer.parseInt(AuthServiceConstants.HTTP_SERVICE_UNAVAILABLE_CODE));
         } else if (ex instanceof TokenSudoException) {
             response.setStatus(Integer.parseInt(AuthServiceConstants.HTTP_UPGRADE_REQUIRED_CODE));
-        } else {
+        } else if (ex instanceof IOException) {
+            //IO异常（如AsyncRequestNotUsableException），一般是客户端主动断开的请求，这里返回null，不返回错误信息。
+            log.error(msg);
+            return null;
+        }else {
             //其它错误都当做500类异常。
             response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
             //500类异常，要打印到日志里。

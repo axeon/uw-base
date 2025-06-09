@@ -190,10 +190,10 @@ public class DaoAutoConfiguration {
         standaloneConfig.setHostName( redisProperties.getHost() );
         standaloneConfig.setPort( redisProperties.getPort() );
         standaloneConfig.setDatabase( redisProperties.getDatabase() );
-        if (redisProperties.getUsername() != null) {
+        if (StringUtils.isNotBlank(redisProperties.getUsername())) {
             standaloneConfig.setUsername( redisProperties.getUsername() );
         }
-        if (redisProperties.getPassword() != null) {
+        if (StringUtils.isNotBlank(redisProperties.getPassword())) {
             standaloneConfig.setPassword( RedisPassword.of( redisProperties.getPassword() ) );
         }
         LettuceConnectionFactory factory = new LettuceConnectionFactory( standaloneConfig, clientConfig );

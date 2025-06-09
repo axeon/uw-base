@@ -3,6 +3,7 @@ package uw.task.conf;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.lettuce.core.resource.ClientResources;
 import jakarta.annotation.PreDestroy;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -239,10 +240,10 @@ public class TaskAutoConfiguration {
         standaloneConfig.setHostName( redisProperties.getHost() );
         standaloneConfig.setPort( redisProperties.getPort() );
         standaloneConfig.setDatabase( redisProperties.getDatabase() );
-        if (redisProperties.getUsername() != null) {
+        if (StringUtils.isNotBlank(redisProperties.getUsername())) {
             standaloneConfig.setUsername( redisProperties.getUsername() );
         }
-        if (redisProperties.getPassword() != null) {
+        if (StringUtils.isNotBlank(redisProperties.getPassword())) {
             standaloneConfig.setPassword( RedisPassword.of( redisProperties.getPassword() ) );
         }
         LettuceConnectionFactory factory = new LettuceConnectionFactory( standaloneConfig, clientConfig );

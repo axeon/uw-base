@@ -38,12 +38,12 @@ public class AuthServiceHelper {
     /**
      * InheritableThreadLocal 保存当前线程请求用户对象
      */
-    private static final ThreadLocal<AuthTokenData> contextTokenHolder = new InheritableThreadLocal<AuthTokenData>();
+    private static final ThreadLocal<AuthTokenData> contextTokenHolder = new InheritableThreadLocal<>();
 
     /**
      * InheritableThreadLocal 保存当前线程请求日志对象
      */
-    private static final ThreadLocal<MscActionLog> contextLogHolder = new InheritableThreadLocal<MscActionLog>();
+    private static final ThreadLocal<MscActionLog> contextLogHolder = new InheritableThreadLocal<>();
 
     /**
      * 针对token有效期，每个单独设定过期时间。
@@ -626,7 +626,7 @@ public class AuthServiceHelper {
                 HttpServletRequest request = ((ServletRequestAttributes) attributes).getRequest();
                 requestUri = request.getRequestURI();
             }
-            logger.warn("RequestPath: [{}]未设置日志属性, bizType=[{}], bizId=[{}], bizLog=[{}]", requestUri, bizType, bizId, bizLog);
+            logger.warn("RequestPath:[{}]日志相关设置无效，将不会记录日志。bizType=[{}], bizId=[{}], bizLog=[{}]", requestUri, bizType, bizId, bizLog);
         } else {
             //允许多次设置日志信息。
             if (bizType != null) {

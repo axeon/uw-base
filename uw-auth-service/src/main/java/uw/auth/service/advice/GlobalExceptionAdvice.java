@@ -52,7 +52,7 @@ public class GlobalExceptionAdvice {
             response.setStatus(Integer.parseInt(AuthServiceConstants.HTTP_UPGRADE_REQUIRED_CODE));
         } else if (ex instanceof IOException) {
             //IO异常（如AsyncRequestNotUsableException），一般是客户端主动断开的请求，这里返回null，不返回错误信息。
-            log.error(msg);
+            log.warn(msg);
             return null;
         }else {
             //其它错误都当做500类异常。

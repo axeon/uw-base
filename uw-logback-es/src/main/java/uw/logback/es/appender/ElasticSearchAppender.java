@@ -39,7 +39,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
     /**
      * http操作接口。
      */
-    private static final HttpInterface HTTP_INTERFACE = new JsonInterfaceHelper(HttpConfig.builder().retryOnConnectionFailure(true).connectTimeout(10_000L).readTimeout(10_000L).writeTimeout(10_000L).build());
+    private static final HttpInterface HTTP_INTERFACE = new JsonInterfaceHelper(HttpConfig.builder().retryOnConnectionFailure(true).connectTimeout(10_000L).readTimeout(10_000L).writeTimeout(10_000L).hostnameVerifier((hostName, sslSession) -> true).build());
     /**
      * 索引格式器
      */

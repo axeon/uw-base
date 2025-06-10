@@ -18,6 +18,7 @@ import uw.httpclient.http.HttpInterface;
 import uw.httpclient.json.JsonInterfaceHelper;
 import uw.httpclient.util.BufferRequestBody;
 import uw.httpclient.util.MediaTypes;
+import uw.httpclient.util.SSLContextUtils;
 import uw.log.es.LogClientProperties;
 import uw.log.es.util.IndexConfigVo;
 import uw.log.es.vo.*;
@@ -160,7 +161,7 @@ public class LogService {
             return;
         }
         this.needBasicAuth = StringUtils.isNotBlank(esUsername) && StringUtils.isNotBlank(esPassword);
-        this.httpInterface = new JsonInterfaceHelper(HttpConfig.builder().retryOnConnectionFailure(true).connectTimeout(logClientProperties.getEs().getConnectTimeout()).readTimeout(logClientProperties.getEs().getReadTimeout()).writeTimeout(logClientProperties.getEs().getWriteTimeout()).hostnameVerifier((hostName, sslSession) -> true).build());
+        this.httpInterface = new JsonInterfaceHelper(HttpConfig.builder().retryOnConnectionFailure(true).connectTimeout(logClientProperties.getEs().getConnectTimeout()).readTimeout(logClientProperties.getEs().getReadTimeout()).writeTimeout(logClientProperties.getEs().getWriteTimeout()).trustManager( SSLContextUtils.getTrustAllManager() ).sslSocketFactory( SSLContextUtils.getTruestAllSocketFactory()).hostnameVerifier((hostName, sslSession) -> true).build());
         this.esBulk = logClientProperties.getEs().getEsBulk();
         this.maxFlushInMilliseconds = logClientProperties.getEs().getMaxFlushInSeconds() * 1000L;
         this.maxBytesOfBatch = logClientProperties.getEs().getMaxKiloBytesOfBatch() * 1024L;

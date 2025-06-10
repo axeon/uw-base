@@ -139,3 +139,8 @@ Q: ObjectMapper是否能处理不加注解的Vo类？
 A: 目前uw-httpclient采用jackson作为json和xml的序列化和反序列化库,没有添加jackson支持的注解能否转换成功取决于jackson对json或者xml处理的
 默认的规则,建议使用uw-code-center生成相关的Java Vo实体类。
 
+Q: 如何处理内部自签名的ssl访问问题？
+A: 初始化代码中加入以下代码：
+.trustManager( SSLContextUtils.getTrustAllManager() )
+.sslSocketFactory( SSLContextUtils.getTruestAllSocketFactory())
+.hostnameVerifier( (host, session) -> true )

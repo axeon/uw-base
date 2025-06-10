@@ -1,7 +1,9 @@
 package uw.httpclient.http;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import uw.common.util.JsonUtils;
+
 import java.util.Date;
-import java.util.StringJoiner;
 
 /**
  * http默认日志实现。
@@ -56,6 +58,7 @@ public class HttpDefaultData implements HttpData {
     /**
      * 返回byte数组。
      */
+    @JsonIgnore
     private byte[] responseBytes;
 
     /**
@@ -75,20 +78,7 @@ public class HttpDefaultData implements HttpData {
 
     @Override
     public String toString() {
-        return new StringJoiner( ", ", HttpDefaultData.class.getSimpleName() + "[", "]" )
-                .add( "requestUrl='" + requestUrl + "'" )
-                .add( "requestMethod='" + requestMethod + "'" )
-                .add( "requestHeader='" + requestHeader + "'" )
-                .add( "statusCode=" + statusCode )
-                .add( "requestSize=" + requestSize )
-                .add( "responseSize=" + responseSize )
-                .add( "responseType='" + responseType + "'" )
-                .add( "requestData='" + requestData + "'" )
-                .add( "responseData='" + responseData + "'" )
-                .add( "requestDate=" + requestDate )
-                .add( "responseDate=" + responseDate )
-                .add( "errorInfo='" + errorInfo + "'" )
-                .toString();
+        return JsonUtils.toString(this);
     }
 
     @Override
@@ -142,23 +132,23 @@ public class HttpDefaultData implements HttpData {
     }
 
     @Override
-    public String getResponseType() {
-        return responseType;
-    }
-
-    @Override
-    public void setResponseType(String responseType) {
-        this.responseType = responseType;
-    }
-
-    @Override
     public byte[] getResponseBytes() {
         return responseBytes;
     }
 
     @Override
+    public String getResponseType() {
+        return responseType;
+    }
+
+    @Override
     public void setResponseBytes(byte[] responseBytes) {
         this.responseBytes = responseBytes;
+    }
+
+    @Override
+    public void setResponseType(String responseType) {
+        this.responseType = responseType;
     }
 
     @Override
@@ -187,7 +177,7 @@ public class HttpDefaultData implements HttpData {
             return responseData;
         } else {
             if (responseBytes != null) {
-                responseData = new String( this.responseBytes );
+                responseData = new String(this.responseBytes);
                 return responseData;
             } else {
                 return null;

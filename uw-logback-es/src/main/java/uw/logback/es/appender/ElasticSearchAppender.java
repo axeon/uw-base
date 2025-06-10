@@ -15,6 +15,7 @@ import uw.httpclient.http.HttpInterface;
 import uw.httpclient.json.JsonInterfaceHelper;
 import uw.httpclient.util.BufferRequestBody;
 import uw.httpclient.util.MediaTypes;
+import uw.httpclient.util.SSLContextUtils;
 import uw.logback.es.util.JsonEncoderUtils;
 import uw.logback.es.util.ThrowableProxyUtils;
 
@@ -39,7 +40,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
     /**
      * http操作接口。
      */
-    private static final HttpInterface HTTP_INTERFACE = new JsonInterfaceHelper(HttpConfig.builder().retryOnConnectionFailure(true).connectTimeout(10_000L).readTimeout(10_000L).writeTimeout(10_000L).hostnameVerifier((hostName, sslSession) -> true).build());
+    private static final HttpInterface HTTP_INTERFACE = new JsonInterfaceHelper(HttpConfig.builder().retryOnConnectionFailure(true).connectTimeout(10_000L).readTimeout(10_000L).writeTimeout(10_000L).trustManager( SSLContextUtils.getTrustAllManager() ).sslSocketFactory( SSLContextUtils.getTruestAllSocketFactory()).hostnameVerifier((hostName, sslSession) -> true).build());
     /**
      * 索引格式器
      */

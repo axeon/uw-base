@@ -1,3 +1,8 @@
+# 2025.0601.0010版本升级说明
+1. uw-log-es: 支持自签名ssl的es服务器，主要适配腾讯云香港ES节点。
+2. uw-logback-es: 支持自签名ssl的es服务器，主要适配腾讯云香港ES节点。
+3. uw-auth-service: 优化IOException的处理，仅输出warn msg。
+
 # 2025.0601.0009版本升级说明
 1. uw-common-app: JsonConfigHelper.ParamType新增TEXT长文本类型，支持多行文本，便于前端正确渲染UI。
 2. uw-auth-service: 优化日志不打印的警告信息。

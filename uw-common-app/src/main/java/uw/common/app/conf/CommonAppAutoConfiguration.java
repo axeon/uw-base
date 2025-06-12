@@ -1,5 +1,6 @@
 package uw.common.app.conf;
 
+import com.alibaba.cloud.nacos.registry.NacosAutoServiceRegistration;
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -14,6 +15,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.ThreadUtils;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -25,6 +27,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.event.ContextClosedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
@@ -39,6 +43,7 @@ import uw.common.app.service.SysCritLogStorageService;
 import uw.common.util.DateUtils;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -62,6 +67,11 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
      * 对象映射器.
      */
     private final ObjectMapper objectMapper;
+
+    /**
+     * nacos服务注册.
+     */
+    private final NacosAutoServiceRegistration nacosAutoServiceRegistration;
 
     /**
      * 默认语言.
@@ -103,18 +113,17 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     /**
      * 构造函数.
      *
-     * @param commonAppProperties
      */
-    public CommonAppAutoConfiguration(CommonAppProperties commonAppProperties, ObjectMapper objectMapper) {
+    public CommonAppAutoConfiguration(CommonAppProperties commonAppProperties, ObjectMapper objectMapper, NacosAutoServiceRegistration nacosAutoServiceRegistration) {
         this.DEFAULT_LOCALE = commonAppProperties.getLocaleDefault();
         this.LOCALE_LIST = commonAppProperties.getLocaleList();
         this.objectMapper = objectMapper;
+        this.nacosAutoServiceRegistration = nacosAutoServiceRegistration;
     }
 
     /**
      * 语言解析器.
      *
-     * @return
      */
     @Bean
     @Primary
@@ -160,7 +169,6 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     /**
      * critical日志存储服务.
      *
-     * @return
      */
     @Bean
     @Primary
@@ -169,11 +177,9 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
         return new SysCritLogStorageService(uwAppBaseProperties);
     }
 
-
     /**
      * 添加mvc的Date格式转换器.
      *
-     * @param registry
      */
     @Override
     public void addFormatters(FormatterRegistry registry) {
@@ -183,7 +189,6 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     /**
      * 移除XML消息转换器
      *
-     * @param converters
      */
     @Override
     public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
@@ -211,4 +216,16 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
 
     }
 
+    /**
+     * bugfix解决nacos不能正确graceful stop的问题。
+     *
+     */
+    @EventListener(ContextClosedEvent.class)
+    public void onContextClosedEvent(ContextClosedEvent contextClosedEvent) {
+        logger.info("onContextClosedEvent stop nacos discovery service.");
+        // 预留3s的停止时间
+        ThreadUtils.sleepQuietly(Duration.ofSeconds(3));
+        //  停止nacos服务注册
+        nacosAutoServiceRegistration.stop();
+    }
 }

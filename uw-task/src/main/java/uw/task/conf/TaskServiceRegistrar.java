@@ -30,12 +30,11 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 任务服务注册器。
  *
- * @param
  * @author axeon
  */
-public class TaskServiceRegister {
+public class TaskServiceRegistrar {
 
-    private static final Logger log = LoggerFactory.getLogger( TaskServiceRegister.class );
+    private static final Logger log = LoggerFactory.getLogger( TaskServiceRegistrar.class );
 
     private final ConnectionFactory taskConnectionFactory;
 
@@ -89,9 +88,9 @@ public class TaskServiceRegister {
      * @param taskRabbitConnectionFactory
      * @param rabbitAdmin
      */
-    public TaskServiceRegister(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskRunnerContainer taskRunnerContainer, TaskCronerContainer taskCronerContainer,
-                               ConnectionFactory taskRabbitConnectionFactory,
-                               RabbitAdmin rabbitAdmin, TaskMetaInfoManager taskMetaInfoManager) {
+    public TaskServiceRegistrar(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskRunnerContainer taskRunnerContainer, TaskCronerContainer taskCronerContainer,
+                                ConnectionFactory taskRabbitConnectionFactory,
+                                RabbitAdmin rabbitAdmin, TaskMetaInfoManager taskMetaInfoManager) {
         this.taskProperties = taskProperties;
         this.taskConnectionFactory = taskRabbitConnectionFactory;
         this.taskRunnerContainer = taskRunnerContainer;

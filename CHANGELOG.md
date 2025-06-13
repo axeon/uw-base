@@ -1,5 +1,6 @@
-# 2025.0601.0012版本升级说明
-1. uw-common-app: 修复nacos不能优雅关闭的问题，让在线重启丝滑无比。
+# 2025.0601.0015版本升级说明
+1. uw-common-app: 修复nacos优雅关闭问题，让滚动升级丝滑无比。
+2. uw-task: TaskServiceRegistrar优化。
 
 # 2025.0601.0011版本升级说明
 1. uw-log-es: 支持自签名ssl的es服务器，主要适配腾讯云香港ES节点。

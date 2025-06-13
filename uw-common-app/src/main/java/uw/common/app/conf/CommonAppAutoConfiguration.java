@@ -224,7 +224,7 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     public void onContextClosedEvent(ContextClosedEvent contextClosedEvent) {
         logger.info("onContextClosedEvent stop nacos discovery service.");
         // 预留3s的停止时间
-        ThreadUtils.sleepQuietly(Duration.ofSeconds(3));
+        // ThreadUtils.sleepQuietly(Duration.ofSeconds(3));
         //  停止nacos服务注册
         nacosAutoServiceRegistration.stop();
     }

@@ -15,6 +15,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.ThreadUtils;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -83,12 +84,17 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     private final List<Locale> LOCALE_LIST;
 
     /**
+     * 通用配置.
+     */
+    private final CommonAppProperties commonAppProperties;
+
+    /**
      * 缓存语言对象.
      */
     private final LoadingCache<String, Locale> LOCALE_CACHE = Caffeine.newBuilder().maximumSize(1000).build(new CacheLoader<>() {
 
         @Override
-        public @Nullable Locale load(String language) {
+        public @Nullable Locale load(@NotNull String language) {
             try {
                 // 创建一个语言范围列表
                 List<Locale.LanguageRange> languageRanges = Locale.LanguageRange.parse(language);
@@ -113,6 +119,7 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
      * 构造函数.
      */
     public CommonAppAutoConfiguration(CommonAppProperties commonAppProperties, ObjectMapper objectMapper, NacosAutoServiceRegistration nacosAutoServiceRegistration) {
+        this.commonAppProperties = commonAppProperties;
         this.DEFAULT_LOCALE = commonAppProperties.getLocaleDefault();
         this.LOCALE_LIST = commonAppProperties.getLocaleList();
         this.objectMapper = objectMapper;
@@ -229,10 +236,10 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     @EventListener(ContextClosedEvent.class)
     void onContextClosedEvent(ContextClosedEvent contextClosedEvent) {
         logger.info("onContextClosedEvent stop nacos discovery service.");
-        // 预留3s的停止时间
-        // ThreadUtils.sleepQuietly(Duration.ofSeconds(3));
-        //  停止nacos服务注册
+        // 停止nacos服务注册
         nacosAutoServiceRegistration.stop();
+        // 预留3s的停止时间
+        ThreadUtils.sleepQuietly(commonAppProperties.getShutdownTimeout());
     }
 
 

@@ -77,7 +77,7 @@ public class TaskAutoConfiguration {
     /**
      * 服务端任务配置。
      */
-    private TaskServiceRegister serverConfig;
+    private TaskServiceRegistrar taskServiceRegistrar;
 
     /**
      * 定时任务容器。
@@ -122,17 +122,17 @@ public class TaskAutoConfiguration {
         if (initFlag.compareAndSet( false, true )) {
             taskMetaInfoManager.init();
             //task自持任务
-            if (serverConfig.isEnableRegistry()) {
+            if (taskServiceRegistrar.isEnableRegistry()) {
                 scheduledExecutorService = Executors.newScheduledThreadPool( 3, new ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "uw-task-service-%d" ).build() );
                 //主机报告任务
-                scheduledExecutorService.scheduleAtFixedRate( () -> serverConfig.reportHostInfo(), 20, 180, TimeUnit.SECONDS );
+                scheduledExecutorService.scheduleAtFixedRate( () -> taskServiceRegistrar.reportHostInfo(), 20, 180, TimeUnit.SECONDS );
                 //选举任务
                 scheduledExecutorService.scheduleAtFixedRate( () -> taskGlobalLocker.checkLeader(), 0, 60, TimeUnit.SECONDS );
             } else {
                 scheduledExecutorService = Executors.newScheduledThreadPool( 1, new ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "uw-task-service-%d" ).build() );
             }
             //配置更新任务
-            scheduledExecutorService.scheduleAtFixedRate( () -> serverConfig.updateConfig(), 0, 60, TimeUnit.SECONDS );
+            scheduledExecutorService.scheduleAtFixedRate( () -> taskServiceRegistrar.updateConfig(), 0, 60, TimeUnit.SECONDS );
         }
     }
 
@@ -141,7 +141,7 @@ public class TaskAutoConfiguration {
         if (scheduledExecutorService != null) {
             scheduledExecutorService.shutdown();
         }
-        serverConfig.stopAllTaskRunner();
+        taskServiceRegistrar.stopAllTaskRunner();
         taskCronerContainer.stopAllTaskCroner();
     }
 
@@ -313,7 +313,7 @@ public class TaskAutoConfiguration {
         // 定时任务容器。
         taskCronerContainer = new TaskCronerContainer( taskProperties, taskApiClient, taskSequenceManager, taskListenerManager, taskGlobalLocker );
         // 初始化TaskServerConfig
-        serverConfig = new TaskServiceRegister( taskProperties, taskApiClient, taskRunnerContainer, taskCronerContainer, taskRabbitConnectionFactory, rabbitAdmin,
+        taskServiceRegistrar = new TaskServiceRegistrar( taskProperties, taskApiClient, taskRunnerContainer, taskCronerContainer, taskRabbitConnectionFactory, rabbitAdmin,
                 taskMetaInfoManager );
         // 返回TaskScheduler
         TaskFactory taskFactory = new TaskFactory( taskProperties, rabbitTemplate, taskRunnerContainer, taskSequenceManager, taskMetaInfoManager );

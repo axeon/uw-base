@@ -15,7 +15,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.ThreadUtils;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -24,6 +23,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.loadbalancer.cache.LoadBalancerCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -43,7 +43,6 @@ import uw.common.app.service.SysCritLogStorageService;
 import uw.common.util.DateUtils;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -112,7 +111,6 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
 
     /**
      * 构造函数.
-     *
      */
     public CommonAppAutoConfiguration(CommonAppProperties commonAppProperties, ObjectMapper objectMapper, NacosAutoServiceRegistration nacosAutoServiceRegistration) {
         this.DEFAULT_LOCALE = commonAppProperties.getLocaleDefault();
@@ -123,7 +121,6 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
 
     /**
      * 语言解析器.
-     *
      */
     @Bean
     @Primary
@@ -168,7 +165,6 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
 
     /**
      * critical日志存储服务.
-     *
      */
     @Bean
     @Primary
@@ -179,7 +175,6 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
 
     /**
      * 添加mvc的Date格式转换器.
-     *
      */
     @Override
     public void addFormatters(FormatterRegistry registry) {
@@ -188,7 +183,6 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
 
     /**
      * 移除XML消息转换器
-     *
      */
     @Override
     public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
@@ -217,15 +211,29 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     }
 
     /**
-     * bugfix解决nacos不能正确graceful stop的问题。
+     * 解决spring loadbalancer双重缓存问题。
+     * 直接禁用spring loadbalancer缓存。
+     * 此配置会引发一条warn日志，无大碍。
      *
+     * @return
+     */
+    @Bean
+    @Primary
+    LoadBalancerCacheManager loadBalancerCacheManager() {
+        return null;
+    }
+
+    /**
+     * bugfix解决nacos不能正确graceful stop的问题。
      */
     @EventListener(ContextClosedEvent.class)
-    public void onContextClosedEvent(ContextClosedEvent contextClosedEvent) {
+    void onContextClosedEvent(ContextClosedEvent contextClosedEvent) {
         logger.info("onContextClosedEvent stop nacos discovery service.");
         // 预留3s的停止时间
         // ThreadUtils.sleepQuietly(Duration.ofSeconds(3));
         //  停止nacos服务注册
         nacosAutoServiceRegistration.stop();
     }
+
+
 }

@@ -1,4 +1,4 @@
-# 2025.0601.0016版本升级说明
+# 2025.0601.0018版本升级说明
 1. uw-common-app: 修复nacos优雅关闭问题，让滚动升级丝滑无比。
 2. uw-common-app: 修复loadbalancer双重缓存问题，让滚动升级丝滑无比。
 3. uw-task: TaskServiceRegistrar优化。

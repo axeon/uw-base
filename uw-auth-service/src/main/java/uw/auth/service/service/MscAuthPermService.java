@@ -192,7 +192,7 @@ public class MscAuthPermService {
      */
     private boolean checkTokenPermSet(Set<Integer> permSet, String uri) {
         Integer permId = appPermMap.get(uri);
-        return permId != null && permSet.contains(permId);
+        return permSet != null && permId != null && permSet.contains(permId);
     }
 
 }

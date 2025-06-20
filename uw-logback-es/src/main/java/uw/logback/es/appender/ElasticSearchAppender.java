@@ -127,7 +127,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
     /**
      * 需要排除的异常关键字，多个关键字之间用','分割。
      */
-    private String excludeThrowableKeys = "org.spring,org.apache,org.apache,java.base,jakarta,com.mysql";
+    private String excludeThrowableKeys = "java.base,org.spring,jakarta,org.apache,com.mysql,okhttp,com.fasterxml,uw.auth.service.filter";
 
     /**
      * 是否开启JMX
@@ -634,7 +634,9 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
                             }
                         });
                     }
-                    Thread.sleep(500);
+                    try {
+                        Thread.sleep(500);
+                    }catch (InterruptedException ignore){}
                 } catch (Exception e) {
                     //直接打印到控制台输出吧
                     e.printStackTrace();

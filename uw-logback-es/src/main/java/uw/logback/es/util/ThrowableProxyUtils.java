@@ -19,7 +19,7 @@ public class ThrowableProxyUtils {
     /**
      * 需要忽略的堆栈输出。
      */
-    public static String[] ExcludeThrowableKeys = new String[]{"org.spring", "org.apache", "java.base", "jakarta", "com.mysql"};
+    public static String[] ExcludeThrowableKeys = new String[]{"java.base", "org.spring", "org.apache", "jakarta", "com.mysql", "okhttp", "com.fasterxml", "uw.auth.service.filter"};
 
     /**
      * 输出异常到buffer。
@@ -28,21 +28,21 @@ public class ThrowableProxyUtils {
      * @param tp
      */
     public static void writeThrowable(okio.Buffer buf, IThrowableProxy tp) {
-        recursiveAppend( buf, null, 0, tp );
+        recursiveAppend(buf, null, 0, tp);
     }
 
     private static void recursiveAppend(okio.Buffer buf, String prefix, int indent, IThrowableProxy tp) {
         if (tp == null) return;
-        subjoinFirstLine( buf, prefix, indent, tp );
-        buf.writeUtf8( JSON_LINE_SEPARATOR );
-        subjoinSTEPArray( buf, indent, tp );
+        subjoinFirstLine(buf, prefix, indent, tp);
+        buf.writeUtf8(JSON_LINE_SEPARATOR);
+        subjoinSTEPArray(buf, indent, tp);
         IThrowableProxy[] suppressed = tp.getSuppressed();
         if (suppressed != null) {
             for (IThrowableProxy current : suppressed) {
-                recursiveAppend( buf, "Suppressed: ", indent + ThrowableProxyUtil.SUPPRESSED_EXCEPTION_INDENT, current );
+                recursiveAppend(buf, "Suppressed: ", indent + ThrowableProxyUtil.SUPPRESSED_EXCEPTION_INDENT, current);
             }
         }
-        recursiveAppend( buf, "Caused by: ", indent, tp.getCause() );
+        recursiveAppend(buf, "Caused by: ", indent, tp.getCause());
     }
 
     /**
@@ -54,14 +54,14 @@ public class ThrowableProxyUtils {
      * @param tp
      */
     private static void subjoinFirstLine(okio.Buffer buf, String prefix, int indent, IThrowableProxy tp) {
-        buf.writeUtf8( indentJsonTab( indent ) );
+        buf.writeUtf8(indentJsonTab(indent));
         if (prefix != null) {
-            buf.writeUtf8( prefix );
+            buf.writeUtf8(prefix);
         }
         if (tp.isCyclic()) {
-            buf.writeUtf8( "[CIRCULAR REFERENCE: " ).writeUtf8( tp.getClassName() ).writeUtf8( ": " ).writeUtf8( JsonEncoderUtils.escapeJSON( tp.getMessage() ) ).writeUtf8( "]" );
+            buf.writeUtf8("[CIRCULAR REFERENCE: ").writeUtf8(tp.getClassName()).writeUtf8(": ").writeUtf8(JsonEncoderUtils.escapeJSON(tp.getMessage())).writeUtf8("]");
         } else {
-            buf.writeUtf8( tp.getClassName() ).writeUtf8( ": " ).writeUtf8( JsonEncoderUtils.escapeJSON( tp.getMessage() ) );
+            buf.writeUtf8(tp.getClassName()).writeUtf8(": ").writeUtf8(JsonEncoderUtils.escapeJSON(tp.getMessage()));
         }
     }
 
@@ -83,15 +83,17 @@ public class ThrowableProxyUtils {
         int ignoredCount = 0;
 
         for (int i = 0; i < maxIndex; i++) {
-            StackTraceElementProxy element = stepArray[i];
-            if (!isIgnoredStackTraceLine( element.toString() )) {
-                buf.writeUtf8( indentJsonTab( indent ) );
-                buf.writeUtf8( element.getSTEAsString() );
+            StackTraceElementProxy elementProxy = stepArray[i];
+            String steStr = elementProxy.getStackTraceElement().toString();
+            if (!isIgnoredStackTraceLine(steStr)) {
+                buf.writeUtf8(indentJsonTab(indent));
+                buf.writeUtf8("at ");
+                buf.writeUtf8(steStr);
                 if (ignoredCount > 0) {
-                    printIgnoredCount( buf, ignoredCount );
+                    printIgnoredCount(buf, ignoredCount);
                 }
                 ignoredCount = 0;
-                buf.writeUtf8( JSON_LINE_SEPARATOR );
+                buf.writeUtf8(JSON_LINE_SEPARATOR);
             } else {
                 ++ignoredCount;
                 if (maxIndex < stepArray.length) {
@@ -101,13 +103,13 @@ public class ThrowableProxyUtils {
         }
 
         if (ignoredCount > 0) {
-            printIgnoredCount( buf, ignoredCount );
+            printIgnoredCount(buf, ignoredCount);
         }
 
         if (commonFrames > 0 && unrestrictedPrinting) {
-            buf.writeUtf8( indentJsonTab( indent ) );
-            buf.writeUtf8( "... " ).writeUtf8( String.valueOf( tp.getCommonFrames() ) ).writeUtf8( " common frames omitted" );
-            buf.writeUtf8( JSON_LINE_SEPARATOR );
+            buf.writeUtf8(indentJsonTab(indent));
+            buf.writeUtf8("... ").writeUtf8(String.valueOf(tp.getCommonFrames())).writeUtf8(" common frames omitted");
+            buf.writeUtf8(JSON_LINE_SEPARATOR);
         }
     }
 
@@ -140,7 +142,7 @@ public class ThrowableProxyUtils {
      * @param ignoredCount
      */
     private static void printIgnoredCount(okio.Buffer buf, int ignoredCount) {
-        buf.writeUtf8( " [" ).writeUtf8( String.valueOf( ignoredCount ) ).writeUtf8( " skipped]" );
+        buf.writeUtf8(" [").writeUtf8(String.valueOf(ignoredCount)).writeUtf8(" skipped]");
     }
 
     /**
@@ -152,7 +154,7 @@ public class ThrowableProxyUtils {
     private static boolean isIgnoredStackTraceLine(String line) {
         if (ExcludeThrowableKeys != null) {
             for (String ignoredStackTraceLine : ExcludeThrowableKeys) {
-                if (line.contains( ignoredStackTraceLine )) {
+                if (line.startsWith(ignoredStackTraceLine)) {
                     return true;
                 }
             }

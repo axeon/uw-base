@@ -1,3 +1,8 @@
+# 2025.0601.0020版本升级说明
+1. 升级spring boot 3.5.2，解决spring自身的CVE安全漏洞。
+2. uw-logback-es: 优化堆栈过滤效率，优化默认堆栈过滤数据。
+3. logback-spring.xml: 建议修改项目中的logback-spring.xml的excludeThrowableKeys参数为"java.base,org.spring,jakarta,org.apache,com.mysql,okhttp,com.fasterxml,uw.auth.service.filter"
+
 # 2025.0601.0018版本升级说明
 1. uw-common-app: 修复nacos优雅关闭问题，让滚动升级丝滑无比。
 2. uw-common-app: 修复loadbalancer双重缓存问题，让滚动升级丝滑无比。

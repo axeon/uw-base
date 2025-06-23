@@ -64,11 +64,7 @@ public class MfaIPLimitHelper {
      * @return
      */
     public static boolean checkIpWhiteList(String ip) {
-        if (ipWhiteList != null && IpMatchUtils.matches(ipWhiteList, ip)) {
-            return true;
-        } else {
-            return false;
-        }
+        return ipWhiteList != null && IpMatchUtils.matches(ipWhiteList, ip);
     }
 
     /**
@@ -78,18 +74,16 @@ public class MfaIPLimitHelper {
      * @return
      */
     public static ResponseData checkIpErrorLimit(String userIp) {
-        //不在白名单的，才检查登录限制。
-        if (!checkIpWhiteList(userIp)) {
-            String key = RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, userIp);
-            String ics = mfaRedisOp.get(RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, userIp));
-            if (StringUtils.isNotBlank(ics)) {
-                int ic = Integer.parseInt(ics);
-                if (ic >= uwMfaProperties.getIpLimitErrorTimes()) {
-                    long ttl = mfaRedisTemplate.getExpire(key, TimeUnit.MINUTES) + 1;
-                    return ResponseData.errorCode(MfaResponseCode.IP_LIMIT_ERROR, userIp, (uwMfaProperties.getIpLimitSeconds() / 60), ic, ttl);
-                } else if (ic >= uwMfaProperties.getIpLimitWarnTimes()) {
-                    return ResponseData.warnCode(MfaResponseCode.IP_LIMIT_WARN, userIp, (uwMfaProperties.getIpLimitSeconds() / 60), ic);
-                }
+        String key = RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, userIp);
+        String limitIpInfo = mfaRedisOp.get(RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, userIp));
+        if (StringUtils.isNotBlank(limitIpInfo)) {
+            int errorCount = Integer.parseInt(limitIpInfo);
+            if (errorCount >= uwMfaProperties.getIpLimitErrorTimes()) {
+                long ttl = mfaRedisTemplate.getExpire(key, TimeUnit.MINUTES) + 1;
+                return ResponseData.errorCode(MfaResponseCode.IP_LIMIT_ERROR, userIp, (uwMfaProperties.getIpLimitSeconds() / 60), errorCount, ttl);
+            } else if (errorCount >= uwMfaProperties.getIpLimitWarnTimes() && !checkIpWhiteList(userIp)) {
+                // 对于非白名单和登录错误次数达到限制，则发送警告。
+                return ResponseData.warnCode(MfaResponseCode.IP_LIMIT_WARN, userIp, (uwMfaProperties.getIpLimitSeconds() / 60), errorCount);
             }
         }
         return ResponseData.success();
@@ -102,12 +96,9 @@ public class MfaIPLimitHelper {
      * @param userIp
      */
     public static boolean incrementIpErrorTimes(String userIp, String remark) {
-        if (!MfaIPLimitHelper.checkIpWhiteList(userIp)) {
-            if (mfaRedisOp.increment(RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, userIp)) == 1L) {
-                return mfaRedisTemplate.expire(RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, userIp), uwMfaProperties.getIpLimitSeconds(), TimeUnit.SECONDS);
-            }
-        }else{
-            return false;
+        Long times = mfaRedisOp.increment(RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, userIp));
+        if (times != null && times == 1L) {
+            return mfaRedisTemplate.expire(RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, userIp), uwMfaProperties.getIpLimitSeconds(), TimeUnit.SECONDS);
         }
         return false;
     }
@@ -118,11 +109,7 @@ public class MfaIPLimitHelper {
      * @param ip
      */
     public static boolean clearIpErrorLimit(String ip) {
-        if (!MfaIPLimitHelper.checkIpWhiteList(ip)) {
-            return mfaRedisTemplate.delete(RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, ip));
-        } else {
-            return false;
-        }
+        return mfaRedisTemplate.delete(RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, ip));
     }
 
 

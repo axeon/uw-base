@@ -81,7 +81,7 @@ public class MfaIPLimitHelper {
             if (errorCount >= uwMfaProperties.getIpLimitErrorTimes()) {
                 long ttl = mfaRedisTemplate.getExpire(key, TimeUnit.MINUTES) + 1;
                 return ResponseData.errorCode(MfaResponseCode.IP_LIMIT_ERROR, userIp, (uwMfaProperties.getIpLimitSeconds() / 60), errorCount, ttl);
-            } else if (errorCount >= uwMfaProperties.getIpLimitWarnTimes() && !checkIpWhiteList(userIp)) {
+            } else if (errorCount >= uwMfaProperties.getIpLimitWarnTimes()) {
                 // 对于非白名单和登录错误次数达到限制，则发送警告。
                 return ResponseData.warnCode(MfaResponseCode.IP_LIMIT_WARN, userIp, (uwMfaProperties.getIpLimitSeconds() / 60), errorCount);
             }

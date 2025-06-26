@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <revision>2025.0601.0025</revision>
+        <revision>2025.0601.0026</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
@@ -26,10 +26,10 @@
         <spring-cloud.alibaba.version>2023.0.1.2</spring-cloud.alibaba.version>
         <uw-ai.version>1.0.12</uw-ai.version>
         <uw-auth-client.version>6.1.12</uw-auth-client.version>
-        <uw-auth-service.version>6.1.55</uw-auth-service.version>
+        <uw-auth-service.version>6.1.56</uw-auth-service.version>
         <uw-cache.version>1.1.88</uw-cache.version>
         <uw-common.version>1.0.83</uw-common.version>
-        <uw-common-app.version>1.0.88</uw-common-app.version>
+        <uw-common-app.version>1.0.89</uw-common-app.version>
         <uw-dao.version>5.2.29</uw-dao.version>
         <uw-gateway-client.version>1.0.3</uw-gateway-client.version>
         <uw-httpclient.version>2.1.128</uw-httpclient.version>
@@ -156,7 +156,7 @@
             <dependency>
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-                <version>2.8.8</version>
+                <version>2.8.9</version>
             </dependency>
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>

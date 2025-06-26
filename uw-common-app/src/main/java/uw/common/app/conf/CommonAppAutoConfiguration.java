@@ -28,15 +28,19 @@ import org.springframework.cloud.loadbalancer.cache.LoadBalancerCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.format.FormatterRegistry;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
+import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import uw.auth.service.conf.AuthServiceAutoConfiguration;
 import uw.auth.service.log.AuthCriticalLogStorage;
 import uw.common.app.constant.CommonConstants;
@@ -218,6 +222,7 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     }
 
     /**
+     * crack！
      * 解决spring loadbalancer双重缓存问题。
      * 直接禁用spring loadbalancer缓存。
      * 此配置会引发一条warn日志，无大碍。
@@ -231,6 +236,7 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     }
 
     /**
+     * crack！
      * bugfix解决nacos不能正确graceful stop的问题。
      */
     @EventListener(ContextClosedEvent.class)
@@ -242,5 +248,24 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
         ThreadUtils.sleepQuietly(commonAppProperties.getShutdownTimeout());
     }
 
+    /**
+     * crack.
+     * 根据profile拦截swagger接口。
+     */
+    @Bean
+    @Profile("!debug & !dev")
+    public WebMvcConfigurer swaggerDisableInterceptor() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addInterceptors(InterceptorRegistry registry) {
+                registry.addInterceptor(new HandlerInterceptor() {
+                    @Override
+                    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+                        throw new NoResourceFoundException(HttpMethod.GET, request.getRequestURI());
+                    }
+                }).addPathPatterns("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**");
+            }
+        };
+    }
 
 }

@@ -52,7 +52,7 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
             return false;
         }
         // 适配swagger的接口文档
-        if (declaringClass.getPackageName().contains("org.springdoc")) {
+        if (declaringClass.getPackageName().startsWith("org.springdoc")) {
             return false;
         }
 

@@ -1,3 +1,8 @@
+# 2025.0601.0026版本升级说明
+1. uw-auth-service: 优化对swagger的过滤。
+2. uw-common-app: 在!debug&!dev环境下，自动屏蔽swagger的访问。
+3. 升级springdoc到2.8.9。
+
 # 2025.0601.0025版本升级说明
 1. uw-mfa: 白名单IP也进行登录校验检查，增强内网安全性。
 

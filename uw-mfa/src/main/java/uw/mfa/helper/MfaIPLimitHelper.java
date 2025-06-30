@@ -23,7 +23,7 @@ public class MfaIPLimitHelper {
     /**
      * redis错误限制前缀.
      */
-    private static final String REDIS_LIMIT_IP_PREFIX = "limitIp";
+    private static final String REDIS_LIMIT_IP_PREFIX = "ipLimit";
 
     /**
      * mfaRedisTemplate。

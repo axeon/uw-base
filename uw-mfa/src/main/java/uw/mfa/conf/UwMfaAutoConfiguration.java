@@ -37,17 +37,17 @@ import uw.mfa.helper.MfaTotpHelper;
 @EnableConfigurationProperties({UwMfaProperties.class})
 @AutoConfigureAfter({RedisAutoConfiguration.class})
 public class UwMfaAutoConfiguration {
-    private static final Logger log = LoggerFactory.getLogger( UwMfaAutoConfiguration.class );
+    private static final Logger log = LoggerFactory.getLogger(UwMfaAutoConfiguration.class);
 
     @Bean("mfaRedisTemplate")
     protected RedisTemplate<String, String> mfaRedisTemplate(final UwMfaProperties uwMfaProperties, final ClientResources clientResources) {
         RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setKeySerializer( new StringRedisSerializer() );
-        redisTemplate.setValueSerializer( new StringRedisSerializer() );
-        redisTemplate.setHashKeySerializer( new StringRedisSerializer() );
-        redisTemplate.setHashValueSerializer( new GenericToStringSerializer<Integer>( Integer.class ) );
-        redisTemplate.setConnectionFactory( redisConnectionFactory( uwMfaProperties.getRedis(), clientResources ) );
-        redisTemplate.setEnableDefaultSerializer( false );
+        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        redisTemplate.setValueSerializer(new StringRedisSerializer());
+        redisTemplate.setHashKeySerializer(new StringRedisSerializer());
+        redisTemplate.setHashValueSerializer(new GenericToStringSerializer<Integer>(Integer.class));
+        redisTemplate.setConnectionFactory(redisConnectionFactory(uwMfaProperties.getRedis(), clientResources));
+        redisTemplate.setEnableDefaultSerializer(false);
         redisTemplate.afterPropertiesSet();
         return redisTemplate;
     }
@@ -56,7 +56,7 @@ public class UwMfaAutoConfiguration {
     @DependsOn("mfaRedisTemplate")
     @ConditionalOnMissingBean
     protected MfaCaptchaHelper mfaCaptchaHelper(final UwMfaProperties uwMfaProperties, @Qualifier("mfaRedisTemplate") final RedisTemplate<String, String> mfaRedisTemplate) {
-        return new MfaCaptchaHelper( uwMfaProperties, mfaRedisTemplate );
+        return new MfaCaptchaHelper(uwMfaProperties, mfaRedisTemplate);
     }
 
     @Bean
@@ -64,20 +64,20 @@ public class UwMfaAutoConfiguration {
     @ConditionalOnMissingBean
     protected MfaDeviceCodeHelper mfaDeviceCodeHelper(final UwMfaProperties uwMfaProperties, @Qualifier("mfaRedisTemplate") final RedisTemplate<String, String> mfaRedisTemplate,
                                                       @Qualifier("authRestTemplate") final RestTemplate authRestTemplate) {
-        return new MfaDeviceCodeHelper( uwMfaProperties, mfaRedisTemplate, authRestTemplate );
+        return new MfaDeviceCodeHelper(uwMfaProperties, mfaRedisTemplate, authRestTemplate);
     }
 
     @Bean
     @DependsOn("mfaRedisTemplate")
     @ConditionalOnMissingBean
     protected MfaIPLimitHelper mfaIPLimitHelper(final UwMfaProperties uwMfaProperties, @Qualifier("mfaRedisTemplate") final RedisTemplate<String, String> mfaRedisTemplate) {
-        return new MfaIPLimitHelper( uwMfaProperties, mfaRedisTemplate );
+        return new MfaIPLimitHelper(uwMfaProperties, mfaRedisTemplate);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    protected MfaTotpHelper mfaTotpHelper(final UwMfaProperties uwMfaProperties) {
-        return new MfaTotpHelper( uwMfaProperties );
+    protected MfaTotpHelper mfaTotpHelper(final UwMfaProperties uwMfaProperties, @Qualifier("mfaRedisTemplate") final RedisTemplate<String, String> mfaRedisTemplate) {
+        return new MfaTotpHelper(uwMfaProperties, mfaRedisTemplate);
     }
 
     /**
@@ -91,23 +91,23 @@ public class UwMfaAutoConfiguration {
         //设置连接池。
         RedisProperties.Pool poolProperties = redisProperties.getLettuce().getPool();
         GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
-        poolConfig.setMaxTotal( poolProperties.getMaxActive() );
-        poolConfig.setMaxIdle( poolProperties.getMaxIdle() );
-        poolConfig.setMinIdle( poolProperties.getMinIdle() );
+        poolConfig.setMaxTotal(poolProperties.getMaxActive());
+        poolConfig.setMaxIdle(poolProperties.getMaxIdle());
+        poolConfig.setMinIdle(poolProperties.getMinIdle());
         if (poolProperties.getMaxWait() != null) {
-            poolConfig.setMaxWait( poolProperties.getMaxWait() );
+            poolConfig.setMaxWait(poolProperties.getMaxWait());
         }
-        LettucePoolingClientConfiguration.LettucePoolingClientConfigurationBuilder builder = LettucePoolingClientConfiguration.builder().poolConfig( poolConfig );
+        LettucePoolingClientConfiguration.LettucePoolingClientConfigurationBuilder builder = LettucePoolingClientConfiguration.builder().poolConfig(poolConfig);
         if (redisProperties.getTimeout() != null) {
-            builder.commandTimeout( redisProperties.getTimeout() );
+            builder.commandTimeout(redisProperties.getTimeout());
         }
         //设置shutdownTimeout。
         RedisProperties.Lettuce lettuce = redisProperties.getLettuce();
         if (lettuce.getShutdownTimeout() != null && !lettuce.getShutdownTimeout().isZero()) {
-            builder.shutdownTimeout( redisProperties.getLettuce().getShutdownTimeout() );
+            builder.shutdownTimeout(redisProperties.getLettuce().getShutdownTimeout());
         }
         //设置clientResources。
-        builder.clientResources( clientResources );
+        builder.clientResources(clientResources);
         //设置ssl。
         if (redisProperties.getSsl().isEnabled()) {
             builder.useSsl();
@@ -115,16 +115,16 @@ public class UwMfaAutoConfiguration {
         //构建standaloneConfig。
         LettuceClientConfiguration clientConfig = builder.build();
         RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration();
-        standaloneConfig.setHostName( redisProperties.getHost() );
-        standaloneConfig.setPort( redisProperties.getPort() );
-        standaloneConfig.setDatabase( redisProperties.getDatabase() );
+        standaloneConfig.setHostName(redisProperties.getHost());
+        standaloneConfig.setPort(redisProperties.getPort());
+        standaloneConfig.setDatabase(redisProperties.getDatabase());
         if (StringUtils.isNotBlank(redisProperties.getUsername())) {
-            standaloneConfig.setUsername( redisProperties.getUsername() );
+            standaloneConfig.setUsername(redisProperties.getUsername());
         }
         if (StringUtils.isNotBlank(redisProperties.getPassword())) {
-            standaloneConfig.setPassword( RedisPassword.of( redisProperties.getPassword() ) );
+            standaloneConfig.setPassword(RedisPassword.of(redisProperties.getPassword()));
         }
-        LettuceConnectionFactory factory = new LettuceConnectionFactory( standaloneConfig, clientConfig );
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(standaloneConfig, clientConfig);
         factory.afterPropertiesSet();
         return factory;
     }

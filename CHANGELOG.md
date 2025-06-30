@@ -1,3 +1,8 @@
+# 2025.0601.0028版本升级说明
+1. uw-mfa: Captcha可以通过设置ipLimitWarnTimes:0来直接输出Captcha。
+2. uw-mfa: MfaFusionHelper的verifyTotpCode, verifyDeviceCode新增了强制校验Captcha的方法。
+3. uw-mfa: 移除了MfaCaptchaHelper, MfaDeviceCodeHelper中未使用的userIp参数。
+
 # 2025.0601.0026版本升级说明
 1. uw-auth-service: 优化对swagger的过滤。
 2. uw-common-app: 在!debug&!dev环境下，自动屏蔽swagger的访问。

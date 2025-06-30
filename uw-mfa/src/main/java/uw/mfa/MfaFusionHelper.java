@@ -67,7 +67,7 @@ public class MfaFusionHelper {
     }
 
     /**
-     * 获取IP限制信息。
+     * 获取IP限制列表。
      *
      * @return
      */
@@ -76,7 +76,7 @@ public class MfaFusionHelper {
     }
 
     /**
-     * 获取发送Captcha验证码限制信息。
+     * 获取发送Captcha验证码限制列表。
      *
      * @return
      */
@@ -95,7 +95,7 @@ public class MfaFusionHelper {
     }
 
     /**
-     * 获取发送DeviceCode验证码限制信息。
+     * 获取DeviceCode发送限制列表。
      *
      * @return
      */
@@ -104,13 +104,51 @@ public class MfaFusionHelper {
     }
 
     /**
-     * 清除发送DeviceCode验证码限制。
+     * 获取DeviceCode校验限制列表。
+     *
+     * @return
+     */
+    public static Set<String> getDeviceCodeVerifyLimitList() {
+        return MfaDeviceCodeHelper.getVerifyErrorList();
+    }
+
+    /**
+     * 清除DeviceCode发送限制。
      *
      * @param ip
      * @return
      */
     public static boolean clearDeviceCodeSendLimit(String ip) {
         return MfaDeviceCodeHelper.clearSendLimit(ip);
+    }
+
+    /**
+     * 清除DeviceCode校验限制。
+     *
+     * @param deviceId
+     * @return
+     */
+    public static boolean clearDeviceCodeVerifyLimit(String deviceId) {
+        return MfaDeviceCodeHelper.clearVerifyLimit(deviceId);
+    }
+
+    /**
+     * 清除totp校验限制。
+     *
+     * @param userInfo
+     * @return
+     */
+    public static boolean clearTotpVerifyLimit(String userInfo) {
+        return MfaTotpHelper.clearVerifyLimit(userInfo);
+    }
+
+    /**
+     * 获取totp校验限制列表。
+     *
+     * @return
+     */
+    public static Set<String> getTotpVerifyLimitList() {
+        return MfaTotpHelper.getVerifyErrorList();
     }
 
     /**
@@ -179,8 +217,7 @@ public class MfaFusionHelper {
      * @param deviceType 登录类型
      * @param deviceId
      */
-    public static ResponseData sendDeviceCode(String userIp, long saasId, int deviceType, String deviceId, String captchaId, String captchaSign, int codeLen,
-                                              String notifySubject, String notifyContent) {
+    public static ResponseData sendDeviceCode(String userIp, long saasId, int deviceType, String deviceId, String captchaId, String captchaSign, int codeLen, String notifySubject, String notifyContent) {
         //检查Captcha限制。
         ResponseData verifyData = verifyCaptcha(userIp, captchaId, captchaSign);
         if (!verifyData.isSuccess()) {
@@ -257,13 +294,13 @@ public class MfaFusionHelper {
      * @param totpCode
      * @return
      */
-    public static ResponseData verifyTotpCode(String userIp, String totpSecret, String totpCode) {
+    public static ResponseData verifyTotpCode(String userIp, String userInfo, String totpSecret, String totpCode) {
         //检查IP限制。
         ResponseData verifyData = checkIpErrorLimit(userIp);
         if (!verifyData.isSuccess()) {
             return verifyData;
         }
-        verifyData = MfaTotpHelper.verifyCode(totpSecret, totpCode);
+        verifyData = MfaTotpHelper.verifyCode(userInfo, totpSecret, totpCode);
         if (verifyData.isNotSuccess()) {
             MfaIPLimitHelper.incrementIpErrorTimes(userIp, verifyData.getCode());
         }
@@ -273,17 +310,19 @@ public class MfaFusionHelper {
     /**
      * 验证totp密钥。
      *
+     * @param userIp     用户ip
+     * @param userInfo   用户信息
      * @param totpSecret
      * @param totpCode
      * @return
      */
-    public static ResponseData verifyTotpCode(String userIp, String totpSecret, String totpCode, String captchaId, String captchaSign) {
+    public static ResponseData verifyTotpCode(String userIp, String userInfo, String totpSecret, String totpCode, String captchaId, String captchaSign) {
         //检查Captcha限制。
         ResponseData verifyData = verifyCaptcha(userIp, captchaId, captchaSign);
         if (!verifyData.isSuccess()) {
             return verifyData;
         }
-        verifyData = MfaTotpHelper.verifyCode(totpSecret, totpCode);
+        verifyData = MfaTotpHelper.verifyCode(userInfo, totpSecret, totpCode);
         if (verifyData.isNotSuccess()) {
             MfaIPLimitHelper.incrementIpErrorTimes(userIp, verifyData.getCode());
         }

@@ -31,9 +31,13 @@ public class MfaDeviceCodeHelper {
      */
     private static final String REDIS_DEVICE_CODE_PREFIX = "deviceCode";
     /**
-     * redis发码限制前缀.
+     * redis 发码限制前缀.
      */
-    private static final String REDIS_LIMIT_CODE_PREFIX = "limitDevice";
+    private static final String REDIS_DEVICE_CODE_LIMIT_PREFIX = "deviceCodeLimit";
+    /**
+     * redis 码校验前缀.
+     */
+    private static final String REDIS_DEVICE_CODE_VERIFY_PREFIX = "deviceCodeVerify";
     /**
      * 随机生成器
      */
@@ -73,8 +77,7 @@ public class MfaDeviceCodeHelper {
      */
     private static ValueOperations<String, String> mfaRedisOp;
 
-    public MfaDeviceCodeHelper(UwMfaProperties uwMfaProperties, @Qualifier("mfaRedisTemplate") final RedisTemplate<String, String> mfaRedisTemplate, @Qualifier(
-            "authRestTemplate") final RestTemplate authRestTemplate) {
+    public MfaDeviceCodeHelper(UwMfaProperties uwMfaProperties, @Qualifier("mfaRedisTemplate") final RedisTemplate<String, String> mfaRedisTemplate, @Qualifier("authRestTemplate") final RestTemplate authRestTemplate) {
         MfaDeviceCodeHelper.uwMfaProperties = uwMfaProperties;
         MfaDeviceCodeHelper.mfaRedisTemplate = mfaRedisTemplate;
         MfaDeviceCodeHelper.mfaRedisOp = mfaRedisTemplate.opsForValue();
@@ -122,8 +125,8 @@ public class MfaDeviceCodeHelper {
             notifyContent = uwMfaProperties.getDeviceNotifyContent();
         }
         //检查验证码发送限制情况
-        String redisKey = RedisKeyUtils.buildKey(REDIS_LIMIT_CODE_PREFIX, userIp);
-        Long sentTimes = mfaRedisOp.increment(redisKey);
+        String redisKey = RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_LIMIT_PREFIX, userIp);
+        long sentTimes = Objects.requireNonNullElse(mfaRedisOp.increment(redisKey), 0L);
         if (sentTimes == 1L) {
             mfaRedisTemplate.expire(redisKey, uwMfaProperties.getDeviceCodeSendLimitSeconds(), TimeUnit.SECONDS);
         }
@@ -163,7 +166,7 @@ public class MfaDeviceCodeHelper {
     }
 
     /**
-     * 检查设备验证码。
+     * 校验设备验证码。
      *
      * @return
      */
@@ -171,12 +174,51 @@ public class MfaDeviceCodeHelper {
         if (StringUtils.isBlank(deviceId) || StringUtils.isBlank(deviceCode)) {
             return ResponseData.errorCode(MfaResponseCode.DEVICE_CODE_LOST_ERROR);
         }
+        //检查设备码验证限制情况
+        ResponseData checkData = checkVerifyErrorLimit(deviceId);
+        if (checkData.isNotSuccess()) {
+            return checkData;
+        }
         String redisCode = mfaRedisOp.getAndDelete(RedisKeyUtils.buildKey(MfaDeviceCodeHelper.REDIS_DEVICE_CODE_PREFIX, deviceType, deviceId));
         if (StringUtils.equals(redisCode, deviceCode)) {
             return ResponseData.success();
         } else {
+            incrementVerifyErrorTimes(deviceId);
             return ResponseData.errorCode(MfaResponseCode.DEVICE_CODE_VERIFY_ERROR);
         }
+    }
+
+    /**
+     * 检查校验错误限制。
+     *
+     * @param deviceId
+     * @return
+     */
+    public static ResponseData checkVerifyErrorLimit(String deviceId) {
+        String key = RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_VERIFY_PREFIX, deviceId);
+        String limitInfo = mfaRedisOp.get(RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_VERIFY_PREFIX, deviceId));
+        int errorCount = 0;
+        if (StringUtils.isNotBlank(limitInfo)) {
+            errorCount = Integer.parseInt(limitInfo);
+        }
+        if (errorCount >= uwMfaProperties.getDeviceCodeVerifyErrorTimes()) {
+            long ttl = mfaRedisTemplate.getExpire(key, TimeUnit.MINUTES) + 1;
+            return ResponseData.errorCode(MfaResponseCode.DEVICE_CODE_VERIFY_LIMIT_ERROR, deviceId, (uwMfaProperties.getDeviceCodeVerifyLimitSeconds() / 60), errorCount, ttl);
+        }
+        return ResponseData.success();
+    }
+
+    /**
+     * 递增校验错误次数
+     *
+     * @param deviceId
+     */
+    public static boolean incrementVerifyErrorTimes(String deviceId) {
+        Long times = mfaRedisOp.increment(RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_VERIFY_PREFIX, deviceId));
+        if (times != null && times == 1L) {
+            return mfaRedisTemplate.expire(RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_VERIFY_PREFIX, deviceId), uwMfaProperties.getDeviceCodeVerifyLimitSeconds(), TimeUnit.SECONDS);
+        }
+        return false;
     }
 
     /**
@@ -185,19 +227,43 @@ public class MfaDeviceCodeHelper {
      * @param ip
      */
     public static boolean clearSendLimit(String ip) {
-        return mfaRedisTemplate.delete(RedisKeyUtils.buildKey(REDIS_LIMIT_CODE_PREFIX, ip));
+        return mfaRedisTemplate.delete(RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_LIMIT_PREFIX, ip));
     }
 
     /**
-     * 获取IP限制列表。
+     * 清除设备验证码校验限制。
+     *
+     * @param deviceId
+     */
+    public static boolean clearVerifyLimit(String deviceId) {
+        return mfaRedisTemplate.delete(RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_VERIFY_PREFIX, deviceId));
+    }
+
+    /**
+     * 获取DeviceCode发送限制列表。
      *
      * @return
      */
     public static Set<String> getSendLimitList() {
         Set<String> keys = new LinkedHashSet<>();
-        try (Cursor<String> cursor = mfaRedisTemplate.scan(ScanOptions.scanOptions().match(REDIS_LIMIT_CODE_PREFIX + ":*").count(1000).build())) {
+        try (Cursor<String> cursor = mfaRedisTemplate.scan(ScanOptions.scanOptions().match(REDIS_DEVICE_CODE_LIMIT_PREFIX + ":*").count(1000).build())) {
             cursor.forEachRemaining(key -> {
-                keys.add(key.substring(REDIS_LIMIT_CODE_PREFIX.length() + 1));
+                keys.add(key.substring(REDIS_DEVICE_CODE_LIMIT_PREFIX.length() + 1));
+            });
+        }
+        return keys;
+    }
+
+    /**
+     * 获取DeviceCode错误限制列表。
+     *
+     * @return
+     */
+    public static Set<String> getVerifyErrorList() {
+        Set<String> keys = new LinkedHashSet<>();
+        try (Cursor<String> cursor = mfaRedisTemplate.scan(ScanOptions.scanOptions().match(REDIS_DEVICE_CODE_VERIFY_PREFIX + ":*").count(1000).build())) {
+            cursor.forEachRemaining(key -> {
+                keys.add(key.substring(REDIS_DEVICE_CODE_VERIFY_PREFIX.length() + 1));
             });
         }
         return keys;

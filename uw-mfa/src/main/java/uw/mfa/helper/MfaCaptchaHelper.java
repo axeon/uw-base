@@ -36,7 +36,7 @@ public class MfaCaptchaHelper {
     /**
      * redisCAPTCHA限制前缀.
      */
-    private static final String REDIS_LIMIT_CAPTCHA_PREFIX = "limitCaptcha";
+    private static final String REDIS_CAPTCHA_LIMIT_PREFIX = "captchaLimit";
 
     /**
      * mfaRedisTemplate。
@@ -74,7 +74,7 @@ public class MfaCaptchaHelper {
      */
     public static ResponseData<CaptchaQuestion> generateCaptcha(String userIp, String captchaId) {
         //检查发送限制情况
-        String redisKey = RedisKeyUtils.buildKey(REDIS_LIMIT_CAPTCHA_PREFIX, userIp);
+        String redisKey = RedisKeyUtils.buildKey(REDIS_CAPTCHA_LIMIT_PREFIX, userIp);
         long sentTimes = Objects.requireNonNullElse(mfaRedisOp.increment(redisKey), 0L);
         if (sentTimes == 1L) {
             mfaRedisTemplate.expire(redisKey, uwMfaProperties.getCaptchaSendLimitSeconds(), TimeUnit.SECONDS);
@@ -120,7 +120,7 @@ public class MfaCaptchaHelper {
      * @param ip
      */
     public static boolean clearSendLimit(String ip) {
-        return mfaRedisTemplate.delete(RedisKeyUtils.buildKey(REDIS_LIMIT_CAPTCHA_PREFIX, ip));
+        return mfaRedisTemplate.delete(RedisKeyUtils.buildKey(REDIS_CAPTCHA_LIMIT_PREFIX, ip));
     }
 
     /**
@@ -130,9 +130,9 @@ public class MfaCaptchaHelper {
      */
     public static Set<String> getSendLimitList() {
         Set<String> keys = new LinkedHashSet<>();
-        try (Cursor<String> cursor = mfaRedisTemplate.scan(ScanOptions.scanOptions().match(REDIS_LIMIT_CAPTCHA_PREFIX + ":*").count(1000).build())) {
+        try (Cursor<String> cursor = mfaRedisTemplate.scan(ScanOptions.scanOptions().match(REDIS_CAPTCHA_LIMIT_PREFIX + ":*").count(1000).build())) {
             cursor.forEachRemaining(key -> {
-                keys.add(key.substring(REDIS_LIMIT_CAPTCHA_PREFIX.length() + 1));
+                keys.add(key.substring(REDIS_CAPTCHA_LIMIT_PREFIX.length() + 1));
             });
         }
         return keys;

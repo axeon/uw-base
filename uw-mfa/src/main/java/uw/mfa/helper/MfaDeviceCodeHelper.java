@@ -33,11 +33,11 @@ public class MfaDeviceCodeHelper {
     /**
      * redis 发码限制前缀.
      */
-    private static final String REDIS_DEVICE_CODE_LIMIT_PREFIX = "deviceCodeLimit";
+    private static final String REDIS_DEVICE_CODE_SEND_PREFIX = "deviceSend";
     /**
      * redis 码校验前缀.
      */
-    private static final String REDIS_DEVICE_CODE_VERIFY_PREFIX = "deviceCodeVerify";
+    private static final String REDIS_DEVICE_CODE_VERIFY_PREFIX = "deviceVerify";
     /**
      * 随机生成器
      */
@@ -125,7 +125,7 @@ public class MfaDeviceCodeHelper {
             notifyContent = uwMfaProperties.getDeviceNotifyContent();
         }
         //检查验证码发送限制情况
-        String redisKey = RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_LIMIT_PREFIX, userIp);
+        String redisKey = RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_SEND_PREFIX, userIp);
         long sentTimes = Objects.requireNonNullElse(mfaRedisOp.increment(redisKey), 0L);
         if (sentTimes == 1L) {
             mfaRedisTemplate.expire(redisKey, uwMfaProperties.getDeviceCodeSendLimitSeconds(), TimeUnit.SECONDS);
@@ -223,7 +223,7 @@ public class MfaDeviceCodeHelper {
      * @param ip
      */
     public static boolean clearSendLimit(String ip) {
-        return mfaRedisTemplate.delete(RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_LIMIT_PREFIX, ip));
+        return mfaRedisTemplate.delete(RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_SEND_PREFIX, ip));
     }
 
     /**
@@ -242,9 +242,9 @@ public class MfaDeviceCodeHelper {
      */
     public static Set<String> getSendLimitList() {
         Set<String> keys = new LinkedHashSet<>();
-        try (Cursor<String> cursor = mfaRedisTemplate.scan(ScanOptions.scanOptions().match(REDIS_DEVICE_CODE_LIMIT_PREFIX + ":*").count(1000).build())) {
+        try (Cursor<String> cursor = mfaRedisTemplate.scan(ScanOptions.scanOptions().match(REDIS_DEVICE_CODE_SEND_PREFIX + ":*").count(1000).build())) {
             cursor.forEachRemaining(key -> {
-                keys.add(key.substring(REDIS_DEVICE_CODE_LIMIT_PREFIX.length() + 1));
+                keys.add(key.substring(REDIS_DEVICE_CODE_SEND_PREFIX.length() + 1));
             });
         }
         return keys;

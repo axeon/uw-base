@@ -1,4 +1,8 @@
 # 2025.0601.0028版本升级说明
+1. uw-mfa: MfaDeviceCodeHelper增加对DeviceId的校验错误限制，抑制横向爆破。
+2. uw-mfa: MfaTotpHelper增加对于UserId的校验错误限制，抑制横向爆破。
+
+# 2025.0601.0028版本升级说明
 1. uw-mfa: Captcha可以通过设置ipLimitWarnTimes:0来直接输出Captcha。
 2. uw-mfa: MfaFusionHelper的verifyTotpCode, verifyDeviceCode新增了强制校验Captcha的方法。
 3. uw-mfa: 移除了MfaCaptchaHelper, MfaDeviceCodeHelper中未使用的userIp参数。

@@ -34,6 +34,8 @@ public enum MfaResponseCode implements ResponseCode {
 
     DEVICE_CODE_SEND_LIMIT_ERROR( "您的IP[%s]已经在[%s]分钟内连续[%s]次发送验证码! 请[%s]分钟后再试! " ),
 
+    DEVICE_CODE_VERIFY_LIMIT_ERROR( "您的设备ID[%s]已经在[%s]分钟内连续[%s]次验证错误! 请[%s]分钟后再试! " ),
+
     DEVICE_CODE_SEND_ERROR( "设备验证码发送失败! " ),
 
     DEVICE_CODE_LOST_ERROR( "设备验证码信息丢失! " ),
@@ -54,6 +56,8 @@ public enum MfaResponseCode implements ResponseCode {
     TOTP_CODE_VERIFY_ERROR( "TOTP验证码验证错误! " ),
 
     TOTP_RECOVERY_CODE_VERIFY_ERROR( "TOTP恢复验证码验证错误! " ),
+
+    TOTP_VERIFY_LIMIT_ERROR( "您的用户ID[%s]已经在[%s]分钟内连续[%s]次验证错误! 请[%s]分钟后再试! " ),
 
     ;
     /**

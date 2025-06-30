@@ -67,6 +67,16 @@ public class UwMfaProperties {
     private int deviceCodeDefaultLength = 6;
 
     /**
+     * 设备验证码校验限定时间 10min
+     */
+    private long deviceCodeVerifyLimitSeconds = 600L;
+
+    /**
+     * 设备验证码错误次数，默认10次。
+     */
+    private long deviceCodeVerifyErrorTimes = 10L;
+
+    /**
      * 设备验证码通知标题。
      */
     private String deviceNotifySubject = "设备验证码";
@@ -110,6 +120,16 @@ public class UwMfaProperties {
      * TOTP验证时间窗口偏移量
      */
     private int totpTimePeriodDiscrepancy = 2;
+
+    /**
+     * TOTP校验限定时间 10min
+     */
+    private long totpVerifyLimitSeconds = 600L;
+
+    /**
+     * TOTP错误次数，默认10次。
+     */
+    private long totpVerifyErrorTimes = 10L;
 
     /**
      * TOTP是否生成二维码，默认生成。
@@ -227,6 +247,22 @@ public class UwMfaProperties {
         this.deviceCodeDefaultLength = deviceCodeDefaultLength;
     }
 
+    public long getDeviceCodeVerifyLimitSeconds() {
+        return deviceCodeVerifyLimitSeconds;
+    }
+
+    public void setDeviceCodeVerifyLimitSeconds(long deviceCodeVerifyLimitSeconds) {
+        this.deviceCodeVerifyLimitSeconds = deviceCodeVerifyLimitSeconds;
+    }
+
+    public long getDeviceCodeVerifyErrorTimes() {
+        return deviceCodeVerifyErrorTimes;
+    }
+
+    public void setDeviceCodeVerifyErrorTimes(long deviceCodeVerifyErrorTimes) {
+        this.deviceCodeVerifyErrorTimes = deviceCodeVerifyErrorTimes;
+    }
+
     public String getDeviceNotifySubject() {
         return deviceNotifySubject;
     }
@@ -297,6 +333,22 @@ public class UwMfaProperties {
 
     public void setTotpTimePeriodDiscrepancy(int totpTimePeriodDiscrepancy) {
         this.totpTimePeriodDiscrepancy = totpTimePeriodDiscrepancy;
+    }
+
+    public long getTotpVerifyLimitSeconds() {
+        return totpVerifyLimitSeconds;
+    }
+
+    public void setTotpVerifyLimitSeconds(long totpVerifyLimitSeconds) {
+        this.totpVerifyLimitSeconds = totpVerifyLimitSeconds;
+    }
+
+    public long getTotpVerifyErrorTimes() {
+        return totpVerifyErrorTimes;
+    }
+
+    public void setTotpVerifyErrorTimes(long totpVerifyErrorTimes) {
+        this.totpVerifyErrorTimes = totpVerifyErrorTimes;
     }
 
     public boolean isTotpGenQr() {

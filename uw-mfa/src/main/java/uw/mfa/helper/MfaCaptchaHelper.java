@@ -17,6 +17,7 @@ import uw.mfa.constant.MfaResponseCode;
 import uw.mfa.util.RedisKeyUtils;
 
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -74,13 +75,14 @@ public class MfaCaptchaHelper {
     public static ResponseData<CaptchaQuestion> generateCaptcha(String userIp, String captchaId) {
         //检查发送限制情况
         String redisKey = RedisKeyUtils.buildKey( REDIS_LIMIT_CAPTCHA_PREFIX, userIp );
-        Long sentTimes = mfaRedisOp.increment( redisKey );
+        long sentTimes = Objects.requireNonNullElse(mfaRedisOp.increment(redisKey),0L);
         if (sentTimes == 1L) {
             mfaRedisTemplate.expire( redisKey, uwMfaProperties.getCaptchaSendLimitSeconds(), TimeUnit.SECONDS );
         }
         if (sentTimes >= uwMfaProperties.getCaptchaSendLimitTimes()) {
+            long ttl = mfaRedisTemplate.getExpire(redisKey, TimeUnit.MINUTES) + 1;
             return ResponseData.errorCode( MfaResponseCode.CAPTCHA_SEND_LIMIT_ERROR, userIp, (uwMfaProperties.getCaptchaSendLimitSeconds() / 60),
-                    uwMfaProperties.getCaptchaSendLimitTimes(), (uwMfaProperties.getCaptchaSendLimitSeconds() / 60) );
+                    uwMfaProperties.getCaptchaSendLimitTimes(), ttl );
         }
         ResponseData<CaptchaData> captchaResData = captchaService.generateCaptcha( captchaId );
         if (captchaResData.isNotSuccess()) {

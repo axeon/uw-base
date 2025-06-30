@@ -167,7 +167,7 @@ public class MfaDeviceCodeHelper {
      *
      * @return
      */
-    public static ResponseData verifyDeviceCode(String userIp, int deviceType, String deviceId, String deviceCode) {
+    public static ResponseData verifyDeviceCode(int deviceType, String deviceId, String deviceCode) {
         if (StringUtils.isBlank(deviceId) || StringUtils.isBlank(deviceCode)) {
             return ResponseData.errorCode(MfaResponseCode.DEVICE_CODE_LOST_ERROR);
         }

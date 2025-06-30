@@ -101,7 +101,7 @@ public class MfaCaptchaHelper {
      * @param captchaId
      * @return
      */
-    public static ResponseData verifyCaptcha(String userIp, String captchaId, String captchaSign) {
+    public static ResponseData verifyCaptcha(String captchaId, String captchaSign) {
         if (StringUtils.isBlank( captchaId ) || StringUtils.isBlank( captchaSign )) {
             return ResponseData.errorCode( MfaResponseCode.CAPTCHA_LOST_ERROR );
         }

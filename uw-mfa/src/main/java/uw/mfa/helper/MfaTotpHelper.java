@@ -130,15 +130,15 @@ public class MfaTotpHelper {
      * @return
      */
     public static ResponseData checkVerifyErrorLimit(String userInfo) {
-        String key = RedisKeyUtils.buildKey(REDIS_TOTP_VERIFY_PREFIX, userInfo);
+        String redisKey = RedisKeyUtils.buildKey(REDIS_TOTP_VERIFY_PREFIX, userInfo);
         String limitInfo = mfaRedisOp.get(RedisKeyUtils.buildKey(REDIS_TOTP_VERIFY_PREFIX, userInfo));
         int errorCount = 0;
         if (StringUtils.isNotBlank(limitInfo)) {
             errorCount = Integer.parseInt(limitInfo);
         }
         if (errorCount >= uwMfaProperties.getTotpVerifyErrorTimes()) {
-            long ttl = mfaRedisTemplate.getExpire(key, TimeUnit.MINUTES) + 1;
-            return ResponseData.errorCode(MfaResponseCode.TOTP_VERIFY_LIMIT_ERROR, userInfo, (uwMfaProperties.getTotpVerifyLimitSeconds() / 60), errorCount, ttl);
+            long ttl = mfaRedisTemplate.getExpire(redisKey, TimeUnit.MINUTES) + 1;
+            return ResponseData.errorCode(MfaResponseCode.TOTP_VERIFY_LIMIT_ERROR, userInfo, uwMfaProperties.getTotpVerifyLimitSeconds() / 60, errorCount, ttl);
         }
         return ResponseData.success();
     }

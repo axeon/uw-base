@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class MfaCaptchaHelper {
 
-    private static final Logger log = LoggerFactory.getLogger( MfaCaptchaHelper.class );
+    private static final Logger log = LoggerFactory.getLogger(MfaCaptchaHelper.class);
 
     /**
      * redis captcha前缀.
@@ -64,7 +64,7 @@ public class MfaCaptchaHelper {
         MfaCaptchaHelper.uwMfaProperties = uwMfaProperties;
         MfaCaptchaHelper.mfaRedisTemplate = mfaRedisTemplate;
         MfaCaptchaHelper.mfaRedisOp = mfaRedisTemplate.opsForValue();
-        MfaCaptchaHelper.captchaService = new CaptchaService( uwMfaProperties.getCaptchaStrategies() );
+        MfaCaptchaHelper.captchaService = new CaptchaService(uwMfaProperties.getCaptchaStrategies());
     }
 
     /**
@@ -74,27 +74,25 @@ public class MfaCaptchaHelper {
      */
     public static ResponseData<CaptchaQuestion> generateCaptcha(String userIp, String captchaId) {
         //检查发送限制情况
-        String redisKey = RedisKeyUtils.buildKey( REDIS_LIMIT_CAPTCHA_PREFIX, userIp );
-        long sentTimes = Objects.requireNonNullElse(mfaRedisOp.increment(redisKey),0L);
+        String redisKey = RedisKeyUtils.buildKey(REDIS_LIMIT_CAPTCHA_PREFIX, userIp);
+        long sentTimes = Objects.requireNonNullElse(mfaRedisOp.increment(redisKey), 0L);
         if (sentTimes == 1L) {
-            mfaRedisTemplate.expire( redisKey, uwMfaProperties.getCaptchaSendLimitSeconds(), TimeUnit.SECONDS );
+            mfaRedisTemplate.expire(redisKey, uwMfaProperties.getCaptchaSendLimitSeconds(), TimeUnit.SECONDS);
         }
         if (sentTimes >= uwMfaProperties.getCaptchaSendLimitTimes()) {
             long ttl = mfaRedisTemplate.getExpire(redisKey, TimeUnit.MINUTES) + 1;
-            return ResponseData.errorCode( MfaResponseCode.CAPTCHA_SEND_LIMIT_ERROR, userIp, (uwMfaProperties.getCaptchaSendLimitSeconds() / 60),
-                    uwMfaProperties.getCaptchaSendLimitTimes(), ttl );
+            return ResponseData.errorCode(MfaResponseCode.CAPTCHA_SEND_LIMIT_ERROR, userIp, uwMfaProperties.getCaptchaSendLimitSeconds() / 60, uwMfaProperties.getCaptchaSendLimitTimes(), ttl);
         }
-        ResponseData<CaptchaData> captchaResData = captchaService.generateCaptcha( captchaId );
+        ResponseData<CaptchaData> captchaResData = captchaService.generateCaptcha(captchaId);
         if (captchaResData.isNotSuccess()) {
-            return ResponseData.errorCode( MfaResponseCode.CAPTCHA_GENERATE_ERROR );
+            return ResponseData.errorCode(MfaResponseCode.CAPTCHA_GENERATE_ERROR);
         }
         CaptchaData captchaData = captchaResData.getData();
         CaptchaQuestion captchaQuestion = captchaData.getCaptchaQuestion();
         //设置有效期
-        captchaQuestion.setCaptchaTTL( uwMfaProperties.getCaptchaExpiredSeconds() );
-        mfaRedisOp.set( RedisKeyUtils.buildKey( REDIS_CAPTCHA_PREFIX, captchaQuestion.getCaptchaId() ), captchaData.getCaptchaResult(),
-                uwMfaProperties.getCaptchaExpiredSeconds(), TimeUnit.SECONDS );
-        return ResponseData.success( captchaQuestion );
+        captchaQuestion.setCaptchaTTL(uwMfaProperties.getCaptchaExpiredSeconds());
+        mfaRedisOp.set(RedisKeyUtils.buildKey(REDIS_CAPTCHA_PREFIX, captchaQuestion.getCaptchaId()), captchaData.getCaptchaResult(), uwMfaProperties.getCaptchaExpiredSeconds(), TimeUnit.SECONDS);
+        return ResponseData.success(captchaQuestion);
     }
 
     /**
@@ -104,13 +102,13 @@ public class MfaCaptchaHelper {
      * @return
      */
     public static ResponseData verifyCaptcha(String captchaId, String captchaSign) {
-        if (StringUtils.isBlank( captchaId ) || StringUtils.isBlank( captchaSign )) {
-            return ResponseData.errorCode( MfaResponseCode.CAPTCHA_LOST_ERROR );
+        if (StringUtils.isBlank(captchaId) || StringUtils.isBlank(captchaSign)) {
+            return ResponseData.errorCode(MfaResponseCode.CAPTCHA_LOST_ERROR);
         }
-        String captchaResult = mfaRedisOp.getAndDelete( RedisKeyUtils.buildKey( REDIS_CAPTCHA_PREFIX, captchaId ) );
-        ResponseData verifyData = captchaService.verifyCaptcha( captchaId, captchaSign, captchaResult );
+        String captchaResult = mfaRedisOp.getAndDelete(RedisKeyUtils.buildKey(REDIS_CAPTCHA_PREFIX, captchaId));
+        ResponseData verifyData = captchaService.verifyCaptcha(captchaId, captchaSign, captchaResult);
         if (verifyData.isNotSuccess()) {
-            return ResponseData.errorCode( MfaResponseCode.CAPTCHA_VERIFY_ERROR );
+            return ResponseData.errorCode(MfaResponseCode.CAPTCHA_VERIFY_ERROR);
         }
         return ResponseData.success();
     }

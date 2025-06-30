@@ -131,17 +131,15 @@ public class MfaDeviceCodeHelper {
             mfaRedisTemplate.expire(redisKey, uwMfaProperties.getDeviceCodeSendLimitSeconds(), TimeUnit.SECONDS);
         }
         if (sentTimes >= uwMfaProperties.getDeviceCodeSendLimitTimes()) {
-            return ResponseData.errorCode(MfaResponseCode.DEVICE_CODE_SEND_LIMIT_ERROR, userIp,
-                    (uwMfaProperties.getDeviceCodeSendLimitSeconds() / 60), uwMfaProperties.getDeviceCodeSendLimitTimes(),
-                    (uwMfaProperties.getDeviceCodeSendLimitSeconds() / 60));
+            long ttl = mfaRedisTemplate.getExpire(redisKey, TimeUnit.MINUTES) + 1;
+            return ResponseData.errorCode(MfaResponseCode.DEVICE_CODE_SEND_LIMIT_ERROR, userIp, uwMfaProperties.getDeviceCodeSendLimitSeconds() / 60, uwMfaProperties.getDeviceCodeSendLimitTimes(), ttl);
         }
         String deviceCode = genCode(codeLen);
         Map<String, String> paramMap = new HashMap<>();
         paramMap.put(TEMPLATE_DEVICE_CODE, deviceCode);
         paramMap.put(TEMPLATE_EXPIRE_MINUTES, String.valueOf(uwMfaProperties.getDeviceCodeExpiredSeconds() / 60));
         if (deviceType == MfaDeviceType.MOBILE_CODE.getValue()) {
-            mfaRedisOp.set(RedisKeyUtils.buildKey(MfaDeviceCodeHelper.REDIS_DEVICE_CODE_PREFIX, deviceType, deviceId), deviceCode,
-                    uwMfaProperties.getDeviceCodeExpiredSeconds(), TimeUnit.SECONDS);
+            mfaRedisOp.set(RedisKeyUtils.buildKey(MfaDeviceCodeHelper.REDIS_DEVICE_CODE_PREFIX, deviceType, deviceId), deviceCode, uwMfaProperties.getDeviceCodeExpiredSeconds(), TimeUnit.SECONDS);
             //调用接口发送短信
             ResponseData responseData = MfaDeviceCodeHelper.sendSms(saasId, "mfa", deviceId, deviceId, replaceTemplate(notifyContent, paramMap), paramMap);
             if (responseData.isSuccess()) {
@@ -150,11 +148,9 @@ public class MfaDeviceCodeHelper {
                 return ResponseData.errorCode(MfaResponseCode.DEVICE_CODE_SEND_ERROR);
             }
         } else if (deviceType == MfaDeviceType.EMAIL_CODE.getValue()) {
-            mfaRedisOp.set(RedisKeyUtils.buildKey(MfaDeviceCodeHelper.REDIS_DEVICE_CODE_PREFIX, deviceType, deviceId), deviceCode,
-                    uwMfaProperties.getDeviceCodeExpiredSeconds(), TimeUnit.SECONDS);
+            mfaRedisOp.set(RedisKeyUtils.buildKey(MfaDeviceCodeHelper.REDIS_DEVICE_CODE_PREFIX, deviceType, deviceId), deviceCode, uwMfaProperties.getDeviceCodeExpiredSeconds(), TimeUnit.SECONDS);
             //调用接口发送邮件
-            ResponseData responseData = MfaDeviceCodeHelper.sendEmail(saasId, "mfa", deviceId, deviceId, replaceTemplate(notifySubject, paramMap),
-                    replaceTemplate(notifyContent, paramMap), paramMap);
+            ResponseData responseData = MfaDeviceCodeHelper.sendEmail(saasId, "mfa", deviceId, deviceId, replaceTemplate(notifySubject, paramMap), replaceTemplate(notifyContent, paramMap), paramMap);
             if (responseData.isSuccess()) {
                 return ResponseData.success();
             } else {
@@ -195,15 +191,15 @@ public class MfaDeviceCodeHelper {
      * @return
      */
     public static ResponseData checkVerifyErrorLimit(String deviceId) {
-        String key = RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_VERIFY_PREFIX, deviceId);
+        String redisKey = RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_VERIFY_PREFIX, deviceId);
         String limitInfo = mfaRedisOp.get(RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_VERIFY_PREFIX, deviceId));
         int errorCount = 0;
         if (StringUtils.isNotBlank(limitInfo)) {
             errorCount = Integer.parseInt(limitInfo);
         }
         if (errorCount >= uwMfaProperties.getDeviceCodeVerifyErrorTimes()) {
-            long ttl = mfaRedisTemplate.getExpire(key, TimeUnit.MINUTES) + 1;
-            return ResponseData.errorCode(MfaResponseCode.DEVICE_CODE_VERIFY_LIMIT_ERROR, deviceId, (uwMfaProperties.getDeviceCodeVerifyLimitSeconds() / 60), errorCount, ttl);
+            long ttl = mfaRedisTemplate.getExpire(redisKey, TimeUnit.MINUTES) + 1;
+            return ResponseData.errorCode(MfaResponseCode.DEVICE_CODE_VERIFY_LIMIT_ERROR, deviceId, uwMfaProperties.getDeviceCodeVerifyLimitSeconds() / 60, errorCount, ttl);
         }
         return ResponseData.success();
     }

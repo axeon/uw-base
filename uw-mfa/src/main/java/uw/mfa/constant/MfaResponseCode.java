@@ -14,9 +14,9 @@ public enum MfaResponseCode implements ResponseCode {
     // ip限制
     IP_AUTH_ERROR( "你的IP[%s]不在授权IP范围内! " ),
 
-    IP_LIMIT_WARN( "您的IP[%s]已经在[%s]分钟内连续[%s]次登录失败! " ),
+    IP_LIMIT_WARN( "您的IP[%s]已经在[%s]分钟内连续[%s]次验证失败! " ),
 
-    IP_LIMIT_ERROR( "您的IP[%s]已经在[%s]分钟内连续[%s]次登录失败! 请[%s]分钟后再试! " ),
+    IP_LIMIT_ERROR( "您的IP[%s]已经在[%s]分钟内连续[%s]次验证失败! 请[%s]分钟后再试! " ),
 
     // Captcha
     CAPTCHA_FEE_ERROR( "欠费! " ),
@@ -30,7 +30,7 @@ public enum MfaResponseCode implements ResponseCode {
     CAPTCHA_VERIFY_ERROR( "图形识别码验证错误! " ),
 
     // 设备码
-    DEVICE_CODE_FEE_ERROR( "运营商欠费! " ),
+    DEVICE_CODE_FEE_ERROR( "设备验证码发送欠费! " ),
 
     DEVICE_CODE_SEND_LIMIT_ERROR( "您的IP[%s]已经在[%s]分钟内连续[%s]次发送验证码! 请[%s]分钟后再试! " ),
 
@@ -40,7 +40,7 @@ public enum MfaResponseCode implements ResponseCode {
 
     DEVICE_CODE_LOST_ERROR( "设备验证码信息丢失! " ),
 
-    DEVICE_CODE_VERIFY_ERROR( "设备验证码验证错误! " ),
+    DEVICE_CODE_VERIFY_ERROR( "设备验证码校验错误! " ),
 
     DEVICE_TYPE_ERROR( "设备类型错误! " ),
 
@@ -53,9 +53,9 @@ public enum MfaResponseCode implements ResponseCode {
 
     TOTP_CODE_LOST_ERROR( "TOTP验证码信息丢失! " ),
 
-    TOTP_CODE_VERIFY_ERROR( "TOTP验证码验证错误! " ),
+    TOTP_CODE_VERIFY_ERROR( "TOTP验证码校验错误! " ),
 
-    TOTP_RECOVERY_CODE_VERIFY_ERROR( "TOTP恢复验证码验证错误! " ),
+    TOTP_RECOVERY_CODE_VERIFY_ERROR( "TOTP恢复验证码校验错误! " ),
 
     TOTP_VERIFY_LIMIT_ERROR( "您的用户ID[%s]已经在[%s]分钟内连续[%s]次验证错误! 请[%s]分钟后再试! " ),
 

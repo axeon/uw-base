@@ -1,4 +1,4 @@
-# 2025.0601.0031版本升级说明
+# 2025.0601.0032版本升级说明
 1. uw-mfa: MfaDeviceCodeHelper增加对DeviceId的校验错误限制，抑制横向爆破。
 2. uw-mfa: MfaTotpHelper增加对于UserId的校验错误限制，抑制横向爆破。
 

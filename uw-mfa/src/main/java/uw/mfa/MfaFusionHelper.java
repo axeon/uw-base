@@ -232,10 +232,20 @@ public class MfaFusionHelper {
      *
      * @return
      */
+    public static ResponseData verifyDeviceCode(int deviceType, String deviceId, String deviceCode) {
+        return MfaDeviceCodeHelper.verifyDeviceCode(deviceType, deviceId, deviceCode);
+    }
+
+    /**
+     * 检查设备验证码。
+     * 如果识别错误，则直接递增IP错误。
+     *
+     * @return
+     */
     public static ResponseData verifyDeviceCode(String userIp, int deviceType, String deviceId, String deviceCode) {
         //检查IP限制。
         ResponseData verifyData = checkIpErrorLimit(userIp);
-        if (!verifyData.isSuccess()) {
+        if (verifyData.isError()) {
             return verifyData;
         }
         verifyData = MfaDeviceCodeHelper.verifyDeviceCode(deviceType, deviceId, deviceCode);
@@ -286,9 +296,19 @@ public class MfaFusionHelper {
         return MfaTotpHelper.issue(label, issuer, qrSize);
     }
 
+    /**
+     * 验证totpCode。
+     *
+     * @param totpSecret
+     * @param totpCode
+     * @return
+     */
+    public static ResponseData verifyTotpCode(String userInfo, String totpSecret, String totpCode) {
+        return MfaTotpHelper.verifyCode(userInfo, totpSecret, totpCode);
+    }
 
     /**
-     * 验证totp密钥。
+     * 验证totpCode。
      *
      * @param totpSecret
      * @param totpCode
@@ -297,7 +317,7 @@ public class MfaFusionHelper {
     public static ResponseData verifyTotpCode(String userIp, String userInfo, String totpSecret, String totpCode) {
         //检查IP限制。
         ResponseData verifyData = checkIpErrorLimit(userIp);
-        if (!verifyData.isSuccess()) {
+        if (verifyData.isError()) {
             return verifyData;
         }
         verifyData = MfaTotpHelper.verifyCode(userInfo, totpSecret, totpCode);
@@ -308,7 +328,7 @@ public class MfaFusionHelper {
     }
 
     /**
-     * 验证totp密钥。
+     * 验证totpCode。
      *
      * @param userIp     用户ip
      * @param userInfo   用户信息

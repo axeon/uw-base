@@ -189,7 +189,7 @@ public class MfaFusionHelper {
     }
 
     /**
-     * 发送验证码。
+     * 发送设备验证码。
      * 此方法内会对IP限制进行检测，如果warn会进行captcha检测，否则不会检测。
      *
      * @param deviceType 登录类型
@@ -200,7 +200,7 @@ public class MfaFusionHelper {
     }
 
     /**
-     * 发送验证码。
+     * 发送设备验证码。
      * 此方法内会对IP限制进行检测，如果warn会进行captcha检测，否则不会检测。
      *
      * @param deviceType 登录类型
@@ -211,7 +211,7 @@ public class MfaFusionHelper {
     }
 
     /**
-     * 发送验证码。
+     * 发送设备验证码。
      * 此方法内会对IP限制进行检测，如果warn会进行captcha检测，否则不会检测。
      *
      * @param deviceType 登录类型
@@ -227,7 +227,7 @@ public class MfaFusionHelper {
     }
 
     /**
-     * 检查设备验证码。
+     * 校验设备验证码。
      * 如果识别错误，则直接递增IP错误。
      *
      * @return
@@ -237,8 +237,8 @@ public class MfaFusionHelper {
     }
 
     /**
-     * 检查设备验证码。
-     * 如果识别错误，则直接递增IP错误。
+     * 校验设备验证码。
+     * 同时验证ip。
      *
      * @return
      */
@@ -256,8 +256,8 @@ public class MfaFusionHelper {
     }
 
     /**
-     * 检查设备验证码。
-     * 如果识别错误，则直接递增IP错误。
+     * 校验设备验证码。
+     * 同时验证ip和captcha。
      *
      * @return
      */
@@ -297,7 +297,7 @@ public class MfaFusionHelper {
     }
 
     /**
-     * 验证totpCode。
+     * 校验totp验证码。
      *
      * @param totpSecret
      * @param totpCode
@@ -308,7 +308,8 @@ public class MfaFusionHelper {
     }
 
     /**
-     * 验证totpCode。
+     * 校验totp验证码。
+     * 同时验证ip。
      *
      * @param totpSecret
      * @param totpCode
@@ -328,7 +329,8 @@ public class MfaFusionHelper {
     }
 
     /**
-     * 验证totpCode。
+     * 校验totp验证码。
+     * 同时验证ip和captcha。
      *
      * @param userIp     用户ip
      * @param userInfo   用户信息
@@ -350,7 +352,7 @@ public class MfaFusionHelper {
     }
 
     /**
-     * 生成totp密钥。
+     * 生成16位随机恢复码。
      *
      * @param amount
      * @return

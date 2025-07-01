@@ -94,7 +94,7 @@ public class MfaTotpHelper {
     }
 
     /**
-     * 验证Totp密钥数据。
+     * 校验totp验证码。
      *
      * @param userInfo
      * @param totpSecret 密钥

@@ -131,6 +131,11 @@ public class JsonConfigHelper {
                     errorMessage += "参数不能为空";
                     isValid = false;
                 }
+            } else if (configParam.getType() == JsonConfigParam.ParamType.TEXT_RICH) {
+                if (StringUtils.isBlank(paramValue)) {
+                    errorMessage += "参数不能为空";
+                    isValid = false;
+                }
             } else if (configParam.getType() == JsonConfigParam.ParamType.INT) {
                 try {
                     Integer.parseInt(paramValue);

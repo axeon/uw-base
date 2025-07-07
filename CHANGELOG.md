@@ -1,5 +1,6 @@
 # 2025.0701.0000版本升级说明
 1. uw-common-app: 移除JsonConfigParam中的name字段。
+2. uw-common-app: JsonConfigParam.ParamType新增textRich类型，用于存储富文本。
 
 # 2025.0601.0033版本升级说明
 1. uw-mfa: MfaDeviceCodeHelper增加对DeviceId的校验错误限制，抑制横向爆破。

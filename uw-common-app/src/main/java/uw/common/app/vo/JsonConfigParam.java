@@ -135,6 +135,11 @@ public interface JsonConfigParam {
         STRING( "string", "字符串类型" ),
 
         /**
+         * 列表字符串类型
+         */
+        SET_STRING( "set<string>", "字符串类型集合" ),
+
+        /**
          * 字符串类型
          */
         TEXT( "text", "长文本类型" ),
@@ -143,11 +148,6 @@ public interface JsonConfigParam {
          * 字符串类型
          */
         TEXT_RICH( "textRich", "富文本类型" ),
-
-        /**
-         * 列表字符串类型
-         */
-        SET_STRING( "set<string>", "字符串类型集合" ),
 
         /**
          * 数值类型

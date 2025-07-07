@@ -1,3 +1,6 @@
+# 2025.0701.0000版本升级说明
+1. uw-common-app: 移除JsonConfigParam中的name字段。
+
 # 2025.0601.0033版本升级说明
 1. uw-mfa: MfaDeviceCodeHelper增加对DeviceId的校验错误限制，抑制横向爆破。
 2. uw-mfa: MfaTotpHelper增加对于UserId的校验错误限制，抑制横向爆破。

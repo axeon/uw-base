@@ -23,7 +23,7 @@ public interface JsonConfigParam {
      * 配置参数名。
      * 当使用enum的时候。
      */
-    @Schema(title = "配置参数名", description = "配置参数名")
+    @Schema(title = "配置名", description = "配置名")
     default String getKey(){
         return getParamData().getKey();
     }
@@ -43,14 +43,6 @@ public interface JsonConfigParam {
     @Schema(title = "配置默认值", description = "配置默认值")
     default String getValue(){
         return getParamData().getValue();
-    }
-
-    /**
-     * 配置名称。
-     */
-    @Schema(title = "配置名称", description = "配置名称")
-    default String getName(){
-        return getParamData().getName();
     }
 
     /**
@@ -91,11 +83,6 @@ public interface JsonConfigParam {
         private final String value;
 
         /**
-         * 配置名称。
-         */
-        private final String name;
-
-        /**
          * 配置描述。
          */
         private final String desc;
@@ -105,11 +92,10 @@ public interface JsonConfigParam {
          */
         private final String regex;
 
-        public ParamData(String key, ParamType type, String value, String name, String desc, String regex) {
+        public ParamData(String key, ParamType type, String value, String desc, String regex) {
             this.key = key;
             this.type = type;
             this.value = value;
-            this.name = name;
             this.desc = desc;
             this.regex = regex;
         }
@@ -124,10 +110,6 @@ public interface JsonConfigParam {
 
         public String getValue() {
             return value;
-        }
-
-        public String getName() {
-            return name;
         }
 
         public String getDesc() {

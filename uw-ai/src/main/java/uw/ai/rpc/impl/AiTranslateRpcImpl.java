@@ -4,7 +4,6 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import uw.ai.conf.UwAiProperties;
@@ -19,7 +18,6 @@ import java.net.URI;
 /**
  * AiToolRpcImpl.
  */
-@Component
 public class AiTranslateRpcImpl implements AiTranslateRpc {
 
     /**
@@ -29,7 +27,7 @@ public class AiTranslateRpcImpl implements AiTranslateRpc {
 
     private final UwAiProperties uwAiProperties;
 
-    public AiTranslateRpcImpl(RestTemplate authRestTemplate, UwAiProperties uwAiProperties) {
+    public AiTranslateRpcImpl(UwAiProperties uwAiProperties, RestTemplate authRestTemplate) {
         this.authRestTemplate = authRestTemplate;
         this.uwAiProperties = uwAiProperties;
     }

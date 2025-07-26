@@ -10,10 +10,10 @@ public interface AiChatRpc {
 
 
     /**
-     * 更新工具元数据。
+     * 生成响应数据。
      *
-     * @param param
-     * @return
+     * @param param param
+     * @return ResponseData
      */
     ResponseData<String> generate(AiChatGenerateParam param);
 

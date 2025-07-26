@@ -3,7 +3,6 @@ package uw.ai.rpc.impl;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import uw.ai.conf.UwAiProperties;
@@ -17,7 +16,6 @@ import java.util.List;
 /**
  * AiToolRpcImpl.
  */
-@Component
 public class AiToolRpcImpl implements AiToolRpc {
 
     /**
@@ -27,7 +25,7 @@ public class AiToolRpcImpl implements AiToolRpc {
 
     private final UwAiProperties uwAiProperties;
 
-    public AiToolRpcImpl(RestTemplate authRestTemplate, UwAiProperties uwAiProperties) {
+    public AiToolRpcImpl(UwAiProperties uwAiProperties, RestTemplate authRestTemplate) {
         this.authRestTemplate = authRestTemplate;
         this.uwAiProperties = uwAiProperties;
     }

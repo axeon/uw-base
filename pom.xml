@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <revision>2025.0701.0000</revision>
+        <revision>2025.0701.0001</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
@@ -24,7 +24,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <spring-cloud.version>2025.0.0</spring-cloud.version>
         <spring-cloud.alibaba.version>2023.0.1.2</spring-cloud.alibaba.version>
-        <uw-ai.version>1.0.12</uw-ai.version>
+        <uw-ai.version>1.0.15</uw-ai.version>
         <uw-auth-client.version>6.1.12</uw-auth-client.version>
         <uw-auth-service.version>6.1.56</uw-auth-service.version>
         <uw-cache.version>1.1.88</uw-cache.version>
@@ -141,7 +141,7 @@
             <dependency>
                 <groupId>org.msgpack</groupId>
                 <artifactId>msgpack-core</artifactId>
-                <version>0.9.9</version>
+                <version>0.9.10</version>
             </dependency>
             <dependency>
                 <groupId>org.openjdk.jmh</groupId>

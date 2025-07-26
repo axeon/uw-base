@@ -1,3 +1,6 @@
+# 2025.0701.0001版本升级说明
+1. uw-ai: 优化代码。
+
 # 2025.0701.0000版本升级说明
 1. uw-common-app: 移除JsonConfigParam中的name字段。
 2. uw-common-app: JsonConfigParam.ParamType新增textRich类型，用于存储富文本。

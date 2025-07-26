@@ -5,7 +5,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
@@ -18,7 +17,6 @@ import uw.common.dto.ResponseData;
 /**
  * AiChatRpcImpl.
  */
-@Component
 public class AiChatRpcImpl implements AiChatRpc {
 
 
@@ -29,7 +27,7 @@ public class AiChatRpcImpl implements AiChatRpc {
 
     private final UwAiProperties uwAiProperties;
 
-    public AiChatRpcImpl(RestTemplate authRestTemplate, UwAiProperties uwAiProperties) {
+    public AiChatRpcImpl(UwAiProperties uwAiProperties, RestTemplate authRestTemplate) {
         this.authRestTemplate = authRestTemplate;
         this.uwAiProperties = uwAiProperties;
     }

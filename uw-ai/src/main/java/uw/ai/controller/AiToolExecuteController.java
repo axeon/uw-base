@@ -48,9 +48,6 @@ public class AiToolExecuteController {
             return ResponseData.errorMsg("请给出任务类和任务参数！");
         }
         AiTool<AiToolParam, ResponseData> aiTool = applicationContext.getBean(executeParam.getToolClass(), AiTool.class);
-        if (aiTool == null) {
-            return ResponseData.errorMsg("找不到任务类：" + executeParam.getToolClass());
-        }
         AiToolParam toolParam = aiTool.convertParam(executeParam.getToolInput());
         return aiTool.apply(toolParam);
     }

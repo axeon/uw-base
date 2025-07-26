@@ -11,10 +11,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.web.client.RestTemplate;
 import uw.ai.AiClientHelper;
 import uw.ai.controller.AiToolExecuteController;
 import uw.ai.rpc.AiChatRpc;
 import uw.ai.rpc.AiToolRpc;
+import uw.ai.rpc.AiTranslateRpc;
+import uw.ai.rpc.impl.AiChatRpcImpl;
+import uw.ai.rpc.impl.AiToolRpcImpl;
+import uw.ai.rpc.impl.AiTranslateRpcImpl;
 import uw.ai.tool.AiTool;
 import uw.ai.util.AiToolSchemaGenerator;
 import uw.ai.vo.AiToolMeta;
@@ -34,7 +39,7 @@ import java.util.stream.Collectors;
 @EnableConfigurationProperties({UwAiProperties.class})
 public class UwAiAutoConfiguration {
 
-    private static final Logger logger = LoggerFactory.getLogger( UwAiAutoConfiguration.class );
+    private static final Logger logger = LoggerFactory.getLogger(UwAiAutoConfiguration.class);
 
     /**
      * applicationContext
@@ -51,6 +56,45 @@ public class UwAiAutoConfiguration {
         this.uwAiProperties = uwAiProperties;
     }
 
+    /**
+     * AiToolRpc初始化。
+     *
+     * @param uwAiProperties
+     * @param authRestTemplate
+     * @return
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public AiToolRpc aiToolRpc(UwAiProperties uwAiProperties, RestTemplate authRestTemplate) {
+        return new AiToolRpcImpl(uwAiProperties, authRestTemplate);
+    }
+
+    /**
+     * AiChatRpc初始化。
+     *
+     * @param uwAiProperties
+     * @param authRestTemplate
+     * @return
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public AiChatRpc aiChatRpc(UwAiProperties uwAiProperties, RestTemplate authRestTemplate) {
+        return new AiChatRpcImpl(uwAiProperties, authRestTemplate);
+    }
+
+    /**
+     * AiTranslateRpc初始化。
+     *
+     * @param uwAiProperties
+     * @param authRestTemplate
+     * @return
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public AiTranslateRpc aiTranslateRpc(UwAiProperties uwAiProperties, RestTemplate authRestTemplate) {
+        return new AiTranslateRpcImpl(uwAiProperties, authRestTemplate);
+    }
+
 
     /**
      * AiClientHelper初始化。
@@ -60,8 +104,8 @@ public class UwAiAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public AiClientHelper aiClientHelper(AiToolRpc toolRpc, AiChatRpc chatRpc) {
-        return new AiClientHelper( toolRpc, chatRpc );
+    public AiClientHelper aiClientHelper(AiToolRpc toolRpc, AiChatRpc chatRpc, AiTranslateRpc translateRpc) {
+        return new AiClientHelper(toolRpc, chatRpc, translateRpc);
     }
 
     /**
@@ -71,55 +115,55 @@ public class UwAiAutoConfiguration {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
-        Map<String, AiTool> aiToolMap = applicationContext.getBeansOfType( AiTool.class );
-        logger.info( "扫描到当前实例AiTool数量为[{}]！", aiToolMap.size() );
+        Map<String, AiTool> aiToolMap = applicationContext.getBeansOfType(AiTool.class);
+        logger.info("扫描到当前实例AiTool数量为[{}]！", aiToolMap.size());
         if (!aiToolMap.isEmpty()) {
-            logger.info( "开始注册AiTool。。。" );
+            logger.info("开始注册AiTool。。。");
             //处理apiType列表。
-            ResponseData<List<AiToolMeta>> sysAiToolMetaListData = AiClientHelper.listToolMeta( uwAiProperties.getAppName() );
+            ResponseData<List<AiToolMeta>> sysAiToolMetaListData = AiClientHelper.listToolMeta(uwAiProperties.getAppName());
             if (sysAiToolMetaListData.isNotSuccess()) {
-                logger.error( "拉取系统端AiToolMeta列表失败！ {}", sysAiToolMetaListData.getMsg() );
+                logger.error("拉取系统端AiToolMeta列表失败！ {}", sysAiToolMetaListData.getMsg());
                 return;
             }
             List<AiToolMeta> sysAiToolMetaList = sysAiToolMetaListData.getData();
-            Map<String, AiToolMeta> sysAiToolMetaMap = sysAiToolMetaList.stream().collect( Collectors.toMap( x -> x.getToolClass(), x -> x,
-                    (existingValue, newValue) -> newValue ) );
-            logger.info( "系统端拉取到有效AiTool共{}条！", sysAiToolMetaMap.size() );
+            Map<String, AiToolMeta> sysAiToolMetaMap = sysAiToolMetaList.stream().collect(Collectors.toMap(x -> x.getToolClass(), x -> x,
+                    (existingValue, newValue) -> newValue));
+            logger.info("系统端拉取到有效AiTool共{}条！", sysAiToolMetaMap.size());
             for (AiTool aiTool : aiToolMap.values()) {
                 String toolClass = aiTool.getClass().getName();
                 Method applyMethod;
                 try {
-                    applyMethod = Arrays.stream( aiTool.getClass().getDeclaredMethods() ).filter( method -> method.getName().equals( "apply" ) ).findFirst().orElse( null );
+                    applyMethod = Arrays.stream(aiTool.getClass().getDeclaredMethods()).filter(method -> method.getName().equals("apply")).findFirst().orElse(null);
                 } catch (Exception e) {
-                    logger.error( "AiTool[{}]找不到正确定义的apply方法！{}", toolClass, e.getMessage(), e );
+                    logger.error("AiTool[{}]找不到正确定义的apply方法！{}", toolClass, e.getMessage(), e);
                     continue;
                 }
                 if (applyMethod == null) {
-                    logger.error( "AiTool[{}]找不到正确定义的apply方法！", toolClass );
+                    logger.error("AiTool[{}]找不到正确定义的apply方法！", toolClass);
                     continue;
                 }
-                AiToolMeta sysToolMeta = sysAiToolMetaMap.get( toolClass );
-                if (sysToolMeta == null || !sysToolMeta.getToolVersion().equals( aiTool.toolVersion() )) {
+                AiToolMeta sysToolMeta = sysAiToolMetaMap.get(toolClass);
+                if (sysToolMeta == null || !sysToolMeta.getToolVersion().equals(aiTool.toolVersion())) {
                     AiToolMeta aiToolMeta = new AiToolMeta();
                     if (sysToolMeta != null) {
-                        aiToolMeta.setId( sysToolMeta.getId() );
+                        aiToolMeta.setId(sysToolMeta.getId());
                     }
-                    aiToolMeta.setAppName( uwAiProperties.getAppName() );
-                    aiToolMeta.setToolClass( toolClass );
-                    aiToolMeta.setToolVersion( aiTool.toolVersion() );
-                    aiToolMeta.setToolName( aiTool.toolName() );
-                    aiToolMeta.setToolDesc( aiTool.toolDesc() );
-                    aiToolMeta.setToolInput( AiToolSchemaGenerator.generateForMethodInput( applyMethod ) );
-                    aiToolMeta.setToolOutput( AiToolSchemaGenerator.generateForMethodOutput( applyMethod ) );
-                    ResponseData responseData = AiClientHelper.updateToolMeta( aiToolMeta );
+                    aiToolMeta.setAppName(uwAiProperties.getAppName());
+                    aiToolMeta.setToolClass(toolClass);
+                    aiToolMeta.setToolVersion(aiTool.toolVersion());
+                    aiToolMeta.setToolName(aiTool.toolName());
+                    aiToolMeta.setToolDesc(aiTool.toolDesc());
+                    aiToolMeta.setToolInput(AiToolSchemaGenerator.generateForMethodInput(applyMethod));
+                    aiToolMeta.setToolOutput(AiToolSchemaGenerator.generateForMethodOutput(applyMethod));
+                    ResponseData responseData = AiClientHelper.updateToolMeta(aiToolMeta);
                     if (responseData.isSuccess()) {
-                        logger.info( "注册AiToolMeta[{}]成功！", toolClass );
+                        logger.info("注册AiToolMeta[{}]成功！", toolClass);
                     } else {
-                        logger.error( "注册AiToolMeta[{}]失败！{}", toolClass, responseData.getMsg() );
+                        logger.error("注册AiToolMeta[{}]失败！{}", toolClass, responseData.getMsg());
                     }
                 }
             }
-            logger.info( "完成注册AiToolMeta!" );
+            logger.info("完成注册AiToolMeta!");
         }
     }
 
@@ -132,7 +176,7 @@ public class UwAiAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     AiToolExecuteController aiToolExecuteController(ApplicationContext applicationContext) {
-        return new AiToolExecuteController( applicationContext );
+        return new AiToolExecuteController(applicationContext);
     }
 
 }

@@ -16,6 +16,10 @@
     <dependencies>
         <dependency>
             <groupId>com.umtone</groupId>
+            <artifactId>uw-dao</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.umtone</groupId>
             <artifactId>uw-auth-service</artifactId>
         </dependency>
         <dependency>

@@ -30,14 +30,6 @@ public final class AiJsonParser {
     }
 
     /**
-     * Returns a Jackson {@link ObjectMapper} instance tailored for JSON-parsing
-     * operations for tool calling and structured output.
-     */
-    public static ObjectMapper getObjectMapper() {
-        return OBJECT_MAPPER;
-    }
-
-    /**
      * Converts a JSON string to a Java object.
      */
     public static <T> T fromJson(String json, Class<T> type) {

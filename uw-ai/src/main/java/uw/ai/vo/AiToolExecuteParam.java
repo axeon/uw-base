@@ -26,6 +26,24 @@ public class AiToolExecuteParam {
     public AiToolExecuteParam() {
     }
 
+    private AiToolExecuteParam(Builder builder) {
+        setToolId(builder.toolId);
+        setToolClass(builder.toolClass);
+        setToolInput(builder.toolInput);
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder builder(AiToolExecuteParam copy) {
+        Builder builder = new Builder();
+        builder.toolId = copy.getToolId();
+        builder.toolClass = copy.getToolClass();
+        builder.toolInput = copy.getToolInput();
+        return builder;
+    }
+
     public long getToolId() {
         return toolId;
     }
@@ -48,5 +66,33 @@ public class AiToolExecuteParam {
 
     public void setToolInput(String toolInput) {
         this.toolInput = toolInput;
+    }
+
+    public static final class Builder {
+        private long toolId;
+        private String toolClass;
+        private String toolInput;
+
+        private Builder() {
+        }
+
+        public Builder toolId(long toolId) {
+            this.toolId = toolId;
+            return this;
+        }
+
+        public Builder toolClass(String toolClass) {
+            this.toolClass = toolClass;
+            return this;
+        }
+
+        public Builder toolInput(String toolInput) {
+            this.toolInput = toolInput;
+            return this;
+        }
+
+        public AiToolExecuteParam build() {
+            return new AiToolExecuteParam(this);
+        }
     }
 }

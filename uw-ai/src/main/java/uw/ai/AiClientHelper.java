@@ -1,17 +1,13 @@
 package uw.ai;
 
 
-import io.swagger.v3.oas.annotations.Operation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.PostMapping;
 import uw.ai.rpc.AiChatRpc;
 import uw.ai.rpc.AiToolRpc;
 import uw.ai.rpc.AiTranslateRpc;
 import uw.ai.util.BeanOutputConverter;
 import uw.ai.vo.*;
-import uw.auth.service.annotation.MscPermDeclare;
-import uw.auth.service.constant.UserType;
 import uw.common.dto.ResponseData;
 
 import java.util.List;
@@ -94,7 +90,7 @@ public class AiClientHelper {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public <T> ResponseData<T> chatGenerateEntity(AiChatGenerateParam param, Class<T> clazz) {
+    public static <T> ResponseData<T> chatGenerateEntity(AiChatGenerateParam param, Class<T> clazz) {
         // 设置类型转换器
         BeanOutputConverter<T> beanOutputConverter = new BeanOutputConverter<>(clazz);
         // 设置系统提示

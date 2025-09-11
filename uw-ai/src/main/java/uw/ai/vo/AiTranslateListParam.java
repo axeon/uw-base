@@ -23,11 +23,65 @@ public class AiTranslateListParam extends AiTranslateBaseParam {
         this.textList = textList;
     }
 
+    private AiTranslateListParam(Builder builder) {
+        setConfigId(builder.configId);
+        setSystemPrompt(builder.systemPrompt);
+        setLangList(builder.langList);
+        setTextList(builder.textList);
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder builder(AiTranslateListParam copy) {
+        Builder builder = new Builder();
+        builder.configId = copy.getConfigId();
+        builder.systemPrompt = copy.getSystemPrompt();
+        builder.langList = copy.getLangList();
+        builder.textList = copy.getTextList();
+        return builder;
+    }
+
     public List<String> getTextList() {
         return textList;
     }
 
     public void setTextList(List<String> textList) {
         this.textList = textList;
+    }
+
+    public static final class Builder {
+        private long configId;
+        private String systemPrompt;
+        private List<String> langList;
+        private List<String> textList;
+
+        private Builder() {
+        }
+
+        public Builder configId(long configId) {
+            this.configId = configId;
+            return this;
+        }
+
+        public Builder systemPrompt(String systemPrompt) {
+            this.systemPrompt = systemPrompt;
+            return this;
+        }
+
+        public Builder langList(List<String> langList) {
+            this.langList = langList;
+            return this;
+        }
+
+        public Builder textList(List<String> textList) {
+            this.textList = textList;
+            return this;
+        }
+
+        public AiTranslateListParam build() {
+            return new AiTranslateListParam(this);
+        }
     }
 }

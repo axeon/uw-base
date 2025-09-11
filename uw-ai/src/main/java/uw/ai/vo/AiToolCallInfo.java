@@ -28,6 +28,22 @@ public class AiToolCallInfo {
         this.returnDirect = returnDirect;
     }
 
+    private AiToolCallInfo(Builder builder) {
+        setToolCode(builder.toolCode);
+        setReturnDirect(builder.returnDirect);
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder builder(AiToolCallInfo copy) {
+        Builder builder = new Builder();
+        builder.toolCode = copy.getToolCode();
+        builder.returnDirect = copy.isReturnDirect();
+        return builder;
+    }
+
     public String getToolCode() {
         return toolCode;
     }
@@ -42,5 +58,27 @@ public class AiToolCallInfo {
 
     public void setReturnDirect(boolean returnDirect) {
         this.returnDirect = returnDirect;
+    }
+
+    public static final class Builder {
+        private String toolCode;
+        private boolean returnDirect;
+
+        private Builder() {
+        }
+
+        public Builder toolCode(String toolCode) {
+            this.toolCode = toolCode;
+            return this;
+        }
+
+        public Builder returnDirect(boolean returnDirect) {
+            this.returnDirect = returnDirect;
+            return this;
+        }
+
+        public AiToolCallInfo build() {
+            return new AiToolCallInfo(this);
+        }
     }
 }

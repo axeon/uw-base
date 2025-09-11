@@ -57,6 +57,32 @@ public class AiChatGenerateParam {
     public AiChatGenerateParam() {
     }
 
+    private AiChatGenerateParam(Builder builder) {
+        setConfigId(builder.configId);
+        setUserPrompt(builder.userPrompt);
+        setSystemPrompt(builder.systemPrompt);
+        setToolList(builder.toolList);
+        setToolContext(builder.toolContext);
+        setRagLibIds(builder.ragLibIds);
+        setFileList(builder.fileList);
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder builder(AiChatGenerateParam copy) {
+        Builder builder = new Builder();
+        builder.configId = copy.getConfigId();
+        builder.userPrompt = copy.getUserPrompt();
+        builder.systemPrompt = copy.getSystemPrompt();
+        builder.toolList = copy.getToolList();
+        builder.toolContext = copy.getToolContext();
+        builder.ragLibIds = copy.getRagLibIds();
+        builder.fileList = copy.getFileList();
+        return builder;
+    }
+
     public long getConfigId() {
         return configId;
     }
@@ -111,5 +137,58 @@ public class AiChatGenerateParam {
 
     public void setFileList(MultipartFile[] fileList) {
         this.fileList = fileList;
+    }
+
+
+    public static final class Builder {
+        private long configId;
+        private String userPrompt;
+        private String systemPrompt;
+        private List<AiToolCallInfo> toolList;
+        private Map<String, Object> toolContext;
+        private long[] ragLibIds;
+        private MultipartFile[] fileList;
+
+        private Builder() {
+        }
+
+        public Builder configId(long configId) {
+            this.configId = configId;
+            return this;
+        }
+
+        public Builder userPrompt(String userPrompt) {
+            this.userPrompt = userPrompt;
+            return this;
+        }
+
+        public Builder systemPrompt(String systemPrompt) {
+            this.systemPrompt = systemPrompt;
+            return this;
+        }
+
+        public Builder toolList(List<AiToolCallInfo> toolList) {
+            this.toolList = toolList;
+            return this;
+        }
+
+        public Builder toolContext(Map<String, Object> toolContext) {
+            this.toolContext = toolContext;
+            return this;
+        }
+
+        public Builder ragLibIds(long[] ragLibIds) {
+            this.ragLibIds = ragLibIds;
+            return this;
+        }
+
+        public Builder fileList(MultipartFile[] fileList) {
+            this.fileList = fileList;
+            return this;
+        }
+
+        public AiChatGenerateParam build() {
+            return new AiChatGenerateParam(this);
+        }
     }
 }

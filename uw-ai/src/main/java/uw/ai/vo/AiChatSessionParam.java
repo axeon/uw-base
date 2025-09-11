@@ -50,6 +50,30 @@ public class AiChatSessionParam {
     public AiChatSessionParam() {
     }
 
+    private AiChatSessionParam(Builder builder) {
+        setConfigId(builder.configId);
+        setUserPrompt(builder.userPrompt);
+        setSystemPrompt(builder.systemPrompt);
+        setWindowSize(builder.windowSize);
+        setToolList(builder.toolList);
+        setRagLibIds(builder.ragLibIds);
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder builder(AiChatSessionParam copy) {
+        Builder builder = new Builder();
+        builder.configId = copy.getConfigId();
+        builder.userPrompt = copy.getUserPrompt();
+        builder.systemPrompt = copy.getSystemPrompt();
+        builder.windowSize = copy.getWindowSize();
+        builder.toolList = copy.getToolList();
+        builder.ragLibIds = copy.getRagLibIds();
+        return builder;
+    }
+
     public long getConfigId() {
         return configId;
     }
@@ -96,5 +120,51 @@ public class AiChatSessionParam {
 
     public void setRagLibIds(long[] ragLibIds) {
         this.ragLibIds = ragLibIds;
+    }
+
+    public static final class Builder {
+        private long configId;
+        private String userPrompt;
+        private String systemPrompt;
+        private int windowSize;
+        private List<AiToolCallInfo> toolList;
+        private long[] ragLibIds;
+
+        private Builder() {
+        }
+
+        public Builder configId(long configId) {
+            this.configId = configId;
+            return this;
+        }
+
+        public Builder userPrompt(String userPrompt) {
+            this.userPrompt = userPrompt;
+            return this;
+        }
+
+        public Builder systemPrompt(String systemPrompt) {
+            this.systemPrompt = systemPrompt;
+            return this;
+        }
+
+        public Builder windowSize(int windowSize) {
+            this.windowSize = windowSize;
+            return this;
+        }
+
+        public Builder toolList(List<AiToolCallInfo> toolList) {
+            this.toolList = toolList;
+            return this;
+        }
+
+        public Builder ragLibIds(long[] ragLibIds) {
+            this.ragLibIds = ragLibIds;
+            return this;
+        }
+
+        public AiChatSessionParam build() {
+            return new AiChatSessionParam(this);
+        }
     }
 }

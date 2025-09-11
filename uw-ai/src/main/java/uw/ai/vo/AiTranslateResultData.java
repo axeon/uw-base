@@ -30,6 +30,22 @@ public class AiTranslateResultData {
         this.resultMap = resultMap;
     }
 
+    private AiTranslateResultData(Builder builder) {
+        setLang(builder.lang);
+        setResultMap(builder.resultMap);
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder builder(AiTranslateResultData copy) {
+        Builder builder = new Builder();
+        builder.lang = copy.getLang();
+        builder.resultMap = copy.getResultMap();
+        return builder;
+    }
+
     public String getLang() {
         return lang;
     }
@@ -44,6 +60,28 @@ public class AiTranslateResultData {
 
     public void setResultMap(Map<String, String> resultMap) {
         this.resultMap = resultMap;
+    }
+
+    public static final class Builder {
+        private String lang;
+        private Map<String, String> resultMap;
+
+        private Builder() {
+        }
+
+        public Builder lang(String lang) {
+            this.lang = lang;
+            return this;
+        }
+
+        public Builder resultMap(Map<String, String> resultMap) {
+            this.resultMap = resultMap;
+            return this;
+        }
+
+        public AiTranslateResultData build() {
+            return new AiTranslateResultData(this);
+        }
     }
 }
 

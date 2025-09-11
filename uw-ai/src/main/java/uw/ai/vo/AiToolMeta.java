@@ -70,6 +70,34 @@ public class AiToolMeta {
         this.toolOutput = toolOutput;
     }
 
+    private AiToolMeta(Builder builder) {
+        setId(builder.id);
+        setAppName(builder.appName);
+        setToolClass(builder.toolClass);
+        setToolVersion(builder.toolVersion);
+        setToolName(builder.toolName);
+        setToolDesc(builder.toolDesc);
+        setToolInput(builder.toolInput);
+        setToolOutput(builder.toolOutput);
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder builder(AiToolMeta copy) {
+        Builder builder = new Builder();
+        builder.id = copy.getId();
+        builder.appName = copy.getAppName();
+        builder.toolClass = copy.getToolClass();
+        builder.toolVersion = copy.getToolVersion();
+        builder.toolName = copy.getToolName();
+        builder.toolDesc = copy.getToolDesc();
+        builder.toolInput = copy.getToolInput();
+        builder.toolOutput = copy.getToolOutput();
+        return builder;
+    }
+
     public long getId() {
         return id;
     }
@@ -132,5 +160,63 @@ public class AiToolMeta {
 
     public void setToolOutput(String toolOutput) {
         this.toolOutput = toolOutput;
+    }
+
+    public static final class Builder {
+        private long id;
+        private String appName;
+        private String toolClass;
+        private String toolVersion;
+        private String toolName;
+        private String toolDesc;
+        private String toolInput;
+        private String toolOutput;
+
+        private Builder() {
+        }
+
+        public Builder id(long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder appName(String appName) {
+            this.appName = appName;
+            return this;
+        }
+
+        public Builder toolClass(String toolClass) {
+            this.toolClass = toolClass;
+            return this;
+        }
+
+        public Builder toolVersion(String toolVersion) {
+            this.toolVersion = toolVersion;
+            return this;
+        }
+
+        public Builder toolName(String toolName) {
+            this.toolName = toolName;
+            return this;
+        }
+
+        public Builder toolDesc(String toolDesc) {
+            this.toolDesc = toolDesc;
+            return this;
+        }
+
+        public Builder toolInput(String toolInput) {
+            this.toolInput = toolInput;
+            return this;
+        }
+
+        public Builder toolOutput(String toolOutput) {
+            this.toolOutput = toolOutput;
+            return this;
+        }
+
+        public AiToolMeta build() {
+            return new AiToolMeta(this);
+        }
     }
 }

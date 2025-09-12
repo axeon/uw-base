@@ -3,6 +3,7 @@ package uw.ai;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Flux;
 import uw.ai.rpc.AiChatRpc;
 import uw.ai.rpc.AiToolRpc;
 import uw.ai.rpc.AiTranslateRpc;
@@ -77,8 +78,18 @@ public class AiClientHelper {
      * @param param
      * @return
      */
-    public static ResponseData<String> chatGenerate(AiChatGenerateParam param) {
+    public static ResponseData<String> generate(AiChatGenerateParam param) {
         return chatRpc.generate(param);
+    }
+
+    /**
+     * 聊天生成。
+     *
+     * @param param
+     * @return
+     */
+    public static Flux<String> chatGenerate(AiChatGenerateParam param) {
+        return chatRpc.chatGenerate(param);
     }
 
     /**
@@ -90,7 +101,7 @@ public class AiClientHelper {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public static <T> ResponseData<T> chatGenerateEntity(AiChatGenerateParam param, Class<T> clazz) {
+    public static <T> ResponseData<T> generateEntity(AiChatGenerateParam param, Class<T> clazz) {
         // 设置类型转换器
         BeanOutputConverter<T> beanOutputConverter = new BeanOutputConverter<>(clazz);
         // 设置系统提示
@@ -102,7 +113,7 @@ public class AiClientHelper {
         systemPrompt.append(String.format(ENTITY_SYSTEM_PROMPT, beanOutputConverter.getFormat()));
         param.setSystemPrompt(systemPrompt.toString());
         // 调用生成
-        ResponseData<String> responseData = chatGenerate(param);
+        ResponseData<String> responseData = generate(param);
         if (responseData.isNotSuccess()) {
             return responseData.raw();
         }

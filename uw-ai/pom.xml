@@ -46,7 +46,6 @@
             <groupId>com.github.victools</groupId>
             <artifactId>jsonschema-module-swagger-2</artifactId>
         </dependency>
-
     </dependencies>
 
 </project>

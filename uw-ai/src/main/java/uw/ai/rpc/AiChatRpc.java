@@ -1,6 +1,5 @@
 package uw.ai.rpc;
 
-import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
 import uw.ai.vo.AiChatGenerateParam;
 import uw.common.dto.ResponseData;

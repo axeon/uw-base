@@ -9,9 +9,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 import uw.ai.AiClientHelper;
 import uw.ai.controller.AiToolExecuteController;
 import uw.ai.rpc.AiChatRpc;
@@ -78,8 +80,8 @@ public class UwAiAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public AiChatRpc aiChatRpc(UwAiProperties uwAiProperties, RestTemplate authRestTemplate) {
-        return new AiChatRpcImpl(uwAiProperties, authRestTemplate);
+    public AiChatRpc aiChatRpc(UwAiProperties uwAiProperties, RestTemplate authRestTemplate, WebClient authWebClient) {
+        return new AiChatRpcImpl(uwAiProperties, authRestTemplate, authWebClient);
     }
 
     /**

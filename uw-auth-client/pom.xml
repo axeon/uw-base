@@ -31,6 +31,10 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.umtone</groupId>
             <artifactId>uw-common</artifactId>
         </dependency>

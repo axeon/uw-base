@@ -24,6 +24,8 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.http.converter.support.AllEncompassingFormHttpMessageConverter;
 import org.springframework.http.converter.xml.SourceHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import uw.auth.client.filter.AuthTokenHeaderFilter;
 import uw.auth.client.helper.AuthClientTokenHelper;
 import uw.auth.client.interceptor.AuthTokenHeaderInterceptor;
 
@@ -94,14 +96,15 @@ public class AuthClientAutoConfiguration {
         return new AuthClientTokenHelper(authClientProperties, restTemplate);
     }
 
+
     /**
      * 负载均衡的RestTemplate
      *
      * @param authClientHttpRequestFactory
      * @return
      */
-    @LoadBalanced
     @Bean("authRestTemplate")
+    @LoadBalanced
     @Primary
     @ConditionalOnProperty(prefix = "uw.auth.client", name = "enable-spring-cloud", havingValue = "true", matchIfMissing = true)
     public RestTemplate lbAuthRestTemplate(final ClientHttpRequestFactory authClientHttpRequestFactory, final AuthClientTokenHelper authClientTokenHelper) {
@@ -125,6 +128,29 @@ public class AuthClientAutoConfiguration {
         authRestTemplate.setInterceptors(Collections.singletonList(new AuthTokenHeaderInterceptor(authClientTokenHelper)));
         authRestTemplate.setMessageConverters(messageConverters);
         return authRestTemplate;
+    }
+
+    /**
+     * 创建被 @LoadBalanced 修饰的 Builder。
+     */
+    @Bean
+    @LoadBalanced
+    public WebClient.Builder webClientloadBalancedBuilder() {
+        return WebClient.builder();
+    }
+
+    /**
+     * 认证Token的WebClient
+     *
+     * @param authClientTokenHelper
+     * @return
+     */
+    @Bean("authWebClient")
+    @Primary
+    public WebClient authWebClient(WebClient.Builder webClientloadBalancedBuilder, final AuthClientTokenHelper authClientTokenHelper) {
+        return webClientloadBalancedBuilder
+                .filter(new AuthTokenHeaderFilter(authClientTokenHelper))
+                .build();
     }
 
     /**

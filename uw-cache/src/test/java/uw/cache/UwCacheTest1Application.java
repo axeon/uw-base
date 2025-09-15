@@ -11,7 +11,7 @@ public class UwCacheTest1Application {
     public static void main(String[] args) throws InterruptedException {
         new SpringApplicationBuilder( UwCacheTest1Application.class ).beanNameGenerator( (beanDefinition, beanDefinitionRegistry) -> {
             String beanClassName = beanDefinition.getBeanClassName();
-            if (beanClassName.contains( "uw.cache" )) {
+            if (beanClassName.startsWith( "uw.cache" )) {
                 return beanClassName;
             }
             if (beanClassName.endsWith( "LoadBalancerAutoConfiguration" )) {

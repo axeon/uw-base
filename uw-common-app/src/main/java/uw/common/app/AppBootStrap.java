@@ -1,5 +1,6 @@
 package uw.common.app;
 
+import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.AnnotationBeanNameGenerator;
 
@@ -12,7 +13,6 @@ public class AppBootStrap {
     }
 
     public static void run(Class<?> primarySource, String[] args) {
-        /* 1. 取主类所在包作为保留前缀 */
         final String basePackage = primarySource.getPackage().getName();
 
         new SpringApplicationBuilder(primarySource).beanNameGenerator((def, reg) -> {
@@ -20,16 +20,27 @@ public class AppBootStrap {
             if (className == null) {
                 return new AnnotationBeanNameGenerator().generateBeanName(def, reg);
             }
-
-            // 本项目包下的 bean 直接用全限定名
+            // 本项目包下判定
             if (className.startsWith(basePackage)) {
-                return className;
+                // 项目自身SwaggerConfig处理
+                if (className.endsWith("SwaggerConfig")) {
+                    return className;
+                }
+
+                // Controller单独处理
+                if (def instanceof AnnotatedBeanDefinition abd &&
+                        abd.getMetadata().getAnnotationTypes().stream()
+                                .anyMatch(t -> t.endsWith("Controller"))) {
+                    return className;
+                }
             }
-            // 临时兼容
-            if (className.endsWith("ClientHttpConnectorAutoConfiguration")
+
+            // 全局判定，临时兼容webflux和loadbalancer问题。
+            if (className.contains("ClientHttpConnectorAutoConfiguration")
                     || className.endsWith("LoadBalancerAutoConfiguration")) {
                 return className;
             }
+
             // 其余走默认
             return new AnnotationBeanNameGenerator().generateBeanName(def, reg);
         }).run(args);

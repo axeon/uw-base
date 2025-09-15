@@ -1,1 +1,2 @@
 uw.auth.client.conf.AuthClientAutoConfiguration
+uw.auth.client.conf.AuthClientExcludeAutoConfigProcessor

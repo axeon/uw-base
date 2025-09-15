@@ -18,11 +18,11 @@
     <dependencies>
         <dependency>
             <groupId>com.umtone</groupId>
-            <artifactId>uw-auth-client</artifactId>
+            <artifactId>uw-common</artifactId>
         </dependency>
         <dependency>
             <groupId>com.umtone</groupId>
-            <artifactId>uw-common</artifactId>
+            <artifactId>uw-auth-client</artifactId>
         </dependency>
         <dependency>
             <groupId>io.swagger.core.v3</groupId>

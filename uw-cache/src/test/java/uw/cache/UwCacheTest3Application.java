@@ -10,7 +10,7 @@ public class UwCacheTest3Application {
     public static void main(String[] args) {
         new SpringApplicationBuilder( UwCacheTest3Application.class ).beanNameGenerator( (beanDefinition, beanDefinitionRegistry) -> {
             String beanClassName = beanDefinition.getBeanClassName();
-            if (beanClassName.contains( "uw.cache" )) {
+            if (beanClassName.startsWith( "uw.cache" )) {
                 return beanClassName;
             }
             if (beanClassName.endsWith( "LoadBalancerAutoConfiguration" )) {

@@ -3,11 +3,9 @@ package uw.ai.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.github.victools.jsonschema.generator.Option;
 import com.github.victools.jsonschema.generator.SchemaGenerator;
 import com.github.victools.jsonschema.generator.SchemaGeneratorConfig;
@@ -18,18 +16,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.lang.NonNull;
+import uw.common.util.JsonUtils;
 
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Objects;
 
 /**
- * A utility class for converting LLM output to a specific type.
+ * A utility class for converting LLM output to a specific target type.
+ *
  * @param <T>
  */
 public class BeanOutputConverter<T> {
 
-    private final Logger logger = LoggerFactory.getLogger( BeanOutputConverter.class );
+    private final Logger logger = LoggerFactory.getLogger(BeanOutputConverter.class);
 
     /**
      * The target class type reference to which the output will be converted.
@@ -52,7 +52,7 @@ public class BeanOutputConverter<T> {
      * @param clazz The target type's class.
      */
     public BeanOutputConverter(Class<T> clazz) {
-        this( ParameterizedTypeReference.forType( clazz ) );
+        this(ParameterizedTypeReference.forType(clazz));
     }
 
     /**
@@ -63,7 +63,7 @@ public class BeanOutputConverter<T> {
      * @param objectMapper Custom object mapper for JSON operations. endings.
      */
     public BeanOutputConverter(Class<T> clazz, ObjectMapper objectMapper) {
-        this( ParameterizedTypeReference.forType( clazz ), objectMapper );
+        this(ParameterizedTypeReference.forType(clazz), objectMapper);
     }
 
     /**
@@ -72,7 +72,7 @@ public class BeanOutputConverter<T> {
      * @param typeRef The target class type reference.
      */
     public BeanOutputConverter(ParameterizedTypeReference<T> typeRef) {
-        this( typeRef.getType(), null );
+        this(typeRef.getType(), null);
     }
 
     /**
@@ -84,7 +84,7 @@ public class BeanOutputConverter<T> {
      * @param objectMapper Custom object mapper for JSON operations. endings.
      */
     public BeanOutputConverter(ParameterizedTypeReference<T> typeRef, ObjectMapper objectMapper) {
-        this( typeRef.getType(), objectMapper );
+        this(typeRef.getType(), objectMapper);
     }
 
     /**
@@ -96,14 +96,15 @@ public class BeanOutputConverter<T> {
      * @param objectMapper Custom object mapper for JSON operations. endings.
      */
     private BeanOutputConverter(Type type, ObjectMapper objectMapper) {
-        Objects.requireNonNull( type, "Type cannot be null;" );
+        Objects.requireNonNull(type, "Type cannot be null;");
         this.type = type;
-        this.objectMapper = objectMapper != null ? objectMapper : getObjectMapper();
+        this.objectMapper = objectMapper != null ? objectMapper : JsonUtils.getJsonMapper();
         generateSchema();
     }
 
     /**
      * Cleans the given text by removing leading and trailing whitespace, triple backticks, and "json" identifier.
+     *
      * @param text
      * @return
      */
@@ -112,17 +113,17 @@ public class BeanOutputConverter<T> {
         text = text.trim();
 
         // Check for and remove triple backticks and "json" identifier
-        if (text.startsWith( "```" ) && text.endsWith( "```" )) {
+        if (text.startsWith("```") && text.endsWith("```")) {
             // Remove the first line if it contains "```json"
-            String[] lines = text.split( "\n", 2 );
-            if (lines[0].trim().equalsIgnoreCase( "```json" )) {
+            String[] lines = text.split("\n", 2);
+            if (lines[0].trim().equalsIgnoreCase("```json")) {
                 text = lines.length > 1 ? lines[1] : "";
             } else {
-                text = text.substring( 3 ); // Remove leading ```
+                text = text.substring(3); // Remove leading ```
             }
 
             // Remove trailing ```
-            text = text.substring( 0, text.length() - 3 );
+            text = text.substring(0, text.length() - 3);
 
             // Trim again to remove any potential whitespace
             text = text.trim();
@@ -139,11 +140,11 @@ public class BeanOutputConverter<T> {
     @SuppressWarnings("unchecked")
     public T convert(@NonNull String text) {
         try {
-            return (T) this.objectMapper.readValue( text, this.objectMapper.constructType( this.type ) );
+            return (T) this.objectMapper.readValue(text, this.objectMapper.constructType(this.type));
         } catch (JsonProcessingException e) {
             logger.error(
-                    "Could not parse the given text to the desired target type: \"{}\" into {}", text, this.type );
-            throw new RuntimeException( e );
+                    "Could not parse the given text to the desired target type: \"{}\" into {}", text, this.type);
+            throw new RuntimeException(e);
         }
     }
 
@@ -161,7 +162,7 @@ public class BeanOutputConverter<T> {
                 请严格按照以下的JSON Schema格式返回信息：
                 ```%s```
                 """;
-        return String.format( template, this.jsonSchema );
+        return String.format(template, this.jsonSchema);
     }
 
     /**
@@ -175,46 +176,34 @@ public class BeanOutputConverter<T> {
 
     public Map<String, Object> getJsonSchemaMap() {
         try {
-            return this.objectMapper.readValue( this.jsonSchema, Map.class );
+            return this.objectMapper.readValue(this.jsonSchema, Map.class);
         } catch (JsonProcessingException ex) {
-            logger.error( "Could not parse the JSON Schema to a Map object", ex );
-            throw new IllegalStateException( ex );
+            logger.error("Could not parse the JSON Schema to a Map object", ex);
+            throw new IllegalStateException(ex);
         }
-    }
-
-    /**
-     * Configures and returns an object mapper for JSON operations.
-     *
-     * @return Configured object mapper.
-     */
-    protected ObjectMapper getObjectMapper() {
-        return JsonMapper.builder()
-                .addModules( AiJsonParser.instantiateAvailableModules() )
-                .configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false )
-                .build();
     }
 
     /**
      * Generates the JSON schema for the target type.
      */
     private void generateSchema() {
-        JacksonModule jacksonModule = new JacksonModule( JacksonOption.RESPECT_JSONPROPERTY_REQUIRED,
-                JacksonOption.RESPECT_JSONPROPERTY_ORDER );
+        JacksonModule jacksonModule = new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED,
+                JacksonOption.RESPECT_JSONPROPERTY_ORDER);
         SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(
                 com.github.victools.jsonschema.generator.SchemaVersion.DRAFT_2020_12,
-                com.github.victools.jsonschema.generator.OptionPreset.PLAIN_JSON )
-                .with( jacksonModule )
-                .with( Option.FORBIDDEN_ADDITIONAL_PROPERTIES_BY_DEFAULT );
+                com.github.victools.jsonschema.generator.OptionPreset.PLAIN_JSON)
+                .with(jacksonModule)
+                .with(Option.FORBIDDEN_ADDITIONAL_PROPERTIES_BY_DEFAULT);
         SchemaGeneratorConfig config = configBuilder.build();
-        SchemaGenerator generator = new SchemaGenerator( config );
-        JsonNode jsonNode = generator.generateSchema( this.type );
-        ObjectWriter objectWriter = this.objectMapper.writer( new DefaultPrettyPrinter()
-                .withObjectIndenter( new DefaultIndenter().withLinefeed( System.lineSeparator() ) ) );
+        SchemaGenerator generator = new SchemaGenerator(config);
+        JsonNode jsonNode = generator.generateSchema(this.type);
+        ObjectWriter objectWriter = this.objectMapper.writer(new DefaultPrettyPrinter()
+                .withObjectIndenter(new DefaultIndenter().withLinefeed(System.lineSeparator())));
         try {
-            this.jsonSchema = objectWriter.writeValueAsString( jsonNode );
+            this.jsonSchema = objectWriter.writeValueAsString(jsonNode);
         } catch (JsonProcessingException e) {
-            logger.error( "Could not pretty print json schema for jsonNode: {}", jsonNode );
-            throw new RuntimeException( "Could not pretty print json schema for " + this.type, e );
+            logger.error("Could not pretty print json schema for jsonNode: {}", jsonNode);
+            throw new RuntimeException("Could not pretty print json schema for " + this.type, e);
         }
     }
 }

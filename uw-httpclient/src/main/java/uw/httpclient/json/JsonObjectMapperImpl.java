@@ -6,7 +6,9 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import uw.common.util.DateUtils;
 import uw.httpclient.exception.DataMapperException;
 import uw.httpclient.http.DataObjectMapper;
@@ -24,6 +26,15 @@ import java.util.TimeZone;
 public class JsonObjectMapperImpl implements DataObjectMapper {
 
     private static final com.fasterxml.jackson.databind.ObjectMapper jsonMapper = jsonMapperInit();
+
+    /**
+     * 初始化JsonMapper。
+     *
+     * @return
+     */
+    public static ObjectMapper getJsonMapper() {
+        return jsonMapper;
+    }
 
     /**
      * Java 泛型绑定
@@ -92,9 +103,17 @@ public class JsonObjectMapperImpl implements DataObjectMapper {
      */
     private static com.fasterxml.jackson.databind.ObjectMapper jsonMapperInit() {
         com.fasterxml.jackson.databind.ObjectMapper jsonMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        // 关闭未知属性报错
         jsonMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        // 关闭时间戳输出
         jsonMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        // 设置日期格式
+        // 添加JDK8模块
+        jsonMapper.registerModule(new Jdk8Module());
+        // 添加JSR310时间模块
+        jsonMapper.registerModule(new JavaTimeModule());
+        // 添加参数名模块
+        jsonMapper.registerModule(new ParameterNamesModule());
+        // 设置DateUtils日期格式
         SimpleModule dateUtilModule = new SimpleModule();
         dateUtilModule.addDeserializer(Date.class, new JsonDeserializer<Date>() {
             @Override
@@ -111,7 +130,6 @@ public class JsonObjectMapperImpl implements DataObjectMapper {
         });
         jsonMapper.registerModule(dateUtilModule);
         jsonMapper.setTimeZone(TimeZone.getDefault());
-        jsonMapper.registerModule(new JavaTimeModule());
         return jsonMapper;
     }
 }

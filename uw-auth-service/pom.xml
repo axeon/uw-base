@@ -25,14 +25,6 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-commons</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.umtone</groupId>
             <artifactId>uw-common</artifactId>
         </dependency>
@@ -43,11 +35,6 @@
         <dependency>
             <groupId>com.umtone</groupId>
             <artifactId>uw-log-es</artifactId>
-            <version>${uw-log-es.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-pool2</artifactId>
         </dependency>
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>

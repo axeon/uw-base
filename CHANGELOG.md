@@ -1,4 +1,9 @@
 # 2025.0901.0003版本升级说明
+1. 升级springboot: 3.5.6
+2. uw-common-app: 新增SchemaValidateHelper，基于@Schema标签进行数据校验。
+3. uw-common-app: 优化JsonConfigHelper，使用和SchemaValidateHelper一致的校验逻辑。
+
+# 2025.0901.0003版本升级说明
 1. uw-ai: 优化代码。
 2. uw-common: 优化JsonUtils代码，增强兼容性。
 3. uw-httpclient: 优化json解析代码。

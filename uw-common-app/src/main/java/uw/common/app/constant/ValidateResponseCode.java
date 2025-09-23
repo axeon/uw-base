@@ -7,26 +7,25 @@ import uw.common.dto.ResponseCode;
 import uw.common.util.EnumUtils;
 
 /**
- * 通用返回代码。
+ * schema校验返回代码。
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum CommonResponseCode implements ResponseCode {
-
-    ENTITY_LIST_ERROR( "数据列表失败" ),
-    ENTITY_LOAD_ERROR( "数据加载失败" ),
-    ENTITY_SAVE_ERROR( "数据保存失败" ),
-    ENTITY_UPDATE_ERROR( "数据更新失败" ),
-    ENTITY_DELETE_ERROR( "数据删除失败" ),
-    ENTITY_EXISTS_ERROR( "数据已存在" ),
-    ENTITY_NOT_FOUND_ERROR( "数据未找到" ),
-    ENTITY_STATE_ERROR( "数据状态错误" ),
+public enum ValidateResponseCode implements ResponseCode {
+    NOT_NULL( "不能为NULL" ),
+    NOT_EMPTY( "不能为空" ),
+    VALUE_TOO_SMALL( "不能小于最小值" ),
+    VALUE_TOO_LARGE( "不能大于最大值" ),
+    LENGTH_TOO_SHORT( "不能小于最小长度" ),
+    LENGTH_TOO_LONG( "不能大于最大长度" ),
+    DATA_FORMAT_ERROR( "数据格式错误" ),
+    REGEX_FORMAT_ERROR( "正则校验格式错误" ),
     ;
 
     /**
      * 国际化信息MESSAGE_SOURCE。
      */
     private static final ResourceBundleMessageSource MESSAGE_SOURCE = new ResourceBundleMessageSource() {{
-        setBasename( "i18n/messages/uw_common" );
+        setBasename( "i18n/messages/uw_validate" );
         setDefaultEncoding( "UTF-8" );
         setCacheSeconds( 0 );
     }};
@@ -40,19 +39,9 @@ public enum CommonResponseCode implements ResponseCode {
      */
     private final String message;
 
-    CommonResponseCode(String message) {
+    ValidateResponseCode(String message) {
         this.code = EnumUtils.enumNameToDotCase( this.name() );
         this.message = message;
-    }
-
-    /**
-     * 获取配置前缀.
-     *
-     * @return
-     */
-    @Override
-    public String codePrefix() {
-        return "uw.common";
     }
 
     /**
@@ -85,5 +74,13 @@ public enum CommonResponseCode implements ResponseCode {
         return MESSAGE_SOURCE;
     }
 
-
+    /**
+     * 获取配置前缀.
+     *
+     * @return
+     */
+    @Override
+    public String codePrefix() {
+        return "uw.validate";
+    }
 }

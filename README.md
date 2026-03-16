@@ -323,17 +323,13 @@ MyDB服务客户端，用于访问MyDB数据服务。
 在项目的 `pom.xml` 中添加UW-Base的依赖管理：
 
 ```xml
-<dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>com.umtone</groupId>
-            <artifactId>uw-base</artifactId>
-            <version>2025.0901.0005</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-    </dependencies>
-</dependencyManagement>
+<parent>
+  <groupId>com.umtone</groupId>
+  <artifactId>uw-base</artifactId>
+  <version>2026.0301.0002</version>
+  <relativePath/>
+</parent>
+
 ```
 
 ### 2. 添加所需模块依赖

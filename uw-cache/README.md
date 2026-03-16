@@ -68,7 +68,7 @@ FusionCache.config( fusionConfig, new CacheDataLoader<Integer, String>() {
 FusionCache.Config是配置参数类，支持基于builder的链式调用，如下：
 
 ```java
-FusionCache.Config fusionConfig = FusionCache.Config.builder().cacheName( SaasInfo.class ).localCacheMaxNum( 1000 ).globalCacheExpireMillis( 86400_000L ).build();
+FusionCache.Config fusionConfig = FusionCache.Config.builder().cacheName( SaasInfo.class ).localCacheMaxNum( 1000 ).cacheExpireMillis( 86400_000L ).build();
 ```
 
 同时提供了便利的构造器传值方式，如下：
@@ -89,18 +89,10 @@ private String cacheName;
  */
 private int localCacheMaxNum = 10000;
 /**
- * 本地缓存有效期毫秒数，默认0。
+ * 缓存有效期毫秒数，默认0。
  * 设置为0的时候，表示永不过期。
- * 此参数严重影响缓存性能，降低超过200倍的性能，如非必要不要使用。
  */
-private long localCacheExpireMillis = 0L;
-/**
- * 全局缓存有效期毫秒数，默认为-1。
- * 设置为0的时候，表示永不过期。
- * 设置为-1的时候，表示不使用全局缓存。
- * 鉴于redis的特性，一般建议设置一个有效期，防止redis爆库。
- */
-private long globalCacheExpireMillis = -1;
+private long cacheExpireMillis = 0L;
 /**
  * 空值保护毫秒数，默认为60秒。
  * 当reload方法获取null的时候，将会保护一段时间，防穿透。
@@ -121,7 +113,19 @@ private long reloadIntervalMillis = 100;
  * 默认为10次。
  */
 private int reloadMaxTimes = 10;
+/**
+ * 是否自动通知集群缓存失效。
+ * 加载成功的缓存，将会通知集群缓存失效以便更新。
+ * 默认不启用。
+ */
+private boolean autoNotifyInvalidate = false;
 
+/**
+ * 是否全局缓存。
+ * 默认为true，表示全局缓存。
+ * 如果为false，则表示本节点的缓存。
+ */
+private boolean isGlobalCache = true;
 ```
 
 ## 缓存使用
@@ -261,16 +265,6 @@ private long reloadIntervalMillis = 100;
  * 默认为10次。
  */
 private int reloadMaxTimes = 10;
-/**
- * 全局缓存锁定等待的毫秒数。
- * 默认为100ms，不建议低于50ms。
- */
-private long globalLockWaitIntervalMillis = 100;
-/**
- * 全局缓存锁定等待的重试次数。
- * 默认为10次。
- */
-private int globalLockWaitMaxTimes = 10;
 ```
 
 # GlobalLocker 全局锁

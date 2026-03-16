@@ -17,7 +17,7 @@ public class LogClient {
     /**
      * 提供一个静态实例化对象，便于各种调用。
      */
-    private static LogClient logClient = null;
+    private static LogClient INSTANCE = null;
 
     /**
      * 内部的logService对象。
@@ -31,7 +31,7 @@ public class LogClient {
      */
     public LogClient(final LogService logService) {
         this.logService = logService;
-        logClient = this;
+        INSTANCE = this;
     }
 
     /**
@@ -40,7 +40,7 @@ public class LogClient {
      * @return
      */
     public static LogClient getInstance() {
-        return logClient;
+        return INSTANCE;
     }
 
     /**

@@ -28,10 +28,23 @@ public class JsonConfigBox {
     /**
      * 配置混合Map。
      */
-    public final Map<String, String> configMixMap;
+    public Map<String, String> configMixMap;
+
+
+    public JsonConfigBox() {
+    }
 
 
     public JsonConfigBox(Map<String, String> configMixMap) {
+        this.configMixMap = configMixMap;
+    }
+
+
+    public Map<String, String> getConfigMixMap() {
+        return configMixMap;
+    }
+
+    public void setConfigMixMap(Map<String, String> configMixMap) {
         this.configMixMap = configMixMap;
     }
 

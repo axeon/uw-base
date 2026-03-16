@@ -109,9 +109,13 @@ public class BeanOutputConverter<T> {
      * @return
      */
     public String cleanJson(String text) {
+        // Remove </think> info
+        int tPos = text.indexOf("</think>");
+        if (tPos >= 0) {
+            text = text.substring(tPos + 8);
+        }
         // Remove leading and trailing whitespace
         text = text.trim();
-
         // Check for and remove triple backticks and "json" identifier
         if (text.startsWith("```") && text.endsWith("```")) {
             // Remove the first line if it contains "```json"

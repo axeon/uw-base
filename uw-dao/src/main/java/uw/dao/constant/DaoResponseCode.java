@@ -75,7 +75,7 @@ public enum DaoResponseCode implements ResponseCode {
      * @return
      */
     @Override
-    public MessageSource getMessageSource() {
+    public MessageSource messageSource() {
         return MESSAGE_SOURCE;
     }
 

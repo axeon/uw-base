@@ -20,7 +20,7 @@ public class UwCacheTestFailProtectedApplication {
             return new AnnotationBeanNameGenerator().generateBeanName( beanDefinition, beanDefinitionRegistry );
         } ).run( args );
         FusionCache.Config fusionConfig =
-                FusionCache.Config.builder().cacheName( "test" ).localCacheMaxNum( 1000 ).globalCacheExpireMillis( -1 ).failProtectMillis( 5000L ).build();
+                FusionCache.Config.builder().cacheName( "test" ).localCacheMaxNum( 1000 ).cacheExpireMillis( -1 ).failProtectMillis( 5000L ).build();
         FusionCache.config( fusionConfig, new CacheDataLoader<Integer, FusionCacheNotifyMessage>() {
             @Override
             public FusionCacheNotifyMessage load(Integer key) {

@@ -19,7 +19,7 @@ public class UwCacheTest2Application {
             }
             return new AnnotationBeanNameGenerator().generateBeanName( beanDefinition, beanDefinitionRegistry );
         } ).run( args );
-        FusionCache.Config fusionConfig = FusionCache.Config.builder().cacheName( "fusion" ).localCacheMaxNum( 1000 ).globalCacheExpireMillis( 1000000 ).build();
+        FusionCache.Config fusionConfig = FusionCache.Config.builder().cacheName( "fusion" ).localCacheMaxNum( 1000 ).cacheExpireMillis( 1000000 ).build();
         FusionCache.config( fusionConfig, new CacheDataLoader<Integer, String>() {
             @Override
             public String load(Integer key) {

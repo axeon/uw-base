@@ -34,7 +34,7 @@ public class TaskFactory {
     /**
      * 全局唯一实例。
      */
-    private static TaskFactory taskFactory;
+    private static TaskFactory INSTANCE;
     /**
      * rabbitTemplate模板.
      */
@@ -70,7 +70,7 @@ public class TaskFactory {
                 new SynchronousQueue<>(), new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskRpc-%d").build(), new ThreadPoolExecutor.CallerRunsPolicy());
         taskQueueService = new ThreadPoolExecutor(taskProperties.getTaskLocalThreadMinNum(), taskProperties.getTaskLocalThreadMaxNum(), 20L, TimeUnit.SECONDS,
                 new SynchronousQueue<>(), new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskQueue-%d").build(), new TaskQueueLocalExecutor.SendToQueuePolicy());
-        taskFactory = this;
+        INSTANCE = this;
     }
 
     /**
@@ -79,7 +79,7 @@ public class TaskFactory {
      * @return
      */
     public static TaskFactory getInstance() {
-        return taskFactory;
+        return INSTANCE;
     }
 
     /**

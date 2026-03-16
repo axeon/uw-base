@@ -81,7 +81,7 @@ public enum CommonResponseCode implements ResponseCode {
      * @return
      */
     @Override
-    public MessageSource getMessageSource() {
+    public MessageSource messageSource() {
         return MESSAGE_SOURCE;
     }
 

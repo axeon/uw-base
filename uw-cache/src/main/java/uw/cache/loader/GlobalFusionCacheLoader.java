@@ -6,12 +6,12 @@ import org.slf4j.LoggerFactory;
 import uw.cache.CacheDataLoader;
 import uw.cache.FusionCache;
 import uw.cache.GlobalCache;
-import uw.cache.vo.CacheProtectedValue;
+import uw.cache.vo.CacheValueWrapper;
 
 /**
  * 全局融合缓存加载器。
  */
-public class GlobalFusionCacheLoader<K, V> implements CacheLoader<K, V> {
+public class GlobalFusionCacheLoader<K, V> implements CacheLoader<K, CacheValueWrapper<V>> {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalFusionCacheLoader.class);
 
@@ -38,21 +38,21 @@ public class GlobalFusionCacheLoader<K, V> implements CacheLoader<K, V> {
      * @throws Exception
      */
     @Override
-    public V load(K key) {
+    public CacheValueWrapper<V> load(K key) {
         try {
             // 加载数据。
-            V value = GlobalCache.loadWithProtectedValue(cacheConfig.getCacheName(), key, cacheDataLoader, cacheConfig.getGlobalCacheExpireMillis(),
+            CacheValueWrapper<V> valueWrapper = GlobalCache.loadValueWrapper(cacheConfig.getCacheName(), key, cacheDataLoader, cacheConfig.getCacheExpireMillis(),
                     cacheConfig.getNullProtectMillis(), cacheConfig.getFailProtectMillis(), cacheConfig.getReloadIntervalMillis(), cacheConfig.getReloadMaxTimes());
             //此处通知invalidate缓存。
             if (cacheConfig.isAutoNotifyInvalidate()) {
                 FusionCache.notifyInvalidate(cacheConfig.getCacheName(), key);
             }
             // 返回数据。
-            return value;
+            return valueWrapper;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
-        return (V) new CacheProtectedValue(cacheConfig.getFailProtectMillis());
+        return new CacheValueWrapper<>(cacheConfig.getNullProtectMillis());
     }
 
 

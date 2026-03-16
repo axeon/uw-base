@@ -13,7 +13,7 @@ import org.springframework.amqp.support.converter.MessageConversionException;
 import org.springframework.amqp.support.converter.MessageConverter;
 import uw.task.TaskData;
 
-import java.util.Date;
+import java.util.*;
 
 /**
  * 用于spring-amqp的消息转换器。
@@ -36,8 +36,19 @@ public class TaskMessageConverter implements MessageConverter {
         @Override
         protected Kryo initialValue() {
             Kryo kryo = new Kryo();
+            kryo.setClassLoader(Thread.currentThread().getContextClassLoader());
             kryo.setRegistrationRequired(false);
+            kryo.setReferences(false);
+            kryo.setOptimizedGenerics(true);
             kryo.register(TaskData.class);
+            // 预注册常用 JDK 类
+            kryo.register(ArrayList.class);
+            kryo.register(LinkedList.class);
+            kryo.register(HashMap.class);
+            kryo.register(LinkedHashMap.class);
+            kryo.register(TreeMap.class);
+            kryo.register(HashSet.class);
+            kryo.register(LinkedHashSet.class);
             kryo.register(Date.class);
             return kryo;
         }
@@ -108,7 +119,7 @@ public class TaskMessageConverter implements MessageConverter {
                     log.warn("Could not convert incoming message with content-type [{}],message: {} ",
                             contentType, new String(message.getBody(), "UTF-8"));
                 } catch (Exception e) {
-                    log.warn( "Could not convert incoming message with content-type [{}],message cannot be decode. {}", contentType, e.getMessage() );
+                    log.warn("Could not convert incoming message with content-type [{}],message cannot be decode. {}", contentType, e.getMessage());
                 }
             }
         }

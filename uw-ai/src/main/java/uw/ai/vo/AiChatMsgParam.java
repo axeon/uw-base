@@ -2,6 +2,7 @@ package uw.ai.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.web.multipart.MultipartFile;
+import uw.auth.service.AuthServiceHelper;
 
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,36 @@ import java.util.Map;
  */
 @Schema(title = "AiChat聊天消息参数", description = "AiChat聊天消息参数")
 public class AiChatMsgParam {
+
+    /**
+     * SaasId
+     */
+    @Schema(title = "saasId", description = "saasId")
+    private long saasId;
+
+    /**
+     * UserId
+     */
+    @Schema(title = "userId", description = "userId")
+    private long userId;
+
+    /**
+     * UserType
+     */
+    @Schema(title = "userType", description = "userType")
+    private int userType;
+
+    /**
+     * UserInfo
+     */
+    @Schema(title = "userInfo", description = "userInfo")
+    private String userInfo;
+
+    /**
+     * 配置Id
+     */
+    @Schema(title = "配置Id", description = "配置Id", requiredMode = Schema.RequiredMode.REQUIRED)
+    private long configId;
 
     /**
      * sessionId
@@ -58,6 +89,11 @@ public class AiChatMsgParam {
     }
 
     private AiChatMsgParam(Builder builder) {
+        setSaasId(builder.saasId);
+        setUserId(builder.userId);
+        setUserType(builder.userType);
+        setUserInfo(builder.userInfo);
+        setConfigId(builder.configId);
         setSessionId(builder.sessionId);
         setUserPrompt(builder.userPrompt);
         setSystemPrompt(builder.systemPrompt);
@@ -73,6 +109,11 @@ public class AiChatMsgParam {
 
     public static Builder builder(AiChatMsgParam copy) {
         Builder builder = new Builder();
+        builder.saasId = copy.getSaasId();
+        builder.userId = copy.getUserId();
+        builder.userType = copy.getUserType();
+        builder.userInfo = copy.getUserInfo();
+        builder.configId = copy.getConfigId();
         builder.sessionId = copy.getSessionId();
         builder.userPrompt = copy.getUserPrompt();
         builder.systemPrompt = copy.getSystemPrompt();
@@ -81,6 +122,55 @@ public class AiChatMsgParam {
         builder.ragLibIds = copy.getRagLibIds();
         builder.fileList = copy.getFileList();
         return builder;
+    }
+    /**
+     * 绑定授权信息。
+     */
+    public void bindAuthInfo(){
+        this.saasId = AuthServiceHelper.getSaasId();
+        this.userId = AuthServiceHelper.getUserId();
+        this.userType = AuthServiceHelper.getUserType();
+        this.userInfo = AuthServiceHelper.getUserName();
+    }
+
+    public long getSaasId() {
+        return saasId;
+    }
+
+    public long getConfigId() {
+        return configId;
+    }
+
+    public void setConfigId(long configId) {
+        this.configId = configId;
+    }
+
+    public void setSaasId(long saasId) {
+        this.saasId = saasId;
+    }
+
+    public long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(long userId) {
+        this.userId = userId;
+    }
+
+    public int getUserType() {
+        return userType;
+    }
+
+    public void setUserType(int userType) {
+        this.userType = userType;
+    }
+
+    public String getUserInfo() {
+        return userInfo;
+    }
+
+    public void setUserInfo(String userInfo) {
+        this.userInfo = userInfo;
     }
 
     public long getSessionId() {
@@ -140,6 +230,11 @@ public class AiChatMsgParam {
     }
 
     public static final class Builder {
+        private long saasId;
+        private long userId;
+        private int userType;
+        private String userInfo;
+        private long configId;
         private long sessionId;
         private String userPrompt;
         private String systemPrompt;
@@ -149,6 +244,42 @@ public class AiChatMsgParam {
         private MultipartFile[] fileList;
 
         private Builder() {
+        }
+
+        /**
+         * 绑定授权信息。
+         */
+        public Builder bindAuthInfo() {
+            this.saasId = AuthServiceHelper.getSaasId();
+            this.userId = AuthServiceHelper.getUserId();
+            this.userType = AuthServiceHelper.getUserType();
+            this.userInfo = AuthServiceHelper.getUserName();
+            return this;
+        }
+
+        public Builder saasId(long saasId) {
+            this.saasId = saasId;
+            return this;
+        }
+
+        public Builder userId(long userId) {
+            this.userId = userId;
+            return this;
+        }
+
+        public Builder userType(int userType) {
+            this.userType = userType;
+            return this;
+        }
+
+        public Builder userInfo(String userInfo) {
+            this.userInfo = userInfo;
+            return this;
+        }
+
+        public Builder configId(long configId) {
+            this.configId = configId;
+            return this;
         }
 
         public Builder sessionId(long sessionId) {

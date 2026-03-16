@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
-import uw.cache.util.KryoUtils;
+import uw.cache.util.KryoCacheUtils;
 import uw.cache.util.RedisKeyUtils;
 
 import java.util.HashSet;
@@ -45,7 +45,7 @@ public class GlobalHashSet {
         if (setName == null || item == null) {
             return false;
         }
-        return Boolean.TRUE.equals( dataCacheRedisTemplate.opsForSet().add( REDIS_PREFIX + setName, KryoUtils.serialize( item ) ) );
+        return Boolean.TRUE.equals( dataCacheRedisTemplate.opsForSet().add( REDIS_PREFIX + setName, KryoCacheUtils.serialize( item ) ) );
     }
 
     /**
@@ -77,7 +77,7 @@ public class GlobalHashSet {
         if (setName == null || item == null) {
             return -1L;
         }
-        Long ret = dataCacheRedisTemplate.opsForSet().remove( REDIS_PREFIX + setName, KryoUtils.serialize( item ) );
+        Long ret = dataCacheRedisTemplate.opsForSet().remove( REDIS_PREFIX + setName, KryoCacheUtils.serialize( item ) );
         if (ret != null) {
             return ret;
         } else {
@@ -109,7 +109,7 @@ public class GlobalHashSet {
         if (setName == null) {
             return null;
         }
-        return KryoUtils.deserialize( dataCacheRedisTemplate.opsForSet().randomMember( REDIS_PREFIX + setName ), itemClazz );
+        return KryoCacheUtils.deserialize( dataCacheRedisTemplate.opsForSet().randomMember( REDIS_PREFIX + setName ), itemClazz );
     }
 
     /**
@@ -125,7 +125,7 @@ public class GlobalHashSet {
         List<byte[]> byteSet =  dataCacheRedisTemplate.opsForSet().randomMembers( REDIS_PREFIX + setName, count );
         HashSet<T> dataSet = new HashSet<T>((int)(byteSet.size()*1.5f));
         for ( byte[] item : byteSet ) {
-            dataSet.add( KryoUtils.deserialize( item, itemClazz ) );
+            dataSet.add( KryoCacheUtils.deserialize( item, itemClazz ) );
         }
         return dataSet;
     }
@@ -140,7 +140,7 @@ public class GlobalHashSet {
         if (setName == null) {
             return null;
         }
-        return KryoUtils.deserialize( dataCacheRedisTemplate.opsForSet().pop( REDIS_PREFIX + setName ), itemClazz );
+        return KryoCacheUtils.deserialize( dataCacheRedisTemplate.opsForSet().pop( REDIS_PREFIX + setName ), itemClazz );
     }
 
     /**
@@ -156,7 +156,7 @@ public class GlobalHashSet {
         List<byte[]> byteSet =  dataCacheRedisTemplate.opsForSet().pop( REDIS_PREFIX + setName, count );
         HashSet<T> dataSet = new HashSet<T>((int)(byteSet.size()*1.5f));
         for ( byte[] item : byteSet ) {
-            dataSet.add( KryoUtils.deserialize( item, itemClazz ) );
+            dataSet.add( KryoCacheUtils.deserialize( item, itemClazz ) );
         }
         return dataSet;
     }
@@ -174,7 +174,7 @@ public class GlobalHashSet {
         Set<byte[]> byteSet =  dataCacheRedisTemplate.opsForSet().members( REDIS_PREFIX + setName );
         HashSet<T> dataSet = new HashSet<T>((int)(byteSet.size()*1.5f));
         for ( byte[] item : byteSet ) {
-            dataSet.add( KryoUtils.deserialize( item, itemClazz ) );
+            dataSet.add( KryoCacheUtils.deserialize( item, itemClazz ) );
         }
         return dataSet;
     }

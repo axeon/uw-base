@@ -1,6 +1,5 @@
 package uw.common.app;
 
-import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.AnnotationBeanNameGenerator;
 
@@ -22,17 +21,10 @@ public class AppBootStrap {
             }
             // 本项目包下判定
             if (className.startsWith(basePackage)) {
-                // 项目自身SwaggerConfig处理
-                if (className.endsWith("SwaggerConfig")) {
+                if (className.endsWith("$PackageInfo$") || className.endsWith("SwaggerConfig") || className.endsWith("Controller") || className.endsWith("Runner") || className.endsWith("Croner")) {
                     return className;
                 }
 
-                // Controller单独处理
-                if (def instanceof AnnotatedBeanDefinition abd &&
-                        abd.getMetadata().getAnnotationTypes().stream()
-                                .anyMatch(t -> t.endsWith("Controller"))) {
-                    return className;
-                }
             }
 
             // 全局判定，临时兼容webflux和loadbalancer问题。

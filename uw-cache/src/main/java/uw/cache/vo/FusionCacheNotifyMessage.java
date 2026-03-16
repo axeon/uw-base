@@ -1,10 +1,18 @@
 package uw.cache.vo;
 
+import uw.common.util.JsonUtils;
+
 /**
  * 融合缓存通知消息。
  * 主要用于集群环境下，通知缓存失效。
  */
 public class FusionCacheNotifyMessage {
+
+    /**
+     * 消息发送者ID
+     */
+    private long senderId;
+
     /**
      * 通知类型
      */
@@ -23,7 +31,8 @@ public class FusionCacheNotifyMessage {
     public FusionCacheNotifyMessage() {
     }
 
-    public FusionCacheNotifyMessage(String cacheName, int notifyType, Object cacheKey) {
+    public FusionCacheNotifyMessage(long senderId, String cacheName, int notifyType, Object cacheKey) {
+        this.senderId = senderId;
         this.cacheName = cacheName;
         this.notifyType = notifyType;
         this.cacheKey = cacheKey;
@@ -31,12 +40,15 @@ public class FusionCacheNotifyMessage {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder( "FusionCacheNotifyMessage{" );
-        sb.append( "notifyType=" ).append( notifyType );
-        sb.append( ", cacheName='" ).append( cacheName ).append( '\'' );
-        sb.append( ", cacheKey=" ).append( cacheKey );
-        sb.append( '}' );
-        return sb.toString();
+        return JsonUtils.toString( this);
+    }
+
+    public long getSenderId() {
+        return senderId;
+    }
+
+    public void setSenderId(long senderId) {
+        this.senderId = senderId;
     }
 
     public int getNotifyType() {

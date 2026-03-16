@@ -42,14 +42,14 @@ public class BenchmarkTest {
     @Setup
     public void init() {
         context = SpringApplication.run( UwCacheTest1Application.class );
-        FusionCache.Config fusionConfig = FusionCache.Config.builder().cacheName( "fusion" ).localCacheMaxNum( 1000 ).globalCacheExpireMillis( 1000000 ).build();
+        FusionCache.Config fusionConfig = FusionCache.Config.builder().cacheName( "fusion" ).localCacheMaxNum( 1000 ).cacheExpireMillis( 1000000 ).build();
         FusionCache.config( fusionConfig, new CacheDataLoader<String, String>() {
             @Override
             public String load(String key) {
                 return "hello " + key;
             }
         } );
-        FusionCache.Config caffineConfig = FusionCache.Config.builder().cacheName( "fusionLocal" ).localCacheMaxNum( 1000 ).globalCacheExpireMillis( -1 ).build();
+        FusionCache.Config caffineConfig = FusionCache.Config.builder().cacheName( "fusionLocal" ).localCacheMaxNum( 1000 ).cacheExpireMillis( -1 ).build();
         FusionCache.config( caffineConfig, new CacheDataLoader<String, String>() {
             @Override
             public String load(String key) {

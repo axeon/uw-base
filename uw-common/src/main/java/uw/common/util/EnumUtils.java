@@ -4,7 +4,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import org.reflections.Reflections;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,27 +16,34 @@ public class EnumUtils {
     /**
      * enum数据缓存。
      */
-    private static final LoadingCache<String, Map<String, Object>> enumCache = Caffeine.newBuilder().build( basePackage -> {
-        Map<String, Object> enumMap = new HashMap<>();
+    private static final LoadingCache<String, Map<String, Map<String, Enum<?>>>> enumCache = Caffeine.newBuilder().build(basePackage -> {
+        Map<String, Map<String, Enum<?>>> enumMap = new LinkedHashMap<>();
         Reflections reflections = new Reflections(basePackage);
-        Set<Class<? extends Enum>> enumCls = reflections.getSubTypesOf(Enum.class);
-        enumCls.forEach(m -> {
-            enumMap.put(m.getSimpleName(), m.getEnumConstants());
-        });
+        Set<Class<? extends Enum>> enumClasses = reflections.getSubTypesOf(Enum.class);
+        for (Class<? extends Enum> cls : enumClasses) {
+            Map<String, Enum<?>> constantMap = new LinkedHashMap<>();
+            Enum<?>[] enumConstants = cls.getEnumConstants();
+            for (Enum<?> constant : enumConstants) {
+                constantMap.put(constant.name(), constant);
+            }
+            enumMap.put(cls.getSimpleName(), constantMap);
+        }
         return enumMap;
     });
 
     /**
      * 根据基础包名，获取此包下所有的Enum数据Map。
+     *
      * @param basePackage
      * @return
      */
-    public static Map<String, Object> getEnumMap(String basePackage){
+    public static Map<String, Map<String, Enum<?>>> getEnumMap(String basePackage) {
         return enumCache.get(basePackage);
     }
 
     /**
      * 将枚举名称转换为小写点分隔形式。
+     *
      * @param input
      * @return
      */
@@ -61,6 +68,7 @@ public class EnumUtils {
 
     /**
      * 将枚举名称转换为小写连字符分隔形式。
+     *
      * @param input
      * @return
      */
@@ -85,6 +93,7 @@ public class EnumUtils {
 
     /**
      * 将枚举名称转换为驼峰命名形式。
+     *
      * @param input
      * @return
      */

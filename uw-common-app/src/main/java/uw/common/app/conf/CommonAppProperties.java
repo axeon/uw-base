@@ -29,6 +29,11 @@ public class CommonAppProperties {
      */
     private Duration shutdownTimeout = Duration.ofSeconds(3);
 
+    /**
+     * 禁用swagger
+     */
+    private boolean disableSwagger = false;
+
     public boolean isEnableCritLog() {
         return enableCritLog;
     }
@@ -59,5 +64,13 @@ public class CommonAppProperties {
 
     public void setShutdownTimeout(Duration shutdownTimeout) {
         this.shutdownTimeout = shutdownTimeout;
+    }
+
+    public boolean isDisableSwagger() {
+        return disableSwagger;
+    }
+
+    public void setDisableSwagger(boolean disableSwagger) {
+        this.disableSwagger = disableSwagger;
     }
 }

@@ -1,5 +1,6 @@
 package uw.common.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 
@@ -16,6 +17,7 @@ public interface ResponseCode {
      * 获取响应码.
      *
      */
+    @JsonIgnore
     String getCode();
 
     /**
@@ -28,7 +30,8 @@ public interface ResponseCode {
      * 获取消息源.
      *
      */
-    default MessageSource getMessageSource() {
+    @JsonIgnore
+    default MessageSource messageSource() {
         return null;
     }
 
@@ -36,6 +39,7 @@ public interface ResponseCode {
      * 获取配置前缀.
      *
      */
+    @JsonIgnore
     default String codePrefix() {
         return null;
     }
@@ -45,6 +49,7 @@ public interface ResponseCode {
      *
      * @param params 参数数组
      */
+    @JsonIgnore
     default String getMessage(Object... params) {
         String message = getMessage();
         if (params == null || params.length == 0) {
@@ -66,6 +71,7 @@ public interface ResponseCode {
      * 获取完整响应码。
      *
      */
+    @JsonIgnore
     default String getFullCode(String code) {
         if (codePrefix() != null) {
             return codePrefix() + '.' + code;
@@ -80,11 +86,12 @@ public interface ResponseCode {
      * @param locale 语言环境
      * @param params 参数数组
      */
+    @JsonIgnore
     default String getLocalizedMessage(Locale locale, Object... params) {
         String message = getMessage();
-        if (getMessageSource() != null) {
+        if (messageSource() != null) {
             try {
-                message = getMessageSource().getMessage(getCode(), null, locale);
+                message = messageSource().getMessage(getCode(), null, locale);
             } catch (Exception ignored) {
             }
         }
@@ -105,6 +112,7 @@ public interface ResponseCode {
      *
      * @param params 参数数组
      */
+    @JsonIgnore
     default String getLocalizedMessage(Object... params) {
         return getLocalizedMessage(LocaleContextHolder.getLocale(), params);
     }
@@ -113,6 +121,7 @@ public interface ResponseCode {
      * 获取I18n响应消息。
      *
      */
+    @JsonIgnore
     default String getLocalizedMessage() {
         return getLocalizedMessage(LocaleContextHolder.getLocale());
     }

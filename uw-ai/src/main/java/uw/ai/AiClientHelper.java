@@ -118,7 +118,7 @@ public class AiClientHelper {
             return responseData.raw();
         }
         // 转换成实体
-        return ResponseData.success(beanOutputConverter.convert(beanOutputConverter.cleanJson(responseData.getData())));
+        return ResponseData.success(beanOutputConverter.convert(beanOutputConverter.cleanJson(responseData.getData())), responseData.getCode(), responseData.getData());
     }
 
     /**

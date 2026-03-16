@@ -11,14 +11,14 @@ import uw.cache.constant.CacheNotifyType;
 import uw.cache.loader.GlobalFusionCacheLoader;
 import uw.cache.loader.LocalRetryCacheLoader;
 import uw.cache.loader.NoneCacheLoader;
-import uw.cache.vo.CacheProtectedValue;
+import uw.cache.vo.CacheValueWrapper;
 import uw.cache.vo.FusionCacheNotifyMessage;
+import uw.common.util.SnowflakeIdGenerator;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -31,17 +31,20 @@ public class FusionCache {
      */
     public static final String FUSION_CACHE_NOTIFY_CHANNEL = "UW_CACHE_NOTIFY_CHANNEL";
 
+    /**
+     * 实例ID。
+     */
+    public static final long INSTANCE_ID = SnowflakeIdGenerator.getInstance().generateId();
+
+    /**
+     * 日志记录器。
+     */
     private static final Logger log = LoggerFactory.getLogger(FusionCache.class);
 
     /**
-     * key是缓存名，value是Cache实例。
+     * key是缓存名，value是CacheWrapper。
      */
-    private static final ConcurrentMap<String, LoadingCache> cacheMap = new ConcurrentHashMap<>();
-
-    /**
-     * key是缓存名，value是Config。
-     */
-    private static final ConcurrentMap<String, Config> configMap = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, CacheWrapper> cacheWrapperMap = new ConcurrentHashMap<>();
 
     /**
      * 配置缓存。
@@ -81,15 +84,11 @@ public class FusionCache {
         if (config.getLocalCacheMaxNum() > 0) {
             caffeine.maximumSize(config.getLocalCacheMaxNum());
         }
-        //缓存过期设置特别影响性能，所以能不设置就不要设置了。
-        if (config.getLocalCacheExpireMillis() > 0) {
-            caffeine.expireAfterWrite(config.getLocalCacheExpireMillis(), TimeUnit.MILLISECONDS);
-        }
         //设置失效监听
         config.cacheChangeNotifyListener = cacheChangeNotifyListener;
         CacheLoader cacheLoader = null;
         if (cacheDataLoader != null) {
-            if (config.getGlobalCacheExpireMillis() > 0) {
+            if (config.isGlobalCache()) {
                 cacheLoader = new GlobalFusionCacheLoader<>(config, cacheDataLoader);
             } else {
                 cacheLoader = new LocalRetryCacheLoader<>(config, cacheDataLoader);
@@ -99,8 +98,7 @@ public class FusionCache {
         }
 
         LoadingCache<?, ?> caffeineCache = caffeine.build(cacheLoader);
-        cacheMap.put(config.getCacheName(), caffeineCache);
-        configMap.put(config.getCacheName(), config);
+        cacheWrapperMap.put(config.getCacheName(), new CacheWrapper(caffeineCache, config));
     }
 
     /**
@@ -111,7 +109,18 @@ public class FusionCache {
      * @param value       数值
      */
     public static void put(Class<?> entityClass, Object key, Object value) {
-        put(entityClass.getSimpleName(), key, value, false);
+        put(entityClass.getSimpleName(), key, value, 0, false);
+    }
+
+    /**
+     * 向缓存中存入数据。
+     *
+     * @param cacheName 缓存名
+     * @param key       缓存主键
+     * @param value     数值
+     */
+    public static void put(String cacheName, Object key, Object value) {
+        put(cacheName, key, value, 0, false);
     }
 
     /**
@@ -123,18 +132,7 @@ public class FusionCache {
      * @param onlyLocal   只更新到本地缓存
      */
     public static void put(Class<?> entityClass, Object key, Object value, boolean onlyLocal) {
-        put(entityClass.getSimpleName(), key, value, onlyLocal);
-    }
-
-    /**
-     * 向缓存中存入数据。
-     *
-     * @param cacheName 缓存名
-     * @param key       缓存主键
-     * @param value     数值
-     */
-    public static void put(String cacheName, Object key, Object value) {
-        put(cacheName, key, value, false);
+        put(entityClass.getSimpleName(), key, value, 0, onlyLocal);
     }
 
     /**
@@ -146,70 +144,171 @@ public class FusionCache {
      * @param onlyLocal 只更新到本地缓存
      */
     public static void put(String cacheName, Object key, Object value, boolean onlyLocal) {
-        Config config = configMap.get(cacheName);
-        if (!onlyLocal && config != null && config.getGlobalCacheExpireMillis() > 0) {
-            GlobalCache.put(cacheName, key, value, config.getGlobalCacheExpireMillis());
-        }
-        LoadingCache cache = getLocalCache(cacheName);
-        if (cache == null) {
-            log.warn("FusionCache[{}] not config!!!", cacheName);
-        }
-        cache.put(key, value);
+        put(cacheName, key, value, 0, onlyLocal);
     }
 
     /**
-     * 向缓存中批量存入数据。
+     * 向缓存中存入数据。
+     *
+     * @param entityClass  缓存对象类(主要用于构造cacheName)
+     * @param key          缓存主键
+     * @param value        数值
+     * @param expireMillis 缓存有效期毫秒数。
+     */
+    public static void put(Class<?> entityClass, Object key, Object value, long expireMillis) {
+        put(entityClass.getSimpleName(), key, value, expireMillis, false);
+    }
+
+    /**
+     * 向缓存中存入数据。
+     *
+     * @param cacheName    缓存名
+     * @param key          缓存主键
+     * @param value        数值
+     * @param expireMillis 缓存有效期毫秒数。
+     */
+    public static void put(String cacheName, Object key, Object value, long expireMillis) {
+        put(cacheName, key, value, expireMillis, false);
+    }
+
+    /**
+     * 向缓存中存入数据。
+     *
+     * @param entityClass  缓存对象类(主要用于构造cacheName)
+     * @param key          缓存主键
+     * @param value        数值
+     * @param expireMillis 缓存有效期毫秒数。
+     * @param onlyLocal    只更新到本地缓存
+     */
+    public static void put(Class<?> entityClass, Object key, Object value, long expireMillis, boolean onlyLocal) {
+        put(entityClass.getSimpleName(), key, value, expireMillis, onlyLocal);
+    }
+
+    /**
+     * 向缓存中存入数据。
+     *
+     * @param cacheName    缓存名
+     * @param key          缓存主键
+     * @param value        数值
+     * @param expireMillis 缓存有效期毫秒数。
+     * @param onlyLocal    只更新到本地缓存
+     */
+    public static void put(String cacheName, Object key, Object value, long expireMillis, boolean onlyLocal) {
+        CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
+        if (cacheWrapper == null) {
+            log.warn("FusionCache[{}] not config!!!", cacheName);
+            return;
+        }
+        expireMillis = expireMillis > 0 ? expireMillis : cacheWrapper.config.getCacheExpireMillis();
+        CacheValueWrapper<Object> valueWrapper = null;
+        if (!onlyLocal && cacheWrapper.config.isGlobalCache()) {
+            valueWrapper = GlobalCache.put(cacheName, key, value, expireMillis);
+        } else {
+            valueWrapper = new CacheValueWrapper<>(value, expireMillis);
+        }
+        cacheWrapper.cache.put(key, valueWrapper);
+    }
+
+    /**
+     * 向缓存中存入数据。
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param map         要存入的批量数据
      */
     public static void putAll(Class<?> entityClass, Map<Object, Object> map) {
-        putAll(entityClass.getSimpleName(), map, false);
+        putAll(entityClass.getSimpleName(), map, 0, false);
     }
 
     /**
-     * 向缓存中批量存入数据。
+     * 向缓存中存入数据。
+     *
+     * @param cacheName 缓存名
+     * @param map       要存入的批量数据
+     */
+    public static void putAll(String cacheName, Map<Object, Object> map) {
+        putAll(cacheName, map, 0, false);
+    }
+
+    /**
+     * 向缓存中存入数据。
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param map         要存入的批量数据
      * @param onlyLocal   只更新到本地缓存
      */
     public static void putAll(Class<?> entityClass, Map<Object, Object> map, boolean onlyLocal) {
-        putAll(entityClass.getSimpleName(), map, onlyLocal);
+        putAll(entityClass.getSimpleName(), map, 0, onlyLocal);
     }
 
     /**
-     * 向缓存中批量存入数据。
+     * 向缓存中存入数据。
      *
-     * @param cacheName
-     * @param map       要存入的批量数据
-     */
-    public static void putAll(String cacheName, Map<Object, Object> map) {
-        putAll(cacheName, map, false);
-    }
-
-    /**
-     * 向缓存中批量存入数据。
-     *
-     * @param cacheName
+     * @param cacheName 缓存名
      * @param map       要存入的批量数据
      * @param onlyLocal 只更新到本地缓存
      */
     public static void putAll(String cacheName, Map<Object, Object> map, boolean onlyLocal) {
-        Config config = configMap.get(cacheName);
-        if (config == null) {
+        putAll(cacheName, map, 0, onlyLocal);
+    }
+
+    /**
+     * 向缓存中存入数据。
+     *
+     * @param entityClass  缓存对象类(主要用于构造cacheName)
+     * @param map          要存入的批量数据
+     * @param expireMillis 缓存有效期毫秒数。
+     */
+    public static void putAll(Class<?> entityClass, Map<Object, Object> map, long expireMillis) {
+        putAll(entityClass.getSimpleName(), map, expireMillis, false);
+    }
+
+    /**
+     * 向缓存中存入数据。
+     *
+     * @param cacheName    缓存名
+     * @param map          要存入的批量数据
+     * @param expireMillis 缓存有效期毫秒数。
+     */
+    public static void putAll(String cacheName, Map<Object, Object> map, long expireMillis) {
+        putAll(cacheName, map, expireMillis, false);
+    }
+
+    /**
+     * 向缓存中批量存入数据。
+     *
+     * @param entityClass  缓存对象类(主要用于构造cacheName)
+     * @param map          要存入的批量数据
+     * @param expireMillis 缓存有效期毫秒数。
+     * @param onlyLocal    只更新到本地缓存
+     */
+    public static void putAll(Class<?> entityClass, Map<Object, Object> map, long expireMillis, boolean onlyLocal) {
+        putAll(entityClass.getSimpleName(), map, expireMillis, onlyLocal);
+    }
+
+    /**
+     * 向缓存中批量存入数据。
+     *
+     * @param cacheName
+     * @param map          要存入的批量数据
+     * @param expireMillis 缓存有效期毫秒数。
+     * @param onlyLocal    只更新到本地缓存
+     */
+    public static void putAll(String cacheName, Map<Object, Object> map, long expireMillis, boolean onlyLocal) {
+        CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
+        if (cacheWrapper == null) {
             log.warn("FusionCache[{}] not config!!!", cacheName);
+            return;
         }
-        if (!onlyLocal && config != null && config.getGlobalCacheExpireMillis() > 0) {
-            for (Map.Entry<Object, Object> kv : map.entrySet()) {
-                GlobalCache.put(cacheName, kv.getKey(), kv.getValue(), config.getGlobalCacheExpireMillis());
+        expireMillis = expireMillis > 0 ? expireMillis : cacheWrapper.config.getCacheExpireMillis();
+        CacheValueWrapper<Object> valueWrapper = null;
+        for (Map.Entry<Object, Object> kv : map.entrySet()) {
+            if (!onlyLocal && cacheWrapper.config.isGlobalCache()) {
+                valueWrapper = GlobalCache.put(cacheName, kv.getKey(), kv.getValue(), expireMillis);
+            } else {
+                valueWrapper = new CacheValueWrapper<>(kv.getValue(), expireMillis);
             }
+            cacheWrapper.cache.put(kv.getValue(), valueWrapper);
         }
-        LoadingCache cache = getLocalCache(cacheName);
-        if (cache == null) {
-            log.warn("FusionCache[{}] not config!!!", cacheName);
-        }
-        cache.putAll(map);
     }
 
     /**
@@ -233,25 +332,54 @@ public class FusionCache {
      * @return
      */
     public static <T> T get(String cacheName, Object key) {
-        LoadingCache cache = getLocalCache(cacheName);
-        if (cache == null) {
+        CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
+        if (cacheWrapper == null) {
             log.warn("FusionCache[{}] not config!!!", cacheName);
             return null;
         }
-        Object value = cache.get(key);
-        if (value instanceof CacheProtectedValue failProtectValue) {
-            if (failProtectValue.isExpired()) {
-                //此处必须全局通知。
-                invalidate(cacheName, key, true);
-                return get(cacheName, key);
-            } else {
-                return null;
-            }
+        CacheValueWrapper<T> valueWrapper = (CacheValueWrapper<T>) cacheWrapper.cache.get(key);
+        if (valueWrapper == null) {
+            return null;
+        }
+        if (valueWrapper.checkExpired()) {
+            //此处必须全局通知。
+            invalidate(cacheName, key, true);
+            return get(cacheName, key);
         } else {
-            return (T) value;
+            return valueWrapper.getValue();
         }
     }
 
+
+    /**
+     * 从缓存中加载ValueWrapper。
+     *
+     * @param entityClass 缓存对象类(主要用于构造cacheName)
+     * @param key         缓存主键
+     * @param <T>
+     * @return
+     */
+    public static <T> CacheValueWrapper<T> getValueWrapper(Class<?> entityClass, Object key) {
+        return getValueWrapper(entityClass.getSimpleName(), key);
+    }
+
+    /**
+     * 从缓存中加载ValueWrapper。
+     *
+     * @param cacheName 缓存名
+     * @param key       缓存主键
+     * @param <T>
+     * @return
+     */
+    public static <T> CacheValueWrapper<T> getValueWrapper(String cacheName, Object key) {
+        CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
+        if (cacheWrapper == null) {
+            log.warn("FusionCache[{}] not config!!!", cacheName);
+            return null;
+        }
+        CacheValueWrapper<T> valueWrapper = (CacheValueWrapper<T>) cacheWrapper.cache.get(key);
+        return valueWrapper;
+    }
 
     /**
      * 缓存中是否存在指定Key。
@@ -272,7 +400,13 @@ public class FusionCache {
      * @return
      */
     public static boolean containsKey(String cacheName, Object key) {
-        return get(cacheName, key) != null;
+        CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
+        if (cacheWrapper == null) {
+            log.warn("FusionCache[{}] not config!!!", cacheName);
+            return false;
+        }
+        CacheValueWrapper valueWrapper = (CacheValueWrapper) cacheWrapper.cache.getIfPresent(key);
+        return valueWrapper != null && valueWrapper.getValue() != null && !valueWrapper.checkExpired();
     }
 
     /**
@@ -292,12 +426,12 @@ public class FusionCache {
      * @return
      */
     public static long localCacheSize(String cacheName) {
-        LoadingCache<?, ?> cache = getLocalCache(cacheName);
-        if (cache == null) {
+        CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
+        if (cacheWrapper == null) {
             log.warn("FusionCache[{}] not config!!!", cacheName);
             return -1;
         }
-        return cache.estimatedSize();
+        return cacheWrapper.cache.estimatedSize();
     }
 
     /**
@@ -317,37 +451,37 @@ public class FusionCache {
      * @return
      */
     public static ConcurrentMap<?, ?> localCacheMap(String cacheName) {
-        LoadingCache<?, ?> cache = getLocalCache(cacheName);
-        if (cache == null) {
+        CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
+        if (cacheWrapper == null) {
             log.warn("FusionCache[{}] not config!!!", cacheName);
             return null;
         }
-        return cache.asMap();
+        return cacheWrapper.cache.asMap();
     }
 
     /**
-     * 获取缓存。
-     *
-     * @param cacheName
-     * @return
-     */
-    public static LoadingCache<?, ?> getLocalCache(String cacheName) {
-        LoadingCache<?, ?> cache = cacheMap.get(cacheName);
-        if (cache == null) {
-            log.warn("FusionCache[{}] not config!!!", cacheName);
-            return null;
-        }
-        return cache;
-    }
-
-    /**
-     * 获取缓存。
+     * 获取本地缓存。
      *
      * @param entityClass
      * @return
      */
     public static LoadingCache<?, ?> getLocalCache(Class<?> entityClass) {
         return getLocalCache(entityClass.getSimpleName());
+    }
+
+    /**
+     * 获取本地缓存。
+     *
+     * @param cacheName
+     * @return
+     */
+    private static LoadingCache<?, ?> getLocalCache(String cacheName) {
+        CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
+        if (cacheWrapper == null) {
+            log.warn("FusionCache[{}] not config!!!", cacheName);
+            return null;
+        }
+        return cacheWrapper.cache;
     }
 
     /**
@@ -367,8 +501,12 @@ public class FusionCache {
      * @return
      */
     public static CacheStats localStats(String cacheName) {
-        LoadingCache<?, ?> cache = getLocalCache(cacheName);
-        return cache != null ? cache.stats() : null;
+        CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
+        if (cacheWrapper == null) {
+            log.warn("FusionCache[{}] not config!!!", cacheName);
+            return null;
+        }
+        return cacheWrapper.cache.stats();
     }
 
     /**
@@ -378,7 +516,7 @@ public class FusionCache {
      * @return
      */
     public static boolean existsCache(Class<?> entityClass) {
-        return cacheMap.containsKey(entityClass.getSimpleName());
+        return cacheWrapperMap.containsKey(entityClass.getSimpleName());
     }
 
     /**
@@ -388,7 +526,7 @@ public class FusionCache {
      * @return
      */
     public static boolean existsCache(String cacheName) {
-        return cacheMap.containsKey(cacheName);
+        return cacheWrapperMap.containsKey(cacheName);
     }
 
     /**
@@ -410,11 +548,12 @@ public class FusionCache {
      * @return
      */
     public static Set<String> keys(String cacheName, String keyPrefix) {
-        Config config = configMap.get(cacheName);
-        if (config == null) {
+        CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
+        if (cacheWrapper == null) {
             log.warn("FusionCache[{}] not config!!!", cacheName);
+            return null;
         }
-        if (config != null && config.getGlobalCacheExpireMillis() > 0) {
+        if (cacheWrapper.config.isGlobalCache()) {
             //全局缓存
             return GlobalCache.keys(cacheName, keyPrefix);
         } else {
@@ -471,18 +610,21 @@ public class FusionCache {
      * @param notify    是否通知集群内其他主机。
      */
     public static boolean invalidate(String cacheName, Object key, boolean notify) {
-        if (notify) {
-            //先删除redis缓存
-            GlobalCache.invalidate(cacheName, key);
-            //发布通知
-            notifyInvalidate(cacheName, key);
-        }
-        //处理自身记录。
-        LoadingCache cache = cacheMap.get(cacheName);
-        Config config = configMap.get(cacheName);
-        if (cache == null || config == null) {
+        CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
+        if (cacheWrapper == null) {
             log.warn("FusionCache[{}] not config!!!", cacheName);
             return false;
+        }
+        //处理自身记录。
+        LoadingCache cache = cacheWrapper.cache;
+        Config config = cacheWrapper.config;
+        if (cacheWrapper.config.isGlobalCache()) {
+            //先删除redis缓存
+            GlobalCache.invalidate(cacheName, key);
+        }
+        if (notify && config.isGlobalCache()) {
+            //发布通知
+            notifyInvalidate(cacheName, key);
         }
         if (key == null) {
             //拉出所有数据执行监听。
@@ -490,12 +632,9 @@ public class FusionCache {
             cache.invalidateAll();
             if (config.cacheChangeNotifyListener != null) {
                 for (Map.Entry kv : kvSet) {
-                    Object oldValue = kv.getValue();
-                    if (oldValue instanceof CacheProtectedValue) {
-                        oldValue = null;
-                    }
+                    CacheValueWrapper oldValue = (CacheValueWrapper) kv.getValue();
                     try {
-                        config.cacheChangeNotifyListener.onMessage(kv.getKey(), oldValue, null);
+                        config.cacheChangeNotifyListener.onMessage(kv.getKey(), oldValue.getValue(), null);
                     } catch (Exception e) {
                         log.error(e.getMessage(), e);
                     }
@@ -503,16 +642,13 @@ public class FusionCache {
                 }
             }
         } else {
-            Object oldValue = cache.getIfPresent(key);
+            CacheValueWrapper oldValue = (CacheValueWrapper) cache.getIfPresent(key);
             //对于没有的信息，不需要执行通知监听。
             if (oldValue != null) {
                 cache.invalidate(key);
                 if (config.cacheChangeNotifyListener != null) {
-                    if (oldValue instanceof CacheProtectedValue) {
-                        oldValue = null;
-                    }
                     try {
-                        config.cacheChangeNotifyListener.onMessage(key, oldValue, null);
+                        config.cacheChangeNotifyListener.onMessage(key, oldValue.getValue(), null);
                     } catch (Exception e) {
                         log.error(e.getMessage(), e);
                     }
@@ -541,7 +677,7 @@ public class FusionCache {
      */
     public static Long notifyInvalidate(String cacheName, Object key) {
         //发布通知
-        return GlobalCache.notifyMsg(FUSION_CACHE_NOTIFY_CHANNEL, new FusionCacheNotifyMessage(cacheName, CacheNotifyType.INVALIDATE.getValue(), key));
+        return GlobalCache.notifyMsg(FUSION_CACHE_NOTIFY_CHANNEL, new FusionCacheNotifyMessage(INSTANCE_ID, cacheName, CacheNotifyType.INVALIDATE.getValue(), key));
     }
 
     /**
@@ -551,7 +687,7 @@ public class FusionCache {
      * @param key         缓存主键
      */
     public static Long notifyRefresh(Class<?> entityClass, Object key) {
-        return notifyInvalidate(entityClass.getSimpleName(), key);
+        return notifyRefresh(entityClass.getSimpleName(), key);
     }
 
     /**
@@ -562,7 +698,7 @@ public class FusionCache {
      */
     public static Long notifyRefresh(String cacheName, Object key) {
         //发布通知
-        return GlobalCache.notifyMsg(FUSION_CACHE_NOTIFY_CHANNEL, new FusionCacheNotifyMessage(cacheName, CacheNotifyType.REFRESH.getValue(), key));
+        return GlobalCache.notifyMsg(FUSION_CACHE_NOTIFY_CHANNEL, new FusionCacheNotifyMessage(INSTANCE_ID, cacheName, CacheNotifyType.REFRESH.getValue(), key));
     }
 
     /**
@@ -606,36 +742,36 @@ public class FusionCache {
      * @param notify    是否通知集群内其他主机。
      */
     public static boolean refresh(String cacheName, Object key, boolean notify) {
-        if (notify) {
-            //先删除redis缓存
-            GlobalCache.invalidate(cacheName, key);
-            //发布通知
-            notifyRefresh(cacheName, key);
-        }
-        //处理自身记录。
-        LoadingCache cache = cacheMap.get(cacheName);
-        Config config = configMap.get(cacheName);
-        if (cache == null || config == null) {
+        CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
+        if (cacheWrapper == null) {
             log.warn("FusionCache[{}] not config!!!", cacheName);
             return false;
         }
+        //处理自身记录。
+        LoadingCache cache = cacheWrapper.cache;
+        Config config = cacheWrapper.config;
+
+        if (cacheWrapper.config.isGlobalCache()) {
+            //先删除redis缓存
+            GlobalCache.invalidate(cacheName, key);
+        }
+
+        if (notify && config.isGlobalCache()) {
+            //发布通知
+            notifyRefresh(cacheName, key);
+        }
+
         //先执行监听。
         if (key == null) {
             //拉出所有数据执行监听。
             Set<Map.Entry> kvSet = cache.asMap().entrySet();
             for (Map.Entry kv : kvSet) {
                 cache.invalidate(kv.getKey());
-                Object oldValue = kv.getValue();
-                Object newValue = cache.get(kv.getKey());
+                CacheValueWrapper oldValue = (CacheValueWrapper) kv.getValue();
+                CacheValueWrapper newValue = (CacheValueWrapper) cache.get(kv.getKey());
                 if (config.cacheChangeNotifyListener != null) {
-                    if (oldValue instanceof CacheProtectedValue) {
-                        oldValue = null;
-                    }
-                    if (newValue instanceof CacheProtectedValue) {
-                        newValue = null;
-                    }
                     try {
-                        config.cacheChangeNotifyListener.onMessage(kv.getKey(), oldValue, newValue);
+                        config.cacheChangeNotifyListener.onMessage(kv.getKey(), oldValue.getValue(), newValue.getValue());
                     } catch (Exception e) {
                         log.error(e.getMessage(), e);
                     }
@@ -643,26 +779,43 @@ public class FusionCache {
                 }
             }
         } else {
-            Object oldValue = cache.getIfPresent(key);
+            CacheValueWrapper oldValue = (CacheValueWrapper) cache.getIfPresent(key);
             if (oldValue != null) {
                 cache.invalidate(key);
             }
-            Object newValue = cache.get(key);
+            CacheValueWrapper newValue = (CacheValueWrapper) cache.get(key);
             if (config.cacheChangeNotifyListener != null) {
-                if (oldValue instanceof CacheProtectedValue) {
-                    oldValue = null;
-                }
-                if (newValue instanceof CacheProtectedValue) {
-                    newValue = null;
-                }
                 try {
-                    config.cacheChangeNotifyListener.onMessage(key, oldValue, newValue);
+                    config.cacheChangeNotifyListener.onMessage(key, oldValue.getValue(), newValue.getValue());
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
                 }
             }
         }
         return true;
+    }
+
+
+    /**
+     * 缓存对象包装类。
+     *
+     * @param cache
+     * @param config
+     */
+    private record CacheWrapper(LoadingCache cache, Config config) {
+
+        public CacheWrapper(LoadingCache cache, Config config) {
+            this.cache = cache;
+            this.config = config;
+        }
+
+        public LoadingCache cache() {
+            return cache;
+        }
+
+        public Config config() {
+            return config;
+        }
     }
 
     /**
@@ -674,23 +827,15 @@ public class FusionCache {
          */
         private String cacheName;
         /**
+         * 缓存有效期毫秒数，默认为0，表示永不过期。
+         * 鉴于redis的特性，一般建议设置一个有效期，防止redis爆库。
+         */
+        private long cacheExpireMillis = -1;
+        /**
          * 本地缓存最大数量，默认10000。
          * 设置为0，表示不限制数量。
          */
         private int localCacheMaxNum = 10000;
-        /**
-         * 本地缓存有效期毫秒数，默认0。
-         * 设置为0的时候，表示永不过期。
-         * 此参数严重影响缓存性能，降低超过200倍的性能，如非必要不要使用。
-         */
-        private long localCacheExpireMillis = 0L;
-        /**
-         * 全局缓存有效期毫秒数，默认为-1。
-         * 设置为0的时候，表示永不过期。
-         * 设置为-1的时候，表示不使用全局缓存。
-         * 鉴于redis的特性，一般建议设置一个有效期，防止redis爆库。
-         */
-        private long globalCacheExpireMillis = -1;
         /**
          * 空值保护毫秒数，默认为60秒。
          * 当reload方法获取null的时候，将会保护一段时间，防穿透。
@@ -720,6 +865,13 @@ public class FusionCache {
         private boolean autoNotifyInvalidate = false;
 
         /**
+         * 是否全局缓存。
+         * 默认为true，表示全局缓存。
+         * 如果为false，则表示本节点的缓存。
+         */
+        private boolean isGlobalCache = true;
+
+        /**
          * 缓存作废监听器。
          */
         private CacheChangeNotifyListener cacheChangeNotifyListener;
@@ -732,12 +884,12 @@ public class FusionCache {
          *
          * @param entityClass
          * @param localCacheMaxNum
-         * @param globalCacheExpireMillis
+         * @param cacheExpireMillis
          */
-        public Config(Class<?> entityClass, int localCacheMaxNum, long globalCacheExpireMillis) {
+        public Config(Class<?> entityClass, int localCacheMaxNum, long cacheExpireMillis) {
             this.cacheName = entityClass.getSimpleName();
             this.localCacheMaxNum = localCacheMaxNum;
-            this.globalCacheExpireMillis = globalCacheExpireMillis;
+            this.cacheExpireMillis = cacheExpireMillis;
         }
 
         /**
@@ -745,12 +897,12 @@ public class FusionCache {
          *
          * @param cacheName
          * @param localCacheMaxNum
-         * @param globalCacheExpireMillis
+         * @param cacheExpireMillis
          */
-        public Config(String cacheName, int localCacheMaxNum, long globalCacheExpireMillis) {
+        public Config(String cacheName, int localCacheMaxNum, long cacheExpireMillis) {
             this.cacheName = cacheName;
             this.localCacheMaxNum = localCacheMaxNum;
-            this.globalCacheExpireMillis = globalCacheExpireMillis;
+            this.cacheExpireMillis = cacheExpireMillis;
         }
 
         /**
@@ -758,12 +910,12 @@ public class FusionCache {
          *
          * @param entityClass
          * @param localCacheMaxNum
-         * @param globalCacheExpireMillis
+         * @param cacheExpireMillis
          */
-        public Config(Class<?> entityClass, int localCacheMaxNum, long globalCacheExpireMillis, long nullProtectMillis, long failProtectMillis) {
+        public Config(Class<?> entityClass, int localCacheMaxNum, long cacheExpireMillis, long nullProtectMillis, long failProtectMillis) {
             this.cacheName = entityClass.getSimpleName();
             this.localCacheMaxNum = localCacheMaxNum;
-            this.globalCacheExpireMillis = globalCacheExpireMillis;
+            this.cacheExpireMillis = cacheExpireMillis;
             this.nullProtectMillis = nullProtectMillis;
             this.failProtectMillis = failProtectMillis;
         }
@@ -773,12 +925,12 @@ public class FusionCache {
          *
          * @param cacheName
          * @param localCacheMaxNum
-         * @param globalCacheExpireMillis
+         * @param cacheExpireMillis
          */
-        public Config(String cacheName, int localCacheMaxNum, long globalCacheExpireMillis, long nullProtectMillis, long failProtectMillis) {
+        public Config(String cacheName, int localCacheMaxNum, long cacheExpireMillis, long nullProtectMillis, long failProtectMillis) {
             this.cacheName = cacheName;
             this.localCacheMaxNum = localCacheMaxNum;
-            this.globalCacheExpireMillis = globalCacheExpireMillis;
+            this.cacheExpireMillis = cacheExpireMillis;
             this.nullProtectMillis = nullProtectMillis;
             this.failProtectMillis = failProtectMillis;
         }
@@ -786,13 +938,13 @@ public class FusionCache {
         private Config(Builder builder) {
             setCacheName(builder.cacheName);
             setLocalCacheMaxNum(builder.localCacheMaxNum);
-            setLocalCacheExpireMillis(builder.localCacheExpireMillis);
-            setGlobalCacheExpireMillis(builder.globalCacheExpireMillis);
+            setCacheExpireMillis(builder.cacheExpireMillis);
             setNullProtectMillis(builder.nullProtectMillis);
             setFailProtectMillis(builder.failProtectMillis);
             setReloadIntervalMillis(builder.reloadIntervalMillis);
             setReloadMaxTimes(builder.reloadMaxTimes);
             setAutoNotifyInvalidate(builder.autoNotifyInvalidate);
+            setGlobalCache(builder.isGlobalCache);
         }
 
         /**
@@ -827,11 +979,11 @@ public class FusionCache {
          *
          * @param cacheName
          * @param localCacheMaxNum
-         * @param globalCacheExpireMillis
+         * @param cacheExpireMillis
          * @return
          */
-        public static Builder builder(String cacheName, int localCacheMaxNum, long globalCacheExpireMillis) {
-            return new Builder().cacheName(cacheName).localCacheMaxNum(localCacheMaxNum).globalCacheExpireMillis(globalCacheExpireMillis);
+        public static Builder builder(String cacheName, int localCacheMaxNum, long cacheExpireMillis) {
+            return new Builder().cacheName(cacheName).localCacheMaxNum(localCacheMaxNum).cacheExpireMillis(cacheExpireMillis);
         }
 
         /**
@@ -839,24 +991,24 @@ public class FusionCache {
          *
          * @param entityClass
          * @param localCacheMaxNum
-         * @param globalCacheExpireMillis
+         * @param cacheExpireMillis
          * @return
          */
-        public static Builder builder(Class<?> entityClass, int localCacheMaxNum, long globalCacheExpireMillis) {
-            return new Builder().cacheName(entityClass.getSimpleName()).localCacheMaxNum(localCacheMaxNum).globalCacheExpireMillis(globalCacheExpireMillis);
+        public static Builder builder(Class<?> entityClass, int localCacheMaxNum, long cacheExpireMillis) {
+            return new Builder().cacheName(entityClass.getSimpleName()).localCacheMaxNum(localCacheMaxNum).cacheExpireMillis(cacheExpireMillis);
         }
 
         public static Builder builder(Config copy) {
             Builder builder = new Builder();
             builder.cacheName = copy.getCacheName();
             builder.localCacheMaxNum = copy.getLocalCacheMaxNum();
-            builder.localCacheExpireMillis = copy.getLocalCacheExpireMillis();
-            builder.globalCacheExpireMillis = copy.getGlobalCacheExpireMillis();
+            builder.cacheExpireMillis = copy.getCacheExpireMillis();
             builder.nullProtectMillis = copy.getNullProtectMillis();
             builder.failProtectMillis = copy.getFailProtectMillis();
             builder.reloadIntervalMillis = copy.getReloadIntervalMillis();
             builder.reloadMaxTimes = copy.getReloadMaxTimes();
             builder.autoNotifyInvalidate = copy.isAutoNotifyInvalidate();
+            builder.isGlobalCache = copy.isGlobalCache();
             return builder;
         }
 
@@ -881,20 +1033,12 @@ public class FusionCache {
             this.localCacheMaxNum = localCacheMaxNum;
         }
 
-        public long getLocalCacheExpireMillis() {
-            return localCacheExpireMillis;
+        public long getCacheExpireMillis() {
+            return cacheExpireMillis;
         }
 
-        public void setLocalCacheExpireMillis(long localCacheExpireMillis) {
-            this.localCacheExpireMillis = localCacheExpireMillis;
-        }
-
-        public long getGlobalCacheExpireMillis() {
-            return globalCacheExpireMillis;
-        }
-
-        public void setGlobalCacheExpireMillis(long globalCacheExpireMillis) {
-            this.globalCacheExpireMillis = globalCacheExpireMillis;
+        public void setCacheExpireMillis(long cacheExpireMillis) {
+            this.cacheExpireMillis = cacheExpireMillis;
         }
 
         public long getNullProtectMillis() {
@@ -937,6 +1081,14 @@ public class FusionCache {
             this.autoNotifyInvalidate = autoNotifyInvalidate;
         }
 
+        public boolean isGlobalCache() {
+            return isGlobalCache;
+        }
+
+        public void setGlobalCache(boolean globalCache) {
+            isGlobalCache = globalCache;
+        }
+
         public static final class Builder {
 
             /**
@@ -950,19 +1102,12 @@ public class FusionCache {
             private int localCacheMaxNum = 10000;
 
             /**
-             * 本地缓存有效期毫秒数，默认0。
-             * 设置为0的时候，表示永不过期。
-             * 设置为-1的时候，表示不使用全局缓存。
-             * 此参数严重影响缓存性能，降低超过200倍的性能，如非必要不要使用。
-             */
-            private long localCacheExpireMillis = 0L;
-            /**
              * 全局缓存有效期毫秒数，默认为-1。
              * 设置为0的时候，表示永不过期。
              * 设置为-1的时候，表示不使用全局缓存。
              * 鉴于redis的特性，一般建议设置一个有效期，防止redis爆库。
              */
-            private long globalCacheExpireMillis = -1;
+            private long cacheExpireMillis = -1;
             /**
              * 空值保护毫秒数，默认为60秒。
              * 当reload方法获取null的时候，将会保护一段时间，防穿透。
@@ -994,6 +1139,12 @@ public class FusionCache {
              */
             private boolean autoNotifyInvalidate = false;
 
+            /**
+             * 是否全局缓存。
+             * 默认为true。
+             */
+            private boolean isGlobalCache = true;
+
 
             private Builder() {
             }
@@ -1017,13 +1168,8 @@ public class FusionCache {
                 return this;
             }
 
-            public Builder localCacheExpireMillis(long localCacheExpireMillis) {
-                this.localCacheExpireMillis = localCacheExpireMillis;
-                return this;
-            }
-
-            public Builder globalCacheExpireMillis(long globalCacheExpireMillis) {
-                this.globalCacheExpireMillis = globalCacheExpireMillis;
+            public Builder cacheExpireMillis(long cacheExpireMillis) {
+                this.cacheExpireMillis = cacheExpireMillis;
                 return this;
             }
 
@@ -1049,6 +1195,11 @@ public class FusionCache {
 
             public Builder autoNotifyInvalidate(boolean autoNotifyInvalidate) {
                 this.autoNotifyInvalidate = autoNotifyInvalidate;
+                return this;
+            }
+
+            public Builder globalCache(boolean globalCache) {
+                this.isGlobalCache = globalCache;
                 return this;
             }
 

@@ -9,13 +9,13 @@ import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.util.UriUtils;
 import uw.common.dto.ResponseData;
 import uw.mfa.constant.HmacAlgorithm;
 import uw.mfa.constant.MfaResponseCode;
 import uw.mfa.totp.vo.TotpSecretData;
 
 import java.io.ByteArrayOutputStream;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Random;
@@ -156,6 +156,6 @@ public class TotpSecretDataGenerator {
         if (text == null) {
             return "";
         }
-        return URLEncoder.encode(text, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+        return UriUtils.encode(text, StandardCharsets.UTF_8);
     }
 }

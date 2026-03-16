@@ -70,7 +70,7 @@ public enum ValidateResponseCode implements ResponseCode {
      * @return
      */
     @Override
-    public MessageSource getMessageSource() {
+    public MessageSource messageSource() {
         return MESSAGE_SOURCE;
     }
 

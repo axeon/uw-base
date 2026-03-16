@@ -18,7 +18,7 @@ public class UwCacheTest3Application {
             }
             return new AnnotationBeanNameGenerator().generateBeanName( beanDefinition, beanDefinitionRegistry );
         } ).run( args );
-        FusionCache.Config fusionConfig = FusionCache.Config.builder().cacheName( "fusion" ).localCacheMaxNum( 1000 ).globalCacheExpireMillis( 1000000 ).build();
+        FusionCache.Config fusionConfig = FusionCache.Config.builder().cacheName( "fusion" ).localCacheMaxNum( 1000 ).cacheExpireMillis( 1000000 ).build();
         FusionCache.config( fusionConfig, new CacheDataLoader<Integer, String>() {
             @Override
             public String load(Integer key) {
@@ -27,7 +27,9 @@ public class UwCacheTest3Application {
         } );
         System.out.println((String)FusionCache.get( "fusion", 123));
         System.out.println(FusionCache.containsKey("fusion",123));
+        System.out.println(FusionCache.localCacheMap("fusion"));
         FusionCache.invalidate( "fusion",123 );
+        System.out.println(FusionCache.localCacheMap("fusion"));
         System.out.println(FusionCache.containsKey("fusion",123));
     }
 }

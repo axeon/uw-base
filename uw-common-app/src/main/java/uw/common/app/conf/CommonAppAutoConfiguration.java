@@ -16,12 +16,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.ThreadUtils;
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.loadbalancer.cache.LoadBalancerCacheManager;
@@ -98,7 +98,7 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     private final LoadingCache<String, Locale> LOCALE_CACHE = Caffeine.newBuilder().maximumSize(1000).build(new CacheLoader<>() {
 
         @Override
-        public @Nullable Locale load(@NotNull String language) {
+        public Locale load(@NotNull String language) {
             try {
                 // 创建一个语言范围列表
                 List<Locale.LanguageRange> languageRanges = Locale.LanguageRange.parse(language);
@@ -249,12 +249,29 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     }
 
     /**
-     * crack.
      * 根据profile拦截swagger接口。
      */
     @Bean
     @Profile("!debug & !dev")
-    public WebMvcConfigurer swaggerDisableInterceptor() {
+    @ConditionalOnProperty(name = "uw.common.app.disableSwagger", havingValue = "false", matchIfMissing = true)
+    public WebMvcConfigurer swaggerProfileDisableInterceptor() {
+        return swaggerDisableInterceptor();
+    }
+
+    /**
+     * 强制禁用：仅配置项控制（无视Profile）
+     * 只要disableSwagger=true，所有环境都禁用
+     */
+    @Bean
+    @ConditionalOnProperty(name = "uw.common.app.disableSwagger", havingValue = "true")
+    public WebMvcConfigurer swaggerForceDisableInterceptor() {
+        return swaggerDisableInterceptor();
+    }
+
+    /**
+     * 禁用swagger接口.
+     */
+    private WebMvcConfigurer swaggerDisableInterceptor() {
         return new WebMvcConfigurer() {
             @Override
             public void addInterceptors(InterceptorRegistry registry) {

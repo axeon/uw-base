@@ -4,7 +4,7 @@ uw:
       database: 9
       host: 192.168.88.21
       port: 6380
-      password: redispasswd
+      password: Ah8mm6tgE0vSv2aadIELqdHAAohgbFYl
       lettuce:
         pool:
           max-active: 100

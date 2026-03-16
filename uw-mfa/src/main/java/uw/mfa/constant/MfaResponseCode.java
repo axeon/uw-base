@@ -120,7 +120,7 @@ public enum MfaResponseCode implements ResponseCode {
      * @return
      */
     @Override
-    public ResourceBundleMessageSource getMessageSource() {
+    public ResourceBundleMessageSource messageSource() {
         return MESSAGE_SOURCE;
     }
 

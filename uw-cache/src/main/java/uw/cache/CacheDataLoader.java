@@ -15,7 +15,39 @@ import java.lang.reflect.Type;
  */
 public abstract class CacheDataLoader<K, V> {
 
+    /**
+     * 自定义过期时间。
+     *  0：永久有效。
+     * >0：指定过期毫秒数。
+     */
+    private long expireMillis = 0L;
+
+    /**
+     * 加载数据。
+     *
+     * @param key
+     * @return
+     * @throws Exception
+     */
     public abstract V load(K key) throws Exception;
+
+    /**
+     * 自定义设置过期时间。
+     *
+     * @param expireMillis
+     */
+    public void setExpireMillis(long expireMillis) {
+        this.expireMillis = expireMillis;
+    }
+
+    /**
+     * 自定义获取过期时间，默认0表示不定义。
+     *
+     * @return
+     */
+    public long getExpireMillis() {
+        return expireMillis;
+    }
 
     /**
      * 获取数值类型。

@@ -89,12 +89,12 @@ public class UwMfaProperties {
     /**
      * 设备验证码短信发送API。
      */
-    private String deviceNotifyMobileApi = "http://saas-base-app/rpc/saasMsg/sendSms";
+    private String deviceNotifyMobileApi = "http://saas-base-app/rpc/msg/sendSms";
 
     /**
      * 设备验证码EMAIL发送API。
      */
-    private String deviceNotifyEmailApi = "http://saas-base-app/rpc/saasMsg/sendMail";
+    private String deviceNotifyEmailApi = "http://saas-base-app/rpc/msg/sendMail";
 
     /**
      * TOTP算法，默认SHA256。

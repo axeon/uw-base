@@ -63,9 +63,9 @@ public class FusionCounter {
     /**
      * 初始化计数器。
      *
-     * @param entityType       entity类型(主要用于构造counterType)。
-     * @param syncGlobalMillis 同步全局间隔毫秒数
-     * @param writeBackMillis  回写数据库间隔毫秒数
+     * @param entityType        entity类型(主要用于构造counterType)。
+     * @param syncGlobalMillis  同步全局间隔毫秒数
+     * @param writeBackMillis   回写数据库间隔毫秒数
      * @param writeBackConsumer 回写函数，可以在此函数中写入数据库。
      */
     public static void config(final Class<?> entityType, final long syncGlobalMillis, final long writeBackMillis, final BiConsumer<Object, Long> writeBackConsumer) {
@@ -123,9 +123,7 @@ public class FusionCounter {
      * @param incrementNum 增加的计数。
      */
     public static long increment(String counterType, Object counterId, long incrementNum) {
-        LocalCounter localCounter = counterMap.computeIfAbsent(counterType + RedisKeyUtils.KEY_SPLITTER + counterId,
-                key -> new LocalCounter(configMap.computeIfAbsent(counterType, config -> new LocalCounter.Config(counterType, DEFAULT_SYNC_GLOBAL_MILLIS)), counterId,
-                        0));
+        LocalCounter localCounter = counterMap.computeIfAbsent(counterType + RedisKeyUtils.KEY_SPLITTER + counterId, key -> new LocalCounter(configMap.computeIfAbsent(counterType, config -> new LocalCounter.Config(counterType, DEFAULT_SYNC_GLOBAL_MILLIS)), counterId, 0));
         return localCounter.increment(incrementNum);
     }
 
@@ -168,9 +166,7 @@ public class FusionCounter {
      * @param incrementNum 增加的计数。
      */
     public static long decrement(String counterType, Object counterId, long incrementNum) {
-        LocalCounter localCounter = counterMap.computeIfAbsent(counterType + RedisKeyUtils.KEY_SPLITTER + counterId,
-                key -> new LocalCounter(configMap.computeIfAbsent(counterType, config -> new LocalCounter.Config(counterType, DEFAULT_SYNC_GLOBAL_MILLIS)), counterId,
-                        0));
+        LocalCounter localCounter = counterMap.computeIfAbsent(counterType + RedisKeyUtils.KEY_SPLITTER + counterId, key -> new LocalCounter(configMap.computeIfAbsent(counterType, config -> new LocalCounter.Config(counterType, DEFAULT_SYNC_GLOBAL_MILLIS)), counterId, 0));
         return localCounter.decrement(incrementNum);
     }
 
@@ -196,8 +192,7 @@ public class FusionCounter {
      * @return 计数数值。
      */
     public static LocalCounter init(String counterType, Object counterId, long initNum) {
-        return counterMap.computeIfAbsent(counterType + RedisKeyUtils.KEY_SPLITTER + counterId, key -> new LocalCounter(configMap.computeIfAbsent(counterType,
-                config -> new LocalCounter.Config(counterType, DEFAULT_SYNC_GLOBAL_MILLIS)), counterId, initNum));
+        return counterMap.computeIfAbsent(counterType + RedisKeyUtils.KEY_SPLITTER + counterId, key -> new LocalCounter(configMap.computeIfAbsent(counterType, config -> new LocalCounter.Config(counterType, DEFAULT_SYNC_GLOBAL_MILLIS)), counterId, initNum));
     }
 
     /**
@@ -243,9 +238,7 @@ public class FusionCounter {
      * @return 计数数值。
      */
     public static long get(String counterType, Object counterId, boolean forceSync) {
-        LocalCounter localCounter = counterMap.computeIfAbsent(counterType + RedisKeyUtils.KEY_SPLITTER + counterId,
-                key -> new LocalCounter(configMap.computeIfAbsent(counterType, config -> new LocalCounter.Config(counterType, DEFAULT_SYNC_GLOBAL_MILLIS)), counterId,
-                        0));
+        LocalCounter localCounter = counterMap.computeIfAbsent(counterType + RedisKeyUtils.KEY_SPLITTER + counterId, key -> new LocalCounter(configMap.computeIfAbsent(counterType, config -> new LocalCounter.Config(counterType, DEFAULT_SYNC_GLOBAL_MILLIS)), counterId, 0));
         if (forceSync) {
             localCounter.sync(true);
         }
@@ -304,7 +297,6 @@ public class FusionCounter {
         }
         return GlobalCounter.getAndDelete(counterType, counterId);
     }
-
 
     /**
      * 本地计数器。

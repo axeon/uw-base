@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
-import uw.cache.util.KryoUtils;
+import uw.cache.util.KryoCacheUtils;
 import uw.cache.util.RedisKeyUtils;
 
 import java.util.HashSet;
@@ -46,7 +46,7 @@ public class GlobalSortedSet {
         if (setName == null || itemData == null) {
             return false;
         }
-        return Boolean.TRUE.equals( dataCacheRedisTemplate.opsForZSet().add( REDIS_PREFIX + setName, KryoUtils.serialize( itemData ), itemScore ) );
+        return Boolean.TRUE.equals( dataCacheRedisTemplate.opsForZSet().add( REDIS_PREFIX + setName, KryoCacheUtils.serialize( itemData ), itemScore ) );
     }
 
     /**
@@ -78,7 +78,7 @@ public class GlobalSortedSet {
         if (setName == null || itemData == null) {
             return -1L;
         }
-        Long ret = dataCacheRedisTemplate.opsForZSet().remove( REDIS_PREFIX + setName, KryoUtils.serialize( itemData ) );
+        Long ret = dataCacheRedisTemplate.opsForZSet().remove( REDIS_PREFIX + setName, KryoCacheUtils.serialize( itemData ) );
         if (ret != null) {
             return ret;
         } else {
@@ -99,7 +99,7 @@ public class GlobalSortedSet {
         }
         Object[] dataArray = new Object[itemDatas.length];
         for (int i = 0; i < itemDatas.length; i++) {
-            dataArray[i] = KryoUtils.serialize( itemDatas[i] );
+            dataArray[i] = KryoCacheUtils.serialize( itemDatas[i] );
         }
         Long ret = dataCacheRedisTemplate.opsForZSet().remove( REDIS_PREFIX + setName, dataArray );
         if (ret != null) {
@@ -147,7 +147,7 @@ public class GlobalSortedSet {
         }
         HashSet<T> dataSet = new HashSet<>( (int) (byteSet.size() * 1.5f) );
         for (byte[] item : byteSet) {
-            dataSet.add( KryoUtils.deserialize( item, itemClazz ) );
+            dataSet.add( KryoCacheUtils.deserialize( item, itemClazz ) );
         }
         return dataSet;
     }

@@ -1,0 +1,138 @@
+# Webot 自动化配置
+uw:
+  webot:
+    # 是否启用 Webot 自动化功能
+    enabled: true
+    # BotPool 配置
+    bot-pool:
+      # 每个浏览器组的最大 Browser 数量
+      max-browsers-per-group: 5
+      # 每个 Browser 的最大 页签 数量
+      max-pages-per-browser: 20
+      # 是否启用自动扩缩容
+      auto-scaling-enabled: true
+      # 扩容阈值（页签 使用率）
+      scale-up-threshold: 0.8
+      # 缩容阈值（页签 使用率）
+      scale-down-threshold: 0.3
+      # Page 最大空闲时间
+      page-max-idle-time: 5m
+      # Page 最大存活时间
+      page-max-lifetime: 30m
+      # Browser 最大空闲时间
+      browser-max-idle-time: 10m
+      # 是否启用状态同步
+      state-sync-enabled: false
+
+    # 会话管理配置
+    session:
+      # 是否启用分布式会话
+      distributed: false
+      # 会话缓存名称
+      cache-name: webot:session
+      # 会话过期时间
+      expire-time: 24h
+      # 是否启用会话持久化
+      persistence-enabled: true
+      # 会话清理间隔
+      cleanup-interval: 10m
+
+      # 浏览器配置
+      browser:
+        # 浏览器类型: chromium, firefox, webkit
+        type: chromium
+        # 是否无头模式
+        headless: true
+        # 视口宽度
+        viewport-width: 1920
+        # 视口高度
+        viewport-height: 1080
+        # 是否启用 JavaScript
+        javascript-enabled: true
+
+      # 验证码服务配置
+      captcha:
+        # 是否启用验证码服务
+        enabled: false
+        # 服务类型: ocr, 2captcha, capsolver
+        service-type: ocr
+        # API 密钥
+        api-key:
+        # 最大重试次数
+        max-retries: 3
+        # 2Captcha 配置
+        two-captcha:
+          # API 密钥
+          api-key:
+          # 超时时间
+          timeout: 2m
+          # 轮询间隔
+          polling-interval: 5s
+        # Capsolver 配置
+        capsolver:
+          # API 密钥
+          api-key:
+          # 超时时间
+          timeout: 2m
+          # 轮询间隔
+          polling-interval: 5s
+        # OCR 配置
+        ocr:
+          # API 密钥
+          api-key:
+          # API URL
+          api-url: http://localhost:8000/ocr
+          # 阈值
+          threshold: 128
+          # 语言
+          language: eng
+          # 超时时间(毫秒)
+          timeout: 30000
+
+      # 反检测配置
+      stealth:
+        # 是否启用反检测功能
+        enabled: true
+        # 是否隐藏 WebDriver 属性
+        hide-web-driver: true
+        # 是否启用 WebGL 指纹伪装
+        webgl-spoofing: true
+        # 是否启用指纹随机化
+        fingerprint-randomization: true
+        # 是否启用插件伪装
+        plugin-spoofing: true
+        # 是否启用字体伪装
+        font-spoofing: true
+        # 自定义 User-Agent 列表
+        user-agents:
+        # 自定义屏幕分辨率列表
+        screen-resolutions:
+        # 自定义时区列表
+        timezones:
+
+      # 代理服务配置
+      proxy:
+        # 是否启用代理
+        enabled: false
+        # 代理类型: HTTP, HTTPS, SOCKS4, SOCKS5
+        type: HTTP
+        # 代理主机
+        host:
+        # 代理端口
+        port:
+        # 代理用户名
+        username:
+        # 代理密码
+        password:
+        # 是否绕过本地地址
+        bypass-local-addresses: true
+        # 是否启用代理池
+        pool-enabled: false
+        # 代理池最大大小
+        pool-max-size: 10
+        # 健康检查间隔
+        health-check-interval: 5m
+        # 最大失败次数
+        max-failures: 3
+        # 代理服务器列表
+        servers:

@@ -281,7 +281,7 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
      */
     @Override
     public ResponseData<List<MscUserVo>> listUser(long saasId, int userType, long mchId, long groupId, long userId, String userName, String nickName, String realName, String mobile, String email) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/listUser").queryParam("saasId", saasId).queryParam("userType", userType).queryParam("mchId", mchId).queryParam("groupId", groupId).queryParam("userId", userId).queryParam("username", userName).queryParam("nickName", nickName).queryParam("realName", realName).queryParam("mobile", mobile).queryParam("email", email).build().encode().toUri();
+        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/listUser").queryParam("saasId", saasId).queryParam("userType", userType).queryParam("mchId", mchId).queryParam("groupId", groupId).queryParam("userId", userId).queryParam("userName", userName).queryParam("nickName", nickName).queryParam("realName", realName).queryParam("mobile", mobile).queryParam("email", email).build().encode().toUri();
         return authRestTemplate.exchange(targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<List<MscUserVo>>>() {
         }).getBody();
     }

@@ -187,8 +187,6 @@ public class AuthServiceFilter implements Filter {
                 }
                 // 取出tokenData
                 AuthTokenData authTokenData = authTokenDataResponse.getData();
-                // 设定当前线程tokenData
-                AuthServiceHelper.setContextToken(authTokenData);
                 // 鉴权开始
                 String permCode = uri + ":" + method;
                 // 权限鉴权

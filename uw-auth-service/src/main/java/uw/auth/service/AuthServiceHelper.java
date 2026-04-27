@@ -750,7 +750,7 @@ public class AuthServiceHelper {
      *
      * @param authToken
      */
-    public static void setContextToken(AuthTokenData authToken) {
+    private static void setContextToken(AuthTokenData authToken) {
         contextTokenHolder.set(authToken);
     }
 
@@ -836,6 +836,8 @@ public class AuthServiceHelper {
             invalidContextToken(userType, token);
             return ResponseData.errorCode(AuthServiceConstants.HTTP_TOKEN_EXPIRED_CODE, "!Server AccessToken expired. Token: " + token);
         }
+        // 设定当前线程tokenData
+        AuthServiceHelper.setContextToken(authTokenData);
         return ResponseData.success(authTokenData);
     }
 

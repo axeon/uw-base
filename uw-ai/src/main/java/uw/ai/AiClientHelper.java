@@ -21,18 +21,6 @@ public class AiClientHelper {
     private static final Logger log = LoggerFactory.getLogger(AiClientHelper.class);
 
     /**
-     * 生成系统提示.
-     */
-    private static final String ENTITY_SYSTEM_PROMPT = """
-            Your response should be in JSON format.
-            Do not include any explanations, only provide a RFC8259 compliant JSON response following this format without deviation.
-            Do not include markdown code blocks in your response.
-            Remove the ```json markdown from the output.
-            Here is the JSON Schema instance your output must adhere to:
-            ```%s```
-            """;
-
-    /**
      * toolRpc
      */
     private static AiToolRpc toolRpc;
@@ -104,13 +92,13 @@ public class AiClientHelper {
     public static <T> ResponseData<T> generateEntity(AiChatGenerateParam param, Class<T> clazz) {
         // 设置类型转换器
         BeanOutputConverter<T> beanOutputConverter = new BeanOutputConverter<>(clazz);
-        // 设置系统提示
+        // 设置系统提示（仅使用 getFormat，避免 Schema 嵌套重复导致弱模型混淆）
         StringBuilder systemPrompt = new StringBuilder();
         if (param.getSystemPrompt() != null) {
             systemPrompt.append(param.getSystemPrompt());
             systemPrompt.append("\n");
         }
-        systemPrompt.append(String.format(ENTITY_SYSTEM_PROMPT, beanOutputConverter.getFormat()));
+        systemPrompt.append(beanOutputConverter.getFormat());
         param.setSystemPrompt(systemPrompt.toString());
         // 调用生成
         ResponseData<String> responseData = generate(param);

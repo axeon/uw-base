@@ -7,6 +7,8 @@ import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.core5.http.HeaderElement;
 import org.apache.hc.core5.http.message.BasicHeaderElementIterator;
 import org.apache.hc.core5.util.TimeValue;
+
+import java.time.Duration;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -164,8 +166,13 @@ public class AuthClientAutoConfiguration {
         PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
         connectionManager.setMaxTotal(authClientProperties.getHttpPool().getMaxTotal());
         connectionManager.setDefaultMaxPerRoute(authClientProperties.getHttpPool().getDefaultMaxPerRoute());
-        RequestConfig config = RequestConfig.custom().setConnectTimeout(authClientProperties.getHttpPool().getConnectTimeout(), TimeUnit.MILLISECONDS).setConnectionRequestTimeout(authClientProperties.getHttpPool().getConnectionRequestTimeout(), TimeUnit.MILLISECONDS).build();
-        CloseableHttpClient httpClient = HttpClientBuilder.create().setConnectionManager(connectionManager).setDefaultRequestConfig(config).setKeepAliveStrategy((response, context) -> {
+        RequestConfig config = RequestConfig.custom()
+                .setConnectTimeout(authClientProperties.getHttpPool().getConnectTimeout(), TimeUnit.MILLISECONDS)
+                .setConnectionRequestTimeout(authClientProperties.getHttpPool().getConnectionRequestTimeout(), TimeUnit.MILLISECONDS)
+                .build();
+        CloseableHttpClient httpClient = HttpClientBuilder.create().setConnectionManager(connectionManager)
+                .setDefaultRequestConfig(config)
+                .setKeepAliveStrategy((response, context) -> {
             BasicHeaderElementIterator iterator = new BasicHeaderElementIterator(response.headerIterator("Keep-Alive"));
             while (iterator.hasNext()) {
                 HeaderElement he = iterator.next();
@@ -175,10 +182,10 @@ public class AuthClientAutoConfiguration {
                     return TimeValue.of(Long.parseLong(value) * 1000, TimeUnit.MILLISECONDS);
                 }
             }
-            // return authClientProperties.getHttpPool().getKeepAliveTimeIfNotPresent();
             return TimeValue.of(authClientProperties.getHttpPool().getKeepAliveTimeIfNotPresent(), TimeUnit.MILLISECONDS);
-
         }).build();
-        return new HttpComponentsClientHttpRequestFactory(httpClient);
+        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
+        factory.setReadTimeout(Duration.ofMillis(authClientProperties.getHttpPool().getSocketTimeout()));
+        return factory;
     }
 }

@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import uw.ai.rpc.AiChatRpc;
+import uw.ai.rpc.AiConfigRpc;
 import uw.ai.rpc.AiToolRpc;
 import uw.ai.rpc.AiTranslateRpc;
 import uw.ai.util.BeanOutputConverter;
@@ -21,18 +22,6 @@ public class AiClientHelper {
     private static final Logger log = LoggerFactory.getLogger(AiClientHelper.class);
 
     /**
-     * 生成系统提示.
-     */
-    private static final String ENTITY_SYSTEM_PROMPT = """
-            Your response should be in JSON format.
-            Do not include any explanations, only provide a RFC8259 compliant JSON response following this format without deviation.
-            Do not include markdown code blocks in your response.
-            Remove the ```json markdown from the output.
-            Here is the JSON Schema instance your output must adhere to:
-            ```%s```
-            """;
-
-    /**
      * toolRpc
      */
     private static AiToolRpc toolRpc;
@@ -47,10 +36,16 @@ public class AiClientHelper {
      */
     private static AiTranslateRpc translateRpc;
 
-    public AiClientHelper(AiToolRpc toolRpc, AiChatRpc chatRpc, AiTranslateRpc translateRpc) {
+    /**
+     * configRpc
+     */
+    private static AiConfigRpc configRpc;
+
+    public AiClientHelper(AiToolRpc toolRpc, AiChatRpc chatRpc, AiTranslateRpc translateRpc, AiConfigRpc configRpc) {
         AiClientHelper.toolRpc = toolRpc;
         AiClientHelper.chatRpc = chatRpc;
         AiClientHelper.translateRpc = translateRpc;
+        AiClientHelper.configRpc = configRpc;
     }
 
     /**
@@ -104,13 +99,13 @@ public class AiClientHelper {
     public static <T> ResponseData<T> generateEntity(AiChatGenerateParam param, Class<T> clazz) {
         // 设置类型转换器
         BeanOutputConverter<T> beanOutputConverter = new BeanOutputConverter<>(clazz);
-        // 设置系统提示
+        // 设置系统提示（仅使用 getFormat，避免 Schema 嵌套重复导致弱模型混淆）
         StringBuilder systemPrompt = new StringBuilder();
         if (param.getSystemPrompt() != null) {
             systemPrompt.append(param.getSystemPrompt());
             systemPrompt.append("\n");
         }
-        systemPrompt.append(String.format(ENTITY_SYSTEM_PROMPT, beanOutputConverter.getFormat()));
+        systemPrompt.append(beanOutputConverter.getFormat());
         param.setSystemPrompt(systemPrompt.toString());
         // 调用生成
         ResponseData<String> responseData = generate(param);
@@ -137,5 +132,12 @@ public class AiClientHelper {
      */
     public static ResponseData<AiTranslateResultData[]> translateMap(AiTranslateMapParam param) {
         return translateRpc.translateMap(param);
+    }
+
+    /**
+     * 获取所有可用的模型配置列表。
+     */
+    public static ResponseData<List<AiModelConfigVo>> listModelConfig() {
+        return configRpc.listModelConfig();
     }
 }

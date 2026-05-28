@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/develop/apache-maven-3.9.15/bin/**)",
+      "Bash(\"D:/develop/apache-maven-3.9.15/bin/mvn\" install *)",
+      "Read(//d/JavaProject/zowyoProject/uw-ai-project/**)",
+      "Read(//d/JavaProject/zowyoProject/**)"
+    ]
+  }
+}

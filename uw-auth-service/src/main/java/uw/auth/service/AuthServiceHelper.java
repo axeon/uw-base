@@ -36,14 +36,14 @@ public class AuthServiceHelper {
     private static final Logger logger = LoggerFactory.getLogger(AuthServiceHelper.class);
 
     /**
-     * InheritableThreadLocal 保存当前线程请求用户对象
+     * ThreadLocal 保存当前线程请求用户对象
      */
-    private static final ThreadLocal<AuthTokenData> contextTokenHolder = new InheritableThreadLocal<>();
+    private static final ThreadLocal<AuthTokenData> contextTokenHolder = new ThreadLocal<>();
 
     /**
-     * InheritableThreadLocal 保存当前线程请求日志对象
+     * ThreadLocal 保存当前线程请求日志对象
      */
-    private static final ThreadLocal<MscActionLog> contextLogHolder = new InheritableThreadLocal<>();
+    private static final ThreadLocal<MscActionLog> contextLogHolder = new ThreadLocal<>();
 
     /**
      * 针对token有效期，每个单独设定过期时间。

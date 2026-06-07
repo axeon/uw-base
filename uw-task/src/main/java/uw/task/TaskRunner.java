@@ -22,7 +22,6 @@ public abstract class TaskRunner<TP, RD> {
      * 2. TaskDataException 任务数据异常，此异常不会引发任务重试。
      * ！！！其它未捕获异常一律认为是程序异常，不会引发任务重试。
      *
-     *
      * @param taskData 数据
      * @return 指定的返回对象
      * @throws Exception 异常

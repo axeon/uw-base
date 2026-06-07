@@ -15,16 +15,16 @@ public class DaoStringUtils {
      * @return String
      */
     public static String toClearCase(String text) {
-        StringBuilder sb = new StringBuilder( text.length() );
+        StringBuilder sb = new StringBuilder(text.length());
         char[] data = text.toCharArray();
         boolean needClear = false;
         for (int i = 0; i < data.length; i++) {
             if (data[i] != '_') {
                 if (needClear) {
-                    sb.append( Character.toUpperCase( data[i] ) );
+                    sb.append(Character.toUpperCase(data[i]));
                     needClear = false;
                 } else {
-                    sb.append( data[i] );
+                    sb.append(data[i]);
                 }
             } else {
                 needClear = true;
@@ -44,7 +44,7 @@ public class DaoStringUtils {
         if (ch[0] >= 'a' && ch[0] <= 'z') {
             ch[0] -= 32;
         }
-        return new String( ch );
+        return new String(ch);
     }
 
     /**
@@ -58,7 +58,7 @@ public class DaoStringUtils {
         if (ch[0] >= 'A' && ch[0] <= 'Z') {
             ch[0] += 32;
         }
-        return new String( ch );
+        return new String(ch);
     }
 
 }

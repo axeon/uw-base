@@ -15,7 +15,9 @@ uw-mfa Multi-Factor Authentication (MFA) 一个融合了IP限制，CAPTCHA，设
     <version>${uw-mfa.version}</version>
 </dependency>
 ```
+
 ## 配置项
+
 ```java
 /**
  * ip白名单。在白名单的IP不受登录限制影响。
@@ -84,17 +86,19 @@ private String deviceNotifyContent =  "验证码[$DEVICE_CODE$]，$EXPIRE_SECOND
 /**
  * 设备验证码短信发送API。
  */
-private String deviceNotifyMobileApi = "http://saas-market-app/rpc/msg/sms";
+private String deviceNotifyMobileApi = "http://saas-base/rpc/msg/sms";
 
 /**
  * 设备验证码EMAIL发送API。
  */
-private String deviceNotifyEmailApi = "http://saas-market-app/rpc/msg/mail";
+private String deviceNotifyEmailApi = "http://saas-base/rpc/msg/mail";
 
 ```
 
 # 使用参考
+
 MfaFusionHelper MFA融合帮助类。
+
 ```java
 /**
  * 一个融合MFA帮助类。

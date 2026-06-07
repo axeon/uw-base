@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -16,7 +15,7 @@ import java.util.Base64;
  */
 public class CaptchaAESUtils {
 
-    private static final Logger logger = LoggerFactory.getLogger( CaptchaAESUtils.class );
+    private static final Logger logger = LoggerFactory.getLogger(CaptchaAESUtils.class);
 
     //算法
     private static final String ALGORITHM = "AES/ECB/PKCS5Padding";
@@ -27,21 +26,18 @@ public class CaptchaAESUtils {
      * @param encryptData 待解密的字符串
      * @param decryptKey  解密密钥
      * @return 解密后的String
-     * @throws Exception
      */
     public static String aesDecrypt(String encryptData, String decryptKey) {
-        if (StringUtils.isBlank( encryptData ) || StringUtils.isBlank( decryptKey )) {
+        if (StringUtils.isBlank(encryptData) || StringUtils.isBlank(decryptKey)) {
             return null;
         }
         try {
-            KeyGenerator keyGen = KeyGenerator.getInstance( "AES" );
-            keyGen.init( 128 );
-            Cipher cipher = Cipher.getInstance( ALGORITHM );
-            cipher.init( Cipher.DECRYPT_MODE, new SecretKeySpec( decryptKey.getBytes(), "AES" ) );
-            byte[] decryptBytes = cipher.doFinal( Base64.getDecoder().decode( encryptData ) );
-            return new String( decryptBytes );
+            Cipher cipher = Cipher.getInstance(ALGORITHM);
+            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(decryptKey.getBytes(StandardCharsets.UTF_8), "AES"));
+            byte[] decryptBytes = cipher.doFinal(Base64.getDecoder().decode(encryptData));
+            return new String(decryptBytes, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            logger.error( "aesDecrypt exception:{}", e.getMessage(), e );
+            logger.error("aesDecrypt exception:{}", e.getMessage(), e);
             return "";
         }
     }
@@ -51,21 +47,18 @@ public class CaptchaAESUtils {
      *
      * @param data       待加密的内容
      * @param encryptKey 加密密钥
-     * @return 加密后的byte[]
-     * @throws Exception
+     * @return 加密后的字符串(Base64编码)
      */
     public static String aesEncrypt(String data, String encryptKey) {
-        if (StringUtils.isBlank( data ) || StringUtils.isBlank( encryptKey )) {
+        if (StringUtils.isBlank(data) || StringUtils.isBlank(encryptKey)) {
             return null;
         }
         try {
-            KeyGenerator keyGen = KeyGenerator.getInstance( "AES" );
-            keyGen.init( 128 );
-            Cipher cipher = Cipher.getInstance( ALGORITHM );
-            cipher.init( Cipher.ENCRYPT_MODE, new SecretKeySpec( encryptKey.getBytes(), "AES" ) );
-            return Base64.getEncoder().encodeToString( cipher.doFinal( data.getBytes( StandardCharsets.UTF_8 ) ) );
+            Cipher cipher = Cipher.getInstance(ALGORITHM);
+            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(encryptKey.getBytes(StandardCharsets.UTF_8), "AES"));
+            return Base64.getEncoder().encodeToString(cipher.doFinal(data.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception e) {
-            logger.error( "aesEncryptToBytes exception:{}", e.getMessage(), e );
+            logger.error("aesEncrypt exception:{}", e.getMessage(), e);
             return null;
         }
     }

@@ -14,14 +14,14 @@ public class DataMapperException extends TaskDataException {
     }
 
     public DataMapperException(String msg) {
-        super( msg );
+        super(msg);
     }
 
     public DataMapperException(Throwable nestedThrowable) {
-        super( nestedThrowable );
+        super(nestedThrowable);
     }
 
     public DataMapperException(String msg, Throwable nestedThrowable) {
-        super( msg, nestedThrowable );
+        super(msg, nestedThrowable);
     }
 }

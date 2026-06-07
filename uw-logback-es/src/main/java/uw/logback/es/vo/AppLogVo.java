@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * 应用日志Vo
  *
- *
  * @since 2018-07-28
  */
 public class AppLogVo {

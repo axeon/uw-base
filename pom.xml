@@ -12,17 +12,17 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.11</version>
+        <version>3.5.14</version>
     </parent>
 
     <properties>
-        <revision>2026.0301.0005</revision>
+        <revision>2026.0301.0006</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
-        <spring-cloud.version>2025.0.0</spring-cloud.version>
+        <spring-cloud.version>2025.0.2</spring-cloud.version>
         <spring-cloud.alibaba.version>2023.0.1.2</spring-cloud.alibaba.version>
         <uw-ai.version>1.0.26</uw-ai.version>
         <uw-auth-client.version>6.1.19</uw-auth-client.version>

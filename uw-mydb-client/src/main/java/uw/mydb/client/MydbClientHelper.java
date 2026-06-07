@@ -20,7 +20,7 @@ import java.net.URI;
  */
 public class MydbClientHelper {
 
-    private static final Logger log = LoggerFactory.getLogger( MydbClientHelper.class );
+    private static final Logger log = LoggerFactory.getLogger(MydbClientHelper.class);
     /**
      * 默认配置。
      */
@@ -45,7 +45,7 @@ public class MydbClientHelper {
      * @return
      */
     public static ResponseData<DataNode> assignSaasNode(Serializable saasId) {
-        return assignSaasNode( DEFAULT_CONFIG, saasId, null );
+        return assignSaasNode(DEFAULT_CONFIG, saasId, null);
     }
 
 
@@ -61,7 +61,7 @@ public class MydbClientHelper {
      * @return
      */
     public static ResponseData<DataNode> assignSaasNode(Serializable saasId, String preferNode) {
-        return assignSaasNode( DEFAULT_CONFIG, saasId, preferNode );
+        return assignSaasNode(DEFAULT_CONFIG, saasId, preferNode);
     }
 
     /**
@@ -78,10 +78,10 @@ public class MydbClientHelper {
      */
     public static ResponseData<DataNode> assignSaasNode(String configKey, Serializable saasId, String preferNode) {
         URI targetUrl =
-                UriComponentsBuilder.fromUriString( uwMydbClientProperties.getMydbCenterHost() ).path( "/rpc/app/assignSaasNode" ).queryParam( "configKey", configKey ).queryParam(
-                        "saasId", saasId ).queryParam( "preferNode", preferNode ).build().encode().toUri();
-        return authRestTemplate.exchange( targetUrl, HttpMethod.POST, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<DataNode>>() {
-        } ).getBody();
+                UriComponentsBuilder.fromUriString(uwMydbClientProperties.getMydbCenterHost()).path("/rpc/app/assignSaasNode").queryParam("configKey", configKey).queryParam(
+                        "saasId", saasId).queryParam("preferNode", preferNode).build().encode().toUri();
+        return authRestTemplate.exchange(targetUrl, HttpMethod.POST, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<DataNode>>() {
+        }).getBody();
     }
 
 }

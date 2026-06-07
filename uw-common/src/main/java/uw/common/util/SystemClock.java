@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * 通过监控调度每隔10s对调用频率进行监控。
  * 低于10/ms的调用频率，直接调用系统时钟。
  * 高于10/ms的调用频率，则通过定时器进行调用。
- *
+ * <p>
  * 测试环境：mbp m2 max, jdk21，100线程。
  * 测试结果：
  * System.currentTimeMillis() 5.9w/ms

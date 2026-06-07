@@ -67,7 +67,7 @@ public enum TokenInvalidType {
     }
 
     public static void main(String[] args) {
-        System.out.println( TokenInvalidType.findByValue(1));
+        System.out.println(TokenInvalidType.findByValue(1));
     }
 
     public int getValue() {

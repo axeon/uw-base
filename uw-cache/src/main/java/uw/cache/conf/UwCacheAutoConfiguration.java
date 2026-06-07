@@ -32,7 +32,7 @@ import uw.cache.listener.FusionCacheNotifyListener;
 @EnableConfigurationProperties({UwCacheProperties.class})
 @AutoConfigureAfter({RedisAutoConfiguration.class})
 public class UwCacheAutoConfiguration {
-    private static final Logger log = LoggerFactory.getLogger( UwCacheAutoConfiguration.class );
+    private static final Logger log = LoggerFactory.getLogger(UwCacheAutoConfiguration.class);
 
     /**
      * 初始化GlobalCache。
@@ -42,7 +42,7 @@ public class UwCacheAutoConfiguration {
      */
     @Bean
     public GlobalCache globalCache(RedisTemplate<String, byte[]> dataCacheRedisTemplate) {
-        return new GlobalCache( dataCacheRedisTemplate );
+        return new GlobalCache(dataCacheRedisTemplate);
     }
 
     /**
@@ -53,7 +53,7 @@ public class UwCacheAutoConfiguration {
      */
     @Bean
     public GlobalLocker globalLocker(RedisTemplate<String, Long> longCacheRedisTemplate) {
-        return new GlobalLocker( longCacheRedisTemplate );
+        return new GlobalLocker(longCacheRedisTemplate);
     }
 
 
@@ -65,7 +65,7 @@ public class UwCacheAutoConfiguration {
      */
     @Bean
     public GlobalCounter globalCounter(RedisTemplate<String, Long> longCacheRedisTemplate) {
-        return new GlobalCounter( longCacheRedisTemplate );
+        return new GlobalCounter(longCacheRedisTemplate);
     }
 
     /**
@@ -76,7 +76,7 @@ public class UwCacheAutoConfiguration {
      */
     @Bean
     public GlobalHashSet globalHashSet(RedisTemplate<String, byte[]> dataCacheRedisTemplate) {
-        return new GlobalHashSet( dataCacheRedisTemplate );
+        return new GlobalHashSet(dataCacheRedisTemplate);
     }
 
     /**
@@ -87,16 +87,16 @@ public class UwCacheAutoConfiguration {
      */
     @Bean
     public GlobalSortedSet globalSortedSet(RedisTemplate<String, byte[]> dataCacheRedisTemplate) {
-        return new GlobalSortedSet( dataCacheRedisTemplate );
+        return new GlobalSortedSet(dataCacheRedisTemplate);
     }
 
 
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(RedisTemplate<String, byte[]> dataCacheRedisTemplate) {
         RedisMessageListenerContainer redisMessageListenerContainer = new RedisMessageListenerContainer();
-        redisMessageListenerContainer.setConnectionFactory( dataCacheRedisTemplate.getConnectionFactory() );
+        redisMessageListenerContainer.setConnectionFactory(dataCacheRedisTemplate.getConnectionFactory());
         FusionCacheNotifyListener cacheMessageListener = new FusionCacheNotifyListener();
-        redisMessageListenerContainer.addMessageListener( cacheMessageListener, new ChannelTopic( FusionCache.FUSION_CACHE_NOTIFY_CHANNEL ) );
+        redisMessageListenerContainer.addMessageListener(cacheMessageListener, new ChannelTopic(FusionCache.FUSION_CACHE_NOTIFY_CHANNEL));
         return redisMessageListenerContainer;
     }
 
@@ -112,9 +112,9 @@ public class UwCacheAutoConfiguration {
     @Bean
     public RedisTemplate<String, byte[]> dataCacheRedisTemplate(final UwCacheProperties uwCacheProperties, final ClientResources clientResources) {
         RedisTemplate<String, byte[]> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setKeySerializer( new StringRedisSerializer() );
-        redisTemplate.setConnectionFactory( redisConnectionFactory( uwCacheProperties.getRedis(), clientResources ) );
-        redisTemplate.setEnableDefaultSerializer( false );
+        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        redisTemplate.setConnectionFactory(redisConnectionFactory(uwCacheProperties.getRedis(), clientResources));
+        redisTemplate.setEnableDefaultSerializer(false);
         redisTemplate.afterPropertiesSet();
         return redisTemplate;
     }
@@ -130,10 +130,10 @@ public class UwCacheAutoConfiguration {
     @Bean
     public RedisTemplate<String, Long> longCacheRedisTemplate(final UwCacheProperties uwCacheProperties, final ClientResources clientResources) {
         RedisTemplate<String, Long> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setKeySerializer( new StringRedisSerializer() );
-        redisTemplate.setValueSerializer( new GenericToStringSerializer<Long>( Long.class ) );
-        redisTemplate.setConnectionFactory( redisConnectionFactory( uwCacheProperties.getRedis(), clientResources ) );
-        redisTemplate.setEnableDefaultSerializer( false );
+        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        redisTemplate.setValueSerializer(new GenericToStringSerializer<Long>(Long.class));
+        redisTemplate.setConnectionFactory(redisConnectionFactory(uwCacheProperties.getRedis(), clientResources));
+        redisTemplate.setEnableDefaultSerializer(false);
         redisTemplate.afterPropertiesSet();
         return redisTemplate;
     }
@@ -149,23 +149,23 @@ public class UwCacheAutoConfiguration {
         //设置连接池。
         RedisProperties.Pool poolProperties = redisProperties.getLettuce().getPool();
         GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
-        poolConfig.setMaxTotal( poolProperties.getMaxActive() );
-        poolConfig.setMaxIdle( poolProperties.getMaxIdle() );
-        poolConfig.setMinIdle( poolProperties.getMinIdle() );
+        poolConfig.setMaxTotal(poolProperties.getMaxActive());
+        poolConfig.setMaxIdle(poolProperties.getMaxIdle());
+        poolConfig.setMinIdle(poolProperties.getMinIdle());
         if (poolProperties.getMaxWait() != null) {
-            poolConfig.setMaxWait( poolProperties.getMaxWait() );
+            poolConfig.setMaxWait(poolProperties.getMaxWait());
         }
-        LettucePoolingClientConfiguration.LettucePoolingClientConfigurationBuilder builder = LettucePoolingClientConfiguration.builder().poolConfig( poolConfig );
+        LettucePoolingClientConfiguration.LettucePoolingClientConfigurationBuilder builder = LettucePoolingClientConfiguration.builder().poolConfig(poolConfig);
         if (redisProperties.getTimeout() != null) {
-            builder.commandTimeout( redisProperties.getTimeout() );
+            builder.commandTimeout(redisProperties.getTimeout());
         }
         //设置shutdownTimeout。
         RedisProperties.Lettuce lettuce = redisProperties.getLettuce();
         if (lettuce.getShutdownTimeout() != null && !lettuce.getShutdownTimeout().isZero()) {
-            builder.shutdownTimeout( redisProperties.getLettuce().getShutdownTimeout() );
+            builder.shutdownTimeout(redisProperties.getLettuce().getShutdownTimeout());
         }
         //设置clientResources。
-        builder.clientResources( clientResources );
+        builder.clientResources(clientResources);
         //设置ssl。
         if (redisProperties.getSsl().isEnabled()) {
             builder.useSsl();
@@ -173,16 +173,16 @@ public class UwCacheAutoConfiguration {
         //构建standaloneConfig。
         LettuceClientConfiguration clientConfig = builder.build();
         RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration();
-        standaloneConfig.setHostName( redisProperties.getHost() );
-        standaloneConfig.setPort( redisProperties.getPort() );
-        standaloneConfig.setDatabase( redisProperties.getDatabase() );
+        standaloneConfig.setHostName(redisProperties.getHost());
+        standaloneConfig.setPort(redisProperties.getPort());
+        standaloneConfig.setDatabase(redisProperties.getDatabase());
         if (StringUtils.isNotBlank(redisProperties.getUsername())) {
-            standaloneConfig.setUsername( redisProperties.getUsername() );
+            standaloneConfig.setUsername(redisProperties.getUsername());
         }
         if (StringUtils.isNotBlank(redisProperties.getPassword())) {
-            standaloneConfig.setPassword( RedisPassword.of( redisProperties.getPassword() ) );
+            standaloneConfig.setPassword(RedisPassword.of(redisProperties.getPassword()));
         }
-        LettuceConnectionFactory factory = new LettuceConnectionFactory( standaloneConfig, clientConfig );
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(standaloneConfig, clientConfig);
         factory.afterPropertiesSet();
         return factory;
     }

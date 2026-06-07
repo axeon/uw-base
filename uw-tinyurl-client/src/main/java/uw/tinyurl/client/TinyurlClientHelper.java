@@ -17,7 +17,7 @@ import uw.tinyurl.client.vo.TinyurlParam;
  */
 public class TinyurlClientHelper {
 
-    private static final Logger log = LoggerFactory.getLogger( TinyurlClientHelper.class );
+    private static final Logger log = LoggerFactory.getLogger(TinyurlClientHelper.class);
     /**
      * Rest模板类
      */
@@ -37,9 +37,9 @@ public class TinyurlClientHelper {
      * @return
      */
     public static ResponseData<String> generate(TinyurlParam tinyurlParam) {
-        return authRestTemplate.exchange( uwTinyurlProperties.getTinyurlCenterHost() + "/rpc/tinyurl/generate", HttpMethod.POST, new HttpEntity<>( tinyurlParam ),
+        return authRestTemplate.exchange(uwTinyurlProperties.getTinyurlCenterHost() + "/rpc/tinyurl/generate", HttpMethod.POST, new HttpEntity<>(tinyurlParam),
                 new ParameterizedTypeReference<ResponseData<String>>() {
-        } ).getBody();
+                }).getBody();
     }
 
 }

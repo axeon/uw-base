@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 
+ *
  * @since 2018-05-30
  */
 public abstract class BaseRunner extends TaskRunner<String, List<Map<String, String>>> {

@@ -20,6 +20,6 @@ public class UwNotifyAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public NotifyClientHelper notifyClientHelper(UwNotifyProperties uwNotifyProperties, RestTemplate authRestTemplate) {
-        return new NotifyClientHelper( uwNotifyProperties, authRestTemplate );
+        return new NotifyClientHelper(uwNotifyProperties, authRestTemplate);
     }
 }

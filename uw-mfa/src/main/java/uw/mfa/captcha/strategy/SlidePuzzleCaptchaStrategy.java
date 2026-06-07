@@ -20,7 +20,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class SlidePuzzleCaptchaStrategy implements CaptchaStrategy {
 
-    private static final Logger log = LoggerFactory.getLogger( SlidePuzzleCaptchaStrategy.class );
+    private static final Logger log = LoggerFactory.getLogger(SlidePuzzleCaptchaStrategy.class);
 
     /**
      * 随机生成器
@@ -37,12 +37,12 @@ public class SlidePuzzleCaptchaStrategy implements CaptchaStrategy {
         //原生图片
         BufferedImage mainImage = CaptchaImageUtils.getSlideMainImage();
         if (null == mainImage) {
-            return ResponseData.errorMsg( "SlidePuzzle main image load failed!" );
+            return ResponseData.errorMsg("SlidePuzzle main image load failed!");
         }
         //抠图图片
         BufferedImage jigsawImage = CaptchaImageUtils.getSlideJigsawImage();
         if (null == jigsawImage) {
-            return ResponseData.errorMsg( "SlidePuzzle jigsaw image load failed!" );
+            return ResponseData.errorMsg("SlidePuzzle jigsaw image load failed!");
         }
         try {
             CaptchaQuestion captchaQuestion = new CaptchaQuestion();
@@ -53,31 +53,31 @@ public class SlidePuzzleCaptchaStrategy implements CaptchaStrategy {
             int jigsawHeight = jigsawImage.getHeight();
 
             // 随机生成拼图坐标 坐标为切块顶部和左侧坐标
-            CaptchaPoint point = generateJigsawPoint( mainWidth, mainHeight, jigsawWidth, jigsawHeight );
+            CaptchaPoint point = generateJigsawPoint(mainWidth, mainHeight, jigsawWidth, jigsawHeight);
             int x = point.getX();
             int y = point.getY();
 
             // 新建的图像根据模板颜色赋值,源图生成遮罩
-            BufferedImage newJigsawImage = CaptchaImageUtils.cutByTemplate( mainImage, jigsawImage, x, y );
+            BufferedImage newJigsawImage = CaptchaImageUtils.cutByTemplate(mainImage, jigsawImage, x, y);
 
             // 增加识别难度的缺块
             // 将滑块微微旋转10角度以内
-            BufferedImage rotateImage = CaptchaImageUtils.rotateImage( jigsawImage, CaptchaRandomUtils.getRandomInt( 6, 10 ) );
+            BufferedImage rotateImage = CaptchaImageUtils.rotateImage(jigsawImage, CaptchaRandomUtils.getRandomInt(6, 10));
             // 参数的算法可以将两个阴影块错位开来
-            CaptchaImageUtils.addLacuna( mainImage, rotateImage, generateLacunaPoint( mainWidth, jigsawWidth, x ), y );
+            CaptchaImageUtils.addLacuna(mainImage, rotateImage, generateLacunaPoint(mainWidth, jigsawWidth, x), y);
 
 
-            captchaQuestion.setMainImageBase64( CaptchaImageUtils.imageToBase64( mainImage ) );
-            captchaQuestion.setSubImageBase64( CaptchaImageUtils.imageToBase64( newJigsawImage ) );
-            captchaQuestion.setCaptchaId( captchaId );
+            captchaQuestion.setMainImageBase64(CaptchaImageUtils.imageToBase64(mainImage));
+            captchaQuestion.setSubImageBase64(CaptchaImageUtils.imageToBase64(newJigsawImage));
+            captchaQuestion.setCaptchaId(captchaId);
 
             // 传输编码
-            captchaQuestion.setCaptchaType( captchaType() );
-            captchaQuestion.setSubData( JsonUtils.toString( new CaptchaPoint( 0, y ) ) );
-            String captchaResult = JsonUtils.toString( point );
-            return ResponseData.success( new CaptchaData( captchaQuestion, captchaResult ) );
+            captchaQuestion.setCaptchaType(captchaType());
+            captchaQuestion.setSubData(JsonUtils.toString(new CaptchaPoint(0, y)));
+            String captchaResult = JsonUtils.toString(point);
+            return ResponseData.success(new CaptchaData(captchaQuestion, captchaResult));
         } catch (Exception e) {
-            return ResponseData.errorMsg( "SlidePuzzle captcha generate failed! " + e.getMessage() );
+            return ResponseData.errorMsg("SlidePuzzle captcha generate failed! " + e.getMessage());
         }
     }
 
@@ -87,13 +87,13 @@ public class SlidePuzzleCaptchaStrategy implements CaptchaStrategy {
         CaptchaPoint pointAnswer = null;
         try {
             // 后端存储的Captcha答案
-            pointResult = JsonUtils.parse( captchaResult, CaptchaPoint.class );
+            pointResult = JsonUtils.parse(captchaResult, CaptchaPoint.class);
             // 前端的回答
-            pointAnswer = JsonUtils.parse( answerData, CaptchaPoint.class );
+            pointAnswer = JsonUtils.parse(answerData, CaptchaPoint.class);
         } catch (Exception e) {
-            return ResponseData.errorMsg( "SlidePuzzle point format invalid! " + e.getMessage() );
+            return ResponseData.errorMsg("SlidePuzzle point format invalid! " + e.getMessage());
         }
-        if (Math.abs( pointResult.x - pointAnswer.x ) > SLIP_OFFSET || pointResult.y != pointAnswer.y) {
+        if (Math.abs(pointResult.x - pointAnswer.x) > SLIP_OFFSET || pointResult.y != pointAnswer.y) {
             return ResponseData.error();
         }
         //校验成功
@@ -128,14 +128,14 @@ public class SlidePuzzleCaptchaStrategy implements CaptchaStrategy {
         if (widthDifference <= 0) {
             x = 5;
         } else {
-            x = RANDOM.nextInt( mainWidth - jigsawWidth );
+            x = RANDOM.nextInt(mainWidth - jigsawWidth);
         }
         if (heightDifference <= 0) {
             y = 5;
         } else {
-            y = RANDOM.nextInt( mainHeight - jigsawHeight );
+            y = RANDOM.nextInt(mainHeight - jigsawHeight);
         }
-        return new CaptchaPoint( x, y );
+        return new CaptchaPoint(x, y);
     }
 
     /**
@@ -149,9 +149,9 @@ public class SlidePuzzleCaptchaStrategy implements CaptchaStrategy {
         int half = mainWidth / 2;
         // 10算是对旋转后图片误差的兼容
         if (x > half) {
-            return CaptchaRandomUtils.getRandomInt( half - jigsawWidth + 10 );
+            return CaptchaRandomUtils.getRandomInt(half - jigsawWidth + 10);
         } else {
-            return CaptchaRandomUtils.getRandomInt( half + jigsawWidth + 10, mainWidth - jigsawWidth - 10 );
+            return CaptchaRandomUtils.getRandomInt(half + jigsawWidth + 10, mainWidth - jigsawWidth - 10);
         }
     }
 }

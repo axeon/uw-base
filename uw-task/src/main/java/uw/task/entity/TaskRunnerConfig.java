@@ -767,7 +767,7 @@ public class TaskRunnerConfig implements Serializable {
          * @return
          */
         public static Builder builder(String taskClass) {
-            return new Builder().taskClass( taskClass );
+            return new Builder().taskClass(taskClass);
         }
 
         /**
@@ -777,7 +777,7 @@ public class TaskRunnerConfig implements Serializable {
          * @return
          */
         public static Builder builder(Class taskClass) {
-            return new Builder().taskClass( taskClass.getName() );
+            return new Builder().taskClass(taskClass.getName());
         }
 
         /**

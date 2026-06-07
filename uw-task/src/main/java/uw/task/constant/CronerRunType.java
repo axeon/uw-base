@@ -11,12 +11,11 @@ public enum CronerRunType {
     /**
      * 直接运行模式。
      */
-    ANYWAY(0,"到处运行"),
+    ANYWAY(0, "到处运行"),
     /**
      * 运行在全局单例模式下。
      */
-    SINGLETON(1,"单例运行");
-
+    SINGLETON(1, "单例运行");
 
 
     private final int value;

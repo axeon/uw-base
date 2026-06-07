@@ -21,7 +21,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
      * ID。
      */
     @QueryMeta(expr = "id=?")
-    @Schema(title="ID", description = "ID")
+    @Schema(title = "ID", description = "ID")
     private Serializable id;
 
 
@@ -29,7 +29,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
      * 数组ID。
      */
     @QueryMeta(expr = "id in (?)")
-    @Schema(title="ID数组", description = "ID数组，可同时匹配多个。")
+    @Schema(title = "ID数组", description = "ID数组，可同时匹配多个。")
     private Serializable[] ids;
 
     /**
@@ -254,6 +254,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
 
     /**
      * 设置商户id。
+     *
      * @param mchId
      * @return
      */
@@ -264,6 +265,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
 
     /**
      * 获取用户id。
+     *
      * @return
      */
     public Long getUserId() {
@@ -272,6 +274,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
 
     /**
      * 设置用户id。
+     *
      * @param userId
      */
     public void setUserId(Long userId) {
@@ -280,6 +283,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
 
     /**
      * 设置用户id。
+     *
      * @param userId
      * @return
      */
@@ -290,6 +294,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
 
     /**
      * 获取用户类型。
+     *
      * @return
      */
     public Integer getUserType() {
@@ -298,6 +303,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
 
     /**
      * 设置用户类型。
+     *
      * @param userType
      */
     public void setUserType(Integer userType) {
@@ -306,6 +312,7 @@ public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
 
     /**
      * 设置用户类型。
+     *
      * @param userType
      * @return
      */

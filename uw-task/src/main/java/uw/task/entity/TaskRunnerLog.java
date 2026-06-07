@@ -107,7 +107,7 @@ public class TaskRunnerLog extends LogBaseVo {
                     logLevel == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_TASK_PARAM) {
                 String data = null;
                 try {
-                    data = JsonUtils.toString( value );
+                    data = JsonUtils.toString(value);
                 } catch (Exception e) {
                     data = e.getMessage();
                     logger.error(e.getMessage(), e);

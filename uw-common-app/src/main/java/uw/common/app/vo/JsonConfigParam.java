@@ -14,6 +14,7 @@ public interface JsonConfigParam {
 
     /**
      * 配置参数数据。
+     *
      * @return
      */
     @JsonIgnore
@@ -24,7 +25,7 @@ public interface JsonConfigParam {
      * 当使用enum的时候。
      */
     @Schema(title = "配置名", description = "配置名")
-    default String getKey(){
+    default String getKey() {
         return getParamData().getKey();
     }
 
@@ -33,7 +34,7 @@ public interface JsonConfigParam {
      * 详见ConfigParamType。
      */
     @Schema(title = "配置类型", description = "配置类型")
-    default ParamType getType(){
+    default ParamType getType() {
         return getParamData().getType();
     }
 
@@ -41,7 +42,7 @@ public interface JsonConfigParam {
      * 配置默认值。
      */
     @Schema(title = "配置默认值", description = "配置默认值")
-    default String getValue(){
+    default String getValue() {
         return getParamData().getValue();
     }
 
@@ -49,7 +50,7 @@ public interface JsonConfigParam {
      * 配置描述。
      */
     @Schema(title = "配置描述", description = "配置描述")
-    default String getDesc(){
+    default String getDesc() {
         return getParamData().getDesc();
     }
 
@@ -57,7 +58,7 @@ public interface JsonConfigParam {
      * 正则表达式。
      */
     @Schema(title = "正则表达式", description = "正则表达式")
-    default String getRegex(){
+    default String getRegex() {
         return getParamData().getRegex();
     }
 
@@ -132,117 +133,117 @@ public interface JsonConfigParam {
         /**
          * 字符串类型
          */
-        STRING( "string", "字符串类型" ),
+        STRING("string", "字符串类型"),
 
         /**
          * 列表字符串类型
          */
-        SET_STRING( "set<string>", "字符串类型集合" ),
+        SET_STRING("set<string>", "字符串类型集合"),
 
         /**
          * 字符串类型
          */
-        TEXT( "text", "长文本类型" ),
+        TEXT("text", "长文本类型"),
 
         /**
          * 字符串类型
          */
-        TEXT_RICH( "textRich", "富文本类型" ),
+        TEXT_RICH("textRich", "富文本类型"),
 
         /**
          * 数值类型
          */
-        INT( "int", "INT类型" ),
+        INT("int", "INT类型"),
 
         /**
          * 列表数值类型
          */
-        SET_INT( "set<int>", "INT类型集合" ),
+        SET_INT("set<int>", "INT类型集合"),
 
         /**
          * 数值类型
          */
-        LONG( "long", "LONG类型" ),
+        LONG("long", "LONG类型"),
 
         /**
          * 列表数值类型
          */
-        SET_LONG( "set<long>", "LONG类型集合" ),
+        SET_LONG("set<long>", "LONG类型集合"),
 
         /**
          * 布尔类型
          */
-        BOOLEAN( "boolean", "布尔类型" ),
+        BOOLEAN("boolean", "布尔类型"),
 
         /**
          * 列表布尔类型
          */
-        SET_BOOLEAN( "set<boolean>", "布尔类型集合" ),
+        SET_BOOLEAN("set<boolean>", "布尔类型集合"),
 
         /**
          * 浮点类型
          */
-        FLOAT( "float", "浮点类型" ),
+        FLOAT("float", "浮点类型"),
 
         /**
          * 列表浮点类型
          */
-        SET_FLOAT( "set<float>", "浮点类型集合" ),
+        SET_FLOAT("set<float>", "浮点类型集合"),
 
         /**
          * 双精度浮点类型
          */
-        DOUBLE( "double", "双精度浮点类型" ),
+        DOUBLE("double", "双精度浮点类型"),
 
         /**
          * 列表双精度浮点类型
          */
-        SET_DOUBLE( "set<double>", "双精度浮点类型集合" ),
+        SET_DOUBLE("set<double>", "双精度浮点类型集合"),
 
         /**
          * 日期类型
          */
-        DATE( "date", "日期类型" ),
+        DATE("date", "日期类型"),
 
         /**
          * 列表日期类型
          */
-        SET_DATE( "set<date>", "日期类型集合" ),
+        SET_DATE("set<date>", "日期类型集合"),
 
         /**
          * 日期类型
          */
-        TIME( "time", "时间类型" ),
+        TIME("time", "时间类型"),
 
         /**
          * 列表日期类型
          */
-        SET_TIME( "set<time>", "时间类型集合" ),
+        SET_TIME("set<time>", "时间类型集合"),
 
         /**
          * 日期时间类型
          */
-        DATETIME( "datetime", "日期时间类型" ),
+        DATETIME("datetime", "日期时间类型"),
 
         /**
          * 列表日期时间类型
          */
-        SET_DATETIME( "set<datetime>", "日期时间类型集合" ),
+        SET_DATETIME("set<datetime>", "日期时间类型集合"),
 
         /**
          * 枚举类型
          */
-        ENUM( "enum", "枚举类型" ),
+        ENUM("enum", "枚举类型"),
 
         /**
          * 列表枚举类型
          */
-        SET_ENUM( "set<enum>", "枚举类型集合" ),
+        SET_ENUM("set<enum>", "枚举类型集合"),
 
         /**
          * map类型
          */
-        MAP( "map", "MAP类型" ),
+        MAP("map", "MAP类型"),
         ;
 
         @JsonValue
@@ -264,7 +265,7 @@ public interface JsonConfigParam {
         @JsonCreator
         public static ParamType fromValue(String value) {
             for (ParamType type : ParamType.values()) {
-                if (type.getValue().equals( value )) {
+                if (type.getValue().equals(value)) {
                     return type;
                 }
             }

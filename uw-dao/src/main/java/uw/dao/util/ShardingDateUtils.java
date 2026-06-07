@@ -42,14 +42,14 @@ public class ShardingDateUtils {
      */
     public static Date beginOfYear(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR ));
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
         cal.set(Calendar.MONTH, 0);
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -61,14 +61,14 @@ public class ShardingDateUtils {
      */
     public static Date beginOfLastYear(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR )-1);
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR) - 1);
         cal.set(Calendar.MONTH, 0);
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -81,14 +81,14 @@ public class ShardingDateUtils {
      */
     public static Date beginOfNextYear(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR )+1);
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR) + 1);
         cal.set(Calendar.MONTH, 0);
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -101,14 +101,14 @@ public class ShardingDateUtils {
      */
     public static Date beginOfMonth(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR ));
-        cal.set(Calendar.MONTH, cal.get( Calendar.MONTH ));
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -120,14 +120,14 @@ public class ShardingDateUtils {
      */
     public static Date beginOfLastMonth(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR ));
-        cal.set(Calendar.MONTH, cal.get( Calendar.MONTH )-1);
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH) - 1);
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -140,14 +140,14 @@ public class ShardingDateUtils {
      */
     public static Date beginOfNextMonth(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR ));
-        cal.set(Calendar.MONTH, cal.get( Calendar.MONTH )+1);
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH) + 1);
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -159,14 +159,14 @@ public class ShardingDateUtils {
      */
     public static Date beginOfToday(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR ));
-        cal.set(Calendar.MONTH, cal.get( Calendar.MONTH ));
-        cal.set(Calendar.DATE, cal.get( Calendar.DAY_OF_MONTH ));
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+        cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH));
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -178,14 +178,14 @@ public class ShardingDateUtils {
      */
     public static Date beginOfYesterday(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR ));
-        cal.set(Calendar.MONTH, cal.get( Calendar.MONTH ));
-        cal.set(Calendar.DATE, cal.get( Calendar.DAY_OF_MONTH )-1);
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+        cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH) - 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -198,14 +198,14 @@ public class ShardingDateUtils {
      */
     public static Date beginOfTomorrow(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR ));
-        cal.set(Calendar.MONTH, cal.get( Calendar.MONTH ));
-        cal.set(Calendar.DATE, cal.get( Calendar.DAY_OF_MONTH )+1);
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+        cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH) + 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
+        cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
 
@@ -218,15 +218,15 @@ public class ShardingDateUtils {
      */
     public static Date endOfYear(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR )+1);
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR) + 1);
         cal.set(Calendar.MONTH, 0);
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTimeInMillis()-1);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
 
     /**
@@ -237,15 +237,15 @@ public class ShardingDateUtils {
      */
     public static Date endOfLastYear(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR ));
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
         cal.set(Calendar.MONTH, 0);
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTimeInMillis()-1);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
 
 
@@ -257,15 +257,15 @@ public class ShardingDateUtils {
      */
     public static Date endOfNextYear(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR )+2);
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR) + 2);
         cal.set(Calendar.MONTH, 0);
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTimeInMillis()-1);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
 
 
@@ -277,15 +277,15 @@ public class ShardingDateUtils {
      */
     public static Date endOfMonth(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR ));
-        cal.set(Calendar.MONTH, cal.get( Calendar.MONTH )+1);
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH) + 1);
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTimeInMillis()-1);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
 
     /**
@@ -296,15 +296,15 @@ public class ShardingDateUtils {
      */
     public static Date endOfLastMonth(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR ));
-        cal.set(Calendar.MONTH, cal.get( Calendar.MONTH ));
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTimeInMillis()-1);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
 
 
@@ -316,15 +316,15 @@ public class ShardingDateUtils {
      */
     public static Date endOfNextMonth(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR ));
-        cal.set(Calendar.MONTH, cal.get( Calendar.MONTH )+2);
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH) + 2);
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTimeInMillis()-1);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
 
     /**
@@ -335,15 +335,15 @@ public class ShardingDateUtils {
      */
     public static Date endOfToday(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR ));
-        cal.set(Calendar.MONTH, cal.get( Calendar.MONTH ));
-        cal.set(Calendar.DATE, cal.get( Calendar.DAY_OF_MONTH )+1);
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+        cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH) + 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTimeInMillis()-1);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
 
     /**
@@ -354,15 +354,15 @@ public class ShardingDateUtils {
      */
     public static Date endOfYesterday(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR ));
-        cal.set(Calendar.MONTH, cal.get( Calendar.MONTH ));
-        cal.set(Calendar.DATE, cal.get( Calendar.DAY_OF_MONTH ));
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+        cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH));
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTimeInMillis()-1);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
 
 
@@ -374,17 +374,16 @@ public class ShardingDateUtils {
      */
     public static Date endOfTomorrow(Date date) {
         Calendar cal = Calendar.getInstance();
-        cal.setTime( date );
-        cal.set(Calendar.YEAR, cal.get( Calendar.YEAR ));
-        cal.set(Calendar.MONTH, cal.get( Calendar.MONTH ));
-        cal.set(Calendar.DATE, cal.get( Calendar.DAY_OF_MONTH )+2);
+        cal.setTime(date);
+        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+        cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH) + 2);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
-        cal.set( Calendar.MILLISECOND,0 );
-        return new Date(cal.getTimeInMillis()-1);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Date(cal.getTimeInMillis() - 1);
     }
-
 
 
 }

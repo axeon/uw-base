@@ -40,4 +40,5 @@ ProductVo product = httpInterface.getForEntity("xxx", ProductVo.class);
 
 #### 8.HttpConfig的retryOnConnectionFailure属性有什么作用和影响？
 
-retryOnConnectionFailure设置为true将会开启请求失败重试。如果你的业务是有严格幂等要求的,重试可能会出现严重问题(比如重复调用下单),应将此值配为false，让程序自己处理错误问题。
+retryOnConnectionFailure设置为true将会开启请求失败重试。如果你的业务是有严格幂等要求的,重试可能会出现严重问题(
+比如重复调用下单),应将此值配为false，让程序自己处理错误问题。

@@ -21,8 +21,8 @@ public class XmlInterfaceTest {
     @Test
     public void testPostFormData() throws Exception {
         Map<String, String> loginParam = new HashMap<>();
-        loginParam.put( "username", "test" );
-        loginParam.put( "password", "test" );
+        loginParam.put("username", "test");
+        loginParam.put("password", "test");
     }
 
     @Test

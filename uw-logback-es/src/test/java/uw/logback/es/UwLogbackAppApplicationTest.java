@@ -14,7 +14,6 @@ import java.io.StringWriter;
 /**
  * 测试日志输出
  *
- * 
  * @since 2018-07-25
  */
 public class UwLogbackAppApplicationTest {

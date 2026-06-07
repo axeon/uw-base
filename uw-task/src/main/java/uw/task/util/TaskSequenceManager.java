@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class TaskSequenceManager {
 
-    private static final Logger log = LoggerFactory.getLogger( TaskSequenceManager.class);
+    private static final Logger log = LoggerFactory.getLogger(TaskSequenceManager.class);
 
     private static final String REDIS_TAG = "uw-task-seq:";
 

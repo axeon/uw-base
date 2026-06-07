@@ -23,18 +23,18 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)//该状态为每个线程独享
 @Measurement(iterations = 100, time = 3)
 public class SeqBenchmark {
-    private static final Logger log = LoggerFactory.getLogger( SeqBenchmark.class );
+    private static final Logger log = LoggerFactory.getLogger(SeqBenchmark.class);
     private ConfigurableApplicationContext context;
-    private static Map<Long,String> idMap = new ConcurrentHashMap();
+    private static Map<Long, String> idMap = new ConcurrentHashMap();
 
     private static final String seqKey = "test8";
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
-                .include( SeqBenchmark.class.getSimpleName() )
-                .forks( 3)
+                .include(SeqBenchmark.class.getSimpleName())
+                .forks(3)
                 .build();
-        new Runner( opt ).run();
+        new Runner(opt).run();
     }
 
 //    @Benchmark
@@ -80,24 +80,24 @@ public class SeqBenchmark {
     @Benchmark
     @CompilerControl(CompilerControl.Mode.INLINE)
     public static void checkMixedSeq() {
-        long seq = FusionSequenceFactory.getSequenceId( seqKey );
-        if (idMap.containsKey( seq )){
-            log.warn( "FusionSequenceFactory seq[{}]和[{}]冲突！",seq,idMap.get( seq ) );
-        }else{
-            idMap.put( seq,"FusionSequenceFactory");
+        long seq = FusionSequenceFactory.getSequenceId(seqKey);
+        if (idMap.containsKey(seq)) {
+            log.warn("FusionSequenceFactory seq[{}]和[{}]冲突！", seq, idMap.get(seq));
+        } else {
+            idMap.put(seq, "FusionSequenceFactory");
         }
-        seq = DaoSequenceFactory.getSequenceId( seqKey );
-        if (idMap.containsKey( seq )){
-            log.warn( "DaoSequenceFactory seq[{}]和[{}]冲突！",seq,idMap.get( seq ) );
-        }else{
-            idMap.put( seq,"DaoSequenceFactory");
+        seq = DaoSequenceFactory.getSequenceId(seqKey);
+        if (idMap.containsKey(seq)) {
+            log.warn("DaoSequenceFactory seq[{}]和[{}]冲突！", seq, idMap.get(seq));
+        } else {
+            idMap.put(seq, "DaoSequenceFactory");
         }
     }
 
 
     @Setup
     public void init() {
-        context = SpringApplication.run( UwDaoTestApplication.class );
+        context = SpringApplication.run(UwDaoTestApplication.class);
     }
 
 

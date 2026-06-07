@@ -31,10 +31,10 @@ public class DataNode {
      */
     public DataNode(String dataNodeKey) {
         if (dataNodeKey != null) {
-            int splitPos = dataNodeKey.indexOf( '.' );
+            int splitPos = dataNodeKey.indexOf('.');
             if (splitPos > -1) {
-                clusterId = Long.parseLong( dataNodeKey.substring( 0, splitPos ) );
-                database = dataNodeKey.substring( splitPos + 1 );
+                clusterId = Long.parseLong(dataNodeKey.substring(0, splitPos));
+                database = dataNodeKey.substring(splitPos + 1);
             }
         }
     }
@@ -58,6 +58,6 @@ public class DataNode {
 
     @Override
     public String toString() {
-        return new StringBuilder().append( this.clusterId ).append( '.' ).append( database ).toString();
+        return new StringBuilder().append(this.clusterId).append('.').append(database).toString();
     }
 }

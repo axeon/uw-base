@@ -12,12 +12,12 @@ public enum RunnerDelayType {
     /**
      * 非延迟任务类型。
      */
-    OFF(0,"非延迟任务类型"),
+    OFF(0, "非延迟任务类型"),
 
     /**
      * 延迟任务类型。
      */
-    ON(1,"延迟任务类型");
+    ON(1, "延迟任务类型");
 
     private final int value;
 

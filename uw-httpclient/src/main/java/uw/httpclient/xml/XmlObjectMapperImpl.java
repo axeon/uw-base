@@ -34,16 +34,16 @@ public class XmlObjectMapperImpl implements DataObjectMapper {
      */
     @Override
     public JavaType constructParametricType(Class<?> parametrized, Class<?>... parameterClasses) {
-        return xmlMapper.getTypeFactory().constructParametricType( parametrized, parameterClasses );
+        return xmlMapper.getTypeFactory().constructParametricType(parametrized, parameterClasses);
     }
 
     @Override
     public <T> T parse(String content, Class<T> classType) throws DataMapperException {
         if (classType == String.class) return (T) content;
         try {
-            return (T) xmlMapper.readValue( content, classType );
+            return (T) xmlMapper.readValue(content, classType);
         } catch (Exception e) {
-            throw new DataMapperException( e.getMessage() + ",data: " + content, e );
+            throw new DataMapperException(e.getMessage() + ",data: " + content, e);
         }
     }
 
@@ -51,27 +51,27 @@ public class XmlObjectMapperImpl implements DataObjectMapper {
     @Override
     public <T> T parse(String content, TypeReference<T> typeRef) throws DataMapperException {
         try {
-            return (T) xmlMapper.readValue( content, typeRef );
+            return (T) xmlMapper.readValue(content, typeRef);
         } catch (Exception e) {
-            throw new DataMapperException( e.getMessage() + ",data: " + content, e );
+            throw new DataMapperException(e.getMessage() + ",data: " + content, e);
         }
     }
 
     @Override
     public <T> T parse(String content, JavaType type) throws DataMapperException {
         try {
-            return xmlMapper.readValue( content, type );
+            return xmlMapper.readValue(content, type);
         } catch (Exception e) {
-            throw new DataMapperException( e.getMessage() + ",data: " + content, e );
+            throw new DataMapperException(e.getMessage() + ",data: " + content, e);
         }
     }
 
     @Override
     public void write(OutputStream out, Object value) throws DataMapperException {
         try {
-            xmlMapper.writeValue( out, value );
+            xmlMapper.writeValue(out, value);
         } catch (Exception e) {
-            throw new DataMapperException( e.getMessage() + ",data: " + value, e );
+            throw new DataMapperException(e.getMessage() + ",data: " + value, e);
         }
     }
 
@@ -79,9 +79,9 @@ public class XmlObjectMapperImpl implements DataObjectMapper {
     public String toString(Object object) throws DataMapperException {
         if (object instanceof String string) return string;
         try {
-            return xmlMapper.writeValueAsString( object );
+            return xmlMapper.writeValueAsString(object);
         } catch (Throwable t) {
-            throw new DataMapperException( t );
+            throw new DataMapperException(t);
         }
     }
 

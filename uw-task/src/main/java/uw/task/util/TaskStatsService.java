@@ -31,7 +31,7 @@ public class TaskStatsService {
      * runner数据存储map。
      */
     private static final ConcurrentHashMap<Long, TaskRunnerStats> RUNNER_STATS_MAP = new ConcurrentHashMap<>();
-    
+
 
     /**
      * 更新cronerMetrics。
@@ -68,8 +68,8 @@ public class TaskStatsService {
     public static List<TaskCronerStats> getCronerStats() {
         long stamp = CRONER_STAMPED_LOCK.writeLock();
         try {
-            List<TaskCronerStats> list = new ArrayList<>( CRONER_STATS_MAP.size());
-            list.addAll( CRONER_STATS_MAP.values());
+            List<TaskCronerStats> list = new ArrayList<>(CRONER_STATS_MAP.size());
+            list.addAll(CRONER_STATS_MAP.values());
             CRONER_STATS_MAP.clear();
             return list;
         } finally {
@@ -114,8 +114,8 @@ public class TaskStatsService {
     public static List<TaskRunnerStats> getRunnerStats() {
         long stamp = RUNNER_STAMPED_LOCK.writeLock();
         try {
-            List<TaskRunnerStats> list = new ArrayList<>( RUNNER_STATS_MAP.size());
-            list.addAll( RUNNER_STATS_MAP.values());
+            List<TaskRunnerStats> list = new ArrayList<>(RUNNER_STATS_MAP.size());
+            list.addAll(RUNNER_STATS_MAP.values());
             RUNNER_STATS_MAP.clear();
             return list;
         } finally {

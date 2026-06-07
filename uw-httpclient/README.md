@@ -1,6 +1,7 @@
 # uw-httpclient
 
 #### 项目简介
+
 uw-httpclient针对接口业务需求设计的一个HttpClient库。
 当前使用okhttp作为底层实现，将来可以切换为AHC、httpclient5。
 
@@ -25,6 +26,7 @@ uw-httpclient针对接口业务需求设计的一个HttpClient库。
 ```
 
 ##### 常用入口
+
 - JsonInterfaceHelper 基于JSON的接口帮助入口。
 
 - XmlInterfaceHelper 基于XML的接口帮助入口。
@@ -46,6 +48,7 @@ public JsonInterfaceHelper(HttpConfig httpConfig, Class<? extends HttpData> http
 ```
 
 ##### HttpConfig配置
+
 HttpConfig提供了常用的配置参数，并支持通过Builder方式进行构建。
 常用的参数说明如下：
 
@@ -90,19 +93,23 @@ private final int maxIdleConnections;
  */
 private final long keepAliveTimeout;
 ```
+
 ##### HttpData 日志记录
+
 - uw-httpclient使用HttpData对象来记录请求->结果日志。可以记录包括请求地址，请求方法，请求时间，请求内容，返回状态码，返回结果等相关数据。
 - 为了减少无异议的copy，开发者可以自定义HttpData类型的实现类直接作为日志类使用，类库提供了HttpDefaultData的默认实现。
 - 为了兼容二进制数据和文本数据，HttpData中优先设置ResponseBytes字段，推荐当访问ResponseData的时候才转化为String类型，避免不必要的转换。
 - HttpDataLogLevel可以控制日志记录的范围，可以设定是否记录RequestData，默认不记录请求数据。
 
 ##### HttpDataProcessor 数据处理器
+
 - HttpDataFilter用于处理请求数据和返回数据。
 
 - 在特定的场景下，请求数据和返回数据需要加解密，此时可以HttpDataFilter中进行处理，让代码更整洁。
 - 另外，最重要的场景是：可以在processLog中处理日志发送。
 
 ##### 主要方法介绍
+
 - getForData 用于get方法获取HttpData，同时也可以用于下载二进制数据，包括图片和文件。
 
 - getForEntity 用于get方法获取HttpEntity，同时包含HttpData和序列化后的对象。

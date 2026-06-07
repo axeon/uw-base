@@ -18,15 +18,15 @@ public class ShardingTableUtils {
     /**
      * DateTimeFormatter对象（包含年月日）.
      */
-    public static final DateTimeFormatter FORMATTER_DAY = DateTimeFormatter.ofPattern( "yyyyMMdd" );
+    public static final DateTimeFormatter FORMATTER_DAY = DateTimeFormatter.ofPattern("yyyyMMdd");
     /**
      * DateTimeFormatter对象（包含年月）.
      */
-    public static final DateTimeFormatter FORMATTER_MONTH = DateTimeFormatter.ofPattern( "yyyyMM" );
+    public static final DateTimeFormatter FORMATTER_MONTH = DateTimeFormatter.ofPattern("yyyyMM");
     /**
      * DateTimeFormatter对象（包含年）.
      */
-    public static final DateTimeFormatter FORMATTER_YEAR = DateTimeFormatter.ofPattern( "yyyy" );
+    public static final DateTimeFormatter FORMATTER_YEAR = DateTimeFormatter.ofPattern("yyyy");
 
     /**
      * ZoneId对象.
@@ -41,9 +41,9 @@ public class ShardingTableUtils {
      * @return 表名
      */
     public static String getTableNameById(String tableName, long id) {
-        TableShardConfig config = DaoConfigManager.getTableShardingConfig( tableName );
-        if (config != null && "id".equalsIgnoreCase( config.getShardType() )) {
-            long batchSize = Long.parseLong( config.getShardRule() );
+        TableShardConfig config = DaoConfigManager.getTableShardingConfig(tableName);
+        if (config != null && "id".equalsIgnoreCase(config.getShardType())) {
+            long batchSize = Long.parseLong(config.getShardRule());
             return tableName + "_" + (id / batchSize);
         }
         return tableName;
@@ -57,15 +57,15 @@ public class ShardingTableUtils {
      * @return 表名
      */
     public static String getTableNameByDate(String tableName, LocalDate date) {
-        TableShardConfig config = DaoConfigManager.getTableShardingConfig( tableName );
-        if (config != null && "date".equalsIgnoreCase( config.getShardType() )) {
+        TableShardConfig config = DaoConfigManager.getTableShardingConfig(tableName);
+        if (config != null && "date".equalsIgnoreCase(config.getShardType())) {
             switch (config.getShardRule()) {
                 case "day":
-                    return tableName + "_" + date.format( FORMATTER_DAY );
+                    return tableName + "_" + date.format(FORMATTER_DAY);
                 case "month":
-                    return tableName + "_" + date.format( FORMATTER_MONTH );
+                    return tableName + "_" + date.format(FORMATTER_MONTH);
                 case "year":
-                    return tableName + "_" + date.format( FORMATTER_YEAR );
+                    return tableName + "_" + date.format(FORMATTER_YEAR);
                 default:
                     return tableName;
             }
@@ -82,7 +82,7 @@ public class ShardingTableUtils {
      */
     public static String getTableNameByDate(String tableName, Date date) {
         // withNano=0是因为mysql精度太差。。。导致有时候四舍五入差了一秒
-        return getTableNameByDate( tableName, date.toInstant().atZone( defaultZoneId ).withNano( 0 ).toLocalDate() );
+        return getTableNameByDate(tableName, date.toInstant().atZone(defaultZoneId).withNano(0).toLocalDate());
     }
 
 }

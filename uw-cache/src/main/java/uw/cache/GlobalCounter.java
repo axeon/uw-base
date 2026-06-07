@@ -16,7 +16,7 @@ import java.util.Set;
  */
 public class GlobalCounter {
 
-    private static final Logger log = LoggerFactory.getLogger( GlobalCounter.class );
+    private static final Logger log = LoggerFactory.getLogger(GlobalCounter.class);
 
     /**
      * redis前缀。
@@ -42,7 +42,7 @@ public class GlobalCounter {
      * @return 计数数值
      */
     public static long increment(Class<?> entityType, Object counterId, long incrementNum) {
-        return increment( entityType.getSimpleName(), counterId, incrementNum );
+        return increment(entityType.getSimpleName(), counterId, incrementNum);
     }
 
     /**
@@ -54,7 +54,7 @@ public class GlobalCounter {
      * @return 计数数值
      */
     public static long increment(String counterType, Object counterId, long incrementNum) {
-        Long count = longCacheRedisTemplate.opsForValue().increment( RedisKeyUtils.buildTypeId( REDIS_PREFIX, counterType, counterId ), incrementNum );
+        Long count = longCacheRedisTemplate.opsForValue().increment(RedisKeyUtils.buildTypeId(REDIS_PREFIX, counterType, counterId), incrementNum);
         return count != null ? count : -1;
     }
 
@@ -67,7 +67,7 @@ public class GlobalCounter {
      * @return 计数数值
      */
     public static long decrement(Class<?> entityType, Object counterId, long decrementNum) {
-        return decrement( entityType.getSimpleName(), counterId, decrementNum );
+        return decrement(entityType.getSimpleName(), counterId, decrementNum);
     }
 
     /**
@@ -79,7 +79,7 @@ public class GlobalCounter {
      * @return 计数数值
      */
     public static long decrement(String counterType, Object counterId, long decrementNum) {
-        Long count = longCacheRedisTemplate.opsForValue().decrement( RedisKeyUtils.buildTypeId( REDIS_PREFIX, counterType, counterId ), decrementNum );
+        Long count = longCacheRedisTemplate.opsForValue().decrement(RedisKeyUtils.buildTypeId(REDIS_PREFIX, counterType, counterId), decrementNum);
         return count != null ? count : -1;
     }
 
@@ -91,7 +91,7 @@ public class GlobalCounter {
      * @param num        数值
      */
     public static void set(Class<?> entityType, Object counterId, long num) {
-        set( entityType.getSimpleName(), counterId, num );
+        set(entityType.getSimpleName(), counterId, num);
     }
 
     /**
@@ -102,7 +102,7 @@ public class GlobalCounter {
      * @param num         数值
      */
     public static void set(String counterType, Object counterId, long num) {
-        longCacheRedisTemplate.opsForValue().set( RedisKeyUtils.buildTypeId( REDIS_PREFIX, counterType, counterId ), num );
+        longCacheRedisTemplate.opsForValue().set(RedisKeyUtils.buildTypeId(REDIS_PREFIX, counterType, counterId), num);
     }
 
     /**
@@ -114,7 +114,7 @@ public class GlobalCounter {
      * @param num        数值
      */
     public static boolean setIfAbsent(Class<?> entityType, Object counterId, long num) {
-        return setIfAbsent( entityType.getSimpleName(), counterId, num );
+        return setIfAbsent(entityType.getSimpleName(), counterId, num);
     }
 
     /**
@@ -126,7 +126,7 @@ public class GlobalCounter {
      * @param num         数值
      */
     public static boolean setIfAbsent(String counterType, Object counterId, long num) {
-        return Boolean.TRUE.equals( longCacheRedisTemplate.opsForValue().setIfAbsent( RedisKeyUtils.buildTypeId( REDIS_PREFIX, counterType, counterId ), num ) );
+        return Boolean.TRUE.equals(longCacheRedisTemplate.opsForValue().setIfAbsent(RedisKeyUtils.buildTypeId(REDIS_PREFIX, counterType, counterId), num));
     }
 
     /**
@@ -137,7 +137,7 @@ public class GlobalCounter {
      * @return 计数数值
      */
     public static long get(Class<?> entityType, Object counterId) {
-        return get( entityType.getSimpleName(), counterId );
+        return get(entityType.getSimpleName(), counterId);
     }
 
     /**
@@ -148,7 +148,7 @@ public class GlobalCounter {
      * @return 计数数值
      */
     public static long get(String counterType, Object counterId) {
-        Long count = longCacheRedisTemplate.opsForValue().get( RedisKeyUtils.buildTypeId( REDIS_PREFIX, counterType, counterId ) );
+        Long count = longCacheRedisTemplate.opsForValue().get(RedisKeyUtils.buildTypeId(REDIS_PREFIX, counterType, counterId));
         return count != null ? count : 0;
     }
 
@@ -160,7 +160,7 @@ public class GlobalCounter {
      * @return 是否成功
      */
     public static boolean delete(Class<?> entityType, Object counterId) {
-        return delete( entityType.getSimpleName(), counterId );
+        return delete(entityType.getSimpleName(), counterId);
     }
 
     /**
@@ -171,7 +171,7 @@ public class GlobalCounter {
      * @return 是否成功
      */
     public static boolean delete(String counterType, Object counterId) {
-        return Boolean.TRUE.equals( longCacheRedisTemplate.delete( RedisKeyUtils.buildTypeId( REDIS_PREFIX, counterType, counterId ) ) );
+        return Boolean.TRUE.equals(longCacheRedisTemplate.delete(RedisKeyUtils.buildTypeId(REDIS_PREFIX, counterType, counterId)));
     }
 
     /**
@@ -182,7 +182,7 @@ public class GlobalCounter {
      * @return 计数数值
      */
     public static long getAndDelete(Class<?> entityType, Object counterId) {
-        return getAndDelete( entityType.getSimpleName(), counterId );
+        return getAndDelete(entityType.getSimpleName(), counterId);
     }
 
     /**
@@ -193,14 +193,15 @@ public class GlobalCounter {
      * @return 计数数值
      */
     public static long getAndDelete(String counterType, Object counterId) {
-        Long count = longCacheRedisTemplate.opsForValue().getAndDelete( RedisKeyUtils.buildTypeId( REDIS_PREFIX, counterType, counterId ) );
+        Long count = longCacheRedisTemplate.opsForValue().getAndDelete(RedisKeyUtils.buildTypeId(REDIS_PREFIX, counterType, counterId));
         return count != null ? count : -1;
     }
 
     /**
      * 获取缓存中的所有key。
+     *
      * @param entityType 缓存对象类(主要用于构造cacheName)
-     * @param keyPrefix key前缀，请注意key最后不用加"*"
+     * @param keyPrefix  key前缀，请注意key最后不用加"*"
      * @return key集合
      */
     public static Set<String> keys(Class<?> entityType, String keyPrefix) {
@@ -211,7 +212,7 @@ public class GlobalCounter {
      * 获取缓存中的所有key。
      *
      * @param counterType 缓存名
-     * @param keyPrefix key前缀，请注意key最后不用加"*",全部清除用*即可。
+     * @param keyPrefix   key前缀，请注意key最后不用加"*",全部清除用*即可。
      * @return key集合
      */
     public static Set<String> keys(String counterType, String keyPrefix) {

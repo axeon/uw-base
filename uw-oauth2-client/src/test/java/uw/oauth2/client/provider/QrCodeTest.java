@@ -4,7 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uw.oauth2.client.conf.OAuth2ClientProperties;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 二维码登录功能测试
@@ -39,11 +39,11 @@ class QrCodeTest {
 
     @Test
     void testWechatQrCodeGeneration() {
-        WechatOAuth2Provider provider = new WechatOAuth2Provider("wechat", wechatConfig, redirectUri,qrCodeUrl);
+        WechatOAuth2Provider provider = new WechatOAuth2Provider("wechat", wechatConfig, redirectUri, qrCodeUrl);
         String qrCodeUrl = provider.buildQrCode();
-        
+
         System.out.println("Generated WeChat QR Code URL: " + qrCodeUrl);
-        
+
         // 验证URL是否使用了二维码特定的URI
         assertTrue(qrCodeUrl.contains("qrconnect"), "URL should use QR code specific URI");
         assertTrue(qrCodeUrl.contains("appid=wx1234567890"), "URL should contain appid");
@@ -55,11 +55,11 @@ class QrCodeTest {
 
     @Test
     void testAlipayQrCodeGeneration() {
-        AlipayOAuth2Provider provider = new AlipayOAuth2Provider("alipay", alipayConfig, redirectUri,qrCodeUrl);
+        AlipayOAuth2Provider provider = new AlipayOAuth2Provider("alipay", alipayConfig, redirectUri, qrCodeUrl);
         String qrCodeUrl = provider.buildQrCode();
-        
+
         System.out.println("Generated Alipay QR Code URL: " + qrCodeUrl);
-        
+
         // 验证URL是否使用了二维码特定的URI
         assertTrue(qrCodeUrl.contains("publicAppAuthorize.htm"), "URL should use QR code specific URI");
         assertTrue(qrCodeUrl.contains("app_id=2021000000000000"), "URL should contain app_id");

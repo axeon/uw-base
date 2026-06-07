@@ -16,7 +16,7 @@ public class AiTranslateMapParam extends AiTranslateBaseParam {
      * 待翻译的文本Map。
      */
     @Schema(title = "待翻译的文本Map", description = "待翻译的文本Map。key是变量名，value是要翻译的文本")
-    private LinkedHashMap<String,String> textMap;
+    private LinkedHashMap<String, String> textMap;
 
     public AiTranslateMapParam() {
     }
@@ -73,7 +73,7 @@ public class AiTranslateMapParam extends AiTranslateBaseParam {
         /**
          * 绑定授权信息。
          */
-        public Builder bindAuthInfo(){
+        public Builder bindAuthInfo() {
             this.saasId = AuthServiceHelper.getSaasId();
             this.userId = AuthServiceHelper.getUserId();
             this.userType = AuthServiceHelper.getUserType();

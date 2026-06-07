@@ -22,23 +22,23 @@ public class SSLSocketFactoryTest {
 
     @Test
     public void testSSLSocket() throws Exception {
-        System.out.println( httpInterface.getForData( "https://express.tt.usj.co.jp/app/interface_cmp/A19/ticket/info" ) );
+        System.out.println(httpInterface.getForData("https://express.tt.usj.co.jp/app/interface_cmp/A19/ticket/info"));
     }
 
     private static HttpInterface buildHttpInterface() {
         try {
-            X509TrustManager trustManager = new X509TrustManagerImpl( new File( "/home/axeon/express.cer" ) );
-            SSLContext sslContext = SSLContext.getInstance( "TLS" );
-            sslContext.init( null, new TrustManager[]{trustManager}, null );
-            return new JsonInterfaceHelper( HttpConfig.builder().sslSocketFactory( sslContext.getSocketFactory() ).trustManager( trustManager )
+            X509TrustManager trustManager = new X509TrustManagerImpl(new File("/home/axeon/express.cer"));
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, new TrustManager[]{trustManager}, null);
+            return new JsonInterfaceHelper(HttpConfig.builder().sslSocketFactory(sslContext.getSocketFactory()).trustManager(trustManager)
                     /**
                      * 主机名称验证器
-                     */.hostnameVerifier( new HostnameVerifier() {
+                     */.hostnameVerifier(new HostnameVerifier() {
                         @Override
                         public boolean verify(String hostname, SSLSession session) {
                             return true;
                         }
-                    } ).build() );
+                    }).build());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -56,10 +56,10 @@ public class SSLSocketFactoryTest {
         public X509TrustManagerImpl(File... certificateFiles) {
             try {
                 this.certificates = new X509Certificate[certificateFiles.length];
-                CertificateFactory certificateFactory = CertificateFactory.getInstance( "X.509" );
+                CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
                 int i = 0;
                 for (File file : certificateFiles) {
-                    certificates[i] = (X509Certificate) certificateFactory.generateCertificate( new FileInputStream( file ) );
+                    certificates[i] = (X509Certificate) certificateFactory.generateCertificate(new FileInputStream(file));
                 }
             } catch (Exception e) {
                 e.printStackTrace();

@@ -70,7 +70,7 @@ public class DataList<T> implements Iterable<T>, Serializable {
      */
     @JsonProperty
     @Schema(title = "结果集", description = "结果集")
-    private List<T> results = Collections.emptyList();
+    private List<T> list = Collections.emptyList();
 
     /**
      * 构造函数.
@@ -82,18 +82,18 @@ public class DataList<T> implements Iterable<T>, Serializable {
     /**
      * DataList构造器.
      *
-     * @param results    结果集
+     * @param list       结果集
      * @param startIndex 开始位置
      * @param resultNum  每页大小
      * @param sizeAll    所有的数量
      */
-    public DataList(List<T> results, int startIndex, int resultNum, int sizeAll) {
-        this.results = results;
+    public DataList(List<T> list, int startIndex, int resultNum, int sizeAll) {
+        this.list = list;
 
         this.startIndex = startIndex;
         this.resultNum = resultNum;
-        if (this.results != null) {
-            this.size = this.results.size();
+        if (this.list != null) {
+            this.size = this.list.size();
         }
         // 计算页数信息
         calcPages(sizeAll);
@@ -129,8 +129,8 @@ public class DataList<T> implements Iterable<T>, Serializable {
      * @return value object数组指定的对象
      */
     public T get(int index) {
-        if (results != null) {
-            return results.get(index);
+        if (list != null) {
+            return list.get(index);
         } else {
             return null;
         }
@@ -196,10 +196,10 @@ public class DataList<T> implements Iterable<T>, Serializable {
      * @return 结果集
      */
     public List<T> results() {
-        if (this.results == null) {
+        if (this.list == null) {
             return Collections.emptyList();
         } else {
-            return this.results;
+            return this.list;
         }
     }
 
@@ -209,8 +209,8 @@ public class DataList<T> implements Iterable<T>, Serializable {
      * @param list objects集合
      */
     public void reset(List<T> list) {
-        this.results = list;
-        if (this.results == null) {
+        this.list = list;
+        if (this.list == null) {
             this.size = 0;
         } else {
             if (this.size != list.size()) {
@@ -226,10 +226,10 @@ public class DataList<T> implements Iterable<T>, Serializable {
      */
     @Override
     public Iterator<T> iterator() {
-        if (this.results == null) {
+        if (this.list == null) {
             return Collections.emptyIterator();
         } else {
-            return this.results.iterator();
+            return this.list.iterator();
         }
     }
 
@@ -239,10 +239,10 @@ public class DataList<T> implements Iterable<T>, Serializable {
      * @return
      */
     public Stream<T> stream() {
-        if (this.results == null) {
+        if (this.list == null) {
             return Stream.empty();
         } else {
-            return this.results.stream();
+            return this.list.stream();
         }
     }
 

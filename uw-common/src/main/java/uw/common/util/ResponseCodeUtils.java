@@ -49,9 +49,10 @@ public class ResponseCodeUtils {
      * 将实现 {@link ResponseCode} 接口的枚举类的所有枚举项转换为 Properties。
      * Key为 {@link ResponseCode#getFullCode()}，Value为 {@link ResponseCode#getMessage()}。
      * 然后输出到一个String中。
+     *
      * @param enumClass
-     * @return
      * @param <E>
+     * @return
      */
     public static <E extends Enum<E> & ResponseCode> String toPropertyString(Class<E> enumClass) {
         Properties properties = toProperties(enumClass);

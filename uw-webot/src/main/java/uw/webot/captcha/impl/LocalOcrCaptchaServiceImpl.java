@@ -2,8 +2,8 @@ package uw.webot.captcha.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.webot.captcha.CaptchaService;
 import uw.webot.captcha.CaptchaConfig;
+import uw.webot.captcha.CaptchaService;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -148,10 +148,10 @@ public class LocalOcrCaptchaServiceImpl implements CaptchaService {
      * 解决GeeTest。
      * 本地OCR服务不支持此功能。
      *
-     * @param gt         GT参数
-     * @param challenge  Challenge参数
-     * @param apiServer  API服务器
-     * @param pageUrl    页面URL
+     * @param gt        GT参数
+     * @param challenge Challenge参数
+     * @param apiServer API服务器
+     * @param pageUrl   页面URL
      * @return 识别结果（失败）
      */
     @Override

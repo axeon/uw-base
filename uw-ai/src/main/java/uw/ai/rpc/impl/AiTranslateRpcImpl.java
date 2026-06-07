@@ -34,6 +34,7 @@ public class AiTranslateRpcImpl implements AiTranslateRpc {
 
     /**
      * 翻译列表实现。
+     *
      * @param param 翻译参数
      * @return 翻译结果数组
      */
@@ -51,7 +52,8 @@ public class AiTranslateRpcImpl implements AiTranslateRpc {
                 url,
                 HttpMethod.POST,
                 new HttpEntity<>(param),
-                new ParameterizedTypeReference<ResponseData<AiTranslateResultData[]>>() {}
+                new ParameterizedTypeReference<ResponseData<AiTranslateResultData[]>>() {
+                }
         );
 
         return response.getBody();
@@ -59,6 +61,7 @@ public class AiTranslateRpcImpl implements AiTranslateRpc {
 
     /**
      * 翻译Map实现。
+     *
      * @param param 翻译参数
      * @return 翻译结果数组
      */
@@ -76,7 +79,8 @@ public class AiTranslateRpcImpl implements AiTranslateRpc {
                 url,
                 HttpMethod.POST,
                 new HttpEntity<>(param),
-                new ParameterizedTypeReference<ResponseData<AiTranslateResultData[]>>() {}
+                new ParameterizedTypeReference<ResponseData<AiTranslateResultData[]>>() {
+                }
         );
 
         return response.getBody();

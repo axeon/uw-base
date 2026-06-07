@@ -66,7 +66,7 @@ public class AuthClientProperties {
     /**
      * 密码
      */
-    private String loginSecret ;
+    private String loginSecret;
 
     /**
      * 用户类型，默认为RPC用户

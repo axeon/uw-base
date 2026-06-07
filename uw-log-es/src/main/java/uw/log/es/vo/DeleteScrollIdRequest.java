@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * 删除滚动ID的请求参数.
+ *
  * @since 2019-12-16
  **/
 @JsonIgnoreProperties(ignoreUnknown = true)

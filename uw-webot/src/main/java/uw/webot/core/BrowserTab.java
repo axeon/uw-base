@@ -1,13 +1,14 @@
 package uw.webot.core;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Response;
 import com.microsoft.playwright.options.LoadState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.webot.WebotSession;
 import uw.webot.proxy.ProxyConfig;
-import uw.webot.stealth.StealthConfig;
-import uw.webot.stealth.StealthManager;
 
 import java.io.Closeable;
 import java.util.Map;
@@ -289,7 +290,7 @@ public class BrowserTab implements Closeable {
      * @return 响应对象
      */
     public Response navigate(String url) {
-        return this.execute((context, page)-> page.navigate(url));
+        return this.execute((context, page) -> page.navigate(url));
     }
 
     /**
@@ -385,7 +386,7 @@ public class BrowserTab implements Closeable {
      * 在浏览器上下文中执行JavaScript（带参数）。
      *
      * @param expression JavaScript表达式
-     * @param arg 传递给表达式的参数
+     * @param arg        传递给表达式的参数
      * @return 执行结果
      */
     public Object evaluate(String expression, Object arg) {

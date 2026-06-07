@@ -45,7 +45,7 @@ public class BitConfigUtils {
      * @param configType
      */
     public final static int off(int config, int configType) {
-        if (isOn( config, configType )) {
+        if (isOn(config, configType)) {
             return config ^ (1 << configType);
         }
         return config;
@@ -88,7 +88,7 @@ public class BitConfigUtils {
      * @param configType
      */
     public final static long off(long config, int configType) {
-        if (isOn( config, configType )) {
+        if (isOn(config, configType)) {
             return config ^ (1L << configType);
         }
         return config;
@@ -135,7 +135,7 @@ public class BitConfigUtils {
         int bitPos = 0;
         while (config != 0) {
             if ((config & 0x01) != 0) { // 检查最低位是否为1
-                posList.add( bitPos ); // 将当前位的位置添加到列表的开头
+                posList.add(bitPos); // 将当前位的位置添加到列表的开头
             }
             config >>>= 1; // 将 num 右移一位
             bitPos++;

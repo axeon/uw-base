@@ -34,8 +34,8 @@ public class AlipayOAuth2Provider extends AbstractOAuth2Provider {
     /**
      * 获取token
      *
-     * @param authCode 授权码
-     * @param authStateId  state
+     * @param authCode    授权码
+     * @param authStateId state
      * @param extParam
      * @return token
      */

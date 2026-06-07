@@ -51,12 +51,14 @@ public class AuthServiceHelper {
     private static final Expiry<String, AuthTokenData> cacheExpiryPolicy = new Expiry<>() {
         @Override
         public long expireAfterCreate(String key, AuthTokenData authToken, long currentTime) {
-            return TimeUnit.MILLISECONDS.toNanos(authToken.getExpireAt() - SystemClock.now());
+            long ttlMillis = authToken.getExpireAt() - SystemClock.now();
+            return TimeUnit.MILLISECONDS.toNanos(Math.max(0L, ttlMillis));
         }
 
         @Override
         public long expireAfterUpdate(String key, AuthTokenData authToken, long currentTime, long currentDuration) {
-            return TimeUnit.MILLISECONDS.toNanos(authToken.getExpireAt() - SystemClock.now());
+            long ttlMillis = authToken.getExpireAt() - SystemClock.now();
+            return TimeUnit.MILLISECONDS.toNanos(Math.max(0L, ttlMillis));
         }
 
         @Override

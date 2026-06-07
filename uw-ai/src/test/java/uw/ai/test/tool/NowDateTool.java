@@ -48,7 +48,7 @@ public class NowDateTool implements uw.ai.tool.AiTool<NowDateTool.ToolParam, Res
      */
     @Override
     public ResponseData<String> apply(ToolParam toolParam) {
-        return ResponseData.success( LocalDateTime.now().toString() );
+        return ResponseData.success(LocalDateTime.now().toString());
     }
 
     /**

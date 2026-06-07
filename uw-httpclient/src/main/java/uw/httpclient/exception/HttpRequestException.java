@@ -14,14 +14,14 @@ public class HttpRequestException extends TaskPartnerException {
     }
 
     public HttpRequestException(String msg) {
-        super( msg );
+        super(msg);
     }
 
     public HttpRequestException(Throwable nestedThrowable) {
-        super( nestedThrowable );
+        super(nestedThrowable);
     }
 
     public HttpRequestException(String msg, Throwable nestedThrowable) {
-        super( msg, nestedThrowable );
+        super(msg, nestedThrowable);
     }
 }

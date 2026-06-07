@@ -8,19 +8,19 @@ import uw.httpclient.util.SSLContextUtils;
 
 public class TestInternalSSLCert {
 
-    private static final HttpInterface JSON_HTTP_INTERFACE = new JsonInterfaceHelper( HttpConfig.builder()
-            .connectTimeout( 30000 )
-            .readTimeout( 30000 )
-            .writeTimeout( 30000 )
-            .trustManager( SSLContextUtils.getTrustAllManager() ).sslSocketFactory( SSLContextUtils.getTruestAllSocketFactory())
-            .hostnameVerifier( (host, session) -> true )
-            .build() );
+    private static final HttpInterface JSON_HTTP_INTERFACE = new JsonInterfaceHelper(HttpConfig.builder()
+            .connectTimeout(30000)
+            .readTimeout(30000)
+            .writeTimeout(30000)
+            .trustManager(SSLContextUtils.getTrustAllManager()).sslSocketFactory(SSLContextUtils.getTruestAllSocketFactory())
+            .hostnameVerifier((host, session) -> true)
+            .build());
 
 
     public static void main(String[] args) {
-        HttpData httpData = JSON_HTTP_INTERFACE.getForData( "https://es-bjo2r42o-internal.private.tencentelasticsearch.com:9200" );
+        HttpData httpData = JSON_HTTP_INTERFACE.getForData("https://es-bjo2r42o-internal.private.tencentelasticsearch.com:9200");
 
-        System.out.println( httpData );
+        System.out.println(httpData);
 
     }
 }

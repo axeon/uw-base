@@ -33,7 +33,8 @@ public class AiConfigRpcImpl implements AiConfigRpc {
                 uwAiProperties.getAiCenterHost() + "/rpc/config/listModelConfig",
                 HttpMethod.GET,
                 null,
-                new ParameterizedTypeReference<ResponseData<List<AiModelConfigVo>>>() {}
+                new ParameterizedTypeReference<ResponseData<List<AiModelConfigVo>>>() {
+                }
         ).getBody();
     }
 }

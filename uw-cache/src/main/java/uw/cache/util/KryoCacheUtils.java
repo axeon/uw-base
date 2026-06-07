@@ -87,7 +87,7 @@ public class KryoCacheUtils {
      * @return
      */
     public static <T> T deserialize(byte[] data, Class<T> cls) {
-        if (data == null|| data.length == 0){
+        if (data == null || data.length == 0) {
             return null;
         }
         T value = null;
@@ -138,7 +138,7 @@ public class KryoCacheUtils {
      * @return
      */
     public static <T> CacheValueWrapper<T> deserializeValueWrapper(byte[] data, Class<T> cls) {
-        if (data == null|| data.length == 0){
+        if (data == null || data.length == 0) {
             return null;
         }
         CacheValueWrapper<T> valueWrapper = new CacheValueWrapper<>();
@@ -147,7 +147,7 @@ public class KryoCacheUtils {
         try {
             long expiredAt = input.readLong();
             valueWrapper.setExpiredAt(expiredAt);
-            if(!input.end()) {
+            if (!input.end()) {
                 T value = kryo.readObject(input, cls);
                 valueWrapper.setValue(value);
             }

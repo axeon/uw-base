@@ -12,7 +12,6 @@ import uw.dao.dialect.DialectManager;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -27,12 +26,12 @@ import static uw.dao.conf.DaoConfigManager.ROOT_CONN_NAME;
  */
 public final class ConnectionManager {
 
-    private static final Logger logger = LoggerFactory.getLogger( ConnectionManager.class );
+    private static final Logger logger = LoggerFactory.getLogger(ConnectionManager.class);
 
     /**
      * 连接池方言
      */
-    private static final Map<String, Dialect> SOURCE_DIALECT_MAP = new HashMap<String, Dialect>();
+    private static final Map<String, Dialect> SOURCE_DIALECT_MAP = new ConcurrentHashMap<>();
 
     /**
      * 数据源缓存表
@@ -46,9 +45,9 @@ public final class ConnectionManager {
         List<String> poolList = DaoConfigManager.getConnPoolNameList();
         for (String poolName : poolList) {
             try {
-                HikariDataSource dataSource = getDataSource( poolName );
+                HikariDataSource dataSource = getDataSource(poolName);
             } catch (Exception e) {
-                logger.error( "Initial ConnectionPool[{}] failed !!!", poolName );
+                logger.error("Initial ConnectionPool[{}] failed !!!", poolName);
             }
         }
     }
@@ -67,7 +66,7 @@ public final class ConnectionManager {
      * @throws SQLException SQL异常
      */
     public static Connection getConnection() throws SQLException {
-        return getConnection( ROOT_CONN_NAME );
+        return getConnection(ROOT_CONN_NAME);
     }
 
     /**
@@ -80,12 +79,12 @@ public final class ConnectionManager {
     public static Connection getConnection(String poolName) throws SQLException {
         HikariDataSource dataSource = null;
         try {
-            dataSource = getDataSource( poolName );
+            dataSource = getDataSource(poolName);
         } catch (Exception e) {
-            throw new SQLException( "ConnectionManager.getConnection() failed to init connPool[" + poolName + "]", e );
+            throw new SQLException("ConnectionManager.getConnection() failed to init connPool[" + poolName + "]", e);
         }
         if (dataSource == null) {
-            throw new SQLException( "ConnectionManager.getConnection() failed to init connPool[" + poolName + "]" );
+            throw new SQLException("ConnectionManager.getConnection() failed to init connPool[" + poolName + "]");
         }
         return dataSource.getConnection();
     }
@@ -97,7 +96,7 @@ public final class ConnectionManager {
      * @throws SQLException
      */
     public static Dialect getDialect() throws SQLException {
-        return SOURCE_DIALECT_MAP.get( ROOT_CONN_NAME );
+        return SOURCE_DIALECT_MAP.get(ROOT_CONN_NAME);
     }
 
     /**
@@ -106,7 +105,7 @@ public final class ConnectionManager {
      * @return
      */
     public static Dialect getDialect(String poolName) {
-        return SOURCE_DIALECT_MAP.get( poolName );
+        return SOURCE_DIALECT_MAP.get(poolName);
     }
 
     /**
@@ -115,7 +114,7 @@ public final class ConnectionManager {
      * @param poolName 连接池名字
      */
     public static boolean checkConnectionPool(String poolName) {
-        HikariDataSource dataSource = DATA_SOURCE_MAP.get( poolName );
+        HikariDataSource dataSource = DATA_SOURCE_MAP.get(poolName);
         if (dataSource == null) {
             return false;
         }
@@ -128,7 +127,7 @@ public final class ConnectionManager {
      * @param poolName 连接池名字
      */
     public static HikariDataSource getConnectionPool(String poolName) {
-        return DATA_SOURCE_MAP.get( poolName );
+        return DATA_SOURCE_MAP.get(poolName);
     }
 
     /**
@@ -138,78 +137,72 @@ public final class ConnectionManager {
      */
     public static synchronized HikariDataSource initConnectionPool(String poolName, String aliasName, String driver, String url, String username, String password, String testSql
             , int connMin, int connMax, int connIdleTimeout, int connBusyTimeout, int connMaxAge) {
-        HikariDataSource dataSource = DATA_SOURCE_MAP.get( poolName );
+        HikariDataSource dataSource = DATA_SOURCE_MAP.get(poolName);
         if (dataSource != null) {
             return dataSource;
         }
-        return DATA_SOURCE_MAP.computeIfAbsent( poolName, (key) -> {
+        return DATA_SOURCE_MAP.computeIfAbsent(poolName, (key) -> {
 
             // HikariConfig
             HikariConfig hikariConfig = new HikariConfig();
-            hikariConfig.setPoolName( poolName );
+            hikariConfig.setPoolName(poolName);
             // 数据库驱动
-            hikariConfig.setDriverClassName( driver );
+            hikariConfig.setDriverClassName(driver);
             // 服务器连接字符串
-            hikariConfig.setJdbcUrl( url );
+            hikariConfig.setJdbcUrl(url);
             // 登陆用户名
-            hikariConfig.setUsername( username );
+            hikariConfig.setUsername(username);
             // 登陆密码
-            hikariConfig.setPassword( password );
+            hikariConfig.setPassword(password);
             // 测试sql hikari不配置testSql,会直接使用Connection.isValid()检活
-            if (StringUtils.isNotBlank( testSql )) {
-                hikariConfig.setConnectionTestQuery( testSql );
+            if (StringUtils.isNotBlank(testSql)) {
+                hikariConfig.setConnectionTestQuery(testSql);
             }
             // 最小连接数
             if (connMin < 0) {
-                hikariConfig.setMinimumIdle( 0 );
+                hikariConfig.setMinimumIdle(0);
             } else {
-                hikariConfig.setMinimumIdle( connMin );
+                hikariConfig.setMinimumIdle(connMin);
             }
             // 最大连接数
             if (connMax < 1) {
-                hikariConfig.setMaximumPoolSize( 1 );
+                hikariConfig.setMaximumPoolSize(1);
             } else {
-                hikariConfig.setMaximumPoolSize( connMax );
+                hikariConfig.setMaximumPoolSize(connMax);
             }
             // 空闲超时(秒钟)
             if (connIdleTimeout < 60) {
                 // 最小一分钟
-                hikariConfig.setIdleTimeout( 60 * 1000L );
+                hikariConfig.setIdleTimeout(60 * 1000L);
             } else {
-                hikariConfig.setIdleTimeout( connIdleTimeout * 1000L );
+                hikariConfig.setIdleTimeout(connIdleTimeout * 1000L);
             }
-            // 连接超时(秒钟)
-            if (connBusyTimeout < 1800) {
-                hikariConfig.setConnectionTimeout( 1800 * 1000L );
-            } else {
-                hikariConfig.setConnectionTimeout( connBusyTimeout * 1000L );
-            }
+            // 连接超时(毫秒)，取用户配置与安全上限(10秒)中的较小值，防止数据库宕机卡死
+            long connTimeoutMs = connBusyTimeout < 1800 ? 1800 * 1000L : connBusyTimeout * 1000L;
+            hikariConfig.setConnectionTimeout(Math.min(connTimeoutMs, 10_000L));
             // 连接寿命(秒钟)
             if (connMaxAge < 1800) {
-                // 最小60分钟
-                hikariConfig.setMaxLifetime( 1800 * 1000L );
+                hikariConfig.setMaxLifetime(1800 * 1000L);
             } else {
-                hikariConfig.setMaxLifetime( connMaxAge * 1000L );
+                hikariConfig.setMaxLifetime(connMaxAge * 1000L);
             }
-            //对于oracle，需要特殊处理。
-            if (driver.contains( "OracleDriver" )) {
-                hikariConfig.setDataSourceProperties( oracleProperties() );
+            // 对于oracle，需要特殊处理
+            if (driver.contains("OracleDriver")) {
+                hikariConfig.setDataSourceProperties(oracleProperties());
             }
-            //补充设置，防止出现数据库宕机卡死的问题。
-            hikariConfig.setConnectionTimeout( 10_000L );
-            hikariConfig.setValidationTimeout( 10_000L );
-            //禁止启动连接数据
-            hikariConfig.setInitializationFailTimeout( 0L );
+            hikariConfig.setValidationTimeout(10_000L);
+            // 禁止启动时阻塞等待连接
+            hikariConfig.setInitializationFailTimeout(0L);
             // 数据库方言
-            HikariDataSource hikariDataSource = new HikariDataSource( hikariConfig );
+            HikariDataSource hikariDataSource = new HikariDataSource(hikariConfig);
             // 注册成功,初始化方言
-            SOURCE_DIALECT_MAP.put( key, DialectManager.getDialectByDriverClassName( hikariConfig.getDriverClassName() ) );
-            if (StringUtils.isNotBlank( aliasName )) {
-                DATA_SOURCE_MAP.put( aliasName, hikariDataSource );
+            SOURCE_DIALECT_MAP.put(key, DialectManager.getDialectByDriverClassName(hikariConfig.getDriverClassName()));
+            if (StringUtils.isNotBlank(aliasName)) {
+                DATA_SOURCE_MAP.put(aliasName, hikariDataSource);
             }
             // 启动连接池
             return hikariDataSource;
-        } );
+        });
     }
 
     /**
@@ -218,7 +211,7 @@ public final class ConnectionManager {
      * @param poolName 连接池名字
      */
     public static synchronized void destroyConnectionPool(String poolName) {
-        HikariDataSource cp = DATA_SOURCE_MAP.remove( poolName );
+        HikariDataSource cp = DATA_SOURCE_MAP.remove(poolName);
         if (cp != null && cp.isRunning()) {
             cp.close();
         }
@@ -231,9 +224,9 @@ public final class ConnectionManager {
      */
     private static Properties oracleProperties() {
         Properties properties = new Properties();
-        properties.put( "oracle.net.CONNECT_TIMEOUT", 10000 );
-        properties.put( "oracle.net.READ_TIMEOUT", 60000 );
-        properties.put( "oracle.jdbc.ReadTimeout", 60000 );
+        properties.put("oracle.net.CONNECT_TIMEOUT", 10000);
+        properties.put("oracle.net.READ_TIMEOUT", 60000);
+        properties.put("oracle.jdbc.ReadTimeout", 60000);
         return properties;
     }
 
@@ -242,7 +235,7 @@ public final class ConnectionManager {
      */
     private static synchronized void destroyAllConnectionPool() {
         for (String poolName : DATA_SOURCE_MAP.keySet()) {
-            destroyConnectionPool( poolName );
+            destroyConnectionPool(poolName);
         }
     }
 
@@ -253,67 +246,71 @@ public final class ConnectionManager {
      * @return Connection
      */
     private static HikariDataSource getDataSource(String poolName) {
-        if (StringUtils.isBlank( poolName )) {
+        if (StringUtils.isBlank(poolName)) {
             poolName = ROOT_CONN_NAME;
         }
-        return DATA_SOURCE_MAP.computeIfAbsent( poolName, (key) -> {
-            ConnPoolConfig config = DaoConfigManager.getConnPoolConfig( key );
+        return DATA_SOURCE_MAP.computeIfAbsent(poolName, (key) -> {
+            ConnPoolConfig config = DaoConfigManager.getConnPoolConfig(key);
             if (config == null) {
                 return null;
             }
             // HikariConfig
             HikariConfig hikariConfig = new HikariConfig();
-            hikariConfig.setPoolName( StringUtils.isBlank( key ) ? "root" : key );
+            hikariConfig.setPoolName(StringUtils.isBlank(key) ? "root" : key);
             // 数据库驱动
-            hikariConfig.setDriverClassName( config.getDriver() );
+            hikariConfig.setDriverClassName(config.getDriver());
             // 服务器连接字符串
-            hikariConfig.setJdbcUrl( config.getUrl() );
+            hikariConfig.setJdbcUrl(config.getUrl());
             // 登陆用户名
-            hikariConfig.setUsername( config.getUsername() );
+            hikariConfig.setUsername(config.getUsername());
             // 登陆密码
-            hikariConfig.setPassword( config.getPassword() );
+            hikariConfig.setPassword(config.getPassword());
             // 测试sql hikari不配置testSql,会直接使用Connection.isValid()检活
-            if (!hikariConfig.getDriverClassName().contains( "mysql" )) {
-                hikariConfig.setConnectionTestQuery( config.getTestSql() );
+            if (!hikariConfig.getDriverClassName().contains("mysql")) {
+                hikariConfig.setConnectionTestQuery(config.getTestSql());
             }
             // 最小连接数
             if (config.getMinConn() < 0) {
-                hikariConfig.setMinimumIdle( 0 );
+                hikariConfig.setMinimumIdle(0);
             } else {
-                hikariConfig.setMinimumIdle( config.getMinConn() );
+                hikariConfig.setMinimumIdle(config.getMinConn());
             }
             // 最大连接数
             if (config.getMaxConn() < 1) {
-                hikariConfig.setMaximumPoolSize( 1 );
+                hikariConfig.setMaximumPoolSize(1);
             } else {
-                hikariConfig.setMaximumPoolSize( config.getMaxConn() );
+                hikariConfig.setMaximumPoolSize(config.getMaxConn());
             }
             // 空闲超时(秒钟)
             if (config.getConnIdleTimeout() < 60) {
                 // 最小一分钟
-                hikariConfig.setIdleTimeout( 60 * 1000L );
+                hikariConfig.setIdleTimeout(60 * 1000L);
             } else {
-                hikariConfig.setIdleTimeout( config.getConnIdleTimeout() * 1000L );
+                hikariConfig.setIdleTimeout(config.getConnIdleTimeout() * 1000L);
             }
-            // 连接超时(秒钟)
-            if (config.getConnBusyTimeout() < 1800) {
-                hikariConfig.setConnectionTimeout( 1800 * 1000L );
-            } else {
-                hikariConfig.setConnectionTimeout( config.getConnBusyTimeout() * 1000L );
-            }
+            // 连接超时(毫秒)，取用户配置与安全上限(10秒)中的较小值，防止数据库宕机卡死
+            long connTimeoutMs = config.getConnBusyTimeout() < 1800 ? 1800 * 1000L : config.getConnBusyTimeout() * 1000L;
+            hikariConfig.setConnectionTimeout(Math.min(connTimeoutMs, 10_000L));
             // 连接寿命(秒钟)
             if (config.getConnMaxAge() < 1800) {
                 // 最小60分钟
-                hikariConfig.setMaxLifetime( 1800 * 1000L );
+                hikariConfig.setMaxLifetime(1800 * 1000L);
             } else {
-                hikariConfig.setMaxLifetime( config.getConnMaxAge() * 1000L );
+                hikariConfig.setMaxLifetime(config.getConnMaxAge() * 1000L);
             }
+            // 对于oracle，需要特殊处理
+            if (hikariConfig.getDriverClassName().contains("OracleDriver")) {
+                hikariConfig.setDataSourceProperties(oracleProperties());
+            }
+            hikariConfig.setValidationTimeout(10_000L);
+            // 禁止启动时阻塞等待连接
+            hikariConfig.setInitializationFailTimeout(0L);
             // 数据库方言
-            HikariDataSource hikariDataSource = new HikariDataSource( hikariConfig );
+            HikariDataSource hikariDataSource = new HikariDataSource(hikariConfig);
             // 注册成功,初始化方言
-            SOURCE_DIALECT_MAP.put( key, DialectManager.getDialectByDriverClassName( hikariConfig.getDriverClassName() ) );
+            SOURCE_DIALECT_MAP.put(key, DialectManager.getDialectByDriverClassName(hikariConfig.getDriverClassName()));
             // 启动连接池
             return hikariDataSource;
-        } );
+        });
     }
 }

@@ -31,6 +31,12 @@ public class FusionCache {
      */
     public static final String FUSION_CACHE_NOTIFY_CHANNEL = "UW_CACHE_NOTIFY_CHANNEL";
 
+
+    /**
+     * 最大重试次数。
+     */
+    private static final int MAX_RETRY_TIMES = 5;
+
     /**
      * 实例ID。
      */
@@ -307,7 +313,7 @@ public class FusionCache {
             } else {
                 valueWrapper = new CacheValueWrapper<>(kv.getValue(), expireMillis);
             }
-            cacheWrapper.cache.put(kv.getValue(), valueWrapper);
+            cacheWrapper.cache.put(kv.getKey(), valueWrapper);
         }
     }
 
@@ -337,17 +343,21 @@ public class FusionCache {
             log.warn("FusionCache[{}] not config!!!", cacheName);
             return null;
         }
-        CacheValueWrapper<T> valueWrapper = (CacheValueWrapper<T>) cacheWrapper.cache.get(key);
-        if (valueWrapper == null) {
-            return null;
-        }
-        if (valueWrapper.checkExpired()) {
-            //此处必须全局通知。
+        for (int i = 0; i <= MAX_RETRY_TIMES; i++) {
+            CacheValueWrapper<T> valueWrapper = (CacheValueWrapper<T>) cacheWrapper.cache.get(key);
+            if (valueWrapper == null) {
+                return null;
+            }
+            if (!valueWrapper.checkExpired()) {
+                return valueWrapper.getValue();
+            }
+            if (i == MAX_RETRY_TIMES) {
+                log.warn("FusionCache[{}] key=[{}] still expired after {} retries, returning null", cacheName, key, MAX_RETRY_TIMES);
+                return null;
+            }
             invalidate(cacheName, key, true);
-            return get(cacheName, key);
-        } else {
-            return valueWrapper.getValue();
         }
+        return null;
     }
 
 
@@ -784,9 +794,9 @@ public class FusionCache {
                 cache.invalidate(key);
             }
             CacheValueWrapper newValue = (CacheValueWrapper) cache.get(key);
-            if (config.cacheChangeNotifyListener != null) {
+            if (config.cacheChangeNotifyListener != null && oldValue != null) {
                 try {
-                    config.cacheChangeNotifyListener.onMessage(key, oldValue.getValue(), newValue.getValue());
+                    config.cacheChangeNotifyListener.onMessage(key, oldValue.getValue(), newValue != null ? newValue.getValue() : null);
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
                 }

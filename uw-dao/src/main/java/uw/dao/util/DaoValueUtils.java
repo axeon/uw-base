@@ -4,8 +4,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import uw.common.util.JsonUtils;
 
-import java.util.Arrays;
-
 /**
  * dao的数值工具类.
  */

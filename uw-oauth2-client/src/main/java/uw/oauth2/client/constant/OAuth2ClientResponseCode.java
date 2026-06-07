@@ -44,7 +44,7 @@ public enum OAuth2ClientResponseCode implements ResponseCode {
      * 服务端错误
      */
     SERVER_ERROR("Server internal error"),
-    
+
     /**
      * 未知错误
      */
@@ -54,9 +54,9 @@ public enum OAuth2ClientResponseCode implements ResponseCode {
      * 国际化信息MESSAGE_SOURCE。
      */
     private static final ResourceBundleMessageSource MESSAGE_SOURCE = new ResourceBundleMessageSource() {{
-        setBasename( "i18n/messages/uw_oauth2_client" );
-        setDefaultEncoding( "UTF-8" );
-        setCacheSeconds( 0 );
+        setBasename("i18n/messages/uw_oauth2_client");
+        setDefaultEncoding("UTF-8");
+        setCacheSeconds(0);
     }};
     /**
      * 响应码。
@@ -75,7 +75,7 @@ public enum OAuth2ClientResponseCode implements ResponseCode {
      * @param message 错误信息
      */
     OAuth2ClientResponseCode(String message) {
-        this.code = EnumUtils.enumNameToDotCase( this.name() );
+        this.code = EnumUtils.enumNameToDotCase(this.name());
         this.message = message;
     }
 

@@ -2,8 +2,8 @@ package uw.ai.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.github.victools.jsonschema.generator.Module;
 import com.github.victools.jsonschema.generator.*;
+import com.github.victools.jsonschema.generator.Module;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import com.github.victools.jsonschema.module.jackson.JacksonOption;
 import com.github.victools.jsonschema.module.swagger2.Swagger2Module;
@@ -47,19 +47,19 @@ public final class AiToolSchemaGenerator {
      * Initialize JSON Schema generators.
      */
     static {
-        Module jacksonModule = new JacksonModule( JacksonOption.RESPECT_JSONPROPERTY_REQUIRED );
+        Module jacksonModule = new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED);
         Module openApiModule = new Swagger2Module();
 
         SchemaGeneratorConfigBuilder schemaGeneratorConfigBuilder =
-                new SchemaGeneratorConfigBuilder( SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON )
-                        .with( jacksonModule )
-                        .with( openApiModule )
-                        .with( Option.EXTRA_OPEN_API_FORMAT_VALUES )
-                        .with( Option.PLAIN_DEFINITION_KEYS );
+                new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
+                        .with(jacksonModule)
+                        .with(openApiModule)
+                        .with(Option.EXTRA_OPEN_API_FORMAT_VALUES)
+                        .with(Option.PLAIN_DEFINITION_KEYS);
         // 排除认证字段。
-        schemaGeneratorConfigBuilder.forFields().withIgnoreCheck( f -> (f.getDeclaredName().equals( "saasId" )|| f.getDeclaredName().equals( "userId" )||f.getDeclaredName().equals( "userType" )||f.getDeclaredName().equals( "userInfo" )));
+        schemaGeneratorConfigBuilder.forFields().withIgnoreCheck(f -> (f.getDeclaredName().equals("saasId") || f.getDeclaredName().equals("userId") || f.getDeclaredName().equals("userType") || f.getDeclaredName().equals("userInfo")));
         SchemaGeneratorConfig typeSchemaGeneratorConfig = schemaGeneratorConfigBuilder.build();
-        TYPE_SCHEMA_GENERATOR = new SchemaGenerator( typeSchemaGeneratorConfig );
+        TYPE_SCHEMA_GENERATOR = new SchemaGenerator(typeSchemaGeneratorConfig);
     }
 
     private AiToolSchemaGenerator() {
@@ -70,8 +70,8 @@ public final class AiToolSchemaGenerator {
      */
     public static String generateForMethodInput(Method method, SchemaOption... schemaOptions) {
         Type[] paramTypes = method.getGenericParameterTypes();
-        if (paramTypes.length == 1){
-            return generateForType( paramTypes[0], schemaOptions);
+        if (paramTypes.length == 1) {
+            return generateForType(paramTypes[0], schemaOptions);
         }
         return null;
     }
@@ -85,7 +85,7 @@ public final class AiToolSchemaGenerator {
         if (returnType instanceof ParameterizedType parameterizedType) {
             if (parameterizedType.getRawType() == ResponseData.class) {
                 returnType = parameterizedType.getActualTypeArguments()[0];
-                return generateForType( returnType, schemaOptions);
+                return generateForType(returnType, schemaOptions);
             }
         }
         return null;
@@ -95,48 +95,48 @@ public final class AiToolSchemaGenerator {
      * Generate a JSON Schema for a class type.
      */
     public static String generateForType(Type type, SchemaOption... schemaOptions) {
-        Assert.notNull( type, "type cannot be null" );
-        ObjectNode schema = TYPE_SCHEMA_GENERATOR.generateSchema( type );
-        if ((type == Void.class) && !schema.has( "properties" )) {
-            schema.putObject( "properties" );
+        Assert.notNull(type, "type cannot be null");
+        ObjectNode schema = TYPE_SCHEMA_GENERATOR.generateSchema(type);
+        if ((type == Void.class) && !schema.has("properties")) {
+            schema.putObject("properties");
         }
-        processSchemaOptions( schemaOptions, schema );
+        processSchemaOptions(schemaOptions, schema);
         return schema.toPrettyString();
     }
 
     // Based on the method in ModelOptionsUtils.
     public static void convertTypeValuesToUpperCase(ObjectNode node) {
         if (node.isObject()) {
-            node.fields().forEachRemaining( entry -> {
+            node.fields().forEachRemaining(entry -> {
                 JsonNode value = entry.getValue();
                 if (value.isObject()) {
-                    convertTypeValuesToUpperCase( (ObjectNode) value );
+                    convertTypeValuesToUpperCase((ObjectNode) value);
                 } else if (value.isArray()) {
-                    value.elements().forEachRemaining( element -> {
+                    value.elements().forEachRemaining(element -> {
                         if (element.isObject() || element.isArray()) {
-                            convertTypeValuesToUpperCase( (ObjectNode) element );
+                            convertTypeValuesToUpperCase((ObjectNode) element);
                         }
-                    } );
-                } else if (value.isTextual() && entry.getKey().equals( "type" )) {
-                    String oldValue = node.get( "type" ).asText();
-                    node.put( "type", oldValue.toUpperCase() );
+                    });
+                } else if (value.isTextual() && entry.getKey().equals("type")) {
+                    String oldValue = node.get("type").asText();
+                    node.put("type", oldValue.toUpperCase());
                 }
-            } );
+            });
         } else if (node.isArray()) {
-            node.elements().forEachRemaining( element -> {
+            node.elements().forEachRemaining(element -> {
                 if (element.isObject() || element.isArray()) {
-                    convertTypeValuesToUpperCase( (ObjectNode) element );
+                    convertTypeValuesToUpperCase((ObjectNode) element);
                 }
-            } );
+            });
         }
     }
 
     private static void processSchemaOptions(SchemaOption[] schemaOptions, ObjectNode schema) {
-        if (Stream.of( schemaOptions ).noneMatch( option -> option == SchemaOption.ALLOW_ADDITIONAL_PROPERTIES_BY_DEFAULT )) {
-            schema.put( "additionalProperties", false );
+        if (Stream.of(schemaOptions).noneMatch(option -> option == SchemaOption.ALLOW_ADDITIONAL_PROPERTIES_BY_DEFAULT)) {
+            schema.put("additionalProperties", false);
         }
-        if (Stream.of( schemaOptions ).anyMatch( option -> option == SchemaOption.UPPER_CASE_TYPE_VALUES )) {
-            convertTypeValuesToUpperCase( schema );
+        if (Stream.of(schemaOptions).anyMatch(option -> option == SchemaOption.UPPER_CASE_TYPE_VALUES)) {
+            convertTypeValuesToUpperCase(schema);
         }
     }
 

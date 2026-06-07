@@ -26,7 +26,7 @@ class WechatOAuth2ProviderTest {
         config.setTokenUri("https://api.weixin.qq.com/sns/oauth2/access_token");
         config.setUserInfoUri("https://api.weixin.qq.com/sns/userinfo");
         config.setAuthScope("snsapi_login");
-        provider = new WechatOAuth2Provider("wechat", config, "https://xili.pub/oauth2/redirect","https://xili.pub/oauth2/qrcode/");
+        provider = new WechatOAuth2Provider("wechat", config, "https://xili.pub/oauth2/redirect", "https://xili.pub/oauth2/qrcode/");
     }
 
     public static void main(String[] args) {

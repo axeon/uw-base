@@ -25,7 +25,7 @@ public class TotpCodeVerifier {
     /**
      * Logger.
      */
-    private static final Logger logger = LoggerFactory.getLogger( TotpCodeVerifier.class );
+    private static final Logger logger = LoggerFactory.getLogger(TotpCodeVerifier.class);
     /**
      * Hashing algorithm.
      */
@@ -46,6 +46,7 @@ public class TotpCodeVerifier {
 
     /**
      * 构造器。
+     *
      * @param algorithm
      * @param digits
      * @param timePeriod
@@ -60,32 +61,33 @@ public class TotpCodeVerifier {
 
     /**
      * 检查代码是否正确。
+     *
      * @param secret
      * @param code
      * @return
      */
     public ResponseData verifyCode(String secret, String code) {
-        if (StringUtils.isBlank( secret)){
-            return ResponseData.errorCode( MfaResponseCode.TOTP_SECRET_LOST_ERROR );
+        if (StringUtils.isBlank(secret)) {
+            return ResponseData.errorCode(MfaResponseCode.TOTP_SECRET_LOST_ERROR);
         }
-        if (StringUtils.isBlank( code )) {
-            return ResponseData.errorCode( MfaResponseCode.TOTP_CODE_LOST_ERROR );
+        if (StringUtils.isBlank(code)) {
+            return ResponseData.errorCode(MfaResponseCode.TOTP_CODE_LOST_ERROR);
         }
         // 获取当前时间戳，并计算已过的周期数。
-        long currentBucket = Math.floorDiv( Instant.now().getEpochSecond(), timePeriod );
+        long currentBucket = Math.floorDiv(Instant.now().getEpochSecond(), timePeriod);
 
         // 计算并比较所有“有效”时间周期的代码。
         // 即使提前匹配到一个有效代码，也要继续计算和比较所有有效时间周期的代码，以避免定时攻击。
         boolean success = false;
         for (int i = -allowedTimePeriodDiscrepancy; i <= allowedTimePeriodDiscrepancy; i++) {
-            success = checkCode( secret, currentBucket + i, code );
+            success = checkCode(secret, currentBucket + i, code);
             if (success) {
                 break;
             }
         }
         if (!success) {
-            return ResponseData.errorCode( MfaResponseCode.TOTP_CODE_VERIFY_ERROR );
-        }else{
+            return ResponseData.errorCode(MfaResponseCode.TOTP_CODE_VERIFY_ERROR);
+        } else {
             return ResponseData.success();
         }
     }
@@ -95,8 +97,8 @@ public class TotpCodeVerifier {
      */
     private boolean checkCode(String secret, long counter, String code) {
         try {
-            String actualCode = generate( secret, counter );
-            return timeSafeStringComparison( actualCode, code );
+            String actualCode = generate(secret, counter);
+            return timeSafeStringComparison(actualCode, code);
         } catch (CodeGenerationException e) {
             return false;
         }
@@ -123,6 +125,7 @@ public class TotpCodeVerifier {
 
     /**
      * 生成代码。
+     *
      * @param key
      * @param counter
      * @return
@@ -130,10 +133,10 @@ public class TotpCodeVerifier {
      */
     public String generate(String key, long counter) throws CodeGenerationException {
         try {
-            byte[] hash = generateHash( key, counter );
-            return getDigitsFromHash( hash );
+            byte[] hash = generateHash(key, counter);
+            return getDigitsFromHash(hash);
         } catch (Exception e) {
-            logger.error( e.getMessage(), e );
+            logger.error(e.getMessage(), e);
             return null;
         }
     }
@@ -151,13 +154,13 @@ public class TotpCodeVerifier {
 
         // Create a HMAC-SHA1 signing key from the shared key
         Base32 codec = new Base32();
-        byte[] decodedKey = codec.decode( key );
-        SecretKeySpec signKey = new SecretKeySpec( decodedKey, algorithm.getValue() );
-        Mac mac = Mac.getInstance( algorithm.getValue() );
-        mac.init( signKey );
+        byte[] decodedKey = codec.decode(key);
+        SecretKeySpec signKey = new SecretKeySpec(decodedKey, algorithm.getValue());
+        Mac mac = Mac.getInstance(algorithm.getValue());
+        mac.init(signKey);
 
         // Create a hash of the counter value
-        return mac.doFinal( data );
+        return mac.doFinal(data);
     }
 
     /**
@@ -174,9 +177,9 @@ public class TotpCodeVerifier {
         }
 
         truncatedHash &= 0x7FFFFFFF;
-        truncatedHash %= (long) Math.pow( 10, digits );
+        truncatedHash %= (long) Math.pow(10, digits);
 
         // Left pad with 0s for a n-digit code
-        return String.format( "%0" + digits + "d", truncatedHash );
+        return String.format("%0" + digits + "d", truncatedHash);
     }
 }

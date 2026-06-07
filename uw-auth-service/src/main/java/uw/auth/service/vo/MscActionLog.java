@@ -14,133 +14,133 @@ public class MscActionLog extends LogBaseVo implements Serializable {
     /**
      * 运营商Id
      */
-    @Schema(title = "运营商Id", description = "运营商Id" )
+    @Schema(title = "运营商Id", description = "运营商Id")
     private long saasId;
 
     /**
      * 商户Id
      */
-    @Schema(title = "商户Id", description = "商户Id" )
+    @Schema(title = "商户Id", description = "商户Id")
     private long mchId;
 
     /**
      * 用户Id
      */
-    @Schema(title = "用户Id", description = "用户Id" )
+    @Schema(title = "用户Id", description = "用户Id")
     private long userId;
 
     /**
      * 用户类型 ==> msc_user_type.type_code
      */
-    @Schema(title = "用户类型", description = "用户类型" )
+    @Schema(title = "用户类型", description = "用户类型")
     private int userType;
 
     /**
      * 用户组Id。
      */
-    @Schema(title = "用户组Id", description = "用户组Id" )
+    @Schema(title = "用户组Id", description = "用户组Id")
     private long groupId;
 
     /**
      * 用户信息。
      */
-    @Schema(title = "用户信息", description = "用户信息" )
+    @Schema(title = "用户信息", description = "用户信息")
     private String userName;
 
     /**
      * 昵称信息。
      */
-    @Schema(title = "昵称信息", description = "昵称信息" )
+    @Schema(title = "昵称信息", description = "昵称信息")
     private String nickName;
 
     /**
      * 真实姓名。
      */
-    @Schema(title = "真实姓名", description = "真实姓名" )
+    @Schema(title = "真实姓名", description = "真实姓名")
     private String realName;
 
     /**
      * 用户IP
      */
-    @Schema(title = "用户IP", description = "用户IP" )
+    @Schema(title = "用户IP", description = "用户IP")
     private String userIp;
 
     /**
      * API URI
      */
-    @Schema(title = "API URI", description = "API URI" )
+    @Schema(title = "API URI", description = "API URI")
     private String apiUri;
 
     /**
      * API名称
      */
-    @Schema(title = "API名称", description = "API名称" )
+    @Schema(title = "API名称", description = "API名称")
     private String apiName;
 
     /**
      * 业务类型,用于查询
      */
-    @Schema(title = "业务类型", description = "业务类型" )
+    @Schema(title = "业务类型", description = "业务类型")
     private String bizType;
 
     /**
      * 业务Id,用于查询
      */
-    @Schema(title = "业务Id", description = "业务Id" )
+    @Schema(title = "业务Id", description = "业务Id")
     private Serializable bizId;
 
     /**
      * 业务日志
      */
-    @Schema(title = "业务日志", description = "业务日志" )
+    @Schema(title = "业务日志", description = "业务日志")
     private String bizLog;
 
     /**
      * 请求参数
      */
-    @Schema(title = "请求参数", description = "请求参数" )
+    @Schema(title = "请求参数", description = "请求参数")
     private String requestBody;
 
     /**
      * 请求时间
      */
-    @Schema(title = "请求时间", description = "请求时间" )
+    @Schema(title = "请求时间", description = "请求时间")
     private Date requestDate;
 
     /**
      * 响应日志
      */
-    @Schema(title = "响应日志", description = "响应日志" )
+    @Schema(title = "响应日志", description = "响应日志")
     private String responseBody;
 
     /**
      * 响应状态
      */
-    @Schema(title = "响应状态", description = "响应状态" )
+    @Schema(title = "响应状态", description = "响应状态")
     private String responseState;
 
     /**
      * 响应代码
      */
-    @Schema(title = "响应代码", description = "响应代码" )
+    @Schema(title = "响应代码", description = "响应代码")
     private String responseCode;
 
     /**
      * 响应消息
      */
-    @Schema(title = "响应消息", description = "响应消息" )
+    @Schema(title = "响应消息", description = "响应消息")
     private String responseMsg;
 
     /**
      * 执行返回毫秒数。
      */
-    @Schema(title = "执行返回毫秒数", description = "执行返回毫秒数" )
+    @Schema(title = "执行返回毫秒数", description = "执行返回毫秒数")
     private long responseMillis;
 
     /**
      * 响应状态码
      */
-    @Schema(title = "响应状态码", description = "响应状态码" )
+    @Schema(title = "响应状态码", description = "响应状态码")
     private int statusCode;
 
     public long getUserId() {

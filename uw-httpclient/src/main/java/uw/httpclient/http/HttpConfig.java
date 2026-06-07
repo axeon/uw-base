@@ -231,7 +231,7 @@ public class HttpConfig {
         }
 
         public HttpConfig build() {
-            return new HttpConfig( this );
+            return new HttpConfig(this);
         }
     }
 }

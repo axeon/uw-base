@@ -22,9 +22,9 @@ public class SequenceFactory {
      */
     public static long getCurrentId(String seqName) {
         if (DaoConfigManager.getConfig().getRedis() != null) {
-            return FusionSequenceFactory.getCurrentId( seqName );
+            return FusionSequenceFactory.getCurrentId(seqName);
         } else {
-            return DaoSequenceFactory.getCurrentId( seqName );
+            return DaoSequenceFactory.getCurrentId(seqName);
         }
     }
 
@@ -36,9 +36,9 @@ public class SequenceFactory {
      */
     public static long getCurrentId(Class<?> cls) {
         if (DaoConfigManager.getConfig().getRedis() != null) {
-            return FusionSequenceFactory.getCurrentId( cls.getSimpleName() );
+            return FusionSequenceFactory.getCurrentId(cls.getSimpleName());
         } else {
-            return DaoSequenceFactory.getCurrentId( cls.getSimpleName() );
+            return DaoSequenceFactory.getCurrentId(cls.getSimpleName());
         }
     }
 
@@ -49,9 +49,9 @@ public class SequenceFactory {
      */
     public static long getSequenceId(String seqName) {
         if (DaoConfigManager.getConfig().getRedis() != null) {
-            return FusionSequenceFactory.getSequenceId( seqName );
+            return FusionSequenceFactory.getSequenceId(seqName);
         } else {
-            return DaoSequenceFactory.getSequenceId( seqName );
+            return DaoSequenceFactory.getSequenceId(seqName);
         }
     }
 
@@ -63,9 +63,9 @@ public class SequenceFactory {
      */
     public static long getSequenceId(Class<?> cls) {
         if (DaoConfigManager.getConfig().getRedis() != null) {
-            return FusionSequenceFactory.getSequenceId( cls.getSimpleName() );
+            return FusionSequenceFactory.getSequenceId(cls.getSimpleName());
         } else {
-            return DaoSequenceFactory.getSequenceId( cls.getSimpleName() );
+            return DaoSequenceFactory.getSequenceId(cls.getSimpleName());
         }
     }
 
@@ -75,9 +75,9 @@ public class SequenceFactory {
      */
     public static void resetSequenceId(String seqName, long seqId) {
         if (DaoConfigManager.getConfig().getRedis() != null) {
-            FusionSequenceFactory.resetSequenceId( seqName, seqId );
+            FusionSequenceFactory.resetSequenceId(seqName, seqId);
         } else {
-            DaoSequenceFactory.resetSequenceId( seqName, seqId, 1 );
+            DaoSequenceFactory.resetSequenceId(seqName, seqId, 1);
         }
     }
 
@@ -87,9 +87,9 @@ public class SequenceFactory {
      */
     public static void resetSequenceId(Class<?> cls, long seqId) {
         if (DaoConfigManager.getConfig().getRedis() != null) {
-            FusionSequenceFactory.resetSequenceId( cls.getSimpleName(), seqId );
+            FusionSequenceFactory.resetSequenceId(cls.getSimpleName(), seqId);
         } else {
-            DaoSequenceFactory.resetSequenceId( cls.getSimpleName(), seqId, 1 );
+            DaoSequenceFactory.resetSequenceId(cls.getSimpleName(), seqId, 1);
         }
     }
 

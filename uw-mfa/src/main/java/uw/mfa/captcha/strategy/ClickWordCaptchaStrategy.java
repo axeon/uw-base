@@ -22,7 +22,7 @@ import java.util.*;
  */
 public class ClickWordCaptchaStrategy implements CaptchaStrategy {
 
-    private static final Logger log = LoggerFactory.getLogger( ClickWordCaptchaStrategy.class );
+    private static final Logger log = LoggerFactory.getLogger(ClickWordCaptchaStrategy.class);
 
     /**
      * 点选的文字内容 随机字母
@@ -51,7 +51,7 @@ public class ClickWordCaptchaStrategy implements CaptchaStrategy {
     /**
      * 点选文字字体
      */
-    private static final Font FONT_STYLE = new Font( "", Font.BOLD, CLICK_WORD_SIZE );
+    private static final Font FONT_STYLE = new Font("", Font.BOLD, CLICK_WORD_SIZE);
     /**
      * 点选文字 字体总个数
      */
@@ -61,7 +61,7 @@ public class ClickWordCaptchaStrategy implements CaptchaStrategy {
     public ResponseData<CaptchaData> generate(String captchaId) {
         BufferedImage mainImage = CaptchaImageUtils.getSlideMainImage();
         if (null == mainImage) {
-            return ResponseData.errorMsg( "ClickWordPuzzle main image load failed!" );
+            return ResponseData.errorMsg("ClickWordPuzzle main image load failed!");
         }
         try {
 
@@ -74,27 +74,27 @@ public class ClickWordCaptchaStrategy implements CaptchaStrategy {
             int height = mainImage.getHeight();
 
             //定义随机1到arr.length某一个字不参与校验
-            int num = CaptchaRandomUtils.getRandomInt( 1, WORD_TOTAL_COUNT );
-            Set<String> currentWords = getRandomWords( WORD_TOTAL_COUNT );
+            int num = CaptchaRandomUtils.getRandomInt(1, WORD_TOTAL_COUNT);
+            Set<String> currentWords = getRandomWords(WORD_TOTAL_COUNT);
             // 用map保存 方便乱序
             Map<String, CaptchaPoint> map = new HashMap<>(currentWords.size());
             int i = 0;
             for (String word : currentWords) {
                 //随机字体坐标
-                CaptchaPoint point = randomWordPoint( width, height, i, WORD_TOTAL_COUNT );
+                CaptchaPoint point = randomWordPoint(width, height, i, WORD_TOTAL_COUNT);
                 //随机字体颜色
                 if (FONT_COLOR_RANDOM) {
-                    mainImageGraphics.setColor( new Color( CaptchaRandomUtils.getRandomInt( 1, 255 ),
-                            CaptchaRandomUtils.getRandomInt( 1, 255 ), CaptchaRandomUtils.getRandomInt( 1, 255 ) ) );
+                    mainImageGraphics.setColor(new Color(CaptchaRandomUtils.getRandomInt(1, 255),
+                            CaptchaRandomUtils.getRandomInt(1, 255), CaptchaRandomUtils.getRandomInt(1, 255)));
                 } else {
-                    mainImageGraphics.setColor( Color.BLACK );
+                    mainImageGraphics.setColor(Color.BLACK);
                 }
                 //设置角度
                 AffineTransform affineTransform = new AffineTransform();
-                affineTransform.rotate( Math.toRadians( CaptchaRandomUtils.getRandomInt( -45, 45 ) ), 0, 0 );
-                Font rotatedFont = FONT_STYLE.deriveFont( affineTransform );
-                mainImageGraphics.setFont( rotatedFont );
-                mainImageGraphics.drawString( word, point.getX(), point.getY() );
+                affineTransform.rotate(Math.toRadians(CaptchaRandomUtils.getRandomInt(-45, 45)), 0, 0);
+                Font rotatedFont = FONT_STYLE.deriveFont(affineTransform);
+                mainImageGraphics.setFont(rotatedFont);
+                mainImageGraphics.drawString(word, point.getX(), point.getY());
 
                 if ((num - 1) != i) {
                     map.put(word, point);
@@ -104,21 +104,21 @@ public class ClickWordCaptchaStrategy implements CaptchaStrategy {
 
             // HashMap存储根据key值hash已经乱序
             for (Map.Entry<String, CaptchaPoint> entry : map.entrySet()) {
-                wordList.add( entry.getKey() );
-                pointList.add( entry.getValue() );
+                wordList.add(entry.getKey());
+                pointList.add(entry.getValue());
             }
 
-            captchaQuestion.setMainImageBase64( CaptchaImageUtils.imageToBase64( mainImage ) );
-            captchaQuestion.setCaptchaId( captchaId );
-            captchaQuestion.setCaptchaType( captchaType() );
-            captchaQuestion.setSubData( JsonUtils.toString(wordList));
+            captchaQuestion.setMainImageBase64(CaptchaImageUtils.imageToBase64(mainImage));
+            captchaQuestion.setCaptchaId(captchaId);
+            captchaQuestion.setCaptchaType(captchaType());
+            captchaQuestion.setSubData(JsonUtils.toString(wordList));
 
             // 存储的验证信息
-            String captchaResult = JsonUtils.toString( pointList );
+            String captchaResult = JsonUtils.toString(pointList);
 
-            return ResponseData.success( new CaptchaData( captchaQuestion, captchaResult ) );
+            return ResponseData.success(new CaptchaData(captchaQuestion, captchaResult));
         } catch (Exception e) {
-            return ResponseData.errorMsg( "ClickWordPuzzle captcha generate failed! " + e.getMessage() );
+            return ResponseData.errorMsg("ClickWordPuzzle captcha generate failed! " + e.getMessage());
         }
     }
 
@@ -143,14 +143,14 @@ public class ClickWordCaptchaStrategy implements CaptchaStrategy {
          * ]
          */
         try {
-            pointResult = JsonUtils.parse( captchaResult, CaptchaPoint[].class );
-            pointAnswer = JsonUtils.parse( answerData, CaptchaPoint[].class );
+            pointResult = JsonUtils.parse(captchaResult, CaptchaPoint[].class);
+            pointAnswer = JsonUtils.parse(answerData, CaptchaPoint[].class);
         } catch (Exception e) {
-            return ResponseData.errorMsg( "ClickWordPuzzle point format invalid! " + e.getMessage() );
+            return ResponseData.errorMsg("ClickWordPuzzle point format invalid! " + e.getMessage());
         }
         for (int i = 0; i < pointResult.length; i++) {
             // 如果点选大于字体一半
-            if (Math.abs( pointResult[i].x - pointAnswer[i].x ) > FONT_SIZE || Math.abs( pointResult[i].y - pointAnswer[i].y ) > FONT_SIZE) {
+            if (Math.abs(pointResult[i].x - pointAnswer[i].x) > FONT_SIZE || Math.abs(pointResult[i].y - pointAnswer[i].y) > FONT_SIZE) {
                 return ResponseData.error();
             }
         }
@@ -183,16 +183,16 @@ public class ClickWordCaptchaStrategy implements CaptchaStrategy {
         int avgWidth = imageWidth / (wordCount + 1);
         int x, y;
         if (avgWidth < FONT_SIZE_HALF) {
-            x = CaptchaRandomUtils.getRandomInt( 1 + FONT_SIZE_HALF, imageWidth );
+            x = CaptchaRandomUtils.getRandomInt(1 + FONT_SIZE_HALF, imageWidth);
         } else {
             if (wordSortIndex == 0) {
-                x = CaptchaRandomUtils.getRandomInt( 1 + FONT_SIZE_HALF, avgWidth * (wordSortIndex + 1) - FONT_SIZE_HALF );
+                x = CaptchaRandomUtils.getRandomInt(1 + FONT_SIZE_HALF, avgWidth * (wordSortIndex + 1) - FONT_SIZE_HALF);
             } else {
-                x = CaptchaRandomUtils.getRandomInt( avgWidth * wordSortIndex + FONT_SIZE_HALF, avgWidth * (wordSortIndex + 1) - FONT_SIZE_HALF );
+                x = CaptchaRandomUtils.getRandomInt(avgWidth * wordSortIndex + FONT_SIZE_HALF, avgWidth * (wordSortIndex + 1) - FONT_SIZE_HALF);
             }
         }
-        y = CaptchaRandomUtils.getRandomInt( FONT_SIZE, imageHeight - FONT_SIZE );
-        return new CaptchaPoint( x, y );
+        y = CaptchaRandomUtils.getRandomInt(FONT_SIZE, imageHeight - FONT_SIZE);
+        return new CaptchaPoint(x, y);
     }
 
     /**
@@ -205,8 +205,8 @@ public class ClickWordCaptchaStrategy implements CaptchaStrategy {
         Set<String> words = new HashSet<>();
         int size = WORDS.length();
         do {
-            String t = String.valueOf( WORDS.charAt( CaptchaRandomUtils.getRandomInt( size ) ) );
-            words.add( t );
+            String t = String.valueOf(WORDS.charAt(CaptchaRandomUtils.getRandomInt(size)));
+            words.add(t);
         } while (words.size() < wordCount);
         return words;
     }

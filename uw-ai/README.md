@@ -3,23 +3,23 @@
 ## 目录
 
 - [1. 项目概述](#1-项目概述)
-  - [1.1 简介](#11-简介)
-  - [1.2 核心特性](#12-核心特性)
+    - [1.1 简介](#11-简介)
+    - [1.2 核心特性](#12-核心特性)
 - [2. 技术栈](#2-技术栈)
 - [3. 安装与配置](#3-安装与配置)
-  - [3.1 Maven依赖](#31-maven依赖)
-  - [3.2 基础配置](#32-基础配置)
+    - [3.1 Maven依赖](#31-maven依赖)
+    - [3.2 基础配置](#32-基础配置)
 - [4. 核心功能详解](#4-核心功能详解)
-  - [4.1 AI对话生成](#41-ai对话生成)
-  - [4.2 AI工具扩展](#42-ai工具扩展)
-  - [4.3 AI翻译服务](#43-ai翻译服务)
-  - [4.4 工具元数据管理](#44-工具元数据管理)
+    - [4.1 AI对话生成](#41-ai对话生成)
+    - [4.2 AI工具扩展](#42-ai工具扩展)
+    - [4.3 AI翻译服务](#43-ai翻译服务)
+    - [4.4 工具元数据管理](#44-工具元数据管理)
 - [5. API使用指南](#5-api使用指南)
-  - [5.1 对话生成](#51-对话生成)
-  - [5.2 流式对话](#52-流式对话)
-  - [5.3 结构化输出](#53-结构化输出)
-  - [5.4 工具定义与执行](#54-工具定义与执行)
-  - [5.5 翻译调用](#55-翻译调用)
+    - [5.1 对话生成](#51-对话生成)
+    - [5.2 流式对话](#52-流式对话)
+    - [5.3 结构化输出](#53-结构化输出)
+    - [5.4 工具定义与执行](#54-工具定义与执行)
+    - [5.5 翻译调用](#55-翻译调用)
 - [6. 核心类说明](#6-核心类说明)
 - [7. 最佳实践](#7-最佳实践)
 - [8. 常见问题](#8-常见问题)
@@ -34,26 +34,26 @@
 
 ### 1.2 核心特性
 
-| 特性 | 说明 |
-|------|------|
-| **对话生成** | 支持同步和流式对话生成，可携带工具信息和RAG知识库 |
-| **AI工具扩展** | 通过实现 `AiTool` 接口定义自定义工具，供AI调用 |
-| **翻译服务** | 支持列表和Map两种模式的批量翻译 |
-| **结构化输出** | 支持将AI输出转换为指定类型的Java对象 |
-| **工具元数据管理** | 提供工具元数据的查询和更新接口 |
-| **JSON Schema生成** | 自动生成工具参数的JSON Schema |
+| 特性                | 说明                            |
+|-------------------|-------------------------------|
+| **对话生成**          | 支持同步和流式对话生成，可携带工具信息和RAG知识库    |
+| **AI工具扩展**        | 通过实现 `AiTool` 接口定义自定义工具，供AI调用 |
+| **翻译服务**          | 支持列表和Map两种模式的批量翻译             |
+| **结构化输出**         | 支持将AI输出转换为指定类型的Java对象         |
+| **工具元数据管理**       | 提供工具元数据的查询和更新接口               |
+| **JSON Schema生成** | 自动生成工具参数的JSON Schema          |
 
 ---
 
 ## 2. 技术栈
 
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| Spring Boot | 3.x | 基础框架 |
-| Project Reactor | 3.x | 响应式编程（Flux流式输出） |
-| Jackson | 2.x | JSON处理 |
-| jsonschema-generator | 4.x | JSON Schema生成 |
-| Swagger2Module | - | 支持Swagger注解生成Schema |
+| 技术                   | 版本  | 用途                  |
+|----------------------|-----|---------------------|
+| Spring Boot          | 3.x | 基础框架                |
+| Project Reactor      | 3.x | 响应式编程（Flux流式输出）     |
+| Jackson              | 2.x | JSON处理              |
+| jsonschema-generator | 4.x | JSON Schema生成       |
+| Swagger2Module       | -   | 支持Swagger注解生成Schema |
 
 ---
 
@@ -90,6 +90,7 @@ uw:
 - **流式生成**：`chatGenerate()` 方法返回 `Flux<String>` 流式输出
 
 对话参数 `AiChatGenerateParam` 支持：
+
 - 用户输入（userPrompt）
 - 系统提示（systemPrompt）
 - 工具列表（toolList）
@@ -122,6 +123,7 @@ public interface AiTool<P extends AiToolParam, R> extends Function<P, R> {
 - **Map翻译**：`translateMap()` 翻译键值对Map
 
 翻译参数 `AiTranslateBaseParam` 支持：
+
 - 配置ID（configId）
 - 系统提示（systemPrompt）
 - 目标语言列表（langList）
@@ -134,6 +136,7 @@ public interface AiTool<P extends AiToolParam, R> extends Function<P, R> {
 - **更新工具元数据**：`updateToolMeta(aiToolMeta)`
 
 工具元数据 `AiToolMeta` 包含：
+
 - 应用名、工具类、工具版本
 - 工具名称、工具描述
 - 工具输入/输出参数Schema
@@ -325,21 +328,21 @@ public class TranslateService {
 
 ## 6. 核心类说明
 
-| 类名 | 说明 |
-|------|------|
-| `AiClientHelper` | AI客户端辅助类，封装所有AI调用方法 |
-| `AiChatRpc` | 对话生成RPC接口 |
-| `AiToolRpc` | 工具元数据管理RPC接口 |
-| `AiTranslateRpc` | 翻译服务RPC接口 |
-| `AiChatGenerateParam` | 对话生成参数 |
-| `AiTool<P, R>` | AI工具接口，需实现此接口定义工具 |
-| `AiToolParam` | 工具参数基类，包含认证信息 |
-| `AiToolMeta` | 工具元数据 |
-| `AiTranslateBaseParam` | 翻译参数基类 |
-| `AiTranslateResultData` | 翻译结果数据 |
-| `BeanOutputConverter<T>` | 结构化输出转换器 |
-| `AiToolSchemaGenerator` | JSON Schema生成工具 |
-| `AiToolExecuteController` | 工具执行控制器（RPC调用） |
+| 类名                        | 说明                  |
+|---------------------------|---------------------|
+| `AiClientHelper`          | AI客户端辅助类，封装所有AI调用方法 |
+| `AiChatRpc`               | 对话生成RPC接口           |
+| `AiToolRpc`               | 工具元数据管理RPC接口        |
+| `AiTranslateRpc`          | 翻译服务RPC接口           |
+| `AiChatGenerateParam`     | 对话生成参数              |
+| `AiTool<P, R>`            | AI工具接口，需实现此接口定义工具   |
+| `AiToolParam`             | 工具参数基类，包含认证信息       |
+| `AiToolMeta`              | 工具元数据               |
+| `AiTranslateBaseParam`    | 翻译参数基类              |
+| `AiTranslateResultData`   | 翻译结果数据              |
+| `BeanOutputConverter<T>`  | 结构化输出转换器            |
+| `AiToolSchemaGenerator`   | JSON Schema生成工具     |
+| `AiToolExecuteController` | 工具执行控制器（RPC调用）      |
 
 ---
 

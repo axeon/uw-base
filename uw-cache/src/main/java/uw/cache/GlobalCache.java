@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+
 /**
  * 全局缓存类，使用redis实现。
  */
@@ -46,6 +47,32 @@ public class GlobalCache {
     private static final String REDIS_PREFIX = "uw-cache:";
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalCache.class);
+
+    /**
+     * 锁条带数组，用于替代 String.intern() + synchronized。
+     * <p>
+     * 之前使用 redisKey.intern() 作为锁对象，会将所有 key 放入 JVM 字符串常量池，
+     * 当 key 包含用户ID等动态数据时常量池持续增长无法被 GC，最终导致 Metaspace OOM。
+     * <p>
+     * 使用固定大小的锁条带，同一 key 始终映射到同一把锁，不同 key 有约 1/1024 的概率碰撞，
+     * 碰撞时仅串行等待不影响正确性。1024 把锁在 100 个并发 key 时的碰撞概率约 4.8%，
+     * 在 50 个并发时约 1.2%，内存开销仅约 8KB。
+     */
+    private static final int LOCK_STRIPES = 1024;
+    private static final Object[] LOCKS = new Object[LOCK_STRIPES];
+
+    static {
+        for (int i = 0; i < LOCK_STRIPES; i++) {
+            LOCKS[i] = new Object();
+        }
+    }
+
+    /**
+     * 根据 key 的 hashCode 映射到固定的锁对象。
+     */
+    private static Object getLock(String key) {
+        return LOCKS[Math.abs(key.hashCode() % LOCK_STRIPES)];
+    }
 
     /**
      * 这里使用ValueOperations<String, String>是有原因的 虽然<K, V>可以泛型 但是泛型也存在问题 使用时必须实例化 也就是说每个使用的地方得ValueOperations<类, 类>实例化RedisTemplate
@@ -313,8 +340,8 @@ public class GlobalCache {
             }
         }
 
-        // 没有则去执行获取方法
-        synchronized (redisKey.intern()) {
+        // 没有则去执行获取方法，使用锁条化替代 String.intern() 避免 Metaspace OOM
+        synchronized (getLock(redisKey)) {
             // 同一jvm中执行这个会被其他线程加锁阻塞 等待那个线程释放锁后 此线程进来 尝试再去get一下值 apply方法执行正常这里就会可以get到
             try {
                 redisData = opsForValue.get(redisKey);

@@ -2,8 +2,6 @@ package uw.webot.session;
 
 import jakarta.validation.constraints.NotNull;
 import uw.webot.core.BrowserConfig;
-import uw.webot.proxy.ProxyConfig;
-import uw.webot.stealth.StealthConfig;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -132,7 +130,7 @@ public class SessionConfig implements Serializable {
 
 
     public static final class Builder {
-        private Duration expireTime =DEFAULT_EXPIRE_TIME;
+        private Duration expireTime = DEFAULT_EXPIRE_TIME;
         private BrowserConfig browserConfig;
         private String captchaConfigKey;
         private String stealthConfigKey;

@@ -15,7 +15,7 @@ import java.net.UnknownHostException;
  */
 public class IpWebUtils {
 
-    private static final Logger logger = LoggerFactory.getLogger( IpWebUtils.class );
+    private static final Logger logger = LoggerFactory.getLogger(IpWebUtils.class);
 
     private static final String HEADER_X_FORWARDED_FOR = "X-Forwarded-For";
 
@@ -31,7 +31,7 @@ public class IpWebUtils {
      */
     public static String getRealIp(HttpServletRequest request) {
         // 1. 获取代理前的IP
-        String proxiedIp = getProxiedIp( request );
+        String proxiedIp = getProxiedIp(request);
 
         // 2. 获取代理前的IP
         if (proxiedIp != null) {
@@ -50,9 +50,9 @@ public class IpWebUtils {
      */
     public static InetAddress getRealIpAddress(HttpServletRequest request) {
         try {
-            return InetAddress.getByName( getRealIp( request ) );
+            return InetAddress.getByName(getRealIp(request));
         } catch (UnknownHostException e) {
-            logger.error( e.getMessage(), e );
+            logger.error(e.getMessage(), e);
             return null;
         }
     }
@@ -65,12 +65,12 @@ public class IpWebUtils {
      */
     private static String getProxiedIp(HttpServletRequest request) {
         // 1. 检查 X-Forwarded-For（优先级最高）
-        String ip = request.getHeader( HEADER_X_FORWARDED_FOR );
-        if (StringUtils.isNotBlank( ip)) {
+        String ip = request.getHeader(HEADER_X_FORWARDED_FOR);
+        if (StringUtils.isNotBlank(ip)) {
             // 直接取逗号前的IP（第一个有效IP）
-            int commaIndex = ip.indexOf( ',' );
-            String candidate = commaIndex != -1 ? ip.substring( 0, commaIndex ).trim() : ip.trim();
-            if (isValidIp( candidate )) {
+            int commaIndex = ip.indexOf(',');
+            String candidate = commaIndex != -1 ? ip.substring(0, commaIndex).trim() : ip.trim();
+            if (isValidIp(candidate)) {
                 return candidate;
             }
         }
@@ -85,7 +85,7 @@ public class IpWebUtils {
      * @return 是否有效（非空、非"unknown"）
      */
     private static boolean isValidIp(String ip) {
-        return ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase( ip );
+        return ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip);
     }
 
 }

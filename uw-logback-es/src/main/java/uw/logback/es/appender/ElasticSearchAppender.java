@@ -40,7 +40,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
     /**
      * http操作接口。
      */
-    private static final HttpInterface HTTP_INTERFACE = new JsonInterfaceHelper(HttpConfig.builder().retryOnConnectionFailure(true).connectTimeout(10_000L).readTimeout(10_000L).writeTimeout(10_000L).trustManager( SSLContextUtils.getTrustAllManager() ).sslSocketFactory( SSLContextUtils.getTruestAllSocketFactory()).hostnameVerifier((hostName, sslSession) -> true).build());
+    private static final HttpInterface HTTP_INTERFACE = new JsonInterfaceHelper(HttpConfig.builder().retryOnConnectionFailure(true).connectTimeout(10_000L).readTimeout(10_000L).writeTimeout(10_000L).trustManager(SSLContextUtils.getTrustAllManager()).sslSocketFactory(SSLContextUtils.getTruestAllSocketFactory()).hostnameVerifier((hostName, sslSession) -> true).build());
     /**
      * 索引格式器
      */
@@ -172,6 +172,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 设置刷新Bucket时间秒数
+     *
      * @param maxFlushInSeconds
      */
     @Override
@@ -189,6 +190,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 设置允许最大Bucket字节数。
+     *
      * @param maxKiloBytesOfBatch
      */
     @Override
@@ -198,6 +200,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 获取Elasticsearch Web API endpoint
+     *
      * @return
      */
     @Override
@@ -207,6 +210,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 设置Elasticsearch Web API endpoint
+     *
      * @param esServer
      */
     public void setEsServer(String esServer) {
@@ -215,6 +219,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 获取Elasticsearch bulk api endpoint
+     *
      * @return
      */
     @Override
@@ -224,6 +229,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 设置Elasticsearch bulk api endpoint
+     *
      * @param esBulk
      */
     public void setEsBulk(String esBulk) {
@@ -232,6 +238,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 获取es用户名
+     *
      * @return
      */
     @Override
@@ -241,6 +248,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 设置es用户名
+     *
      * @param esUsername
      */
     public void setEsUsername(String esUsername) {
@@ -249,6 +257,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 获取es密码
+     *
      * @return
      */
     public String getEsPassword() {
@@ -257,6 +266,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 设置es密码
+     *
      * @param esPassword
      */
     public void setEsPassword(String esPassword) {
@@ -265,6 +275,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 获取ES索引
+     *
      * @return
      */
     @Override
@@ -274,6 +285,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 设置ES索引
+     *
      * @param esIndex
      */
     public void setEsIndex(String esIndex) {
@@ -282,6 +294,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 获取ES索引后缀
+     *
      * @return
      */
     @Override
@@ -291,6 +304,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 设置ES索引后缀
+     *
      * @param esIndexSuffix
      */
     public void setEsIndexSuffix(String esIndexSuffix) {
@@ -299,6 +313,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 获取批量线程数
+     *
      * @return
      */
     @Override
@@ -308,6 +323,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 设置批量线程数
+     *
      * @param maxBatchThreads
      */
     public void setMaxBatchThreads(int maxBatchThreads) {
@@ -316,6 +332,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 获取批量线程队列数
+     *
      * @return
      */
     @Override
@@ -325,6 +342,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 设置批量线程队列数
+     *
      * @param maxBatchQueueSize
      */
     public void setMaxBatchQueueSize(int maxBatchQueueSize) {
@@ -333,6 +351,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 是否开启JMX监控
+     *
      * @return
      */
     public boolean isJmxMonitoring() {
@@ -341,6 +360,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 设置是否开启JMX监控
+     *
      * @param jmxMonitoring
      */
     public void setJmxMonitoring(boolean jmxMonitoring) {
@@ -349,6 +369,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 获取应用主机名
+     *
      * @return
      */
     @Override
@@ -358,6 +379,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 设置应用主机名
+     *
      * @param appHost
      */
     public void setAppHost(String appHost) {
@@ -366,6 +388,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 获取应用信息
+     *
      * @return
      */
     @Override
@@ -375,6 +398,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 设置应用信息
+     *
      * @param appInfo
      */
     public void setAppInfo(String appInfo) {
@@ -383,6 +407,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 获取Throwable最大堆栈深度
+     *
      * @return
      */
     @Override
@@ -392,6 +417,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 设置Throwable最大堆栈深度
+     *
      * @param maxDepthPerThrowable
      */
     public void setMaxDepthPerThrowable(int maxDepthPerThrowable) {
@@ -400,6 +426,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 获取Throwable排除的key
+     *
      * @return
      */
     @Override
@@ -409,6 +436,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 设置Throwable排除的key
+     *
      * @param excludeThrowableKeys
      */
     public void setExcludeThrowableKeys(String excludeThrowableKeys) {
@@ -417,6 +445,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 附加日志。
+     *
      * @param event
      */
     @Override
@@ -636,7 +665,8 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
                     }
                     try {
                         Thread.sleep(500);
-                    }catch (InterruptedException ignore){}
+                    } catch (InterruptedException ignore) {
+                    }
                 } catch (Exception e) {
                     //直接打印到控制台输出吧
                     e.printStackTrace();

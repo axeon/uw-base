@@ -12,17 +12,17 @@ import uw.common.util.EnumUtils;
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum DaoResponseCode implements ResponseCode {
 
-    TRANSACTION_ERROR( "数据库操作执行失败！" ),
-    DATA_NOT_FOUND_WARN( "数据未找到！" ),
+    TRANSACTION_ERROR("数据库操作执行失败！"),
+    DATA_NOT_FOUND_WARN("数据未找到！"),
     ;
 
     /**
      * 国际化信息MESSAGE_SOURCE。
      */
     private static final ResourceBundleMessageSource MESSAGE_SOURCE = new ResourceBundleMessageSource() {{
-        setBasename( "i18n/messages/uw_dao" );
-        setDefaultEncoding( "UTF-8" );
-        setCacheSeconds( 0 );
+        setBasename("i18n/messages/uw_dao");
+        setDefaultEncoding("UTF-8");
+        setCacheSeconds(0);
     }};
 
     /**
@@ -35,7 +35,7 @@ public enum DaoResponseCode implements ResponseCode {
     private final String message;
 
     DaoResponseCode(String message) {
-        this.code = EnumUtils.enumNameToDotCase( this.name() );
+        this.code = EnumUtils.enumNameToDotCase(this.name());
         this.message = message;
     }
 

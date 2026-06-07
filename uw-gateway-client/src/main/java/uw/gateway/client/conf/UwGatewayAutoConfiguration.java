@@ -20,6 +20,6 @@ public class UwGatewayAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public GatewayClientHelper GatewayClientHelper(UwGatewayProperties uwGatewayProperties, RestTemplate authRestTemplate) {
-        return new GatewayClientHelper( uwGatewayProperties, authRestTemplate );
+        return new GatewayClientHelper(uwGatewayProperties, authRestTemplate);
     }
 }

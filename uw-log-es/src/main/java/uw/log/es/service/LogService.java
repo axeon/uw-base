@@ -161,7 +161,7 @@ public class LogService {
             return;
         }
         this.needBasicAuth = StringUtils.isNotBlank(esUsername) && StringUtils.isNotBlank(esPassword);
-        this.httpInterface = new JsonInterfaceHelper(HttpConfig.builder().retryOnConnectionFailure(true).connectTimeout(logClientProperties.getEs().getConnectTimeout()).readTimeout(logClientProperties.getEs().getReadTimeout()).writeTimeout(logClientProperties.getEs().getWriteTimeout()).trustManager( SSLContextUtils.getTrustAllManager() ).sslSocketFactory( SSLContextUtils.getTruestAllSocketFactory()).hostnameVerifier((hostName, sslSession) -> true).build());
+        this.httpInterface = new JsonInterfaceHelper(HttpConfig.builder().retryOnConnectionFailure(true).connectTimeout(logClientProperties.getEs().getConnectTimeout()).readTimeout(logClientProperties.getEs().getReadTimeout()).writeTimeout(logClientProperties.getEs().getWriteTimeout()).trustManager(SSLContextUtils.getTrustAllManager()).sslSocketFactory(SSLContextUtils.getTruestAllSocketFactory()).hostnameVerifier((hostName, sslSession) -> true).build());
         this.esBulk = logClientProperties.getEs().getEsBulk();
         this.maxFlushInMilliseconds = logClientProperties.getEs().getMaxFlushInSeconds() * 1000L;
         this.maxBytesOfBatch = logClientProperties.getEs().getMaxKiloBytesOfBatch() * 1024L;
@@ -374,7 +374,7 @@ public class LogService {
                 log.error("LogClient ES Batch process error! code:{}, response:{}", httpData.getStatusCode(), httpData.getResponseData());
             }
             BulkResponse bulkResponse = JsonUtils.parse(httpData.getResponseData(), BulkResponse.class);
-            if (bulkResponse.isErrors()){
+            if (bulkResponse.isErrors()) {
                 log.error("LogClient ES Batch process error! code:{}, response:{}", httpData.getStatusCode(), httpData.getResponseData());
             }
         } catch (Exception e) {

@@ -18,7 +18,7 @@ import java.util.Set;
  */
 public class GlobalSortedSet {
 
-    private static final Logger log = LoggerFactory.getLogger( GlobalSortedSet.class );
+    private static final Logger log = LoggerFactory.getLogger(GlobalSortedSet.class);
 
     /**
      * redis前缀。
@@ -46,7 +46,7 @@ public class GlobalSortedSet {
         if (setName == null || itemData == null) {
             return false;
         }
-        return Boolean.TRUE.equals( dataCacheRedisTemplate.opsForZSet().add( REDIS_PREFIX + setName, KryoCacheUtils.serialize( itemData ), itemScore ) );
+        return Boolean.TRUE.equals(dataCacheRedisTemplate.opsForZSet().add(REDIS_PREFIX + setName, KryoCacheUtils.serialize(itemData), itemScore));
     }
 
     /**
@@ -59,7 +59,26 @@ public class GlobalSortedSet {
         if (setName == null) {
             return -1L;
         }
-        Long ret = dataCacheRedisTemplate.opsForZSet().size( REDIS_PREFIX + setName );
+        Long ret = dataCacheRedisTemplate.opsForZSet().size(REDIS_PREFIX + setName);
+        if (ret != null) {
+            return ret;
+        } else {
+            return -1L;
+        }
+    }
+
+    /**
+     * 从SortedSet中移除对象。
+     *
+     * @param setName  Set名。
+     * @param itemData 队列对象。
+     * @return long 删除数量。
+     */
+    public static <T> long remove(String setName, T itemData) {
+        if (setName == null || itemData == null) {
+            return -1L;
+        }
+        Long ret = dataCacheRedisTemplate.opsForZSet().remove(REDIS_PREFIX + setName, KryoCacheUtils.serialize(itemData));
         if (ret != null) {
             return ret;
         } else {
@@ -71,25 +90,6 @@ public class GlobalSortedSet {
      * 从SortedSet中移除对象。
      *
      * @param setName   Set名。
-     * @param itemData 队列对象。
-     * @return long 删除数量。
-     */
-    public static <T> long remove(String setName, T itemData) {
-        if (setName == null || itemData == null) {
-            return -1L;
-        }
-        Long ret = dataCacheRedisTemplate.opsForZSet().remove( REDIS_PREFIX + setName, KryoCacheUtils.serialize( itemData ) );
-        if (ret != null) {
-            return ret;
-        } else {
-            return -1L;
-        }
-    }
-
-    /**
-     * 从SortedSet中移除对象。
-     *
-     * @param setName    Set名。
      * @param itemDatas 队列对象。
      * @return long 删除数量。
      */
@@ -99,9 +99,9 @@ public class GlobalSortedSet {
         }
         Object[] dataArray = new Object[itemDatas.length];
         for (int i = 0; i < itemDatas.length; i++) {
-            dataArray[i] = KryoCacheUtils.serialize( itemDatas[i] );
+            dataArray[i] = KryoCacheUtils.serialize(itemDatas[i]);
         }
-        Long ret = dataCacheRedisTemplate.opsForZSet().remove( REDIS_PREFIX + setName, dataArray );
+        Long ret = dataCacheRedisTemplate.opsForZSet().remove(REDIS_PREFIX + setName, dataArray);
         if (ret != null) {
             return ret;
         } else {
@@ -121,7 +121,7 @@ public class GlobalSortedSet {
         if (setName == null) {
             return -1L;
         }
-        Long ret = dataCacheRedisTemplate.opsForZSet().removeRangeByScore( REDIS_PREFIX + setName, scoreMin, scoreMax );
+        Long ret = dataCacheRedisTemplate.opsForZSet().removeRangeByScore(REDIS_PREFIX + setName, scoreMin, scoreMax);
         if (ret != null) {
             return ret;
         } else {
@@ -141,13 +141,13 @@ public class GlobalSortedSet {
         if (setName == null) {
             return null;
         }
-        Set<byte[]> byteSet = dataCacheRedisTemplate.opsForZSet().rangeByScore( REDIS_PREFIX + setName, scoreMin, scoreMax );
+        Set<byte[]> byteSet = dataCacheRedisTemplate.opsForZSet().rangeByScore(REDIS_PREFIX + setName, scoreMin, scoreMax);
         if (byteSet == null) {
             return null;
         }
-        HashSet<T> dataSet = new HashSet<>( (int) (byteSet.size() * 1.5f) );
+        HashSet<T> dataSet = new HashSet<>((int) (byteSet.size() * 1.5f));
         for (byte[] item : byteSet) {
-            dataSet.add( KryoCacheUtils.deserialize( item, itemClazz ) );
+            dataSet.add(KryoCacheUtils.deserialize(item, itemClazz));
         }
         return dataSet;
     }
@@ -162,14 +162,15 @@ public class GlobalSortedSet {
         if (setName == null) {
             return false;
         }
-        return Boolean.TRUE.equals( dataCacheRedisTemplate.delete( REDIS_PREFIX + setName ) );
+        return Boolean.TRUE.equals(dataCacheRedisTemplate.delete(REDIS_PREFIX + setName));
     }
 
 
     /**
      * 获取缓存中的所有key。
+     *
      * @param entityType 缓存对象类(主要用于构造cacheName)
-     * @param keyPrefix key前缀，请注意key最后不用加"*"
+     * @param keyPrefix  key前缀，请注意key最后不用加"*"
      * @return
      */
     public static Set<String> keys(Class<?> entityType, String keyPrefix) {
@@ -179,7 +180,7 @@ public class GlobalSortedSet {
     /**
      * 获取缓存中的所有key。
      *
-     * @param setType 集合名
+     * @param setType   集合名
      * @param keyPrefix key前缀，请注意key最后不用加"*",全部清除用*即可。
      * @return
      */

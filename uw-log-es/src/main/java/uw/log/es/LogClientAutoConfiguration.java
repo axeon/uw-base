@@ -15,7 +15,7 @@ import uw.log.es.service.LogService;
 @Configuration
 @EnableConfigurationProperties({LogClientProperties.class})
 public class LogClientAutoConfiguration {
-    private static final Logger logger = LoggerFactory.getLogger( LogClientAutoConfiguration.class );
+    private static final Logger logger = LoggerFactory.getLogger(LogClientAutoConfiguration.class);
     /**
      * 应用名称
      */
@@ -41,7 +41,7 @@ public class LogClientAutoConfiguration {
      */
     @Bean
     public LogClient logClient(final LogClientProperties logClientProperties) {
-        logClient = new LogClient( new LogService( logClientProperties, appInfo, appHost ) );
+        logClient = new LogClient(new LogService(logClientProperties, appInfo, appHost));
         return logClient;
     }
 

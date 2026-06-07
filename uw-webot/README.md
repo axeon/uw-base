@@ -1,6 +1,7 @@
 # UW-Webot 自动化框架
 
-UW-Webot 是一个基于 Microsoft Playwright 的高性能 Web 自动化框架，采用 Hybrid 混合模式设计，支持浏览器实例复用和页签级隔离，提供验证码识别、反检测、代理池等企业级功能。
+UW-Webot 是一个基于 Microsoft Playwright 的高性能 Web 自动化框架，采用 Hybrid
+混合模式设计，支持浏览器实例复用和页签级隔离，提供验证码识别、反检测、代理池等企业级功能。
 
 ## 目录
 
@@ -50,6 +51,7 @@ BrowserBotPool (单例)
 ### 2. 验证码识别
 
 支持多种验证码服务：
+
 - **本地 OCR**：基于 Tesseract 的本地识别
 - **2Captcha**：第三方验证码解决服务
 - **Capsolver**：AI 驱动的验证码解决服务
@@ -125,19 +127,19 @@ BrowserBotPool (单例)
 
 ### 系统要求
 
-| 组件 | 最低版本  | 推荐版本  |
-|------|-------|-------|
-| Java | 17    | 25    |
-| Maven | 3.8   | 3.9+  |
+| 组件          | 最低版本  | 推荐版本  |
+|-------------|-------|-------|
+| Java        | 17    | 25    |
+| Maven       | 3.8   | 3.9+  |
 | Spring Boot | 3.2.x | 3.3.x |
 
 ### 浏览器要求
 
-| 浏览器 | 支持版本 |
-|--------|---------|
+| 浏览器             | 支持版本 |
+|-----------------|------|
 | Chromium/Chrome | 120+ |
-| Firefox | 120+ |
-| WebKit/Safari | 17+ |
+| Firefox         | 120+ |
+| WebKit/Safari   | 17+  |
 
 ### 依赖组件
 
@@ -390,41 +392,41 @@ uw:
 
 ### WebotManager
 
-| 方法 | 描述 | 参数 | 返回值 |
-|------|------|------|--------|
-| `createSession()` | 创建默认会话 | 无 | WebotSession |
-| `createSession(SessionConfig)` | 创建会话 | 会话配置 | WebotSession |
-| `openBrowserTab(WebotSession)` | 获取浏览器页签 | 会话 | BrowserTab |
-| `execute(WebotSession, WebotFunction)` | 执行操作并自动管理资源 | 会话, 函数 | T |
-| `execute(WebotSession, WebotConsumer)` | 执行操作（无返回值） | 会话, 消费者 | void |
-| `getSession(String)` | 获取会话 | 会话ID | WebotSession |
-| `updateSession(WebotSession)` | 更新会话 | 会话 | void |
-| `destroySession(String)` | 销毁会话 | 会话ID | void |
-| `getCaptchaManager()` | 获取验证码管理器 | 无 | CaptchaManager |
-| `getProxyManager()` | 获取代理管理器 | 无 | ProxyManager |
-| `getStealthManager()` | 获取反检测管理器 | 无 | StealthManager |
-| `getStats()` | 获取池统计信息 | 无 | PoolStats |
+| 方法                                     | 描述          | 参数      | 返回值            |
+|----------------------------------------|-------------|---------|----------------|
+| `createSession()`                      | 创建默认会话      | 无       | WebotSession   |
+| `createSession(SessionConfig)`         | 创建会话        | 会话配置    | WebotSession   |
+| `openBrowserTab(WebotSession)`         | 获取浏览器页签     | 会话      | BrowserTab     |
+| `execute(WebotSession, WebotFunction)` | 执行操作并自动管理资源 | 会话, 函数  | T              |
+| `execute(WebotSession, WebotConsumer)` | 执行操作（无返回值）  | 会话, 消费者 | void           |
+| `getSession(String)`                   | 获取会话        | 会话ID    | WebotSession   |
+| `updateSession(WebotSession)`          | 更新会话        | 会话      | void           |
+| `destroySession(String)`               | 销毁会话        | 会话ID    | void           |
+| `getCaptchaManager()`                  | 获取验证码管理器    | 无       | CaptchaManager |
+| `getProxyManager()`                    | 获取代理管理器     | 无       | ProxyManager   |
+| `getStealthManager()`                  | 获取反检测管理器    | 无       | StealthManager |
+| `getStats()`                           | 获取池统计信息     | 无       | PoolStats      |
 
 ### BrowserTab
 
-| 方法 | 描述 | 参数 | 返回值 |
-|------|------|------|--------|
-| `navigate(String)` | 导航到URL | url | Response |
-| `navigate(String, Page.NavigateOptions)` | 导航到URL（带选项） | url, 选项 | Response |
-| `waitForLoadState(LoadState)` | 等待页面加载状态 | 加载状态 | void |
-| `url()` | 获取当前URL | 无 | String |
-| `title()` | 获取页面标题 | 无 | String |
-| `content()` | 获取页面HTML | 无 | String |
-| `reload()` | 重新加载页面 | 无 | Response |
-| `reload(Page.ReloadOptions)` | 重新加载页面（带选项） | 选项 | Response |
-| `screenshot(Page.ScreenshotOptions)` | 截图 | 选项 | byte[] |
-| `evaluate(String)` | 执行JavaScript | 表达式 | Object |
-| `evaluate(String, Object)` | 执行JavaScript（带参数） | 表达式, 参数 | Object |
-| `getStorageStateJson()` | 获取存储状态JSON | 无 | String |
-| `consume(BiConsumer<BrowserContext, Page>)` | 执行自定义操作 | 消费者 | void |
-| `execute(BiFunction<BrowserContext, Page, T>)` | 执行自定义操作（带返回值） | 函数 | T |
-| `executeAsync(BiFunction<BrowserContext, Page, T>)` | 异步执行自定义操作 | 函数 | Future<T> |
-| `close()` | 关闭并归还页签 | 无 | void |
+| 方法                                                  | 描述                | 参数      | 返回值       |
+|-----------------------------------------------------|-------------------|---------|-----------|
+| `navigate(String)`                                  | 导航到URL            | url     | Response  |
+| `navigate(String, Page.NavigateOptions)`            | 导航到URL（带选项）       | url, 选项 | Response  |
+| `waitForLoadState(LoadState)`                       | 等待页面加载状态          | 加载状态    | void      |
+| `url()`                                             | 获取当前URL           | 无       | String    |
+| `title()`                                           | 获取页面标题            | 无       | String    |
+| `content()`                                         | 获取页面HTML          | 无       | String    |
+| `reload()`                                          | 重新加载页面            | 无       | Response  |
+| `reload(Page.ReloadOptions)`                        | 重新加载页面（带选项）       | 选项      | Response  |
+| `screenshot(Page.ScreenshotOptions)`                | 截图                | 选项      | byte[]    |
+| `evaluate(String)`                                  | 执行JavaScript      | 表达式     | Object    |
+| `evaluate(String, Object)`                          | 执行JavaScript（带参数） | 表达式, 参数 | Object    |
+| `getStorageStateJson()`                             | 获取存储状态JSON        | 无       | String    |
+| `consume(BiConsumer<BrowserContext, Page>)`         | 执行自定义操作           | 消费者     | void      |
+| `execute(BiFunction<BrowserContext, Page, T>)`      | 执行自定义操作（带返回值）     | 函数      | T         |
+| `executeAsync(BiFunction<BrowserContext, Page, T>)` | 异步执行自定义操作         | 函数      | Future<T> |
+| `close()`                                           | 关闭并归还页签           | 无       | void      |
 
 ## 常见问题
 
@@ -452,7 +454,7 @@ uw:
 
 ### Q3: 如何配置分布式会话？
 
-**A**: 
+**A**:
 
 ```yaml
 uw:
@@ -465,17 +467,17 @@ uw:
 
 ### Q4: 验证码服务如何选择？
 
-**A**: 
+**A**:
 
-| 服务类型 | 适用场景 | 成本 | 准确率 |
-|---------|---------|------|--------|
-| OCR | 简单数字/字母验证码 | 低 | 中 |
-| 2Captcha | 复杂验证码、ReCaptcha | 中 | 高 |
-| Capsolver | AI 验证码、ReCaptcha V3 | 中高 | 很高 |
+| 服务类型      | 适用场景                | 成本 | 准确率 |
+|-----------|---------------------|----|-----|
+| OCR       | 简单数字/字母验证码          | 低  | 中   |
+| 2Captcha  | 复杂验证码、ReCaptcha     | 中  | 高   |
+| Capsolver | AI 验证码、ReCaptcha V3 | 中高 | 很高  |
 
 ### Q5: 如何排查代理问题？
 
-**A**: 
+**A**:
 
 1. 检查代理配置是否正确
 2. 使用 `proxyService.checkProxyHealth(proxy)` 测试代理可用性
@@ -484,7 +486,7 @@ uw:
 
 ### Q6: 内存占用过高怎么办？
 
-**A**: 
+**A**:
 
 1. **减少浏览器实例数**：降低 `max-browsers-per-group`
 2. **及时释放资源**：确保页签使用完毕后调用 `close()`

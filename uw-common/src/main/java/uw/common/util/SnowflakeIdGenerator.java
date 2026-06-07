@@ -1,14 +1,21 @@
 package uw.common.util;
 
-import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * SnowflakeIdGenerator 是基于Snowflake算法的唯一ID生成器。
- * 生成的ID由时间戳、机器ID（通过UUID生成）和序列号组成，保证在分布式环境中的全局唯一性。
+ * 生成的ID由时间戳、机器ID和序列号组成，保证在分布式环境中的全局唯一性。
  * 该实现支持高并发情况下的ID生成，避免了依赖中心化服务。
- * 为了适配k8s和docker环境，使用了UUID替换了IP。
+ * <p>
+ * machineId分配策略（按优先级）：
+ * 1. 环境变量 MACHINE_ID（K8s中可通过Pod Ordinal或Downward API注入）
+ * 2. HOSTNAME的稳定hash（容器/Pod名称，同一实例重启后保持一致）
+ * 3. 降级到UUID随机（仅当以上均不可用时）
  */
 public class SnowflakeIdGenerator {
+
+    private static final Logger log = LoggerFactory.getLogger(SnowflakeIdGenerator.class);
 
     // 配置
     private static final long START_TIMESTAMP = 1735660800_000L; // 自定义起始时间（2025年1月1日）
@@ -26,17 +33,61 @@ public class SnowflakeIdGenerator {
     // 静态实例
     private static final SnowflakeIdGenerator INSTANCE = new SnowflakeIdGenerator();
 
-    private long machineId; // 机器ID
+    private final long machineId; // 机器ID
     private long sequence = 0L; // 序列号
     private long lastTimestamp = -1L; // 上次生成ID的时间戳
 
     /**
-     * 私有构造函数，通过UUID生成机器ID
-     * 将UUID的高64位作为机器ID，并确保其位数在最大机器ID范围内。
+     * 构造函数，通过策略确定machineId。
+     * 优先使用环境变量，其次使用HOSTNAME的hash，最后降级到随机。
      */
     public SnowflakeIdGenerator() {
-        // 使用UUID生成机器ID，这里取UUID的低10位作为机器ID
-        this.machineId = UUID.randomUUID().getMostSignificantBits() & MAX_MACHINE_ID;
+        this.machineId = resolveMachineId();
+    }
+
+    /**
+     * 按优先级解析machineId：
+     * 1. 环境变量 MACHINE_ID
+     * 2. HOSTNAME 的稳定hash
+     * 3. 随机降级
+     */
+    private static long resolveMachineId() {
+        // 优先级1：环境变量 MACHINE_ID
+        String envMachineId = System.getenv("MACHINE_ID");
+        if (envMachineId != null && !envMachineId.isEmpty()) {
+            try {
+                long id = Long.parseLong(envMachineId) & MAX_MACHINE_ID;
+                log.info("Snowflake machineId from env MACHINE_ID: {}", id);
+                return id;
+            } catch (NumberFormatException e) {
+                log.warn("Invalid MACHINE_ID env: {}, falling back to hostname", envMachineId);
+            }
+        }
+
+        // 优先级2：HOSTNAME的稳定hash（Pod名称在K8s StatefulSet中是有序且稳定的）
+        String hostname = System.getenv("HOSTNAME");
+        if (hostname != null && !hostname.isEmpty()) {
+            long id = stableHash(hostname) & MAX_MACHINE_ID;
+            log.info("Snowflake machineId from HOSTNAME hash: {} (hostname={})", id, hostname);
+            return id;
+        }
+
+        // 优先级3：降级到随机（单实例开发/测试场景）
+        long id = (System.currentTimeMillis() ^ Thread.currentThread().getId()) & MAX_MACHINE_ID;
+        log.info("Snowflake machineId from fallback: {}", id);
+        return id;
+    }
+
+    /**
+     * 对字符串做稳定的hash，确保相同输入始终产生相同输出。
+     */
+    private static long stableHash(String value) {
+        long hash = 0xcbf29ce484222325L;
+        for (int i = 0; i < value.length(); i++) {
+            hash ^= value.charAt(i);
+            hash *= 0x100000001b3L;
+        }
+        return hash;
     }
 
     /**

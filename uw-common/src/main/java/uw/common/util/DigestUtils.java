@@ -1,5 +1,6 @@
 package uw.common.util;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -19,15 +20,15 @@ public class DigestUtils {
      */
     public static String sign(String msg, Algorithm algorithm) {
         if (algorithm == null) {
-            throw new IllegalArgumentException( "Digest类型不能为空" );
+            throw new IllegalArgumentException("Digest类型不能为空");
         }
 
         try {
-            MessageDigest digest = MessageDigest.getInstance( algorithm.getAlgorithm() );
-            byte[] hash = digest.digest( msg.getBytes() );
-            return Base64.getEncoder().encodeToString( hash );
+            MessageDigest digest = MessageDigest.getInstance(algorithm.getAlgorithm());
+            byte[] hash = digest.digest(msg.getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString(hash);
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalArgumentException( "无效的Digest类型: " + algorithm, e );
+            throw new IllegalArgumentException("无效的Digest类型: " + algorithm, e);
         }
     }
 
@@ -40,15 +41,15 @@ public class DigestUtils {
      */
     public static String signHex(String msg, Algorithm algorithm) {
         if (algorithm == null) {
-            throw new IllegalArgumentException( "Digest类型不能为空" );
+            throw new IllegalArgumentException("Digest类型不能为空");
         }
 
         try {
-            MessageDigest digest = MessageDigest.getInstance( algorithm.getAlgorithm() );
-            byte[] hash = digest.digest( msg.getBytes() );
-            return bytesToHex( hash );
+            MessageDigest digest = MessageDigest.getInstance(algorithm.getAlgorithm());
+            byte[] hash = digest.digest(msg.getBytes(StandardCharsets.UTF_8));
+            return bytesToHex(hash);
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalArgumentException( "无效的Digest类型: " + algorithm, e );
+            throw new IllegalArgumentException("无效的Digest类型: " + algorithm, e);
         }
     }
 
@@ -61,7 +62,7 @@ public class DigestUtils {
     public static String bytesToHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
         for (byte b : bytes) {
-            sb.append( String.format( "%02x", b ) );
+            sb.append(String.format("%02x", b));
         }
         return sb.toString();
     }
@@ -70,13 +71,13 @@ public class DigestUtils {
      * Digest类型枚举（按安全性排序，推荐使用SHA-256或更高）
      */
     public enum Algorithm {
-        MD5( "MD5", "不安全，仅用于兼容旧系统" ),
-        SHA( "SHA-1", "较弱，建议仅用于历史系统" ),
-        SHA_256( "SHA-256", "推荐使用" ),
-        SHA_384( "SHA-384", "高强度" ),
-        SHA_512( "SHA-512", "最高强度" ),
-        SHA3_256( "SHA3-256", "最新标准，推荐使用" ),
-        SHA3_512( "SHA3-512", "最新标准，最高强度" );
+        MD5("MD5", "不安全，仅用于兼容旧系统"),
+        SHA("SHA-1", "较弱，建议仅用于历史系统"),
+        SHA_256("SHA-256", "推荐使用"),
+        SHA_384("SHA-384", "高强度"),
+        SHA_512("SHA-512", "最高强度"),
+        SHA3_256("SHA3-256", "最新标准，推荐使用"),
+        SHA3_512("SHA3-512", "最新标准，最高强度");
 
         /**
          * Digest算法名称

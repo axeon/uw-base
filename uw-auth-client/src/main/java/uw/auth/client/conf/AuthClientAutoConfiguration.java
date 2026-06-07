@@ -7,8 +7,6 @@ import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.core5.http.HeaderElement;
 import org.apache.hc.core5.http.message.BasicHeaderElementIterator;
 import org.apache.hc.core5.util.TimeValue;
-
-import java.time.Duration;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -28,9 +26,10 @@ import org.springframework.http.converter.xml.SourceHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import uw.auth.client.filter.AuthTokenHeaderFilter;
-import uw.auth.client.service.AuthClientTokenService;
 import uw.auth.client.interceptor.AuthTokenHeaderInterceptor;
+import uw.auth.client.service.AuthClientTokenService;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -172,17 +171,17 @@ public class AuthClientAutoConfiguration {
         CloseableHttpClient httpClient = HttpClientBuilder.create().setConnectionManager(connectionManager)
                 .setDefaultRequestConfig(config)
                 .setKeepAliveStrategy((response, context) -> {
-            BasicHeaderElementIterator iterator = new BasicHeaderElementIterator(response.headerIterator("Keep-Alive"));
-            while (iterator.hasNext()) {
-                HeaderElement he = iterator.next();
-                String param = he.getName();
-                String value = he.getValue();
-                if (value != null && param.equalsIgnoreCase("timeout")) {
-                    return TimeValue.of(Long.parseLong(value) * 1000, TimeUnit.MILLISECONDS);
-                }
-            }
-            return TimeValue.of(authClientProperties.getHttpPool().getKeepAliveTimeIfNotPresent(), TimeUnit.MILLISECONDS);
-        }).build();
+                    BasicHeaderElementIterator iterator = new BasicHeaderElementIterator(response.headerIterator("Keep-Alive"));
+                    while (iterator.hasNext()) {
+                        HeaderElement he = iterator.next();
+                        String param = he.getName();
+                        String value = he.getValue();
+                        if (value != null && param.equalsIgnoreCase("timeout")) {
+                            return TimeValue.of(Long.parseLong(value) * 1000, TimeUnit.MILLISECONDS);
+                        }
+                    }
+                    return TimeValue.of(authClientProperties.getHttpPool().getKeepAliveTimeIfNotPresent(), TimeUnit.MILLISECONDS);
+                }).build();
         HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
         factory.setReadTimeout(Duration.ofMillis(authClientProperties.getHttpPool().getSocketTimeout()));
         return factory;

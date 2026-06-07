@@ -16,7 +16,7 @@ public class IdQueryParam extends QueryParam<IdQueryParam> {
      * ID。
      */
     @QueryMeta(expr = "id=?")
-    @Schema(title="ID", description = "ID")
+    @Schema(title = "ID", description = "ID")
     private Serializable id;
 
 
@@ -24,7 +24,7 @@ public class IdQueryParam extends QueryParam<IdQueryParam> {
      * 数组ID。
      */
     @QueryMeta(expr = "id in (?)")
-    @Schema(title="ID数组", description = "ID数组，可同时匹配多个。")
+    @Schema(title = "ID数组", description = "ID数组，可同时匹配多个。")
     private Serializable[] ids;
 
     /**

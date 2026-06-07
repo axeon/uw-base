@@ -65,7 +65,7 @@ public class AuthPageQueryParam extends PageQueryParam {
      */
     public AuthPageQueryParam bindUserId() {
         AuthTokenData tokenData = getAuthToken();
-        setUserId( tokenData.getUserId() );
+        setUserId(tokenData.getUserId());
         return this;
     }
 
@@ -74,7 +74,7 @@ public class AuthPageQueryParam extends PageQueryParam {
      */
     public AuthPageQueryParam bindMchId() {
         AuthTokenData tokenData = getAuthToken();
-        setMchId( tokenData.getMchId() );
+        setMchId(tokenData.getMchId());
         return this;
     }
 
@@ -83,12 +83,13 @@ public class AuthPageQueryParam extends PageQueryParam {
      */
     public AuthPageQueryParam bindUserType() {
         AuthTokenData tokenData = getAuthToken();
-        setUserType( tokenData.getUserType() );
+        setUserType(tokenData.getUserType());
         return this;
     }
 
     /**
      * 获取saasId。
+     *
      * @return
      */
     public Long getSaasId() {
@@ -97,6 +98,7 @@ public class AuthPageQueryParam extends PageQueryParam {
 
     /**
      * 设置saasId。
+     *
      * @param saasId
      */
     public void setSaasId(Long saasId) {
@@ -104,7 +106,8 @@ public class AuthPageQueryParam extends PageQueryParam {
     }
 
     /**
-     *  设置saasId。
+     * 设置saasId。
+     *
      * @param saasId
      * @return
      */
@@ -115,6 +118,7 @@ public class AuthPageQueryParam extends PageQueryParam {
 
     /**
      * 获取mchId。
+     *
      * @return
      */
     public Long getMchId() {
@@ -123,6 +127,7 @@ public class AuthPageQueryParam extends PageQueryParam {
 
     /**
      * 设置mchId。
+     *
      * @param mchId
      */
     public void setMchId(Long mchId) {
@@ -131,6 +136,7 @@ public class AuthPageQueryParam extends PageQueryParam {
 
     /**
      * 设置mchId。
+     *
      * @param mchId
      * @return
      */
@@ -141,6 +147,7 @@ public class AuthPageQueryParam extends PageQueryParam {
 
     /**
      * 获取userId。
+     *
      * @return
      */
     public Long getUserId() {
@@ -149,6 +156,7 @@ public class AuthPageQueryParam extends PageQueryParam {
 
     /**
      * 设置userId。
+     *
      * @param userId
      */
     public void setUserId(Long userId) {
@@ -157,6 +165,7 @@ public class AuthPageQueryParam extends PageQueryParam {
 
     /**
      * 设置userId。
+     *
      * @param userId
      * @return
      */
@@ -167,6 +176,7 @@ public class AuthPageQueryParam extends PageQueryParam {
 
     /**
      * 获取userType。
+     *
      * @return
      */
     public Integer getUserType() {
@@ -175,6 +185,7 @@ public class AuthPageQueryParam extends PageQueryParam {
 
     /**
      * 设置userType。
+     *
      * @param userType
      */
     public void setUserType(Integer userType) {
@@ -183,6 +194,7 @@ public class AuthPageQueryParam extends PageQueryParam {
 
     /**
      * 设置userType。
+     *
      * @param userType
      * @return
      */
@@ -197,7 +209,7 @@ public class AuthPageQueryParam extends PageQueryParam {
     private AuthPageQueryParam bindSaasId() {
         AuthTokenData tokenData = getAuthToken();
         if (tokenData.getUserType() < UserType.RPC.getValue() || tokenData.getUserType() > UserType.ADMIN.getValue()) {
-            setSaasId( tokenData.getSaasId() );
+            setSaasId(tokenData.getSaasId());
         }
         return this;
     }
@@ -210,7 +222,7 @@ public class AuthPageQueryParam extends PageQueryParam {
     private AuthTokenData getAuthToken() {
         AuthTokenData authToken = AuthServiceHelper.getContextToken();
         if (authToken == null) {
-            throw new UnsupportedOperationException( "AuthServiceHelper must be run in auth-service web environment!" );
+            throw new UnsupportedOperationException("AuthServiceHelper must be run in auth-service web environment!");
         }
         return authToken;
     }

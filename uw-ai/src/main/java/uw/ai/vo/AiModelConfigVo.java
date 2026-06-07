@@ -52,30 +52,75 @@ public class AiModelConfigVo {
      */
     private Date createDate;
 
-    public long getId() { return id; }
-    public void setId(long id) { this.id = id; }
+    public long getId() {
+        return id;
+    }
 
-    public String getModelType() { return modelType; }
-    public void setModelType(String modelType) { this.modelType = modelType; }
+    public void setId(long id) {
+        this.id = id;
+    }
 
-    public String getConfigCode() { return configCode; }
-    public void setConfigCode(String configCode) { this.configCode = configCode; }
+    public String getModelType() {
+        return modelType;
+    }
 
-    public String getConfigName() { return configName; }
-    public void setConfigName(String configName) { this.configName = configName; }
+    public void setModelType(String modelType) {
+        this.modelType = modelType;
+    }
 
-    public String getConfigDesc() { return configDesc; }
-    public void setConfigDesc(String configDesc) { this.configDesc = configDesc; }
+    public String getConfigCode() {
+        return configCode;
+    }
 
-    public String getModelName() { return modelName; }
-    public void setModelName(String modelName) { this.modelName = modelName; }
+    public void setConfigCode(String configCode) {
+        this.configCode = configCode;
+    }
 
-    public String getVendorClass() { return vendorClass; }
-    public void setVendorClass(String vendorClass) { this.vendorClass = vendorClass; }
+    public String getConfigName() {
+        return configName;
+    }
 
-    public int getState() { return state; }
-    public void setState(int state) { this.state = state; }
+    public void setConfigName(String configName) {
+        this.configName = configName;
+    }
 
-    public Date getCreateDate() { return createDate; }
-    public void setCreateDate(Date createDate) { this.createDate = createDate; }
+    public String getConfigDesc() {
+        return configDesc;
+    }
+
+    public void setConfigDesc(String configDesc) {
+        this.configDesc = configDesc;
+    }
+
+    public String getModelName() {
+        return modelName;
+    }
+
+    public void setModelName(String modelName) {
+        this.modelName = modelName;
+    }
+
+    public String getVendorClass() {
+        return vendorClass;
+    }
+
+    public void setVendorClass(String vendorClass) {
+        this.vendorClass = vendorClass;
+    }
+
+    public int getState() {
+        return state;
+    }
+
+    public void setState(int state) {
+        this.state = state;
+    }
+
+    public Date getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(Date createDate) {
+        this.createDate = createDate;
+    }
 }

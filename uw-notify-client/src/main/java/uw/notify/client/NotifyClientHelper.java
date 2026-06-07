@@ -15,7 +15,7 @@ import uw.notify.client.vo.WebNotifyMsg;
  */
 public class NotifyClientHelper {
 
-    private static final Logger log = LoggerFactory.getLogger( NotifyClientHelper.class );
+    private static final Logger log = LoggerFactory.getLogger(NotifyClientHelper.class);
     /**
      * Rest模板类
      */
@@ -37,11 +37,11 @@ public class NotifyClientHelper {
     public static ResponseData pushNotify(WebNotifyMsg webNotifyMsg) {
         ResponseData responseData = null;
         try {
-            responseData = authRestTemplate.exchange( uwNotifyProperties.getNotifyCenterHost() + "/rpc/notify/pushNotify", HttpMethod.POST, new HttpEntity<>( webNotifyMsg ),
-                    ResponseData.class ).getBody();
+            responseData = authRestTemplate.exchange(uwNotifyProperties.getNotifyCenterHost() + "/rpc/notify/pushNotify", HttpMethod.POST, new HttpEntity<>(webNotifyMsg),
+                    ResponseData.class).getBody();
         } catch (Exception e) {
-            log.error( "WebNotifyHelper推送消息异常: {}", e.getMessage(), e );
-            return ResponseData.errorMsg( "WebNotifyHelper推送消息异常: " + e.getMessage() );
+            log.error("WebNotifyHelper推送消息异常: {}", e.getMessage(), e);
+            return ResponseData.errorMsg("WebNotifyHelper推送消息异常: " + e.getMessage());
         }
         return responseData;
 

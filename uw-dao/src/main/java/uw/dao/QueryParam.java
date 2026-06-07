@@ -335,6 +335,7 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
 
     /**
      * 清除排序。
+     *
      * @return
      */
     public P CLEAR_SORT() {

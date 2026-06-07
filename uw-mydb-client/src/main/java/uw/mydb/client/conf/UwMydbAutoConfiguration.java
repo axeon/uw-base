@@ -20,6 +20,6 @@ public class UwMydbAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public MydbClientHelper mydbClientHelper(UwMydbClientProperties uwNotifyProperties, RestTemplate authRestTemplate) {
-        return new MydbClientHelper( uwNotifyProperties, authRestTemplate );
+        return new MydbClientHelper(uwNotifyProperties, authRestTemplate);
     }
 }

@@ -42,7 +42,7 @@ public class GatewayClientHelper {
      * @param remark
      * @return
      */
-    public ResponseData updateSaasRateLimit(long saasId, int limitSeconds, int limitRequests, int limitBytes, Date expireDate, String remark) {
+    public static ResponseData updateSaasRateLimit(long saasId, int limitSeconds, int limitRequests, int limitBytes, Date expireDate, String remark) {
         URI targetUrl = UriComponentsBuilder.fromUriString(uwGatewayProperties.getGatewayCenterHost()).path("/rpc/service/updateSaasRateLimit").queryParam("saasId", saasId).queryParam("remark", remark).queryParam("limitSeconds", limitSeconds).queryParam("limitRequests", limitRequests).queryParam("expireDate", expireDate).queryParam("limitBytes", limitBytes).build().encode().toUri();
         return authRestTemplate.exchange(targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class).getBody();
     }
@@ -54,7 +54,7 @@ public class GatewayClientHelper {
      * @param remark
      * @return
      */
-    public ResponseData clearSaasRateLimit(long saasId, String remark) {
+    public static ResponseData clearSaasRateLimit(long saasId, String remark) {
         URI targetUrl = UriComponentsBuilder.fromUriString(uwGatewayProperties.getGatewayCenterHost()).path("/rpc/service/clearSaasRateLimit").queryParam("saasId", saasId).queryParam("remark", remark).build().encode().toUri();
         return authRestTemplate.exchange(targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class).getBody();
     }

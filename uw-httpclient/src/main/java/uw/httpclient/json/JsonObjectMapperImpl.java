@@ -45,16 +45,16 @@ public class JsonObjectMapperImpl implements DataObjectMapper {
      */
     @Override
     public JavaType constructParametricType(Class<?> parametrized, Class<?>... parameterClasses) {
-        return jsonMapper.getTypeFactory().constructParametricType( parametrized, parameterClasses );
+        return jsonMapper.getTypeFactory().constructParametricType(parametrized, parameterClasses);
     }
 
     @Override
     public <T> T parse(String content, Class<T> classType) throws DataMapperException {
         if (classType == String.class) return (T) content;
         try {
-            return (T) jsonMapper.readValue( content, classType );
+            return (T) jsonMapper.readValue(content, classType);
         } catch (Exception e) {
-            throw new DataMapperException( e.getMessage() + ",data: " + content, e );
+            throw new DataMapperException(e.getMessage() + ",data: " + content, e);
         }
     }
 
@@ -62,27 +62,27 @@ public class JsonObjectMapperImpl implements DataObjectMapper {
     @Override
     public <T> T parse(String content, TypeReference<T> typeRef) throws DataMapperException {
         try {
-            return (T) jsonMapper.readValue( content, typeRef );
+            return (T) jsonMapper.readValue(content, typeRef);
         } catch (Exception e) {
-            throw new DataMapperException( e.getMessage() + ",data: " + content, e );
+            throw new DataMapperException(e.getMessage() + ",data: " + content, e);
         }
     }
 
     @Override
     public <T> T parse(String content, JavaType type) throws DataMapperException {
         try {
-            return jsonMapper.readValue( content, type );
+            return jsonMapper.readValue(content, type);
         } catch (Exception e) {
-            throw new DataMapperException( e.getMessage() + ",data: " + content, e );
+            throw new DataMapperException(e.getMessage() + ",data: " + content, e);
         }
     }
 
     @Override
     public void write(OutputStream out, Object value) throws DataMapperException {
         try {
-            jsonMapper.writeValue( out, value );
+            jsonMapper.writeValue(out, value);
         } catch (Exception e) {
-            throw new DataMapperException( e.getMessage() + ",data: " + value, e );
+            throw new DataMapperException(e.getMessage() + ",data: " + value, e);
         }
     }
 
@@ -90,9 +90,9 @@ public class JsonObjectMapperImpl implements DataObjectMapper {
     public String toString(Object object) throws DataMapperException {
         if (object instanceof String string) return string;
         try {
-            return jsonMapper.writeValueAsString( object );
+            return jsonMapper.writeValueAsString(object);
         } catch (Throwable t) {
-            throw new DataMapperException( t );
+            throw new DataMapperException(t);
         }
     }
 

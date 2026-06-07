@@ -42,7 +42,7 @@ public class AuthAppRpcImpl implements AuthAppRpc {
      */
     @Override
     public MscAppRegResponse regApp(MscAppRegRequest appRegRequest) {
-        return authRestTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/app/regApp", appRegRequest, MscAppRegResponse.class );
+        return authRestTemplate.postForObject(authServiceProperties.getAuthCenterHost() + "/rpc/app/regApp", appRegRequest, MscAppRegResponse.class);
     }
 
     /**
@@ -53,7 +53,7 @@ public class AuthAppRpcImpl implements AuthAppRpc {
      */
     @Override
     public MscAppReportResponse reportStatus(MscAppReportRequest mscAppReportRequest) {
-        return authRestTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/app/reportStatus", mscAppReportRequest, MscAppReportResponse.class );
+        return authRestTemplate.postForObject(authServiceProperties.getAuthCenterHost() + "/rpc/app/reportStatus", mscAppReportRequest, MscAppReportResponse.class);
     }
 
     /**
@@ -63,8 +63,8 @@ public class AuthAppRpcImpl implements AuthAppRpc {
      */
     @Override
     public ResponseData updatePermLicense(MscPermLicenseRequest mscPermLicenseRequest) {
-        return authRestTemplate.exchange( authServiceProperties.getAuthCenterHost() + "/rpc/app/updatePermLicense", HttpMethod.PUT, new HttpEntity<>( mscPermLicenseRequest ),
-                ResponseData.class ).getBody();
+        return authRestTemplate.exchange(authServiceProperties.getAuthCenterHost() + "/rpc/app/updatePermLicense", HttpMethod.PUT, new HttpEntity<>(mscPermLicenseRequest),
+                ResponseData.class).getBody();
     }
 
 }

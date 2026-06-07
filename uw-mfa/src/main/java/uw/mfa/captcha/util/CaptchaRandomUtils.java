@@ -17,7 +17,7 @@ public class CaptchaRandomUtils {
      * @return
      */
     public static String getUUID() {
-        return UUID.randomUUID().toString().replaceAll( "-", "" );
+        return UUID.randomUUID().toString().replaceAll("-", "");
     }
 
     /**
@@ -27,7 +27,7 @@ public class CaptchaRandomUtils {
      * @return
      */
     public static int getRandomInt(int bound) {
-        return RandomUtils.insecure().randomInt( 0, bound );
+        return RandomUtils.insecure().randomInt(0, bound);
     }
 
     /**
@@ -38,7 +38,7 @@ public class CaptchaRandomUtils {
      * @return
      */
     public static int getRandomInt(int startNum, int endNum) {
-        return RandomUtils.insecure().randomInt( 0, endNum - startNum ) + startNum;
+        return RandomUtils.insecure().randomInt(0, endNum - startNum) + startNum;
     }
 
     /**
@@ -48,7 +48,7 @@ public class CaptchaRandomUtils {
      * @return
      */
     public static String getRandomString(int length) {
-        return RandomStringUtils.secureStrong().nextAlphanumeric( length );
+        return RandomStringUtils.secureStrong().nextAlphanumeric(length);
     }
 
 }

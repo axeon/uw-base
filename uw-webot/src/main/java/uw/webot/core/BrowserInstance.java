@@ -186,16 +186,16 @@ public class BrowserInstance {
      * @return BrowserTab 实例
      */
     protected synchronized BrowserTab createBrowserTab(WebotSession webotSession) {
-            checkActive();
-            if (browserTabMap.size() >= maxTabsPerBrowser) {
-                throw new IllegalStateException("Maximum number of tabs reached: " + maxTabsPerBrowser);
-            }
-            String browserTabId = browserId + ":tab-" + tabIdGenerator.incrementAndGet();
-            BrowserTab browserTab = new BrowserTab(browserTabId, this, webotSession);
-            browserTab.init(); // 在专属线程中初始化
-            browserTabMap.put(browserTabId, browserTab);
-            log.debug("BrowserTab [{}] opened from browser [{}], active count: {}", browserTab.getBrowserTabId(), browserId, browserTabMap.size());
-            return browserTab;
+        checkActive();
+        if (browserTabMap.size() >= maxTabsPerBrowser) {
+            throw new IllegalStateException("Maximum number of tabs reached: " + maxTabsPerBrowser);
+        }
+        String browserTabId = browserId + ":tab-" + tabIdGenerator.incrementAndGet();
+        BrowserTab browserTab = new BrowserTab(browserTabId, this, webotSession);
+        browserTab.init(); // 在专属线程中初始化
+        browserTabMap.put(browserTabId, browserTab);
+        log.debug("BrowserTab [{}] opened from browser [{}], active count: {}", browserTab.getBrowserTabId(), browserId, browserTabMap.size());
+        return browserTab;
     }
 
     /**

@@ -72,7 +72,7 @@ public class StatsCleanDataTask implements Runnable {
         for (int i = start; i < list.size(); i++) {
             try {
                 dao.executeCommand("DROP TABLE IF EXISTS " + list.get(i));
-                logger.info( "DROP TABLE IF EXISTS [{}].", list.get( i ) );
+                logger.info("DROP TABLE IF EXISTS [{}].", list.get(i));
             } catch (TransactionException e) {
                 logger.error(e.getMessage());
             }

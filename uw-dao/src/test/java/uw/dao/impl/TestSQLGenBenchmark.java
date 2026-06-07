@@ -8,7 +8,6 @@ import uw.dao.util.QueryParamUtils;
 import uw.dao.vo.QueryParamResult;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -33,18 +32,18 @@ public class TestSQLGenBenchmark {
     public static void main(String[] args) {
         QueryParamResult result = testQueryParam();
 
-        System.out.println("参数化SQL: "+result.getSql());
-        System.out.println("参数列表: "+ JsonUtils.toString(result.getParamList()));
-        System.out.println("完整SQL: "+result.genFullSql());
+        System.out.println("参数化SQL: " + result.getSql());
+        System.out.println("参数列表: " + JsonUtils.toString(result.getParamList()));
+        System.out.println("完整SQL: " + result.genFullSql());
 
-        System.out.println("占位符数量: "+StringUtils.countMatches(result.getSql(),"?"));
-        System.out.println("参数数量: "+result.getParamList().length);
+        System.out.println("占位符数量: " + StringUtils.countMatches(result.getSql(), "?"));
+        System.out.println("参数数量: " + result.getParamList().length);
     }
 
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public static QueryParamResult testQueryParam(){
+    public static QueryParamResult testQueryParam() {
         TestQueryParam queryParam = new TestQueryParam();
         queryParam.setId(1000L);
         queryParam.setAppName("abc%");
@@ -54,12 +53,12 @@ public class TestSQLGenBenchmark {
         stateList.add(1);
         stateList.add(2);
         queryParam.setAppInfo("%test%");
-        queryParam.setCreateDate(new Date[]{new Date(SystemClock.now()-86400000),SystemClock.nowDate()});
+        queryParam.setCreateDate(new Date[]{new Date(SystemClock.now() - 86400000), SystemClock.nowDate()});
         queryParam.setStateList(stateList);
         queryParam.setStateOn(true);
-        queryParam.ADD_EXT_COND("test>?",1);
-        queryParam.ADD_EXT_COND("test>? and test<?",new int[]{2,3});
-        queryParam.ADD_EXT_COND("test in (?)",new int[]{7,8,9});
+        queryParam.ADD_EXT_COND("test>?", 1);
+        queryParam.ADD_EXT_COND("test>? and test<?", new int[]{2, 3});
+        queryParam.ADD_EXT_COND("test in (?)", new int[]{7, 8, 9});
 //        queryParam.SET_LIKE_QUERY_ENABLE(false);
 //        queryParam.SET_LIKE_QUERY_PARAM_MIN_LEN(10);
         QueryParamResult result = QueryParamUtils.parseQueryParam(TestEntity.class, null, queryParam);

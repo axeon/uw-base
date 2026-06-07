@@ -71,7 +71,7 @@ public class AiChatMsgParam {
      * 工具上下文。
      */
     @Schema(title = "工具上下文", description = "工具上下文", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private Map<String,Object> toolContext;
+    private Map<String, Object> toolContext;
 
     /**
      * rag知识库id列表。
@@ -123,10 +123,11 @@ public class AiChatMsgParam {
         builder.fileList = copy.getFileList();
         return builder;
     }
+
     /**
      * 绑定授权信息。
      */
-    public void bindAuthInfo(){
+    public void bindAuthInfo() {
         this.saasId = AuthServiceHelper.getSaasId();
         this.userId = AuthServiceHelper.getUserId();
         this.userType = AuthServiceHelper.getUserType();

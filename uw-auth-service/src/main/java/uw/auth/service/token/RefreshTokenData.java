@@ -82,9 +82,11 @@ public class RefreshTokenData {
         builder.clientSecret = copy.getClientSecret();
         return builder;
     }
+
     public boolean isExpired() {
         return SystemClock.now() >= expireAt;
     }
+
     public long getExpireAt() {
         return expireAt;
     }

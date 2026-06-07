@@ -49,12 +49,12 @@ uw:
 
 - 使用了redis pub/sub进行缓存过期通知。
 
-
 ## 配置说明
 
 FusionCache使用前需要调用config方法进行配置，否则无法正常使用。config方法一般建议放在类的构造器中，或者AutoConfiguration文件中，确保仅会调用一次。
 
-config的第二个参数CacheDataLoader基于泛型的数据加载类。**泛型类型的设置必须精确，不能为接口类型必须为具体实现类（kryo反序列化的要求）。**
+config的第二个参数CacheDataLoader基于泛型的数据加载类。**泛型类型的设置必须精确，不能为接口类型必须为具体实现类（kryo反序列化的要求）。
+**
 
 ```java
 FusionCache.config( fusionConfig, new CacheDataLoader<Integer, String>() {
@@ -193,14 +193,14 @@ FusionCache的缓存作废通过redis的pub/sub方法实现，可以对使用同
 
 mbp16 m2max 32Gmem 20线程 预热10秒1次，压测10秒3次数据。
 
-Benchmark                                   Mode  Cnt        Score         Error   Units
-BenchmarkTest.testCaffeineCache            thrpt    3  2681789.453 ±  423455.867  ops/ms
-BenchmarkTest.testCaffeineWithExpireCache  thrpt    3    16798.762 ±     371.330  ops/ms
-BenchmarkTest.testCaffeineWithStats        thrpt    3  1330004.556 ± 1780012.722  ops/ms
-BenchmarkTest.testFusionCache              thrpt    3  1372533.025 ±  727956.771  ops/ms
-BenchmarkTest.testFusionLocalCache         thrpt    3  1404452.401 ±   27713.277  ops/ms
-BenchmarkTest.testGlobalCache              thrpt    3        3.720 ±       1.078  ops/ms
-BenchmarkTest.testMapCache                 thrpt    3  1953975.370 ±  183558.330  ops/ms
+Benchmark Mode Cnt Score Error Units
+BenchmarkTest.testCaffeineCache thrpt 3 2681789.453 ± 423455.867 ops/ms
+BenchmarkTest.testCaffeineWithExpireCache thrpt 3 16798.762 ± 371.330 ops/ms
+BenchmarkTest.testCaffeineWithStats thrpt 3 1330004.556 ± 1780012.722 ops/ms
+BenchmarkTest.testFusionCache thrpt 3 1372533.025 ± 727956.771 ops/ms
+BenchmarkTest.testFusionLocalCache thrpt 3 1404452.401 ± 27713.277 ops/ms
+BenchmarkTest.testGlobalCache thrpt 3 3.720 ± 1.078 ops/ms
+BenchmarkTest.testMapCache thrpt 3 1953975.370 ± 183558.330 ops/ms
 
 如果JDK21的ConcurrentHashMap性能是100%。
 
@@ -370,7 +370,6 @@ public static void config(final Class entityType, final long syncGlobalMillis, f
 
 2. entityType+lockerId参数对。考虑到大部分计数为实体类型，所以更建议使用entity.class参数的传值方式，语义明确，且编译器校验。
 
-
 ## 主要方法
 
 ```java
@@ -463,8 +462,6 @@ GlobalCounter基于Redis的实现的全局计数器。
  */
 public static long increment(Class entityType, Object counterId, long incrementNum);
 ```
-
-   
 
 ```java
 /**

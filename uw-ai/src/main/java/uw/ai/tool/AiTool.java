@@ -54,7 +54,7 @@ public interface AiTool<P extends AiToolParam, ResponseData> extends Function<P,
      * @return
      */
     default P convertParam(String toolTip) {
-        return (P) JsonUtils.parse( toolTip, getParamType() );
+        return (P) JsonUtils.parse(toolTip, getParamType());
     }
 
 

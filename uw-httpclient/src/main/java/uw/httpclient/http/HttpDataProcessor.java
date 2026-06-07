@@ -33,8 +33,8 @@ public interface HttpDataProcessor<D extends HttpData, T> {
      * 一般用于处理日志数据，发送到远端。
      *
      * @param httpData HttpData
-     * @param t 序列化信息
+     * @param t        序列化信息
      */
-    void postProcess(D httpData,T t);
+    void postProcess(D httpData, T t);
 
 }

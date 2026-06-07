@@ -17,7 +17,7 @@ public abstract class CacheDataLoader<K, V> {
 
     /**
      * 自定义过期时间。
-     *  0：永久有效。
+     * 0：永久有效。
      * >0：指定过期毫秒数。
      */
     private long expireMillis = 0L;

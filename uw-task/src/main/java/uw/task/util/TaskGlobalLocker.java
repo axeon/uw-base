@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class TaskGlobalLocker {
 
-    private static final Logger log = LoggerFactory.getLogger( TaskGlobalLocker.class );
+    private static final Logger log = LoggerFactory.getLogger(TaskGlobalLocker.class);
 
     /**
      * REDIS前缀
@@ -48,7 +48,7 @@ public class TaskGlobalLocker {
     private transient boolean flag;
 
     public TaskGlobalLocker(final RedisConnectionFactory redisConnectionFactory, TaskProperties taskProperties) {
-        this.stringRedisTemplate = new StringRedisTemplate( redisConnectionFactory );
+        this.stringRedisTemplate = new StringRedisTemplate(redisConnectionFactory);
         this.stringRedisTemplate.afterPropertiesSet();
         this.lockerName = REDIS_TAG + taskProperties.getTaskProject();
         this.lockerData = taskProperties.getAppName() + ":" + taskProperties.getAppVersion() + "@" + taskProperties.getAppHost() + ":" + taskProperties.getAppPort();
@@ -69,13 +69,13 @@ public class TaskGlobalLocker {
      * @return the isLeader
      */
     public boolean checkLeader() {
-        String data = stringRedisTemplate.opsForValue().get( lockerName );
+        String data = stringRedisTemplate.opsForValue().get(lockerName);
         if (data == null) {
             // 使用set nx来抢leader身份
-            flag = Boolean.TRUE.equals( stringRedisTemplate.opsForValue().setIfAbsent( lockerName, lockerData, LOCK_MILLIS, TimeUnit.MILLISECONDS ) );
+            flag = Boolean.TRUE.equals(stringRedisTemplate.opsForValue().setIfAbsent(lockerName, lockerData, LOCK_MILLIS, TimeUnit.MILLISECONDS));
         } else {
-            if (data.equals( lockerData )) {
-                flag = Boolean.TRUE.equals( stringRedisTemplate.expire( lockerName, LOCK_MILLIS, TimeUnit.MILLISECONDS ) );
+            if (data.equals(lockerData)) {
+                flag = Boolean.TRUE.equals(stringRedisTemplate.expire(lockerName, LOCK_MILLIS, TimeUnit.MILLISECONDS));
             } else {
                 flag = false;
             }

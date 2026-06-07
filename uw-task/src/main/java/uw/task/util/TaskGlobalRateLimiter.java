@@ -17,7 +17,7 @@ import java.util.Collections;
  */
 public class TaskGlobalRateLimiter {
 
-    private static final Logger log = LoggerFactory.getLogger( TaskGlobalRateLimiter.class);
+    private static final Logger log = LoggerFactory.getLogger(TaskGlobalRateLimiter.class);
 
     private static final String REDIS_PREFIX = "uw-task-rate:";
 

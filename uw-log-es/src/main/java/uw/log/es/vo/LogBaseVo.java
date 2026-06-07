@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 /**
  * 日志基类Vo
  *
- * 
  * @since 2018-07-28
  */
 public abstract class LogBaseVo {

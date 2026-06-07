@@ -108,7 +108,7 @@ public class BizAESBox {
      * @return
      */
     public String encrypt(String data) {
-        if (aesIv!=null) {
+        if (aesIv != null) {
             return AESUtils.encryptString(aesKey, aesIv, data);
         } else {
             return AESUtils.encryptString(aesKey, data);
@@ -122,9 +122,9 @@ public class BizAESBox {
      * @return
      */
     public String decrypt(String encrypted) {
-        if (aesIv!=null) {
+        if (aesIv != null) {
             return AESUtils.decryptString(aesKey, aesIv, encrypted);
-        }else{
+        } else {
             return AESUtils.decryptString(aesKey, encrypted);
         }
     }

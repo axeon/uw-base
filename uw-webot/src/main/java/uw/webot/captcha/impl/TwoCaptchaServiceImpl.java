@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.util.JsonUtils;
-import uw.webot.captcha.CaptchaService;
 import uw.webot.captcha.CaptchaConfig;
+import uw.webot.captcha.CaptchaService;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -303,10 +303,10 @@ public class TwoCaptchaServiceImpl implements CaptchaService {
     /**
      * 解决GeeTest。
      *
-     * @param gt         GT参数
-     * @param challenge  Challenge参数
-     * @param apiServer  API服务器
-     * @param pageUrl    页面URL
+     * @param gt        GT参数
+     * @param challenge Challenge参数
+     * @param apiServer API服务器
+     * @param pageUrl   页面URL
      * @return 识别结果
      */
     @Override

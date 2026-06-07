@@ -87,7 +87,7 @@ Auto-Configuration 注册的可用 Bean：
 | `authRestTemplate` (`RestTemplate`) | **主要使用**。每次请求自动注入 `Authorization: Bearer <token>`，401/498 时自动刷新后重试一次。`@Primary`。 |
 | `authWebClient` (`WebClient`) | **主要使用**。响应式版本，功能与上同。`@Primary`。 |
 | `baseAuthClientRestTemplate` (`RestTemplate`) | 内部使用，无鉴权拦截器，专用于向认证中心发起登录/刷新请求。 |
-| `authClientTokenHelper` (`AuthClientTokenHelper`) | Token 管理器，可直接注入调用 `getToken()` 获取当前有效 Token。 |
+| `authClientTokenService` (`AuthClientTokenService`) | Token 管理器，可直接注入调用 `getToken()` 获取当前有效 Token。 |
 | `authClientHttpRequestFactory` (`ClientHttpRequestFactory`) | Apache HttpClient 5 连接池工厂，被上述 RestTemplate 共用。 |
 
 ---
@@ -201,8 +201,8 @@ uw.auth.client
 │   └── LoginType                       # 登录类型枚举（value/label），含分类工具方法
 ├── filter/
 │   └── AuthTokenHeaderFilter           # WebClient ExchangeFilterFunction，注入 Token + 401 重试
-├── helper/
-│   └── AuthClientTokenHelper           # Token 状态机：持有 token/refreshToken/expiresAt，login/refresh/invalidate
+├── service/
+│   └── AuthClientTokenService           # Token 状态机：持有 token/refreshToken/expiresAt，login/refresh/invalidate
 ├── interceptor/
 │   └── AuthTokenHeaderInterceptor      # RestTemplate ClientHttpRequestInterceptor，注入 Token + 401/498 重试
 └── vo/

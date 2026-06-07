@@ -2,13 +2,13 @@ package uw.auth.client.filter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 import reactor.core.publisher.Mono;
-import uw.auth.client.helper.AuthClientTokenHelper;
+import uw.auth.client.constant.AuthClientConstants;
+import uw.auth.client.service.AuthClientTokenService;
 
 /**
  * 添加token到header。
@@ -30,15 +30,15 @@ public class AuthTokenHeaderFilter implements ExchangeFilterFunction {
     /**
      * token helper
      */
-    private final AuthClientTokenHelper authClientTokenHelper;
+    private final AuthClientTokenService authClientTokenService;
 
     /**
      * 构造函数
      *
-     * @param authClientTokenHelper
+     * @param authClientTokenService
      */
-    public AuthTokenHeaderFilter(final AuthClientTokenHelper authClientTokenHelper) {
-        this.authClientTokenHelper = authClientTokenHelper;
+    public AuthTokenHeaderFilter(final AuthClientTokenService authClientTokenService) {
+        this.authClientTokenService = authClientTokenService;
     }
 
     /**
@@ -50,12 +50,13 @@ public class AuthTokenHeaderFilter implements ExchangeFilterFunction {
      */
     @Override
     public Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next) {
-        // 1. 第一次请求
-        return exchange(request, next, authClientTokenHelper.getToken())
+        return exchange(request, next, authClientTokenService.getToken())
                 .flatMap(resp -> {
-                    if (resp.statusCode() == HttpStatus.UNAUTHORIZED) {
+                    int code = resp.statusCode().value();
+                    if (code == AuthClientConstants.HTTP_UNAUTHORIZED_CODE || code == AuthClientConstants.HTTP_TOKEN_EXPIRED_CODE) {
                         log.warn("token 失效，触发刷新；uri={}", request.url());
-                        return exchange(request, next, authClientTokenHelper.getToken());
+                        authClientTokenService.invalidate();
+                        return exchange(request, next, authClientTokenService.getToken());
                     }
                     return Mono.just(resp);
                 });

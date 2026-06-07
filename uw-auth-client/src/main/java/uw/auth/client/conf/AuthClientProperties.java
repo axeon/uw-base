@@ -79,6 +79,11 @@ public class AuthClientProperties {
     private long saasId = 0;
 
     /**
+     * Token提前刷新时间，单位为毫秒，默认300000(5分钟)。
+     */
+    private long refreshAdvanceMillis = 300_000L;
+
+    /**
      * 连接池配置
      */
     private HttpPool httpPool = new HttpPool();
@@ -91,12 +96,12 @@ public class AuthClientProperties {
         /**
          * 连接池最大值
          */
-        private int maxTotal = 100000;
+        private int maxTotal = 3000;
 
         /**
          * 每台主机最大连接数
          */
-        private int defaultMaxPerRoute = 10000;
+        private int defaultMaxPerRoute = 300;
 
         /**
          * 连接超时时间
@@ -277,5 +282,13 @@ public class AuthClientProperties {
 
     public void setHttpPool(HttpPool httpPool) {
         this.httpPool = httpPool;
+    }
+
+    public long getRefreshAdvanceMillis() {
+        return refreshAdvanceMillis;
+    }
+
+    public void setRefreshAdvanceMillis(long refreshAdvanceMillis) {
+        this.refreshAdvanceMillis = refreshAdvanceMillis;
     }
 }

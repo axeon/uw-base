@@ -7,7 +7,7 @@ import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 import uw.auth.client.constant.AuthClientConstants;
-import uw.auth.client.helper.AuthClientTokenHelper;
+import uw.auth.client.service.AuthClientTokenService;
 
 import java.io.IOException;
 
@@ -30,15 +30,15 @@ public class AuthTokenHeaderInterceptor implements ClientHttpRequestInterceptor 
     /**
      * 认证token工具类
      */
-    private final AuthClientTokenHelper authClientTokenHelper;
+    private final AuthClientTokenService authClientTokenService;
 
     /**
      * 构造函数
      *
-     * @param authClientTokenHelper 认证token工具类
+     * @param authClientTokenService 认证token工具类
      */
-    public AuthTokenHeaderInterceptor(final AuthClientTokenHelper authClientTokenHelper) {
-        this.authClientTokenHelper = authClientTokenHelper;
+    public AuthTokenHeaderInterceptor(final AuthClientTokenService authClientTokenService) {
+        this.authClientTokenService = authClientTokenService;
     }
 
     /**
@@ -56,14 +56,14 @@ public class AuthTokenHeaderInterceptor implements ClientHttpRequestInterceptor 
         if (headers.getContentType() == null) {
             headers.setContentType(MediaType.APPLICATION_JSON);
         }
-        headers.set(AUTH_TOKEN_HEADER_NAME, AUTH_TOKEN_HEADER_VALUE_PREFIX + authClientTokenHelper.getToken());
+        headers.set(AUTH_TOKEN_HEADER_NAME, AUTH_TOKEN_HEADER_VALUE_PREFIX + authClientTokenService.getToken());
         ClientHttpResponse response = execution.execute(request, body);
         //如果是无法验证的状态，则直接作废token。
         int code = response.getStatusCode().value();
         if (code == AuthClientConstants.HTTP_UNAUTHORIZED_CODE || code == AuthClientConstants.HTTP_TOKEN_EXPIRED_CODE) {
-            authClientTokenHelper.invalidate();
+            authClientTokenService.invalidate();
             //再次重试
-            headers.set(AUTH_TOKEN_HEADER_NAME, AUTH_TOKEN_HEADER_VALUE_PREFIX + authClientTokenHelper.getToken());
+            headers.set(AUTH_TOKEN_HEADER_NAME, AUTH_TOKEN_HEADER_VALUE_PREFIX + authClientTokenService.getToken());
             response = execution.execute(request, body);
         }
         return response;

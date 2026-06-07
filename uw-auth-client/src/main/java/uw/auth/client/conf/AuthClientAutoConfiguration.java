@@ -28,7 +28,7 @@ import org.springframework.http.converter.xml.SourceHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import uw.auth.client.filter.AuthTokenHeaderFilter;
-import uw.auth.client.helper.AuthClientTokenHelper;
+import uw.auth.client.service.AuthClientTokenService;
 import uw.auth.client.interceptor.AuthTokenHeaderInterceptor;
 
 import java.util.ArrayList;
@@ -94,10 +94,9 @@ public class AuthClientAutoConfiguration {
      * @return
      */
     @Bean
-    public AuthClientTokenHelper authClientTokenHelper(final AuthClientProperties authClientProperties, @Qualifier("baseAuthClientRestTemplate") final RestTemplate restTemplate) {
-        return new AuthClientTokenHelper(authClientProperties, restTemplate);
+    public AuthClientTokenService authClientTokenHelper(final AuthClientProperties authClientProperties, @Qualifier("baseAuthClientRestTemplate") final RestTemplate restTemplate) {
+        return new AuthClientTokenService(authClientProperties, restTemplate);
     }
-
 
     /**
      * 负载均衡的RestTemplate
@@ -109,9 +108,9 @@ public class AuthClientAutoConfiguration {
     @LoadBalanced
     @Primary
     @ConditionalOnProperty(prefix = "uw.auth.client", name = "enable-spring-cloud", havingValue = "true", matchIfMissing = true)
-    public RestTemplate lbAuthRestTemplate(final ClientHttpRequestFactory authClientHttpRequestFactory, final AuthClientTokenHelper authClientTokenHelper) {
+    public RestTemplate lbAuthRestTemplate(final ClientHttpRequestFactory authClientHttpRequestFactory, final AuthClientTokenService authClientTokenService) {
         RestTemplate authRestTemplate = new RestTemplate(authClientHttpRequestFactory);
-        authRestTemplate.setInterceptors(Collections.singletonList(new AuthTokenHeaderInterceptor(authClientTokenHelper)));
+        authRestTemplate.setInterceptors(Collections.singletonList(new AuthTokenHeaderInterceptor(authClientTokenService)));
         authRestTemplate.setMessageConverters(messageConverters);
         return authRestTemplate;
     }
@@ -125,9 +124,9 @@ public class AuthClientAutoConfiguration {
     @Bean("authRestTemplate")
     @Primary
     @ConditionalOnProperty(prefix = "uw.auth.client", name = "enable-spring-cloud", havingValue = "false")
-    public RestTemplate authRestTemplate(final ClientHttpRequestFactory authClientHttpRequestFactory, final AuthClientTokenHelper authClientTokenHelper) {
+    public RestTemplate authRestTemplate(final ClientHttpRequestFactory authClientHttpRequestFactory, final AuthClientTokenService authClientTokenService) {
         RestTemplate authRestTemplate = new RestTemplate(authClientHttpRequestFactory);
-        authRestTemplate.setInterceptors(Collections.singletonList(new AuthTokenHeaderInterceptor(authClientTokenHelper)));
+        authRestTemplate.setInterceptors(Collections.singletonList(new AuthTokenHeaderInterceptor(authClientTokenService)));
         authRestTemplate.setMessageConverters(messageConverters);
         return authRestTemplate;
     }
@@ -144,14 +143,14 @@ public class AuthClientAutoConfiguration {
     /**
      * 认证Token的WebClient
      *
-     * @param authClientTokenHelper
+     * @param authClientTokenService
      * @return
      */
     @Bean("authWebClient")
     @Primary
-    public WebClient authWebClient(WebClient.Builder webClientloadBalancedBuilder, final AuthClientTokenHelper authClientTokenHelper) {
+    public WebClient authWebClient(WebClient.Builder webClientloadBalancedBuilder, final AuthClientTokenService authClientTokenService) {
         return webClientloadBalancedBuilder
-                .filter(new AuthTokenHeaderFilter(authClientTokenHelper))
+                .filter(new AuthTokenHeaderFilter(authClientTokenService))
                 .build();
     }
 

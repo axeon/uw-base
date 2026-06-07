@@ -21,37 +21,20 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
         super(saasId);
     }
 
+    private static final Map<String, String> ALLOWED_SORT_PROPERTY = new HashMap<>() {{
+            put("id", "id");
+            put("requestDate", "request_date");
+            put("responseMillis", "response_millis");
+    }};
+
     /**
      * 允许的排序属性。
-     * key:排序名 value:排序字段
      *
      * @return
      */
     @Override
     public Map<String, String> ALLOWED_SORT_PROPERTY() {
-        return new HashMap<>() {{
-            put("id", "id");
-            put("saasId", "saas_id");
-            put("mchId", "mch_id");
-            put("userId", "user_id");
-            put("userType", "user_type");
-            put("groupId", "group_id");
-            put("userName", "user_name");
-            put("nickName", "nick_name");
-            put("realName", "real_name");
-            put("userIp", "user_ip");
-            put("apiUri", "api_uri");
-            put("apiName", "api_name");
-            put("bizType", "biz_type");
-            put("bizId", "biz_id");
-            put("requestDate", "request_date");
-            put("responseState", "response_state");
-            put("responseCode", "response_code");
-            put("responseMillis", "response_millis");
-            put("statusCode", "status_code");
-            put("appInfo", "app_info");
-            put("appHost", "app_host");
-        }};
+        return ALLOWED_SORT_PROPERTY;
     }
 
     /**

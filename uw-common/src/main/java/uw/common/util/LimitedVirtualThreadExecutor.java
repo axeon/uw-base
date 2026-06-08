@@ -68,6 +68,10 @@ public class LimitedVirtualThreadExecutor {
 
     /**
      * 安全提交任务（内部工具方法）
+     * <p>
+     * 使用 AtomicBoolean 确保信号量只释放一次：
+     * 如果 executor.submit() 成功，由内部 lambda 的 finally 释放；
+     * 如果 executor.submit() 本身失败（如 executor 已关闭），则由外层 catch 释放。
      */
     private static void safeSubmit(Runnable task, Semaphore semaphore, ExecutorService executor) {
         try {
@@ -75,14 +79,12 @@ public class LimitedVirtualThreadExecutor {
                 try {
                     task.run();
                 } catch (Throwable e) {
-                    // Log the error but ensure cleanup in finally
                     throw new RuntimeException("Task execution failed", e);
                 } finally {
                     semaphore.release();
                 }
             });
-        } catch (Throwable e) {  // CHANGED: Catch Throwable instead of Exception
-            // Release permit if submission fails (e.g., executor shut down)
+        } catch (Throwable e) {
             semaphore.release();
             throw new RejectedExecutionException("Task submission failed", e);
         }

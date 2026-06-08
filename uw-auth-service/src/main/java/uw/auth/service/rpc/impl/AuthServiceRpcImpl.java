@@ -2,7 +2,11 @@ package uw.auth.service.rpc.impl;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import uw.auth.client.vo.TokenResponse;
@@ -51,10 +55,11 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
      */
     @Override
     public ResponseData<AuthTokenData> verifyToken(String token) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/verifyToken").queryParam("token", token).build().encode().toUri();
-        ResponseData<AuthTokenData> responseData = authRestTemplate.exchange(targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<AuthTokenData>>() {
+        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/verifyToken").build().encode().toUri();
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("token", token);
+        return authRestTemplate.exchange(targetUrl, HttpMethod.POST, formEntity(formData), new ParameterizedTypeReference<ResponseData<AuthTokenData>>() {
         }).getBody();
-        return responseData;
     }
 
     /**
@@ -76,8 +81,24 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
      */
     @Override
     public TokenResponse genGuestToken(String loginAgent, String clientAgent, int loginType, String loginId, long saasId, long mchId, long userId, String userName, String nickName, String realName, String mobile, String email, String userIp, String remark, boolean checkDoubleLogin) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/genGuestToken").queryParam("loginAgent", loginAgent).queryParam("clientAgent", clientAgent).queryParam("loginType", loginType).queryParam("loginId", loginId).queryParam("saasId", saasId).queryParam("mchId", mchId).queryParam("userId", userId).queryParam("userName", userName).queryParam("nickName", nickName).queryParam("realName", realName).queryParam("mobile", mobile).queryParam("email", email).queryParam("userIp", userIp).queryParam("remark", remark).queryParam("checkDoubleLogin", checkDoubleLogin).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.POST, HttpEntity.EMPTY, TokenResponse.class).getBody();
+        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/genGuestToken").build().encode().toUri();
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("loginAgent", loginAgent);
+        formData.add("clientAgent", clientAgent);
+        formData.add("loginType", String.valueOf(loginType));
+        formData.add("loginId", loginId);
+        formData.add("saasId", String.valueOf(saasId));
+        formData.add("mchId", String.valueOf(mchId));
+        formData.add("userId", String.valueOf(userId));
+        formData.add("userName", userName);
+        formData.add("nickName", nickName);
+        formData.add("realName", realName);
+        formData.add("mobile", mobile);
+        formData.add("email", email);
+        formData.add("userIp", userIp);
+        formData.add("remark", remark);
+        formData.add("checkDoubleLogin", String.valueOf(checkDoubleLogin));
+        return authRestTemplate.exchange(targetUrl, HttpMethod.POST, formEntity(formData), TokenResponse.class).getBody();
     }
 
 
@@ -98,8 +119,23 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
      */
     @Override
     public ResponseData notifyGuestLoginFail(String loginAgent, String clientAgent, int loginType, String loginId, long saasId, long mchId, long userId, String userName, String nickName, String realName, String mobile, String email, String userIp, String remark) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/notifyGuestLoginFail").queryParam("loginAgent", loginAgent).queryParam("clientAgent", clientAgent).queryParam("loginType", loginType).queryParam("loginId", loginId).queryParam("saasId", saasId).queryParam("mchId", mchId).queryParam("userId", userId).queryParam("userName", userName).queryParam("nickName", nickName).queryParam("realName", realName).queryParam("mobile", mobile).queryParam("email", email).queryParam("userIp", userIp).queryParam("remark", remark).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.POST, HttpEntity.EMPTY, ResponseData.class).getBody();
+        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/notifyGuestLoginFail").build().encode().toUri();
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("loginAgent", loginAgent);
+        formData.add("clientAgent", clientAgent);
+        formData.add("loginType", String.valueOf(loginType));
+        formData.add("loginId", loginId);
+        formData.add("saasId", String.valueOf(saasId));
+        formData.add("mchId", String.valueOf(mchId));
+        formData.add("userId", String.valueOf(userId));
+        formData.add("userName", userName);
+        formData.add("nickName", nickName);
+        formData.add("realName", realName);
+        formData.add("mobile", mobile);
+        formData.add("email", email);
+        formData.add("userIp", userIp);
+        formData.add("remark", remark);
+        return authRestTemplate.exchange(targetUrl, HttpMethod.POST, formEntity(formData), ResponseData.class).getBody();
     }
 
     /**
@@ -139,8 +175,12 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
      */
     @Override
     public ResponseData initSaasPerm(long saasId, String saasName, String[] initAppNames, String adminPasswd, String adminMobile, String adminEmail) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/initSaasPerm").queryParam("saasId", saasId).queryParam("saasName", saasName).queryParam("initAppNames", (Object[]) initAppNames).queryParam("adminPasswd", adminPasswd).queryParam("adminMobile", adminMobile).queryParam("adminEmail", adminEmail).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.POST, HttpEntity.EMPTY, ResponseData.class).getBody();
+        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/initSaasPerm").queryParam("saasId", saasId).queryParam("saasName", saasName).queryParam("initAppNames", (Object[]) initAppNames).build().encode().toUri();
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("adminPasswd", adminPasswd);
+        formData.add("adminMobile", adminMobile);
+        formData.add("adminEmail", adminEmail);
+        return authRestTemplate.exchange(targetUrl, HttpMethod.POST, formEntity(formData), ResponseData.class).getBody();
     }
 
     /**
@@ -301,5 +341,14 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
         }).getBody();
     }
 
+
+    /**
+     * 构造form-urlencoded请求的HttpEntity
+     */
+    private HttpEntity<MultiValueMap<String, String>> formEntity(MultiValueMap<String, String> formData) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        return new HttpEntity<>(formData, headers);
+    }
 
 }

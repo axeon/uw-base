@@ -107,9 +107,15 @@ public class SnowflakeIdGenerator {
     public synchronized long generateId() {
         long timestamp = System.currentTimeMillis(); // 当前时间戳
 
-        // 如果当前时间小于上次生成ID的时间戳，说明发生时钟回退，抛出异常
+        // 如果当前时间小于上次生成ID的时间戳，说明发生时钟回退
         if (timestamp < lastTimestamp) {
-            throw new RuntimeException("时钟回退异常");
+            long offset = lastTimestamp - timestamp;
+            if (offset <= 100) {
+                // 小幅回退（<=100ms），等待时钟追上
+                timestamp = waitNextMillis(lastTimestamp);
+            } else {
+                throw new RuntimeException("时钟回退异常，回退" + offset + "ms");
+            }
         }
 
         // 如果是同一毫秒，生成的序列号递增

@@ -18,13 +18,15 @@ public class IpWebUtils {
     private static final Logger logger = LoggerFactory.getLogger(IpWebUtils.class);
 
     private static final String HEADER_X_FORWARDED_FOR = "X-Forwarded-For";
+    private static final String HEADER_X_REAL_IP = "X-Real-IP";
 
     /**
      * 获取客户端真实IP地址（返回 {@link String}）。
      * <p>
-     * 优先级顺序：X-Forwarded-For → 远程地址。
+     * 优先级顺序：X-Real-IP → X-Forwarded-For → 远程地址。
      * <p>
-     * 如果X-Forwarded-For包含多个IP（如 `client, proxy1, proxy2`），将取第一个有效IP。
+     * X-Real-IP 通常由最接近应用的可信代理（如 Nginx）设置，比 X-Forwarded-For 更难伪造。
+     * 如果 X-Forwarded-For 包含多个 IP（如 `client, proxy1, proxy2`），将取最后一个有效IP（最可信的代理添加的）。
      *
      * @param request HTTP请求对象
      * @return 客户端真实IP地址字符串，如果无法获取返回 {@code null}
@@ -64,14 +66,21 @@ public class IpWebUtils {
      * @return
      */
     private static String getProxiedIp(HttpServletRequest request) {
-        // 1. 检查 X-Forwarded-For（优先级最高）
-        String ip = request.getHeader(HEADER_X_FORWARDED_FOR);
-        if (StringUtils.isNotBlank(ip)) {
-            // 直接取逗号前的IP（第一个有效IP）
-            int commaIndex = ip.indexOf(',');
-            String candidate = commaIndex != -1 ? ip.substring(0, commaIndex).trim() : ip.trim();
-            if (isValidIp(candidate)) {
-                return candidate;
+        // 1. 检查 X-Real-IP（优先级最高，由最接近应用的可信代理设置）
+        String realIp = request.getHeader(HEADER_X_REAL_IP);
+        if (isValidIp(realIp)) {
+            return realIp.trim();
+        }
+
+        // 2. 检查 X-Forwarded-For，取最后一个有效IP（最可信的代理添加的）
+        String forwarded = request.getHeader(HEADER_X_FORWARDED_FOR);
+        if (StringUtils.isNotBlank(forwarded)) {
+            String[] ips = forwarded.split(",");
+            for (int i = ips.length - 1; i >= 0; i--) {
+                String candidate = ips[i].trim();
+                if (isValidIp(candidate)) {
+                    return candidate;
+                }
             }
         }
 

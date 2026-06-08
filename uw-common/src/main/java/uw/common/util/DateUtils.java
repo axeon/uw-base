@@ -541,18 +541,8 @@ public class DateUtils {
         calEnd.set(Calendar.SECOND, 0);
         calEnd.set(Calendar.MILLISECOND, 0);
 
-        // 计算两个日期的星期数
-        long week1 = calStart.get(Calendar.WEEK_OF_YEAR);
-        long week2 = calEnd.get(Calendar.WEEK_OF_YEAR);
-        long year1 = calStart.get(Calendar.YEAR);
-        long year2 = calEnd.get(Calendar.YEAR);
-
-        // 如果两个日期的年份不同，则计算跨越年份的周数差异
-        if (year2 - year1 > 0) {
-            return week2 + (year2 - year1) * 52 - week1;
-        } else {
-            return week2 - week1;
-        }
+        long diffInMillis = calEnd.getTimeInMillis() - calStart.getTimeInMillis();
+        return diffInMillis / (7L * 24 * 60 * 60 * 1000);
     }
 
     /**

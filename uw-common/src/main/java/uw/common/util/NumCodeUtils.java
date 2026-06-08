@@ -1,7 +1,7 @@
 package uw.common.util;
 
 
-import java.util.Random;
+import java.security.SecureRandom;
 
 /**
  * 数字编码工具类。
@@ -150,7 +150,7 @@ public class NumCodeUtils {
      * @param numChars
      */
     private static char[] shuffleChars(char[] numChars) {
-        Random random = new Random();
+        SecureRandom random = new SecureRandom();
         for (int i = numChars.length - 1; i > 0; i--) {
             int j = random.nextInt(i + 1);
             char temp = numChars[i];

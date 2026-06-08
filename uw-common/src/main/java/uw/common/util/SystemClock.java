@@ -89,6 +89,10 @@ public class SystemClock {
                 if (updateTask != null && !updateTask.isCancelled()) {
                     updateTask.cancel(true);
                     updateScheduler.shutdown();
+                    try {
+                        updateScheduler.awaitTermination(1, TimeUnit.SECONDS);
+                    } catch (InterruptedException ignored) {
+                    }
                     updateScheduler = null;
                     updateTask = null;
                 }

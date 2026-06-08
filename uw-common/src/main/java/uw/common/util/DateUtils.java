@@ -253,14 +253,16 @@ public class DateUtils {
      * @return Date实例
      */
     public static Date stringToDate(String dateString, String format) {
-        Date date = null;
+        if (dateString == null) {
+            return null;
+        }
         FastDateFormat fastDateFormat = FastDateFormat.getInstance(format);
         try {
-            date = fastDateFormat.parse(dateString);
+            return fastDateFormat.parse(dateString);
         } catch (ParseException e) {
             logger.error(e.getMessage(), e);
+            return null;
         }
-        return date;
     }
 
 
@@ -480,7 +482,7 @@ public class DateUtils {
         long endTime = endDate.getTime();
 
         // 计算毫秒差，然后转换为小时
-        long diffInHours = endTime / (60 * 60 * 1000) - startTime / (60 * 60 * 1000);
+        long diffInHours = (endTime - startTime) / (60 * 60 * 1000);
 
         return diffInHours;
     }

@@ -59,10 +59,13 @@ public class DigestUtils {
      * @param bytes
      * @return
      */
+    private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
+
     public static String bytesToHex(byte[] bytes) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
         for (byte b : bytes) {
-            sb.append(String.format("%02x", b));
+            sb.append(HEX_CHARS[(b >> 4) & 0x0f]);
+            sb.append(HEX_CHARS[b & 0x0f]);
         }
         return sb.toString();
     }

@@ -145,6 +145,7 @@ public class SnowflakeIdGenerator {
     private long waitNextMillis(long lastTimestamp) {
         long timestamp = System.currentTimeMillis();
         while (timestamp <= lastTimestamp) {
+            Thread.yield();
             timestamp = System.currentTimeMillis();
         }
         return timestamp;

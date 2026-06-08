@@ -193,7 +193,7 @@ public class JsonUtils {
         try {
             return jsonMapper.readValue(content, type);
         } catch (Throwable e) {
-            throw new RuntimeException(e.getMessage() + "! data: " + content, e);
+            throw new RuntimeException(e.getMessage() + "! data: InputStream", e);
         }
     }
 

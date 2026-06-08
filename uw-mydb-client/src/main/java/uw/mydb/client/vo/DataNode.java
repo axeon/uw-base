@@ -28,15 +28,22 @@ public class DataNode {
      * 通过集群ID.数据库名来确定唯一值。
      *
      * @param dataNodeKey
+     * @throws IllegalArgumentException dataNodeKey格式不合法时抛出
      */
     public DataNode(String dataNodeKey) {
-        if (dataNodeKey != null) {
-            int splitPos = dataNodeKey.indexOf('.');
-            if (splitPos > -1) {
-                clusterId = Long.parseLong(dataNodeKey.substring(0, splitPos));
-                database = dataNodeKey.substring(splitPos + 1);
-            }
+        if (dataNodeKey == null || dataNodeKey.isEmpty()) {
+            throw new IllegalArgumentException("dataNodeKey must not be null or empty");
         }
+        int splitPos = dataNodeKey.indexOf('.');
+        if (splitPos <= 0 || splitPos == dataNodeKey.length() - 1) {
+            throw new IllegalArgumentException("dataNodeKey format invalid, expected: clusterId.database, got: " + dataNodeKey);
+        }
+        try {
+            clusterId = Long.parseLong(dataNodeKey.substring(0, splitPos));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("clusterId is not a valid number in dataNodeKey: " + dataNodeKey, e);
+        }
+        database = dataNodeKey.substring(splitPos + 1);
     }
 
 

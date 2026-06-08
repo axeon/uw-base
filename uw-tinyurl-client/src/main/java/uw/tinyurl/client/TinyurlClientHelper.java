@@ -31,15 +31,25 @@ public class TinyurlClientHelper {
     }
 
     /**
-     * 推送web通知。
+     * 生成短链。
      *
      * @param tinyurlParam
      * @return
      */
     public static ResponseData<String> generate(TinyurlParam tinyurlParam) {
-        return authRestTemplate.exchange(uwTinyurlProperties.getTinyurlCenterHost() + "/rpc/tinyurl/generate", HttpMethod.POST, new HttpEntity<>(tinyurlParam),
-                new ParameterizedTypeReference<ResponseData<String>>() {
-                }).getBody();
+        String targetUrl = uwTinyurlProperties.getTinyurlCenterHost() + "/rpc/tinyurl/generate";
+        try {
+            ResponseData<String> result = authRestTemplate.exchange(targetUrl, HttpMethod.POST, new HttpEntity<>(tinyurlParam),
+                    new ParameterizedTypeReference<ResponseData<String>>() {
+                    }).getBody();
+            if (result == null) {
+                return ResponseData.errorMsg("TinyurlClientHelper.generate() returned null body");
+            }
+            return result;
+        } catch (Exception e) {
+            log.error("TinyurlClientHelper.generate()异常: {}", e.getMessage(), e);
+            return ResponseData.errorMsg("TinyurlClientHelper.generate()异常: " + e.getMessage());
+        }
     }
 
 }

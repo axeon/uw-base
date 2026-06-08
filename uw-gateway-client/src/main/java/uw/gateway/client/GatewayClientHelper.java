@@ -4,13 +4,15 @@ package uw.gateway.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 import uw.common.dto.ResponseData;
 import uw.gateway.client.conf.UwGatewayProperties;
 
-import java.net.URI;
 import java.util.Date;
 
 
@@ -34,29 +36,50 @@ public class GatewayClientHelper {
 
     /**
      * 运营商限速设置。
-     *
-     * @param saasId
-     * @param limitSeconds
-     * @param limitRequests
-     * @param limitBytes
-     * @param remark
-     * @return
      */
     public static ResponseData updateSaasRateLimit(long saasId, int limitSeconds, int limitRequests, int limitBytes, Date expireDate, String remark) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(uwGatewayProperties.getGatewayCenterHost()).path("/rpc/service/updateSaasRateLimit").queryParam("saasId", saasId).queryParam("remark", remark).queryParam("limitSeconds", limitSeconds).queryParam("limitRequests", limitRequests).queryParam("expireDate", expireDate).queryParam("limitBytes", limitBytes).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class).getBody();
+        String targetUrl = uwGatewayProperties.getGatewayCenterHost() + "/rpc/service/updateSaasRateLimit";
+        try {
+            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+            formData.add("saasId", String.valueOf(saasId));
+            formData.add("limitSeconds", String.valueOf(limitSeconds));
+            formData.add("limitRequests", String.valueOf(limitRequests));
+            formData.add("limitBytes", String.valueOf(limitBytes));
+            formData.add("expireDate", String.valueOf(expireDate.getTime()));
+            formData.add("remark", remark);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            ResponseData result = authRestTemplate.exchange(targetUrl, HttpMethod.PUT, new HttpEntity<>(formData, headers), ResponseData.class).getBody();
+            if (result == null) {
+                return ResponseData.errorMsg("GatewayClientHelper.updateSaasRateLimit() returned null body");
+            }
+            return result;
+        } catch (Exception e) {
+            log.error("GatewayClientHelper.updateSaasRateLimit()异常: {}", e.getMessage(), e);
+            return ResponseData.errorMsg("GatewayClientHelper.updateSaasRateLimit()异常: " + e.getMessage());
+        }
     }
 
     /**
      * 清除运营商限速设置。
-     *
-     * @param saasId
-     * @param remark
-     * @return
      */
     public static ResponseData clearSaasRateLimit(long saasId, String remark) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(uwGatewayProperties.getGatewayCenterHost()).path("/rpc/service/clearSaasRateLimit").queryParam("saasId", saasId).queryParam("remark", remark).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class).getBody();
+        String targetUrl = uwGatewayProperties.getGatewayCenterHost() + "/rpc/service/clearSaasRateLimit";
+        try {
+            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+            formData.add("saasId", String.valueOf(saasId));
+            formData.add("remark", remark);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            ResponseData result = authRestTemplate.exchange(targetUrl, HttpMethod.PUT, new HttpEntity<>(formData, headers), ResponseData.class).getBody();
+            if (result == null) {
+                return ResponseData.errorMsg("GatewayClientHelper.clearSaasRateLimit() returned null body");
+            }
+            return result;
+        } catch (Exception e) {
+            log.error("GatewayClientHelper.clearSaasRateLimit()异常: {}", e.getMessage(), e);
+            return ResponseData.errorMsg("GatewayClientHelper.clearSaasRateLimit()异常: " + e.getMessage());
+        }
     }
 
 }

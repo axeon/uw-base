@@ -35,13 +35,17 @@ public class NotifyClientHelper {
      * @return
      */
     public static ResponseData pushNotify(WebNotifyMsg webNotifyMsg) {
+        String targetUrl = uwNotifyProperties.getNotifyCenterHost() + "/rpc/notify/pushNotify";
         ResponseData responseData = null;
         try {
-            responseData = authRestTemplate.exchange(uwNotifyProperties.getNotifyCenterHost() + "/rpc/notify/pushNotify", HttpMethod.POST, new HttpEntity<>(webNotifyMsg),
+            responseData = authRestTemplate.exchange(targetUrl, HttpMethod.POST, new HttpEntity<>(webNotifyMsg),
                     ResponseData.class).getBody();
         } catch (Exception e) {
             log.error("WebNotifyHelper推送消息异常: {}", e.getMessage(), e);
             return ResponseData.errorMsg("WebNotifyHelper推送消息异常: " + e.getMessage());
+        }
+        if (responseData == null) {
+            return ResponseData.errorMsg("WebNotifyHelper推送消息返回空响应");
         }
         return responseData;
 

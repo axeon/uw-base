@@ -43,8 +43,8 @@ public class StandardOAuth2Provider extends AbstractOAuth2Provider {
             if (idTokenMap != null) {
                 token.setOpenId(getUserIdFromMap(idTokenMap));
                 token.setUsername(getUsernameFromMap(idTokenMap));
-                token.setEmail(String.valueOf(idTokenMap.get("email")));
-                token.setPhone(String.valueOf(idTokenMap.get("phone")));
+                token.setEmail((String) idTokenMap.get("email"));
+                token.setPhone((String) idTokenMap.get("phone"));
                 token.setAvatar(getAvatarFromMap(idTokenMap));
             }
         }

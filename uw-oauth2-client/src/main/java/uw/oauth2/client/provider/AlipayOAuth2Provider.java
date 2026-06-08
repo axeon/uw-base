@@ -248,7 +248,7 @@ public class AlipayOAuth2Provider extends AbstractOAuth2Provider {
             }
             String signContent = sb.substring(0, sb.length() - 1);
 
-            logger.info("Alipay sign content: {}", signContent);
+            logger.debug("Alipay sign content: {}", signContent);
 
             // 从extParam中获取私钥
             String privateKey = providerConfig.getExtParam().get("privateKey");

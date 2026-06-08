@@ -269,7 +269,7 @@ public interface JsonConfigParam {
                     return type;
                 }
             }
-            throw null;
+            throw new IllegalArgumentException("Unknown ParamType value: " + value);
         }
 
         public String getLabel() {

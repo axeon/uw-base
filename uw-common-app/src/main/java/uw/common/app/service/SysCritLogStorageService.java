@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+
+import jakarta.annotation.PreDestroy;
 import uw.auth.service.log.AuthCriticalLogStorage;
 import uw.auth.service.vo.MscActionLog;
 import uw.common.app.conf.CommonAppProperties;
@@ -76,4 +78,13 @@ public class SysCritLogStorageService implements AuthCriticalLogStorage {
             });
         }
     }
+
+    /**
+     * 销毁任务执行器。
+     */
+    @PreDestroy
+    public void shutdown() {
+        executor.shutdown();
+    }
+
 }

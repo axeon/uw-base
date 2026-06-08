@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import uw.dao.annotation.QueryMeta;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -21,10 +20,10 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
         super(saasId);
     }
 
-    private static final Map<String, String> ALLOWED_SORT_PROPERTY = new HashMap<>() {{
-            put("id", "id");
-            put("createDate", "create_date");
-    }};
+    private static final Map<String, String> ALLOWED_SORT_PROPERTY = Map.of(
+            "id", "id",
+            "createDate", "create_date"
+    );
 
     /**
      * 允许的排序属性。

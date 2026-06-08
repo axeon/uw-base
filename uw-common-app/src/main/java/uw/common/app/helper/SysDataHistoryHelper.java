@@ -86,7 +86,11 @@ public class SysDataHistoryHelper {
                 }
             }
             dao.save(history);
-        } catch (Throwable e) {
+        } catch (Error e) {
+            // OOM/StackOverflow等不可恢复错误，记录后重新抛出
+            log.error("Critical error saving history: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
     }

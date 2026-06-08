@@ -28,7 +28,7 @@ public class JsonConfigBox {
     /**
      * 配置混合Map。
      */
-    public Map<String, String> configMixMap;
+    private Map<String, String> configMixMap;
 
 
     public JsonConfigBox() {
@@ -69,7 +69,12 @@ public class JsonConfigBox {
         if (StringUtils.isBlank(temp)) {
             return new String[0];
         }
-        return JsonUtils.parse(temp, String[].class);
+        try {
+            return JsonUtils.parse(temp, String[].class);
+        } catch (Exception e) {
+            logger.warn("Failed to parse param [{}]: {}", paramName, e.getMessage());
+            return new String[0];
+        }
     }
 
     /**
@@ -108,7 +113,12 @@ public class JsonConfigBox {
         if (StringUtils.isBlank(temp)) {
             return new int[0];
         }
-        return JsonUtils.parse(temp, int[].class);
+        try {
+            return JsonUtils.parse(temp, int[].class);
+        } catch (Exception e) {
+            logger.warn("Failed to parse param [{}]: {}", paramName, e.getMessage());
+            return new int[0];
+        }
     }
 
     /**
@@ -149,7 +159,12 @@ public class JsonConfigBox {
         if (StringUtils.isBlank(temp)) {
             return new long[0];
         }
-        return JsonUtils.parse(temp, long[].class);
+        try {
+            return JsonUtils.parse(temp, long[].class);
+        } catch (Exception e) {
+            logger.warn("Failed to parse param [{}]: {}", paramName, e.getMessage());
+            return new long[0];
+        }
     }
 
     /**
@@ -190,7 +205,12 @@ public class JsonConfigBox {
         if (StringUtils.isBlank(temp)) {
             return new double[0];
         }
-        return JsonUtils.parse(temp, double[].class);
+        try {
+            return JsonUtils.parse(temp, double[].class);
+        } catch (Exception e) {
+            logger.warn("Failed to parse param [{}]: {}", paramName, e.getMessage());
+            return new double[0];
+        }
     }
 
     /**
@@ -233,7 +253,12 @@ public class JsonConfigBox {
         if (StringUtils.isBlank(temp)) {
             return new float[0];
         }
-        return JsonUtils.parse(temp, float[].class);
+        try {
+            return JsonUtils.parse(temp, float[].class);
+        } catch (Exception e) {
+            logger.warn("Failed to parse param [{}]: {}", paramName, e.getMessage());
+            return new float[0];
+        }
     }
 
     /**
@@ -275,7 +300,12 @@ public class JsonConfigBox {
         if (StringUtils.isBlank(temp)) {
             return new boolean[0];
         }
-        return JsonUtils.parse(temp, boolean[].class);
+        try {
+            return JsonUtils.parse(temp, boolean[].class);
+        } catch (Exception e) {
+            logger.warn("Failed to parse param [{}]: {}", paramName, e.getMessage());
+            return new boolean[0];
+        }
     }
 
     /**

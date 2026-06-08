@@ -208,7 +208,9 @@ public class AuthQueryParam extends QueryParam<AuthQueryParam> {
      */
     private AuthQueryParam bindSaasId() {
         AuthTokenData tokenData = getAuthToken();
-        if (tokenData.getUserType() < UserType.RPC.getValue() || tokenData.getUserType() > UserType.ADMIN.getValue()) {
+        // 仅对非管理端用户（GUEST等）绑定saasId，管理端用户（RPC/ROOT/OPS/ADMIN/SAAS/MCH）可跨saas查询
+        int userType = tokenData.getUserType();
+        if (userType < UserType.RPC.getValue() || userType > UserType.ADMIN.getValue()) {
             setSaasId(tokenData.getSaasId());
         }
         return this;

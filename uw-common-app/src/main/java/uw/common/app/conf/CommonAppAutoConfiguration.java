@@ -24,6 +24,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.Cache;
 import org.springframework.cloud.loadbalancer.cache.LoadBalancerCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,6 +50,7 @@ import uw.common.util.DateUtils;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -232,7 +234,17 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     @Bean
     @Primary
     LoadBalancerCacheManager loadBalancerCacheManager() {
-        return null;
+        return new LoadBalancerCacheManager() {
+            @Override
+            public Cache getCache(String name) {
+                return null;
+            }
+
+            @Override
+            public Collection<String> getCacheNames() {
+                return List.of();
+            }
+        };
     }
 
     /**

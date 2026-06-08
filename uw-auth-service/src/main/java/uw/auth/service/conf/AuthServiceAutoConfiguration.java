@@ -25,6 +25,7 @@ import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import uw.auth.service.AuthServiceHelper;
+import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.advice.GlobalExceptionAdvice;
 import uw.auth.service.advice.GlobalResponseAdvice;
 import uw.auth.service.filter.AuthServiceFilter;
@@ -60,6 +61,15 @@ public class AuthServiceAutoConfiguration {
      * 应用更新服务
      */
     private MscAppUpdateService appUpdateService;
+
+    /**
+     * AuthService配置
+     */
+    private final AuthServiceProperties authServiceProperties;
+
+    public AuthServiceAutoConfiguration(AuthServiceProperties authServiceProperties) {
+        this.authServiceProperties = authServiceProperties;
+    }
 
 
     /**
@@ -207,6 +217,7 @@ public class AuthServiceAutoConfiguration {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
+        IpWebUtils.initTrustedProxies(authServiceProperties.getTrustedProxies());
         appUpdateService.init();
     }
 

@@ -4,9 +4,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.IpMatchUtils;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.List;
 
 /**
  * ip web工具类。
@@ -21,27 +23,50 @@ public class IpWebUtils {
     private static final String HEADER_X_REAL_IP = "X-Real-IP";
 
     /**
+     * 可信代理IP范围列表。
+     */
+    private static volatile List<IpMatchUtils.IpRange> trustedProxyRanges;
+
+    /**
+     * 初始化可信代理列表。由 AuthServiceAutoConfiguration 在启动时调用。
+     *
+     * @param trustedProxies 逗号分隔的可信代理IP/CIDR列表
+     */
+    public static void initTrustedProxies(String trustedProxies) {
+        trustedProxyRanges = IpMatchUtils.sortList(trustedProxies.split(","));
+        logger.info("IpWebUtils trusted proxies initialized: {}", trustedProxies);
+    }
+
+    /**
+     * 程序化设置可信代理列表。
+     *
+     * @param ranges 可信代理IP范围列表
+     */
+    public static void setTrustedProxies(List<IpMatchUtils.IpRange> ranges) {
+        trustedProxyRanges = ranges;
+    }
+
+    /**
      * 获取客户端真实IP地址（返回 {@link String}）。
      * <p>
-     * 优先级顺序：X-Real-IP → X-Forwarded-For → 远程地址。
-     * <p>
-     * X-Real-IP 通常由最接近应用的可信代理（如 Nginx）设置，比 X-Forwarded-For 更难伪造。
-     * 如果 X-Forwarded-For 包含多个 IP（如 `client, proxy1, proxy2`），将取最后一个有效IP（最可信的代理添加的）。
+     * 仅当请求的直接来源IP在可信代理列表内时，才会从 X-Real-IP / X-Forwarded-For 头中提取IP。
+     * 否则直接使用 TCP 连接的远程地址，防止伪造头绕过IP白名单。
      *
      * @param request HTTP请求对象
-     * @return 客户端真实IP地址字符串，如果无法获取返回 {@code null}
+     * @return 客户端真实IP地址字符串
      */
     public static String getRealIp(HttpServletRequest request) {
-        // 1. 获取代理前的IP
-        String proxiedIp = getProxiedIp(request);
+        String remoteAddr = request.getRemoteAddr();
 
-        // 2. 获取代理前的IP
-        if (proxiedIp != null) {
-            return proxiedIp;
+        // 仅当来源IP是可信代理时，才读取转发头
+        if (isTrustedProxy(remoteAddr)) {
+            String proxiedIp = getProxiedIp(request);
+            if (proxiedIp != null) {
+                return proxiedIp;
+            }
         }
 
-        // 3. 获取直接连接的IP
-        return request.getRemoteAddr();
+        return remoteAddr;
     }
 
     /**
@@ -60,10 +85,18 @@ public class IpWebUtils {
     }
 
     /**
-     * 获取代理后的真实IP地址（返回 {@link String}）。
-     *
-     * @param request
-     * @return
+     * 判断给定IP是否属于可信代理。
+     */
+    private static boolean isTrustedProxy(String ip) {
+        if (trustedProxyRanges == null || trustedProxyRanges.isEmpty()) {
+            // 未配置可信代理时，不信任任何转发头
+            return false;
+        }
+        return IpMatchUtils.matches(trustedProxyRanges, ip);
+    }
+
+    /**
+     * 从请求头中提取代理转发的真实IP。
      */
     private static String getProxiedIp(HttpServletRequest request) {
         // 1. 检查 X-Real-IP（优先级最高，由最接近应用的可信代理设置）
@@ -89,9 +122,6 @@ public class IpWebUtils {
 
     /**
      * 验证IP字符串是否有效。
-     *
-     * @param ip IP字符串
-     * @return 是否有效（非空、非"unknown"）
      */
     private static boolean isValidIp(String ip) {
         return ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip);

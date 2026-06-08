@@ -218,7 +218,9 @@ public class AuthServiceAutoConfiguration {
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
         IpWebUtils.initTrustedProxies(authServiceProperties.getTrustedProxies());
-        appUpdateService.init();
+        if (appUpdateService != null) {
+            appUpdateService.init();
+        }
     }
 
 }

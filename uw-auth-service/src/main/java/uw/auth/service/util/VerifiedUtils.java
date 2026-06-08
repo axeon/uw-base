@@ -59,7 +59,7 @@ public class VerifiedUtils {
         if (StringUtils.isBlank(data)) {
             return data;
         }
-        while (data.length() > 0 && data.charAt(0) == VERIFIED_TAG) {
+        while (data.length() > 1 && data.charAt(0) == VERIFIED_TAG) {
             data = data.substring(1);
         }
         return data;

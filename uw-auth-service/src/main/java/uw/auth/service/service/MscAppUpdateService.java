@@ -72,6 +72,11 @@ public class MscAppUpdateService {
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
 
     /**
+     * 最大注册重试次数。
+     */
+    private static final int MAX_REGISTRY_TIMES = 20;
+
+    /**
      * 内部自持任务。
      */
     private ScheduledExecutorService scheduledExecutorService;
@@ -133,6 +138,8 @@ public class MscAppUpdateService {
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                    break;
                 }
             }
         }

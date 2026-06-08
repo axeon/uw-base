@@ -51,7 +51,7 @@ public class MscAuthPermService {
      * key: 权限标识
      * value: 权限ID
      */
-    private Map<String, Integer> appPermMap;
+    private volatile Map<String, Integer> appPermMap;
 
     /**
      * appId。

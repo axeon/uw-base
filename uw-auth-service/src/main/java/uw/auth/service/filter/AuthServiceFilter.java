@@ -163,7 +163,8 @@ public class AuthServiceFilter implements Filter {
             HandlerExecutionChain handlerExecutionChain = null;
             try {
                 handlerExecutionChain = requestMappingHandlerMapping.getHandler((HttpServletRequest) request);
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                logger.warn("Failed to get handler: {}", e.getMessage());
             }
             // web mvc处理链异常，直接放行到GlobalExceptionHandler处理。
             if (handlerExecutionChain == null) {
@@ -245,8 +246,7 @@ public class AuthServiceFilter implements Filter {
                     mscActionLog.setStatusCode(((HttpServletResponse) response).getStatus());
                     try {
                         //保存request
-                        if (permLogType == ActionLog.REQUEST || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT) {
-                            LoggingHttpServletRequestWrapper requestWrapper = (LoggingHttpServletRequestWrapper) request;
+                        if ((permLogType == ActionLog.REQUEST || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT) && request instanceof LoggingHttpServletRequestWrapper requestWrapper) {
                             StringBuilder sb = new StringBuilder(1280);
                             sb.append("{");
                             Map<String, String[]> requestParamMap = requestWrapper.getParameterMap();
@@ -266,8 +266,7 @@ public class AuthServiceFilter implements Filter {
                             }
                         }
                         //保存response
-                        if (permLogType == ActionLog.RESPONSE || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT) {
-                            LoggingHttpServletResponseWrapper responseWrapper = (LoggingHttpServletResponseWrapper) response;
+                        if ((permLogType == ActionLog.RESPONSE || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT) && response instanceof LoggingHttpServletResponseWrapper responseWrapper) {
                             mscActionLog.setResponseBody(new String(responseWrapper.getContentAsByteArray(), StandardCharsets.UTF_8));
                             responseWrapper.copyBodyToResponse();
                         }

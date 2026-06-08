@@ -14,12 +14,12 @@ public class ThrowableProxyUtils {
     /**
      * 堆栈输出长度限制。
      */
-    public static int MaxDepthPerThrowable = 30;
+    public static volatile int MaxDepthPerThrowable = 30;
 
     /**
      * 需要忽略的堆栈输出。
      */
-    public static String[] ExcludeThrowableKeys = new String[]{"java.base", "org.spring", "org.apache", "jakarta", "com.mysql", "okhttp", "com.fasterxml", "uw.auth.service.filter"};
+    public static volatile String[] ExcludeThrowableKeys = new String[]{"java.base", "org.spring", "org.apache", "jakarta", "com.mysql", "okhttp", "com.fasterxml", "uw.auth.service.filter"};
 
     /**
      * 输出异常到buffer。
@@ -96,7 +96,7 @@ public class ThrowableProxyUtils {
                 buf.writeUtf8(JSON_LINE_SEPARATOR);
             } else {
                 ++ignoredCount;
-                if (maxIndex < stepArray.length) {
+                if (maxIndex < stepArray.length && maxIndex < MaxDepthPerThrowable * 2) {
                     ++maxIndex;
                 }
             }

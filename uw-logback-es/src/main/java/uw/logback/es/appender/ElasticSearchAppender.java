@@ -44,7 +44,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
     /**
      * 索引格式器
      */
-    public static FastDateFormat INDEX_DATE_FORMAT;
+    private FastDateFormat indexDateFormat;
     /**
      * 读写锁
      */
@@ -458,7 +458,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
         try {
             okb = fillBuffer(event);
         } catch (Exception e) {
-            e.printStackTrace();
+            addError("Failed to fill buffer", e);
         }
 
         if (okb == null) {
@@ -469,7 +469,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
         try {
             buffer.writeAll(okb);
         } catch (Exception e) {
-            e.printStackTrace();
+            addError("Failed to write buffer", e);
         } finally {
             batchLock.unlock();
         }
@@ -492,7 +492,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
             esIndex = appInfo;
         }
         if (StringUtils.isNotBlank(esIndexSuffix)) {
-            INDEX_DATE_FORMAT = FastDateFormat.getInstance(esIndexSuffix, (TimeZone) null);
+            indexDateFormat = FastDateFormat.getInstance(esIndexSuffix, (TimeZone) null);
         }
         if (maxDepthPerThrowable < 10) {
             maxDepthPerThrowable = 10;
@@ -506,7 +506,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
             try {
                 registeredObjectName = mbeanServer.registerMBean(this, new ObjectName(objectName)).getObjectName();
             } catch (Exception e) {
-                e.printStackTrace();
+                addError("Failed to register JMX MBean", e);
             }
         }
         this.needBasicAuth = StringUtils.isNotBlank(esUsername) && StringUtils.isNotBlank(esPassword);
@@ -540,7 +540,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
             try {
                 mbeanServer.unregisterMBean(registeredObjectName);
             } catch (Exception e) {
-                e.printStackTrace();
+                addError("Failed to unregister JMX MBean", e);
             }
         }
         super.stop();
@@ -580,10 +580,10 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
      * @return
      */
     private void calcIndexName() {
-        if (INDEX_DATE_FORMAT == null) {
+        if (indexDateFormat == null) {
             esIndexFullName = esIndex;
         } else {
-            esIndexFullName = esIndex + '_' + INDEX_DATE_FORMAT.format(SystemClock.now());
+            esIndexFullName = esIndex + '_' + indexDateFormat.format(SystemClock.now());
         }
     }
 
@@ -611,11 +611,10 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
             }
             HttpData httpData = HTTP_INTERFACE.requestForData(requestBuilder.post(BufferRequestBody.create(bufferData, MediaTypes.JSON_UTF8)).build());
             if (httpData.getStatusCode() != 200) {
-                System.err.println("Logback ES Batch process error! code:" + httpData.getStatusCode() + ", response: " + httpData.getResponseData());
+                addError("Logback ES Batch process error! code:" + httpData.getStatusCode() + ", response: " + httpData.getResponseData());
             }
         } catch (Exception e) {
-            //直接打印到控制台输出吧
-            e.printStackTrace();
+            addError("Logback ES Batch process exception", e);
         }
     }
 
@@ -654,22 +653,25 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
                 try {
                     //重算索引名。
                     calcIndexName();
-                    if (buffer.size() >> 10 > maxKiloBytesOfBatch || SystemClock.now() > nextScanTime) {
+                    boolean shouldFlush;
+                    batchLock.lock();
+                    try {
+                        shouldFlush = buffer.size() >> 10 > maxKiloBytesOfBatch;
+                    } finally {
+                        batchLock.unlock();
+                    }
+                    if (shouldFlush || SystemClock.now() > nextScanTime) {
                         nextScanTime = SystemClock.now() + maxFlushInSeconds * 1000;
-                        batchExecutor.submit(new Runnable() {
-                            @Override
-                            public void run() {
-                                processLogBucket();
-                            }
-                        });
+                        batchExecutor.submit(() -> processLogBucket());
                     }
                     try {
                         Thread.sleep(500);
-                    } catch (InterruptedException ignore) {
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
                     }
                 } catch (Exception e) {
-                    //直接打印到控制台输出吧
-                    e.printStackTrace();
+                    addError("Exception in logback-es monitor", e);
                 }
             }
         }

@@ -40,8 +40,12 @@ public class AiToolRpcImpl implements AiToolRpc {
     public ResponseData<List<AiToolMeta>> listToolMeta(String appName) {
         URI targetUrl =
                 UriComponentsBuilder.fromUriString(uwAiProperties.getAiCenterHost()).path("/rpc/tool/listToolMeta").queryParam("appName", appName).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<List<AiToolMeta>>>() {
+        ResponseData<List<AiToolMeta>> result = authRestTemplate.exchange(targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<List<AiToolMeta>>>() {
         }).getBody();
+        if (result == null) {
+            return ResponseData.errorMsg("AiToolRpcImpl.listToolMeta() returned null body");
+        }
+        return result;
     }
 
     /**
@@ -53,6 +57,10 @@ public class AiToolRpcImpl implements AiToolRpc {
     @Override
     public ResponseData updateToolMeta(AiToolMeta aiToolMeta) {
         String url = uwAiProperties.getAiCenterHost() + "/rpc/tool/updateToolMeta";
-        return authRestTemplate.postForObject(url, aiToolMeta, ResponseData.class);
+        ResponseData result = authRestTemplate.postForObject(url, aiToolMeta, ResponseData.class);
+        if (result == null) {
+            return ResponseData.errorMsg("AiToolRpcImpl.updateToolMeta() returned null body");
+        }
+        return result;
     }
 }

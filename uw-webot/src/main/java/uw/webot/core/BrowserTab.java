@@ -88,7 +88,7 @@ public class BrowserTab implements Closeable {
     /**
      * 最后使用时间。
      */
-    private long lastActiveTime;
+    private volatile long lastActiveTime;
 
     /**
      * 持有者线程。

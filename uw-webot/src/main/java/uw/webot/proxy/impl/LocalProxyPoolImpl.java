@@ -105,12 +105,12 @@ public class LocalProxyPoolImpl implements ProxyService {
     private boolean checkProxy(ProxyType proxyType, ProxyInfo proxy) {
         boolean result = false;
         if (proxy.getType() == proxyType || proxyType == ProxyType.ANY) {
-            // 如果在指定时间内健康，则直接返回。
-            if (proxy.getLastHealthCheckResult() && proxy.getLastHealthCheckTime() + proxyConfig.getHealthCheckInterval().toMillis() < System.currentTimeMillis()) {
+            long healthCheckExpiry = proxy.getLastHealthCheckTime() + proxyConfig.getHealthCheckInterval().toMillis();
+            // 如果健康检查未过期且上次健康，直接返回
+            if (System.currentTimeMillis() < healthCheckExpiry && proxy.getLastHealthCheckResult()) {
                 result = true;
-            }
-            // 如果超出检测时间，则需要重新检测。
-            if (proxy.getLastHealthCheckTime() + proxyConfig.getHealthCheckInterval().toMillis() > System.currentTimeMillis()) {
+            } else {
+                // 健康检查已过期，需要重新检测
                 if (proxy.getFailureCount() < proxyConfig.getMaxFailures()) {
                     if (checkProxyHealth(proxy)) {
                         result = true;

@@ -81,7 +81,7 @@ public class BrowserInstance {
     /**
      * 最后活跃时间。
      */
-    private long lastActiveTime;
+    private volatile long lastActiveTime;
 
     /**
      * 最大 Page 数量。

@@ -333,8 +333,10 @@ public class MfaDeviceCodeHelper {
      * @return
      */
     private static String replaceTemplate(String data, Map<String, String> paramMap) {
-        data = data.replace(TEMPLATE_DEVICE_CODE, paramMap.get(TEMPLATE_DEVICE_CODE));
-        data = data.replace(TEMPLATE_EXPIRE_MINUTES, paramMap.get(TEMPLATE_EXPIRE_MINUTES));
+        String code = paramMap.getOrDefault(TEMPLATE_DEVICE_CODE, "");
+        String minutes = paramMap.getOrDefault(TEMPLATE_EXPIRE_MINUTES, "");
+        data = data.replace(TEMPLATE_DEVICE_CODE, code);
+        data = data.replace(TEMPLATE_EXPIRE_MINUTES, minutes);
         return data;
     }
 

@@ -5,6 +5,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 随机工具。
@@ -27,7 +28,7 @@ public class CaptchaRandomUtils {
      * @return
      */
     public static int getRandomInt(int bound) {
-        return RandomUtils.insecure().randomInt(0, bound);
+        return ThreadLocalRandom.current().nextInt(bound);
     }
 
     /**
@@ -38,7 +39,7 @@ public class CaptchaRandomUtils {
      * @return
      */
     public static int getRandomInt(int startNum, int endNum) {
-        return RandomUtils.insecure().randomInt(0, endNum - startNum) + startNum;
+        return ThreadLocalRandom.current().nextInt(endNum - startNum) + startNum;
     }
 
     /**

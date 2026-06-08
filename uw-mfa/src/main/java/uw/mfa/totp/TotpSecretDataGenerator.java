@@ -94,7 +94,7 @@ public class TotpSecretDataGenerator {
      * @return
      */
     public ResponseData<TotpSecretData> issue(String label, String issuer, int qrSize) {
-        if (StringUtils.isNotBlank(issuer)) {
+        if (StringUtils.isBlank(issuer)) {
             issuer = this.issuer;
         }
         if (qrSize < 100) {

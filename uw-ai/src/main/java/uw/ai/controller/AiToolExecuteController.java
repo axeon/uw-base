@@ -47,7 +47,13 @@ public class AiToolExecuteController {
         if (StringUtils.isBlank(executeParam.getToolClass()) || StringUtils.isBlank(executeParam.getToolInput())) {
             return ResponseData.errorMsg("请给出任务类和任务参数！");
         }
-        AiTool<AiToolParam, ResponseData> aiTool = applicationContext.getBean(executeParam.getToolClass(), AiTool.class);
+        AiTool<AiToolParam, ResponseData> aiTool;
+        try {
+            aiTool = applicationContext.getBean(executeParam.getToolClass(), AiTool.class);
+        } catch (Exception e) {
+            logger.error("获取AiTool实例失败: {}", executeParam.getToolClass(), e);
+            return ResponseData.errorMsg("任务类不存在或不可用");
+        }
         AiToolParam toolParam = aiTool.convertParam(executeParam.getToolInput());
         return aiTool.apply(toolParam);
     }

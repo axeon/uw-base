@@ -24,22 +24,22 @@ public class AiClientHelper {
     /**
      * toolRpc
      */
-    private static AiToolRpc toolRpc;
+    private static volatile AiToolRpc toolRpc;
 
     /**
      * chatRpc
      */
-    private static AiChatRpc chatRpc;
+    private static volatile AiChatRpc chatRpc;
 
     /**
      * translateRpc
      */
-    private static AiTranslateRpc translateRpc;
+    private static volatile AiTranslateRpc translateRpc;
 
     /**
      * configRpc
      */
-    private static AiConfigRpc configRpc;
+    private static volatile AiConfigRpc configRpc;
 
     public AiClientHelper(AiToolRpc toolRpc, AiChatRpc chatRpc, AiTranslateRpc translateRpc, AiConfigRpc configRpc) {
         AiClientHelper.toolRpc = toolRpc;
@@ -113,7 +113,12 @@ public class AiClientHelper {
             return responseData.raw();
         }
         // 转换成实体
-        return ResponseData.success(beanOutputConverter.convert(beanOutputConverter.cleanJson(responseData.getData())), responseData.getCode(), responseData.getData());
+        try {
+            return ResponseData.success(beanOutputConverter.convert(beanOutputConverter.cleanJson(responseData.getData())), responseData.getCode(), responseData.getData());
+        } catch (Exception e) {
+            log.error("generateEntity() JSON转换失败: {}", e.getMessage(), e);
+            return ResponseData.errorMsg("JSON转换失败: " + e.getMessage());
+        }
     }
 
     /**

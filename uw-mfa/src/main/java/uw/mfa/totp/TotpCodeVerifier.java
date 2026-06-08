@@ -76,14 +76,11 @@ public class TotpCodeVerifier {
         // 获取当前时间戳，并计算已过的周期数。
         long currentBucket = Math.floorDiv(Instant.now().getEpochSecond(), timePeriod);
 
-        // 计算并比较所有“有效”时间周期的代码。
+        // 计算并比较所有”有效”时间周期的代码。
         // 即使提前匹配到一个有效代码，也要继续计算和比较所有有效时间周期的代码，以避免定时攻击。
         boolean success = false;
         for (int i = -allowedTimePeriodDiscrepancy; i <= allowedTimePeriodDiscrepancy; i++) {
-            success = checkCode(secret, currentBucket + i, code);
-            if (success) {
-                break;
-            }
+            success |= checkCode(secret, currentBucket + i, code);
         }
         if (!success) {
             return ResponseData.errorCode(MfaResponseCode.TOTP_CODE_VERIFY_ERROR);
@@ -98,6 +95,9 @@ public class TotpCodeVerifier {
     private boolean checkCode(String secret, long counter, String code) {
         try {
             String actualCode = generate(secret, counter);
+            if (actualCode == null) {
+                return false;
+            }
             return timeSafeStringComparison(actualCode, code);
         } catch (CodeGenerationException e) {
             return false;

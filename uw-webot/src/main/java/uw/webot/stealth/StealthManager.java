@@ -44,10 +44,7 @@ public class StealthManager {
      * @return 验证码服务
      */
     public StealthService getDefaultStealthService() {
-        if (serviceMap.isEmpty()) {
-            return null;
-        }
-        return serviceMap.firstEntry().getValue();
+        return serviceMap.isEmpty() ? null : serviceMap.firstEntry().getValue();
     }
 
     /**

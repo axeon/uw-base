@@ -58,6 +58,9 @@ public class CaptchaManager {
      * @return 验证码服务
      */
     public CaptchaService getDefaultCaptchaService() {
+        if (serviceMap.isEmpty()) {
+            return null;
+        }
         return serviceMap.firstEntry().getValue();
     }
 

@@ -65,7 +65,7 @@ public class WebotManager {
     /**
      * 单例实例。
      */
-    private static WebotManager INSTANCE;
+    private static volatile WebotManager INSTANCE;
 
 
     /**

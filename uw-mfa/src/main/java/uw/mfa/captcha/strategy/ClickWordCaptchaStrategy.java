@@ -148,6 +148,9 @@ public class ClickWordCaptchaStrategy implements CaptchaStrategy {
         } catch (Exception e) {
             return ResponseData.errorMsg("ClickWordPuzzle point format invalid! " + e.getMessage());
         }
+        if (pointResult == null || pointAnswer == null || pointResult.length != pointAnswer.length) {
+            return ResponseData.error();
+        }
         for (int i = 0; i < pointResult.length; i++) {
             // 如果点选大于字体一半
             if (Math.abs(pointResult[i].x - pointAnswer[i].x) > FONT_SIZE || Math.abs(pointResult[i].y - pointAnswer[i].y) > FONT_SIZE) {

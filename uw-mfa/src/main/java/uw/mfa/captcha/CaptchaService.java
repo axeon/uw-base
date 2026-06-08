@@ -119,7 +119,7 @@ public class CaptchaService {
         String captchaType = captchaAnswer.getCaptchaType();
         CaptchaStrategy captchaStrategy = getCaptchaStrategy(captchaType);
         if (captchaStrategy == null) {
-            ResponseData.errorMsg("captchaType[" + captchaType + "] invalid!");
+            return ResponseData.errorMsg("captchaType[" + captchaType + "] invalid!");
         }
         // 校验操作时间 (太快可能就是机器识别)
         boolean humanCheck = humanDetect(captchaStrategy, captchaAnswer);
@@ -142,7 +142,7 @@ public class CaptchaService {
         // 如果识别时间达不到要求使用的时间
         if (captchaStrategy.humanOpTime() > opTime) {
             // 随机一半的概率放行
-            return opTime % 2 == 0 ? true : false;
+            return opTime % 2 == 0;
         }
         return true;
     }

@@ -54,7 +54,11 @@ public interface AiTool<P extends AiToolParam, ResponseData> extends Function<P,
      * @return
      */
     default P convertParam(String toolTip) {
-        return (P) JsonUtils.parse(toolTip, getParamType());
+        Class<?> paramType = getParamType();
+        if (paramType == null) {
+            throw new IllegalStateException("Cannot determine param type for " + getClass().getName() + ", ensure generic type parameter is specified");
+        }
+        return (P) JsonUtils.parse(toolTip, paramType);
     }
 
 

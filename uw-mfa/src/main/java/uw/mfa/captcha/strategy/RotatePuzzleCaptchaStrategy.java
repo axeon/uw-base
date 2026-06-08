@@ -88,16 +88,20 @@ public class RotatePuzzleCaptchaStrategy implements CaptchaStrategy {
      */
     @Override
     public ResponseData verify(String answerData, String captchaResult) {
-        // 实际记录答案
-        int rotatePuzzleAnswer = Integer.parseInt(captchaResult);
-        double parsed = Double.parseDouble(answerData);
-        int move = (int) parsed;
-        // 如果角度大于误差
-        if (Math.abs(move - rotatePuzzleAnswer) > ROTATE_OFFSET) {
+        try {
+            // 实际记录答案
+            int rotatePuzzleAnswer = Integer.parseInt(captchaResult);
+            double parsed = Double.parseDouble(answerData);
+            int move = (int) parsed;
+            // 如果角度大于误差
+            if (Math.abs(move - rotatePuzzleAnswer) > ROTATE_OFFSET) {
+                return ResponseData.error();
+            }
+            //校验成功
+            return ResponseData.success();
+        } catch (Exception e) {
             return ResponseData.error();
         }
-        //校验成功
-        return ResponseData.success();
     }
 
     /**

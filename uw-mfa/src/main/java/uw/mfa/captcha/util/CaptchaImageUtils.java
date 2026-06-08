@@ -321,10 +321,9 @@ public class CaptchaImageUtils {
      * @return
      */
     private static void loadImageFromResource(List<BufferedImage> imageList, String imageFile) {
-        try {
-            InputStream is = CaptchaImageUtils.class.getResourceAsStream(imageFile);
+        try (InputStream is = CaptchaImageUtils.class.getResourceAsStream(imageFile)) {
             if (is != null) {
-                imageList.add(ImageIO.read(CaptchaImageUtils.class.getResourceAsStream(imageFile)));
+                imageList.add(ImageIO.read(is));
             }
         } catch (Exception e) {
             log.error("加载图片资源[{}]失败! 异常：{}", imageFile, e.getMessage(), e);

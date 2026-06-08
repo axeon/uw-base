@@ -29,12 +29,16 @@ public class AiConfigRpcImpl implements AiConfigRpc {
 
     @Override
     public ResponseData<List<AiModelConfigVo>> listModelConfig() {
-        return authRestTemplate.exchange(
+        ResponseData<List<AiModelConfigVo>> result = authRestTemplate.exchange(
                 uwAiProperties.getAiCenterHost() + "/rpc/config/listModelConfig",
                 HttpMethod.GET,
                 null,
                 new ParameterizedTypeReference<ResponseData<List<AiModelConfigVo>>>() {
                 }
         ).getBody();
+        if (result == null) {
+            return ResponseData.errorMsg("AiConfigRpcImpl.listModelConfig() returned null body");
+        }
+        return result;
     }
 }

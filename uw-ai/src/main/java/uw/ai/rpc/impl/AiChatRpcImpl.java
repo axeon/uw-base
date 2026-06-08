@@ -108,8 +108,12 @@ public class AiChatRpcImpl implements AiChatRpc {
         // 构建请求实体
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-        return authRestTemplate.exchange(uwAiProperties.getAiCenterHost() + "/rpc/chat/generate", HttpMethod.POST, requestEntity, new ParameterizedTypeReference<ResponseData<String>>() {
+        ResponseData<String> result = authRestTemplate.exchange(uwAiProperties.getAiCenterHost() + "/rpc/chat/generate", HttpMethod.POST, requestEntity, new ParameterizedTypeReference<ResponseData<String>>() {
         }).getBody();
+        if (result == null) {
+            return ResponseData.errorMsg("AiChatRpcImpl.generate() returned null body");
+        }
+        return result;
     }
 
 
@@ -169,7 +173,6 @@ public class AiChatRpcImpl implements AiChatRpc {
         // 使用WebClient处理SSE流式响应
         return authWebClient.post()
                 .uri(uwAiProperties.getAiCenterHost() + "/rpc/chat/chatGenerate")
-//                .uri("http://localhost:10081/rpc/chat/chatGenerate")
                 .contentType(MediaType.MULTIPART_FORM_DATA).
                 body(BodyInserters.fromMultipartData(body))
                 .accept(MediaType.TEXT_EVENT_STREAM)          // 1. 声明接受 SSE

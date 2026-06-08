@@ -3,17 +3,13 @@ package uw.ai.rpc.impl;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 import uw.ai.conf.UwAiProperties;
 import uw.ai.rpc.AiTranslateRpc;
 import uw.ai.vo.AiTranslateListParam;
 import uw.ai.vo.AiTranslateMapParam;
 import uw.ai.vo.AiTranslateResultData;
 import uw.common.dto.ResponseData;
-
-import java.net.URI;
 
 /**
  * AiToolRpcImpl.
@@ -40,23 +36,18 @@ public class AiTranslateRpcImpl implements AiTranslateRpc {
      */
     @Override
     public ResponseData<AiTranslateResultData[]> translateList(AiTranslateListParam param) {
-        // 构建请求URL（假设基础路径为 uwAiProperties.getAiCenterHost()）
-        URI url = UriComponentsBuilder.fromUriString(uwAiProperties.getAiCenterHost())
-                .path("/rpc/translate/translateList")
-                .build()
-                .encode()
-                .toUri();
-
-        // 发送POST请求并处理响应
-        ResponseEntity<ResponseData<AiTranslateResultData[]>> response = authRestTemplate.exchange(
+        String url = uwAiProperties.getAiCenterHost() + "/rpc/translate/translateList";
+        ResponseData<AiTranslateResultData[]> result = authRestTemplate.exchange(
                 url,
                 HttpMethod.POST,
                 new HttpEntity<>(param),
                 new ParameterizedTypeReference<ResponseData<AiTranslateResultData[]>>() {
                 }
-        );
-
-        return response.getBody();
+        ).getBody();
+        if (result == null) {
+            return ResponseData.errorMsg("AiTranslateRpcImpl.translateList() returned null body");
+        }
+        return result;
     }
 
     /**
@@ -67,22 +58,17 @@ public class AiTranslateRpcImpl implements AiTranslateRpc {
      */
     @Override
     public ResponseData<AiTranslateResultData[]> translateMap(AiTranslateMapParam param) {
-        // 构建请求URL
-        URI url = UriComponentsBuilder.fromUriString(uwAiProperties.getAiCenterHost())
-                .path("/rpc/translate/translateMap")
-                .build()
-                .encode()
-                .toUri();
-
-        // 发送POST请求并处理响应
-        ResponseEntity<ResponseData<AiTranslateResultData[]>> response = authRestTemplate.exchange(
+        String url = uwAiProperties.getAiCenterHost() + "/rpc/translate/translateMap";
+        ResponseData<AiTranslateResultData[]> result = authRestTemplate.exchange(
                 url,
                 HttpMethod.POST,
                 new HttpEntity<>(param),
                 new ParameterizedTypeReference<ResponseData<AiTranslateResultData[]>>() {
                 }
-        );
-
-        return response.getBody();
+        ).getBody();
+        if (result == null) {
+            return ResponseData.errorMsg("AiTranslateRpcImpl.translateMap() returned null body");
+        }
+        return result;
     }
 }

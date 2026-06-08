@@ -350,7 +350,7 @@ public class QueryParam<P extends QueryParam<P>> implements Serializable {
      * @return
      */
     public String GEN_SORT_SQL() {
-        if (SORT_NAME != null && SORT_NAME.size() > 0) {
+        if (SORT_NAME != null && SORT_NAME.size() > 0 && ALLOWED_SORT_PROPERTY() != null) {
             // 是否有排序字段。
             boolean hasSort = false;
             StringBuilder sb = new StringBuilder(32);

@@ -288,7 +288,7 @@ public class DataSet implements Serializable {
      * @return 数组中指定位置的数据
      */
     public Object get(String colName) {
-        if (results == null) {
+        if (results == null || currentIndex < 0 || currentIndex >= results.size()) {
             return null;
         }
         return results.get(currentIndex)[getColumnPos(colName)];

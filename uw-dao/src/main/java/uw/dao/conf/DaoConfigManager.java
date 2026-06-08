@@ -51,7 +51,7 @@ public final class DaoConfigManager {
      * @return the isProdProfile
      */
     public static boolean isProdProfile() {
-        return config.isProdProfile();
+        return config != null && config.isProdProfile();
     }
 
     /**

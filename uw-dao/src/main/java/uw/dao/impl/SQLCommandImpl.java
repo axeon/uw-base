@@ -55,6 +55,7 @@ public class SQLCommandImpl {
 
         Connection con = null;
         PreparedStatement pstmt = null;
+        ResultSet rs = null;
         Object value = null;
         try {
             con = dao.getTransactionController().getConnection(connName);
@@ -65,7 +66,7 @@ public class SQLCommandImpl {
             }
             long dbStartMillis = SystemClock.now();
             connMillis = dbStartMillis - startMillis;
-            ResultSet rs = pstmt.executeQuery();
+            rs = pstmt.executeQuery();
             dbMillis = SystemClock.now() - dbStartMillis;
             if (rs.next()) {
                 if (cls == int.class || cls == Integer.class) {
@@ -90,11 +91,17 @@ public class SQLCommandImpl {
                     value = rs.getObject(1);
                 }
             }
-            rs.close();
         } catch (Exception e) {
             exception = e.toString();
-            throw new TransactionException(exception + connName + "@" + connId + ": " + selectSql + "#" + JsonUtils.toString(paramList), e);
+            throw new TransactionException(exception + connName + "@" + connId + ": " + selectSql, e);
         } finally {
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (Exception e) {
+                    logger.error(e.getMessage(), e);
+                }
+            }
             if (pstmt != null) {
                 try {
                     pstmt.close();
@@ -199,7 +206,7 @@ public class SQLCommandImpl {
             rs.close();
         } catch (Exception e) {
             exception = e.toString();
-            throw new TransactionException(exception + connName + "@" + connId + ": " + selectSql + "#" + JsonUtils.toString(paramList), e);
+            throw new TransactionException(exception + connName + "@" + connId + ": " + selectSql, e);
         } finally {
             if (pstmt != null) {
                 try {

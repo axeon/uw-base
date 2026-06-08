@@ -72,6 +72,9 @@ public class EntityCommandImpl {
         StringBuilder sb = new StringBuilder();
         // 写入所有的列
         Collection<FieldMetaInfo> fieldMetaInfos = emi.getFieldInfoMap().values();
+        if (fieldMetaInfos.isEmpty()) {
+            throw new TransactionException("No fields defined for " + tableName);
+        }
         //参数列表。
         Object[] paramList = new Object[fieldMetaInfos.size()];
         sb.append("insert into ").append(tableName).append(" (");
@@ -175,7 +178,6 @@ public class EntityCommandImpl {
         }
         sb.deleteCharAt(sb.length() - 1);
         sb.append(") values ");
-        sb.deleteCharAt(sb.length() - 1);
         for (T entity : entityList) {
             sb.append("(");
             sb.append("?,".repeat(fieldMetaInfos.size()));
@@ -267,11 +269,12 @@ public class EntityCommandImpl {
         }
         StringBuilder sb = new StringBuilder();
         List<FieldMetaInfo> pks = emi.getPkList();
-        sb.append("select * from ").append(tableName).append(" where ");
-        if (pks.size() > 0) {
-            FieldMetaInfo fmi = pks.getFirst();
-            sb.append(fmi.getColumnName()).append("=? ");
+        if (pks.isEmpty()) {
+            throw new TransactionException("No primary key defined for " + tableName);
         }
+        sb.append("select * from ").append(tableName).append(" where ");
+        FieldMetaInfo pksFirst = pks.getFirst();
+        sb.append(pksFirst.getColumnName()).append("=? ");
 
         T entity = null;
 

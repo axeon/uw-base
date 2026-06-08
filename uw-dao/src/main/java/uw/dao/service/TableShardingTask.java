@@ -86,10 +86,10 @@ public class TableShardingTask implements Runnable {
                 }
                 //开始创建表
                 if (!checkTableExist(currentTable)) {
-                    exeCreateTable(currentTable, createScript.replaceAll(baseTableName, currentTable));
+                    exeCreateTable(currentTable, createScript.replace(baseTableName, currentTable));
                 }
                 if (!checkTableExist(nextTable)) {
-                    exeCreateTable(nextTable, createScript.replaceAll(baseTableName, nextTable));
+                    exeCreateTable(nextTable, createScript.replace(baseTableName, nextTable));
                 }
             }
         }
@@ -150,6 +150,10 @@ public class TableShardingTask implements Runnable {
      */
     private String getCreateScript(String tableName) {
         String script = null;
+        if (!isValidTableName(tableName)) {
+            log.warn("Skipping unexpected table name: [{}]", tableName);
+            return null;
+        }
         try {
             DataSet ds = dao.queryForDataSet(dao.getConnectionName(tableName, "all"), "show create table " + tableName);
             if (ds.next()) {
@@ -176,6 +180,10 @@ public class TableShardingTask implements Runnable {
             log.error(e.getMessage(), e);
         }
         return effectedNum;
+    }
+
+    private boolean isValidTableName(String tableName) {
+        return tableName != null && tableName.matches("[a-zA-Z_][a-zA-Z0-9_]*");
     }
 
 }

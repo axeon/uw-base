@@ -64,12 +64,12 @@ public class DaoSequenceFactory {
     /**
      * 当前id.
      */
-    private transient long currentId = 0;
+    private transient volatile long currentId = 0;
 
     /**
      * 当前可以获取的最大id.
      */
-    private transient long maxId = 0;
+    private transient volatile long maxId = 0;
 
     /**
      * 增量数，高并发应用应该保持较高的增量数字。
@@ -185,7 +185,9 @@ public class DaoSequenceFactory {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 logger.error(e.getMessage(), e);
+                break;
             }
         }
         return false;

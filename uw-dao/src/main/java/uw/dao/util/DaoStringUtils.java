@@ -40,6 +40,7 @@ public class DaoStringUtils {
      * @return String
      */
     public static String toUpperFirst(String text) {
+        if (text == null || text.isEmpty()) return text;
         char[] ch = text.toCharArray();
         if (ch[0] >= 'a' && ch[0] <= 'z') {
             ch[0] -= 32;
@@ -54,6 +55,7 @@ public class DaoStringUtils {
      * @return String
      */
     public static String toLowerFirst(String text) {
+        if (text == null || text.isEmpty()) return text;
         char[] ch = text.toCharArray();
         if (ch[0] >= 'A' && ch[0] <= 'Z') {
             ch[0] += 32;

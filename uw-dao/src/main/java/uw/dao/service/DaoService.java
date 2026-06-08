@@ -60,12 +60,12 @@ public class DaoService {
     /**
      * 可以记录的sqlCostMin最小时间。
      */
-    private static int sqlCostMin = 100;
+    private static volatile int sqlCostMin = 100;
 
     /**
      * 是否开启sql统计。
      */
-    private static boolean enableSqlStats = false;
+    private static volatile boolean enableSqlStats = false;
 
     /**
      * 是否开启table sharding。

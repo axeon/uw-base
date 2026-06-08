@@ -146,25 +146,25 @@ public class StealthService {
     private void spoofWebGL(BrowserTab instance) {
         WebGLFingerprint fingerprint = getRandomWebGLFingerprint();
 
-        String script = String.format("""
-                        () => {
+        String script = """
+                        (fingerprint) => {
                             const getParameter = WebGLRenderingContext.prototype.getParameter;
                             WebGLRenderingContext.prototype.getParameter = function(parameter) {
                                 if (parameter === 37445) {
-                                    return '%s';
+                                    return fingerprint.vendor;
                                 }
                                 if (parameter === 37446) {
-                                    return '%s';
+                                    return fingerprint.renderer;
                                 }
                                 if (parameter === 7937) {
-                                    return '%s';
+                                    return fingerprint.unmaskedVendor;
                                 }
                                 if (parameter === 7936) {
-                                    return '%s';
+                                    return fingerprint.unmaskedRenderer;
                                 }
                                 return getParameter(parameter);
                             };
-                        
+
                             // 覆盖getShaderPrecisionFormat
                             const getShaderPrecisionFormat = WebGLRenderingContext.prototype.getShaderPrecisionFormat;
                             WebGLRenderingContext.prototype.getShaderPrecisionFormat = function() {
@@ -175,14 +175,14 @@ public class StealthService {
                                 };
                             };
                         }
-                        """,
-                fingerprint.vendor,
-                fingerprint.renderer,
-                fingerprint.unmaskedVendor,
-                fingerprint.unmaskedRenderer
-        );
+                        """;
 
-        instance.evaluate(script);
+        instance.evaluate(script, Map.of(
+                "vendor", fingerprint.vendor,
+                "renderer", fingerprint.renderer,
+                "unmaskedVendor", fingerprint.unmaskedVendor,
+                "unmaskedRenderer", fingerprint.unmaskedRenderer
+        ));
     }
 
     /**
@@ -197,34 +197,34 @@ public class StealthService {
         int width = Integer.parseInt(resParts[0]);
         int height = Integer.parseInt(resParts[1]);
 
-        String script = String.format("""
-                        () => {
+        String script = """
+                        (config) => {
                             // 设置User-Agent
                             Object.defineProperty(navigator, 'userAgent', {
                                 get: function() {
-                                    return '%s';
+                                    return config.userAgent;
                                 }
                             });
-                        
+
                             // 设置屏幕分辨率
                             Object.defineProperty(screen, 'width', {
                                 get: function() {
-                                    return %d;
+                                    return config.width;
                                 }
                             });
                             Object.defineProperty(screen, 'height', {
                                 get: function() {
-                                    return %d;
+                                    return config.height;
                                 }
                             });
                             Object.defineProperty(screen, 'availWidth', {
                                 get: function() {
-                                    return %d;
+                                    return config.width;
                                 }
                             });
                             Object.defineProperty(screen, 'availHeight', {
                                 get: function() {
-                                    return %d - 40;
+                                    return config.height - 40;
                                 }
                             });
                             Object.defineProperty(screen, 'colorDepth', {
@@ -237,19 +237,19 @@ public class StealthService {
                                     return 24;
                                 }
                             });
-                        
+
                             // 设置时区
                             Intl.DateTimeFormat = function() {
                                 return {
                                     resolvedOptions: function() {
                                         return {
-                                            timeZone: '%s',
+                                            timeZone: config.timezone,
                                             locale: 'zh-CN'
                                         };
                                     }
                                 };
                             };
-                        
+
                             // 覆盖Date
                             const OriginalDate = Date;
                             Date = function() {
@@ -263,11 +263,14 @@ public class StealthService {
                             Date.parse = OriginalDate.parse;
                             Date.UTC = OriginalDate.UTC;
                         }
-                        """,
-                userAgent, width, height, width, height, timezone
-        );
+                        """;
 
-        instance.evaluate(script);
+        instance.evaluate(script, Map.of(
+                "userAgent", userAgent,
+                "width", width,
+                "height", height,
+                "timezone", timezone
+        ));
     }
 
     /**

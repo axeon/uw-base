@@ -210,9 +210,9 @@ public class TaskCronerContainer {
                 }
                 timeRun = (int) (taskCronerLog.getFinishDate().getTime() - taskCronerLog.getRunDate().getTime());
                 //开始输出统计数据。
-                TaskStatsService.updateCronerStats(taskCronerConfig.getId(), 1, taskCronerConfig.getState() == TaskData.STATE_FAIL_PROGRAM ? 1 : 0,
-                        taskCronerConfig.getState() == TaskData.STATE_FAIL_CONFIG ? 1 : 0, taskCronerConfig.getState() == TaskData.STATE_FAIL_DATA ? 1 : 0,
-                        taskCronerConfig.getState() == TaskData.STATE_FAIL_PARTNER ? 1 : 0, timeWait, timeRun);
+                TaskStatsService.updateCronerStats(taskCronerConfig.getId(), 1, taskCronerLog.getState() == TaskData.STATE_FAIL_PROGRAM ? 1 : 0,
+                        taskCronerLog.getState() == TaskData.STATE_FAIL_CONFIG ? 1 : 0, taskCronerLog.getState() == TaskData.STATE_FAIL_DATA ? 1 : 0,
+                        taskCronerLog.getState() == TaskData.STATE_FAIL_PARTNER ? 1 : 0, timeWait, timeRun);
                 // 入库
                 taskApiClient.sendTaskCronerLog(taskCronerConfig.getId(), taskCronerLog);
             }

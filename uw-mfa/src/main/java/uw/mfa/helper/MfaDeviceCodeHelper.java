@@ -11,12 +11,12 @@ import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.web.client.RestTemplate;
 import uw.common.dto.ResponseData;
-import uw.common.util.SystemClock;
 import uw.mfa.conf.UwMfaProperties;
 import uw.mfa.constant.MfaDeviceType;
 import uw.mfa.constant.MfaResponseCode;
 import uw.mfa.util.RedisKeyUtils;
 
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -39,9 +39,9 @@ public class MfaDeviceCodeHelper {
      */
     private static final String REDIS_DEVICE_CODE_VERIFY_PREFIX = "deviceVerify";
     /**
-     * 随机生成器
+     * 安全随机生成器
      */
-    private static final Random RANDOM = new Random(SystemClock.now());
+    private static final SecureRandom RANDOM = new SecureRandom();
     /**
      * ASCII
      */

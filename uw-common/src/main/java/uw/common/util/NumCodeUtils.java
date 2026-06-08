@@ -50,7 +50,7 @@ public class NumCodeUtils {
             return num;
         }
         //混淆掩码。掩码为1-9。
-        int mask = (num[num.length - 1] % 9) + 1;
+        int mask = (num[num.length - 1] - '0') % 9 + 1;
         if (mask > num.length) {
             mask = mask % num.length;
         } else if (mask == num.length) {
@@ -76,7 +76,7 @@ public class NumCodeUtils {
             return numEnc;
         }
         //混淆掩码。掩码为1-9。
-        int mask = (numEnc[0] % 9) + 1;
+        int mask = (numEnc[0] - '0') % 9 + 1;
         if (mask > numEnc.length) {
             mask = mask % numEnc.length;
         } else if (mask == numEnc.length) {

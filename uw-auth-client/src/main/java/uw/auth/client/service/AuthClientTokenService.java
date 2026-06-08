@@ -89,7 +89,7 @@ public class AuthClientTokenService {
      * 连续获取token失败的累计次数，成功时重置为0。
      * 每累计10次输出一次错误日志。
      */
-    private int retryTimes;
+    private volatile int retryTimes;
 
     /**
      * @param authClientProperties 认证客户端配置
@@ -227,7 +227,10 @@ public class AuthClientTokenService {
             if (StringUtils.isBlank(token)) {
                 log.error("!!!AuthClient登录出错! response: {}", loginResponseEntity);
             }
-        } catch (Throwable e) {
+        } catch (Error e) {
+            log.error("!!!AuthClient登录出错! {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
             log.error("!!!AuthClient登录出错! {}", e.getMessage(), e);
         }
         if (StringUtils.isBlank(token)) {
@@ -275,7 +278,10 @@ public class AuthClientTokenService {
             if (StringUtils.isBlank(token)) {
                 log.error("!!!AuthClient刷新token出错! response: {}", responseEntity);
             }
-        } catch (Throwable e) {
+        } catch (Error e) {
+            log.error("!!!AuthClient刷新token出错! {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
             log.error("!!!AuthClient刷新token出错! {}", e.getMessage(), e);
         }
         if (StringUtils.isBlank(token)) {

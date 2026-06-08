@@ -23,6 +23,7 @@ public class ObjectAsStringSerializer<T> extends JsonSerializer<T> {
             gen.writeString(JsonUtils.toString(value));
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
+            gen.writeString(String.valueOf(value));
         }
     }
 }

@@ -17,7 +17,7 @@ public class LogClient {
     /**
      * 提供一个静态实例化对象，便于各种调用。
      */
-    private static LogClient INSTANCE = null;
+    private static volatile LogClient INSTANCE = null;
 
     /**
      * 内部的logService对象。

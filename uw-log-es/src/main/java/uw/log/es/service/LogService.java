@@ -1,5 +1,6 @@
 package uw.log.es.service;
 
+import com.fasterxml.jackson.core.io.JsonStringEncoder;
 import com.fasterxml.jackson.databind.JavaType;
 import com.google.common.base.CaseFormat;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -25,9 +26,9 @@ import uw.log.es.vo.*;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
@@ -71,7 +72,7 @@ public class LogService {
     /**
      * 注册Mapping,<Class<?>,String>
      */
-    private final Map<Class<?>, IndexConfigVo> regMap = new HashMap<>();
+    private final Map<Class<?>, IndexConfigVo> regMap = new ConcurrentHashMap<>();
     /**
      * es集群地址
      */
@@ -282,10 +283,11 @@ public class LogService {
         okb.write(LINE_SEPARATOR_BYTES);
         try {
             JsonUtils.write(source, okb.outputStream());
+            okb.write(LINE_SEPARATOR_BYTES);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
+            return;
         }
-        okb.write(LINE_SEPARATOR_BYTES);
         batchLock.lock();
         try {
             buffer.writeAll(okb);
@@ -332,10 +334,11 @@ public class LogService {
             okb.write(LINE_SEPARATOR_BYTES);
             try {
                 JsonUtils.write(source, okb.outputStream());
+                okb.write(LINE_SEPARATOR_BYTES);
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
+                continue;
             }
-            okb.write(LINE_SEPARATOR_BYTES);
         }
         batchLock.lock();
         try {
@@ -475,7 +478,8 @@ public class LogService {
         }
         StringBuilder urlBuilder = new StringBuilder(esServer);
         urlBuilder.append("/_search/").append(SCROLL);
-        String requestBody = String.format("{\"scroll_id\" : \"%s\",\"scroll\": \"%s\"}", scrollId, scrollExpireSeconds + "s");
+        String escapedScrollId = new String(JsonStringEncoder.getInstance().quoteAsString(scrollId));
+        String requestBody = String.format("{\"scroll_id\":\"%s\",\"scroll\":\"%s\"}", escapedScrollId, scrollExpireSeconds + "s");
         ScrollResponse<T> resp = null;
         JavaType javaType = JsonUtils.constructParametricType(ScrollResponse.class, tClass);
 
@@ -503,7 +507,8 @@ public class LogService {
         }
         StringBuilder urlBuilder = new StringBuilder(esServer);
         urlBuilder.append("/_search/").append(SCROLL);
-        String requestBody = String.format("{\"scroll_id\":\"%s\"}", scrollId);
+        String escapedScrollId = new String(JsonStringEncoder.getInstance().quoteAsString(scrollId));
+        String requestBody = String.format("{\"scroll_id\":\"%s\"}", escapedScrollId);
         DeleteScrollResponse resp;
         try {
             Request.Builder requestBuilder = new Request.Builder().url(urlBuilder.toString());
@@ -544,7 +549,8 @@ public class LogService {
         if (resultNum > 0) {
             sql = sql + " limit " + resultNum;
         }
-        sql = String.format("{\"query\": \"%s\"}", sql);
+        String escapedSql = new String(JsonStringEncoder.getInstance().quoteAsString(sql));
+        sql = String.format("{\"query\": \"%s\"}", escapedSql);
         Request.Builder requestBuilder = new Request.Builder().url(urlBuilder.toString());
         if (needBasicAuth) {
             requestBuilder.header("Authorization", Credentials.basic(esUsername, esPassword));
@@ -565,10 +571,12 @@ public class LogService {
         dsl = dsl.replace("\"_source\":false", "\"_source\":true");
 
         // 删除无用的fields相关字段。
-        int fStart = dsl.indexOf("\"fields\":[");
-        int fEnd = dsl.indexOf("],", fStart) + 2;
-        if (fStart > 0 && fEnd > 0 && fEnd > fStart) {
-            dsl = dsl.substring(0, fStart) + dsl.substring(fEnd);
+        int fStart = dsl.indexOf(",\"fields\":[");
+        if (fStart > 0) {
+            int fEnd = dsl.indexOf("]", fStart + ",\"fields\":[".length());
+            if (fEnd > 0) {
+                dsl = dsl.substring(0, fStart) + dsl.substring(fEnd + 1);
+            }
         }
         return dsl;
     }
@@ -646,16 +654,21 @@ public class LogService {
             while (isRunning) {
                 try {
                     long now = SystemClock.now();
-                    if (buffer.size() > maxBytesOfBatch || now > nextScanTime) {
+                    boolean shouldFlush;
+                    batchLock.lock();
+                    try {
+                        shouldFlush = buffer.size() > maxBytesOfBatch;
+                    } finally {
+                        batchLock.unlock();
+                    }
+                    if (shouldFlush || now > nextScanTime) {
                         nextScanTime = now + maxFlushInMilliseconds;
-                        batchExecutor.submit(new Runnable() {
-                            @Override
-                            public void run() {
-                                processLogBuffer();
-                            }
-                        });
+                        batchExecutor.submit(() -> processLogBuffer());
                     }
                     Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
                 } catch (Exception e) {
                     log.error("Exception processing log entries", e);
                 }

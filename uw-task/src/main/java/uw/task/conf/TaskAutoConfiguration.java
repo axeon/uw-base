@@ -180,10 +180,15 @@ public class TaskAutoConfiguration {
 
         CachingConnectionFactory connFactory = null;
         try {
-            connFactory = new CachingConnectionFactory(factoryBean.getObject());
+            com.rabbitmq.client.ConnectionFactory connectionFactory = factoryBean.getObject();
+            if (connectionFactory == null) {
+                throw new IllegalStateException("RabbitConnectionFactoryBean.getObject() returned null");
+            }
+            connFactory = new CachingConnectionFactory(connectionFactory);
             map.from(rabbitProperties::determineAddresses).to(connFactory::setAddresses);
         } catch (Exception e) {
             log.error("获取ConnectionFactory出错", e);
+            throw new RuntimeException("获取ConnectionFactory出错", e);
         }
         map.from(rabbitProperties::getPublisherConfirmType).whenNonNull().to(connFactory::setPublisherConfirmType);
         map.from(rabbitProperties::isPublisherReturns).to(connFactory::setPublisherReturns);

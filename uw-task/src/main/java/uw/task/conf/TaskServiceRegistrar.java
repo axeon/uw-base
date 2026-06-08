@@ -3,6 +3,7 @@ package uw.task.conf;
 import com.rabbitmq.client.AMQP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.dto.ResponseData;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -61,12 +62,12 @@ public class TaskServiceRegistrar {
     /**
      * 上次更新配置时间，初始值必须=0，用于标识整体加载。
      */
-    private long lastUpdateTime = 0;
+    private volatile long lastUpdateTime = 0;
 
     /**
      * 从服务器端拉取数据是否成功。
      */
-    private boolean updateFlag = true;
+    private volatile boolean updateFlag = true;
 
     /**
      * 是否首次启动
@@ -346,7 +347,8 @@ public class TaskServiceRegistrar {
                 }
             }
         }
-        reportResponse = taskApiClient.reportHostInfo(hostStats);
+        ResponseData<HostReportResponse> reportResult = taskApiClient.reportHostInfo(hostStats);
+        reportResponse = reportResult != null && reportResult.isSuccess() ? reportResult.getData() : null;
         //最后提交主机状态报告。
         if (log.isDebugEnabled()) {
             log.debug("完成提交主机状态报告...");
@@ -362,7 +364,8 @@ public class TaskServiceRegistrar {
      */
     private ConcurrentHashMap<String, TaskCronerConfig> updateCronerConfig() {
         ConcurrentHashMap<String, TaskCronerConfig> map = new ConcurrentHashMap<>();
-        List<TaskCronerConfig> list = taskApiClient.getTaskCronerConfigList(taskProperties.getRunTarget(), taskProperties.getTaskProject(), lastUpdateTime);
+        ResponseData<List<TaskCronerConfig>> response = taskApiClient.getTaskCronerConfigList(taskProperties.getRunTarget(), taskProperties.getTaskProject(), lastUpdateTime);
+        List<TaskCronerConfig> list = response != null && response.isSuccess() ? response.getData() : null;
         if (list != null) {
             for (TaskCronerConfig config : list) {
                 String key = taskMetaInfoManager.getCronerConfigKey(config);
@@ -383,7 +386,8 @@ public class TaskServiceRegistrar {
      */
     private ConcurrentHashMap<String, TaskRunnerConfig> updateRunnerConfig() {
         ConcurrentHashMap<String, TaskRunnerConfig> map = new ConcurrentHashMap<>();
-        List<TaskRunnerConfig> list = taskApiClient.getTaskRunnerConfigList(taskProperties.getRunTarget(), taskProperties.getTaskProject(), lastUpdateTime);
+        ResponseData<List<TaskRunnerConfig>> response = taskApiClient.getTaskRunnerConfigList(taskProperties.getRunTarget(), taskProperties.getTaskProject(), lastUpdateTime);
+        List<TaskRunnerConfig> list = response != null && response.isSuccess() ? response.getData() : null;
         if (list != null) {
             for (TaskRunnerConfig config : list) {
                 String key = taskMetaInfoManager.getRunnerConfigKey(config);
@@ -408,7 +412,10 @@ public class TaskServiceRegistrar {
      * @param contact
      */
     private TaskRunnerConfig uploadRunnerInfo(TaskRunnerConfig config, TaskContact contact) {
-        config = taskApiClient.initTaskRunnerConfig(config);
+        ResponseData<TaskRunnerConfig> response = taskApiClient.initTaskRunnerConfig(config);
+        if (response != null && response.isSuccess() && response.getData() != null) {
+            config = response.getData();
+        }
         taskApiClient.initTaskContact(contact);
         taskMetaInfoManager.setRunnerConfig(taskMetaInfoManager.getRunnerConfigKey(config), config);
         return config;
@@ -421,7 +428,10 @@ public class TaskServiceRegistrar {
      * @param contact
      */
     private TaskCronerConfig uploadCronerInfo(TaskCronerConfig config, TaskContact contact) {
-        config = taskApiClient.initTaskCronerConfig(config);
+        ResponseData<TaskCronerConfig> response = taskApiClient.initTaskCronerConfig(config);
+        if (response != null && response.isSuccess() && response.getData() != null) {
+            config = response.getData();
+        }
         taskApiClient.initTaskContact(contact);
         taskMetaInfoManager.setCronerConfig(taskMetaInfoManager.getCronerConfigKey(config), config);
         return config;

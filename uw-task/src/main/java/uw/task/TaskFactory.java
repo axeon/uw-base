@@ -30,11 +30,11 @@ public class TaskFactory {
     /**
      * 最大重试次数。
      */
-    private static final int MAX_RETRY_TIMES = 50;
+    private static final int MAX_RETRY_TIMES = 20;
     /**
      * 全局唯一实例。
      */
-    private static TaskFactory INSTANCE;
+    private static volatile TaskFactory INSTANCE;
     /**
      * rabbitTemplate模板.
      */
@@ -157,7 +157,10 @@ public class TaskFactory {
                         Thread.sleep(i * 500);
                     }
                     Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
-                    return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
+                    if (retMessage != null) {
+                        return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
+                    }
+                    throw new TaskRuntimeException("RPC call timed out: " + queue);
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
                 }
@@ -233,7 +236,10 @@ public class TaskFactory {
                             Thread.sleep(i * 500);
                         }
                         Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
-                        return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
+                        if (retMessage != null) {
+                            return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
+                        }
+                        throw new TaskRuntimeException("RPC call timed out: " + queue);
                     } catch (Exception e) {
                         log.error(e.getMessage(), e);
                     }

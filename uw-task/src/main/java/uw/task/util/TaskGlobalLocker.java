@@ -45,7 +45,7 @@ public class TaskGlobalLocker {
     /**
      * 是否拿到锁。
      */
-    private transient boolean flag;
+    private volatile boolean flag;
 
     public TaskGlobalLocker(final RedisConnectionFactory redisConnectionFactory, TaskProperties taskProperties) {
         this.stringRedisTemplate = new StringRedisTemplate(redisConnectionFactory);
@@ -65,20 +65,23 @@ public class TaskGlobalLocker {
 
     /**
      * 返回当前是否是Leader.
+     * 使用setIfAbsent原子操作避免GET+SET的TOCTOU竞态条件。
      *
      * @return the isLeader
      */
     public boolean checkLeader() {
+        // 先尝试 setIfAbsent，如果key不存在则原子性地获取锁
+        Boolean acquired = stringRedisTemplate.opsForValue().setIfAbsent(lockerName, lockerData, LOCK_MILLIS, TimeUnit.MILLISECONDS);
+        if (Boolean.TRUE.equals(acquired)) {
+            flag = true;
+            return true;
+        }
+        // key已存在，检查是否是自己持有的
         String data = stringRedisTemplate.opsForValue().get(lockerName);
-        if (data == null) {
-            // 使用set nx来抢leader身份
-            flag = Boolean.TRUE.equals(stringRedisTemplate.opsForValue().setIfAbsent(lockerName, lockerData, LOCK_MILLIS, TimeUnit.MILLISECONDS));
+        if (data != null && data.equals(lockerData)) {
+            flag = stringRedisTemplate.expire(lockerName, LOCK_MILLIS, TimeUnit.MILLISECONDS);
         } else {
-            if (data.equals(lockerData)) {
-                flag = Boolean.TRUE.equals(stringRedisTemplate.expire(lockerName, LOCK_MILLIS, TimeUnit.MILLISECONDS));
-            } else {
-                flag = false;
-            }
+            flag = false;
         }
         return flag;
     }

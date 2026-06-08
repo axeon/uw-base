@@ -109,7 +109,7 @@ public class TaskMessageConverter implements MessageConverter {
                 Kryo kryo = kryoLocal.get();
                 Input input = new Input(message.getBody());
                 content = kryo.readClassAndObject(input);
-                //此处反序列化
+                input.close();
             } catch (Exception e) {
                 throw new MessageConversionException("Failed to convert Message content. " + e.getMessage(), e);
             }

@@ -134,7 +134,7 @@ public class TaskCronerLog extends LogBaseVo implements Serializable {
             if (state != TaskData.STATE_SUCCESS || logLevel == TaskCronerConfig.TASK_LOG_TYPE_RECORD_ALL ||
                     logLevel == TaskCronerConfig.TASK_LOG_TYPE_RECORD_RESULT_DATA) {
                 if (logLimitSize > 0 && taskParam.length() > logLimitSize) {
-                    taskParam = taskParam.substring(0, logLimitSize);
+                    return taskParam.substring(0, logLimitSize);
                 }
                 return taskParam;
             }
@@ -207,7 +207,7 @@ public class TaskCronerLog extends LogBaseVo implements Serializable {
             if (state != TaskData.STATE_SUCCESS || logLevel == TaskCronerConfig.TASK_LOG_TYPE_RECORD_ALL ||
                     logLevel == TaskCronerConfig.TASK_LOG_TYPE_RECORD_RESULT_DATA) {
                 if (logLimitSize > 0 && resultData.length() > logLimitSize) {
-                    resultData = resultData.substring(0, logLimitSize);
+                    return resultData.substring(0, logLimitSize);
                 }
                 return resultData;
             }

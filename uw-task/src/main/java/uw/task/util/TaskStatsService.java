@@ -46,7 +46,7 @@ public class TaskStatsService {
      * @param timeRun
      */
     public static void updateCronerStats(long taskId, int numAll, int numFailProgram, int numFailConfig, int numFailData, int numFailPartner, int timeWait, int timeRun) {
-        long stamp = CRONER_STAMPED_LOCK.readLock();
+        long stamp = CRONER_STAMPED_LOCK.writeLock();
         try {
             CRONER_STATS_MAP.compute(taskId, (k, v) -> {
                 if (v != null) {
@@ -56,7 +56,7 @@ public class TaskStatsService {
                 }
             });
         } finally {
-            CRONER_STAMPED_LOCK.unlockRead(stamp);
+            CRONER_STAMPED_LOCK.unlockWrite(stamp);
         }
     }
 
@@ -92,7 +92,7 @@ public class TaskStatsService {
      * @param timeRun
      */
     public static void updateRunnerStats(long taskId, int numAll, int numFailProgram, int numFailConfig, int numFailData, int numFailPartner, int timeWaitQueue, int timeWaitDelay, int timeRun) {
-        long stamp = RUNNER_STAMPED_LOCK.readLock();
+        long stamp = RUNNER_STAMPED_LOCK.writeLock();
         try {
             RUNNER_STATS_MAP.compute(taskId, (k, v) -> {
                 if (v != null) {
@@ -102,7 +102,7 @@ public class TaskStatsService {
                 }
             });
         } finally {
-            RUNNER_STAMPED_LOCK.unlockRead(stamp);
+            RUNNER_STAMPED_LOCK.unlockWrite(stamp);
         }
     }
 

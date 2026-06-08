@@ -7,7 +7,6 @@ import uw.task.TaskRunner;
 import uw.task.entity.TaskCronerConfig;
 import uw.task.entity.TaskRunnerConfig;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -21,12 +20,12 @@ public class TaskMetaInfoManager {
     /**
      * Runner任务实例缓存。
      */
-    private final Map<String, TaskRunner> runnerInstanceMap = new HashMap<>();
+    private final Map<String, TaskRunner> runnerInstanceMap = new ConcurrentHashMap<>();
 
     /**
      * Cron任务实例缓存。
      */
-    private final Map<String, TaskCroner> cronerInstanceMap = new HashMap<>();
+    private final Map<String, TaskCroner> cronerInstanceMap = new ConcurrentHashMap<>();
 
     /**
      * Runner任务配置缓存
@@ -184,10 +183,12 @@ public class TaskMetaInfoManager {
             // 此时再检测没有taskTag匹配的情况。
             int pos1 = fitName.indexOf('#');
             int pos2 = fitName.lastIndexOf('$');
-            String test = fitName.substring(0, pos1 + 1) + fitName.substring(pos2);
-            config = runnerConfigMap.get(test);
-            if (config != null) {
-                fitName = test;
+            if (pos1 >= 0 && pos2 > pos1) {
+                String test = fitName.substring(0, pos1 + 1) + fitName.substring(pos2);
+                config = runnerConfigMap.get(test);
+                if (config != null) {
+                    fitName = test;
+                }
             }
         }
         if (config != null) {
@@ -225,10 +226,12 @@ public class TaskMetaInfoManager {
         // 此时再检测没有taskTag匹配的情况。
         int pos1 = fitName.indexOf('#');
         int pos2 = fitName.lastIndexOf('$');
-        String test = fitName.substring(0, pos1 + 1) + fitName.substring(pos2);
-        config = runnerConfigMap.get(test);
-        if (config != null) {
-            return config;
+        if (pos1 >= 0 && pos2 > pos1) {
+            String test = fitName.substring(0, pos1 + 1) + fitName.substring(pos2);
+            config = runnerConfigMap.get(test);
+            if (config != null) {
+                return config;
+            }
         }
         throw new RuntimeException("找不到任务配置: taskClass = " + data.getTaskClass());
     }

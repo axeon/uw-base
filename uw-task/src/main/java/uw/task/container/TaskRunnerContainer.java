@@ -20,7 +20,7 @@ import uw.task.util.TaskGlobalRateLimiter;
 import uw.task.util.TaskLocalRateLimiter;
 import uw.task.util.TaskStatsService;
 
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 在此处接受MQ信息，并进行处理。
@@ -98,6 +98,13 @@ public class TaskRunnerContainer {
         taskData.setConsumeDate(SystemClock.nowDate());
         // 获取任务实例
         TaskRunner<?, ?> taskRunner = taskMetaInfoManager.getRunnerInstance(taskData.getTaskClass());
+        if (taskRunner == null) {
+            log.error("未找到TaskRunner实例: {}", taskData.getTaskClass());
+            taskData.setState(TaskData.STATE_FAIL_PROGRAM);
+            taskData.setErrorInfo("TaskRunner not found: " + taskData.getTaskClass());
+            taskData.setFinishDate(SystemClock.nowDate());
+            return taskData;
+        }
         // 获取任务设置数据
         TaskRunnerConfig taskConfig = taskMetaInfoManager.getRunnerConfigByData(taskData);
         // 增加执行信息
@@ -159,7 +166,8 @@ public class TaskRunnerContainer {
                         try {
                             Thread.sleep(noLimitFlag);
                         } catch (InterruptedException e) {
-                            log.error(e.getMessage(), e);
+                            Thread.currentThread().interrupt();
+                            break;
                         }
                     }
                 }
@@ -173,7 +181,7 @@ public class TaskRunnerContainer {
                 try {
                     Thread.sleep(delaySleep);
                 } catch (InterruptedException e) {
-                    log.error(e.getMessage(), e);
+                    Thread.currentThread().interrupt();
                 }
             }
         }
@@ -181,7 +189,7 @@ public class TaskRunnerContainer {
         taskData.setRunDate(SystemClock.nowDate());
         // 如果允许，则开始执行。
         if (noLimitFlag == 0) {
-            ArrayList<RunnerTaskListener> runnerListenerList = taskListenerManager.getRunnerListenerList();
+            List<RunnerTaskListener> runnerListenerList = taskListenerManager.getRunnerListenerList();
             try {
                 // 执行任务
                 taskData.setResultData(taskRunner.runTask(taskData));

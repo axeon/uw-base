@@ -22,8 +22,8 @@ import uw.task.util.TaskSequenceManager;
 import uw.task.util.TaskStatsService;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -140,14 +140,12 @@ public class TaskCronerContainer {
             taskCronerLog.setTaskId(taskCronerConfig.getId());
             taskCronerLog.setRunDate(SystemClock.nowDate());
             // 执行监听器操作
-            ArrayList<CronerTaskListener> cronerListenerList = taskListenerManager.getCronerListenerList();
-            if (cronerListenerList != null && cronerListenerList.size() > 0) {
-                for (CronerTaskListener listener : cronerListenerList) {
-                    try {
-                        listener.onPreExecute(taskCronerLog);
-                    } catch (Throwable e) {
-                        log.error(e.getMessage(), e);
-                    }
+            List<CronerTaskListener> cronerListenerList = taskListenerManager.getCronerListenerList();
+            for (CronerTaskListener listener : cronerListenerList) {
+                try {
+                    listener.onPreExecute(taskCronerLog);
+                } catch (Throwable e) {
+                    log.error(e.getMessage(), e);
                 }
             }
 
@@ -169,13 +167,11 @@ public class TaskCronerContainer {
                 log.error(e.getMessage(), e);
             }
             // 执行监听器操作
-            if (cronerListenerList != null && cronerListenerList.size() > 0) {
-                for (CronerTaskListener listener : cronerListenerList) {
-                    try {
-                        listener.onPostExecute(taskCronerLog);
-                    } catch (Throwable e) {
-                        log.error(e.getMessage(), e);
-                    }
+            for (CronerTaskListener listener : cronerListenerList) {
+                try {
+                    listener.onPostExecute(taskCronerLog);
+                } catch (Throwable e) {
+                    log.error(e.getMessage(), e);
                 }
             }
             taskCronerLog.setFinishDate(SystemClock.nowDate());

@@ -24,23 +24,23 @@
         <maven.compiler.target>21</maven.compiler.target>
         <spring-cloud.version>2025.0.2</spring-cloud.version>
         <spring-cloud.alibaba.version>2023.0.1.2</spring-cloud.alibaba.version>
-        <uw-ai.version>1.0.26</uw-ai.version>
-        <uw-auth-client.version>6.1.19</uw-auth-client.version>
-        <uw-auth-service.version>6.1.58</uw-auth-service.version>
-        <uw-cache.version>1.1.93</uw-cache.version>
-        <uw-common.version>1.0.93</uw-common.version>
-        <uw-common-app.version>1.0.100</uw-common-app.version>
-        <uw-dao.version>5.2.31</uw-dao.version>
-        <uw-gateway-client.version>1.0.5</uw-gateway-client.version>
-        <uw-httpclient.version>2.1.130</uw-httpclient.version>
-        <uw-log-es.version>3.0.95</uw-log-es.version>
-        <uw-logback-es.version>3.0.91</uw-logback-es.version>
-        <uw-mfa.version>1.0.61</uw-mfa.version>
-        <uw-mydb-client.version>1.0.26</uw-mydb-client.version>
-        <uw-notify-client.version>1.0.25</uw-notify-client.version>
-        <uw-task.version>5.0.123</uw-task.version>
-        <uw-tinyurl-client.version>1.0.25</uw-tinyurl-client.version>
-        <uw-webot.version>1.0.3</uw-webot.version>
+        <uw-ai.version>1.1.26</uw-ai.version>
+        <uw-auth-client.version>6.2.19</uw-auth-client.version>
+        <uw-auth-service.version>6.2.58</uw-auth-service.version>
+        <uw-cache.version>1.2.93</uw-cache.version>
+        <uw-common.version>1.1.95</uw-common.version>
+        <uw-common-app.version>1.1.100</uw-common-app.version>
+        <uw-dao.version>5.3.31</uw-dao.version>
+        <uw-gateway-client.version>1.1.5</uw-gateway-client.version>
+        <uw-httpclient.version>2.2.130</uw-httpclient.version>
+        <uw-log-es.version>3.1.95</uw-log-es.version>
+        <uw-logback-es.version>3.1.91</uw-logback-es.version>
+        <uw-mfa.version>1.1.61</uw-mfa.version>
+        <uw-mydb-client.version>1.1.26</uw-mydb-client.version>
+        <uw-notify-client.version>1.1.25</uw-notify-client.version>
+        <uw-task.version>5.1.123</uw-task.version>
+        <uw-tinyurl-client.version>1.1.25</uw-tinyurl-client.version>
+        <uw-webot.version>1.0.5</uw-webot.version>
     </properties>
 
     <dependencyManagement>

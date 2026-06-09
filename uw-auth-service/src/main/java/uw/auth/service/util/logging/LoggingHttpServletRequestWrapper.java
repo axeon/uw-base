@@ -3,7 +3,6 @@ package uw.auth.service.util.logging;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
-
 /**
  * 记录日志的ServletRequest Wrapper
  */
@@ -15,6 +14,6 @@ public class LoggingHttpServletRequestWrapper extends ContentCachingRequestWrapp
      * @param request the original servlet request
      */
     public LoggingHttpServletRequestWrapper(HttpServletRequest request) {
-        super(request);
+        super(request, 8 * 1024 * 1024);
     }
 }

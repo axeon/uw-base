@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <revision>2026.0501.0000</revision>
+        <revision>2026.0501.0001</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
@@ -33,7 +33,7 @@
         <uw-dao.version>5.3.31</uw-dao.version>
         <uw-gateway-client.version>1.1.5</uw-gateway-client.version>
         <uw-httpclient.version>2.2.130</uw-httpclient.version>
-        <uw-log-es.version>3.1.95</uw-log-es.version>
+        <uw-log-es.version>3.1.96</uw-log-es.version>
         <uw-logback-es.version>3.1.91</uw-logback-es.version>
         <uw-mfa.version>1.1.61</uw-mfa.version>
         <uw-mydb-client.version>1.1.26</uw-mydb-client.version>
@@ -129,6 +129,11 @@
                 <groupId>com.umtone</groupId>
                 <artifactId>uw-notify-client</artifactId>
                 <version>${uw-notify-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.umtone</groupId>
+                <artifactId>uw-oauth2-client</artifactId>
+                <version>${uw-oauth2-client.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.umtone</groupId>

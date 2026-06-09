@@ -53,7 +53,7 @@ public class LogClient {
      * @param <T>
      * @return
      */
-    public static <T> PageList<T> mapQueryResponseToDataList(SearchResponse<T> response, int startIndex, int pageSize) {
+    public static <T> PageList<T> mapQueryResponseToPageList(SearchResponse<T> response, int startIndex, int pageSize) {
         ArrayList<T> dataList = new ArrayList<>();
         if (response != null) {
             SearchResponse.HitResponse<T> hitsResponse = response.getHitResponse();

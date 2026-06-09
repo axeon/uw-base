@@ -18,7 +18,7 @@ import uw.auth.service.token.AuthTokenData;
 import uw.auth.service.token.InvalidTokenData;
 import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.vo.MscActionLog;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.SystemClock;
 import uw.log.es.LogClient;
 

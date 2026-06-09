@@ -3,7 +3,7 @@ package uw.mfa.helper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.*;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.IpMatchUtils;
 import uw.mfa.conf.UwMfaProperties;
 import uw.mfa.constant.MfaResponseCode;

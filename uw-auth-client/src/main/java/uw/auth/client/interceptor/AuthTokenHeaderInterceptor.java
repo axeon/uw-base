@@ -13,7 +13,7 @@ import java.io.IOException;
 
 /**
  * HTTP请求拦截器，用于添加token认证所需头信息。
- * 主要用于RestTemplate。
+ * 主要用于RestClient。
  */
 public class AuthTokenHeaderInterceptor implements ClientHttpRequestInterceptor {
 

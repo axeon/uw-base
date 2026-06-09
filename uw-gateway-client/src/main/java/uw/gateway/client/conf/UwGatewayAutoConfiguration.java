@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import uw.gateway.client.GatewayClientHelper;
 
 /**
@@ -19,7 +19,7 @@ public class UwGatewayAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public GatewayClientHelper GatewayClientHelper(UwGatewayProperties uwGatewayProperties, RestTemplate authRestTemplate) {
-        return new GatewayClientHelper(uwGatewayProperties, authRestTemplate);
+    public GatewayClientHelper GatewayClientHelper(UwGatewayProperties uwGatewayProperties, RestClient authRestClient) {
+        return new GatewayClientHelper(uwGatewayProperties, authRestClient);
     }
 }

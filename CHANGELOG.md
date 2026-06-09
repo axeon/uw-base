@@ -1,3 +1,32 @@
+# 2026.0501.0000版本升级说明
+这是一个巨大的版本升级，和2026之前的版本不兼容，需要执行升级脚本script/migrate-202605.py。
+
+## 重大升级
+
+1. DataList / ESDataList → PageList（移至 uw.common.data 包）
+2. DataSet → PageTable（移至 uw.common.data 包）
+3. QueryParam / PageQueryParam 移至 uw.common.dto 包
+4. ResponseData / ResponseCode 移至 uw.common.response 包
+
+## DaoFactory / DaoManager 方法重命名
+
+1. queryForSingleValue → queryForValue
+2. queryForSingleList → queryForValueList
+3. queryForSingleObject → queryForObject
+4. queryForDataSet → queryForTable
+5. executeCommand → execute
+
+## DaoFactory / DaoManager 新增方法
+
+1. queryForList() 系列（16 个重载），委托调用 list() 方法。queryForList 与 queryForValue / queryForObject / queryForTable 构成完整的 query 系列命名。
+2. list() 方法保留不变，与 save / update / delete / load 搭配组成 CRUD 动词系列。
+
+## 其他升级
+
+1. uw-auth-client: authRestTemplate 替换为 authRestClient/authWebClient，适配最新的 Spring 版本
+2. uw-common: 新增MoneyUtils货币计算工具类，所有金额以分（long）为单位，避免浮点误差。支持加减乘除、汇率换算、分摊等场景，提供静态方法和链式调用（Chain）两套API。
+3. uw-common: 新增ValidateUtils数据校验工具类，覆盖字符串、整数、小数、日期时间、网络地址等通用校验，以及中国身份证、手机号、姓名、统一社会信用代码、车牌号等业务校验。
+
 # 2025.0901.0003版本升级说明
 
 1. 升级springboot: 3.5.6

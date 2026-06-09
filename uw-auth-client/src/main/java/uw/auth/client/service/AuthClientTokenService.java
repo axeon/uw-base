@@ -4,16 +4,15 @@ import io.micrometer.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
+import org.springframework.http.MediaType;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import uw.auth.client.conf.AuthClientProperties;
 import uw.auth.client.constant.LoginType;
 import uw.auth.client.vo.LoginRequest;
 import uw.auth.client.vo.TokenResponse;
-import uw.common.dto.ResponseData;
-import uw.common.util.JsonUtils;
+import uw.common.response.ResponseData;
 import uw.common.util.SystemClock;
 
 import java.net.URI;
@@ -23,7 +22,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * 服务间认证Token管理器。
  * <p>
- * 负责向认证中心获取和刷新Access Token，并通过{@code authRestTemplate} / {@code authWebClient}
+ * 负责向认证中心获取和刷新Access Token，并通过{@code authRestClient} / {@code authWebClient}
  * 自动为每个请求注入Authorization头。
  * <p>
  * 并发模型：
@@ -52,7 +51,7 @@ public class AuthClientTokenService {
     /**
      * 用于调用认证中心登录/刷新接口的HTTP客户端。
      */
-    private final RestTemplate restTemplate;
+    private final RestClient restClient;
 
     /**
      * 读写锁，token有效时允许多线程并发读，失效/过期时写锁互斥刷新。
@@ -93,11 +92,11 @@ public class AuthClientTokenService {
 
     /**
      * @param authClientProperties 认证客户端配置
-     * @param restTemplate         用于调用认证中心的RestTemplate
+     * @param restClient           用于调用认证中心的RestClient
      */
-    public AuthClientTokenService(AuthClientProperties authClientProperties, RestTemplate restTemplate) {
+    public AuthClientTokenService(AuthClientProperties authClientProperties, RestClient restClient) {
         this.authClientProperties = authClientProperties;
-        this.restTemplate = restTemplate;
+        this.restClient = restClient;
     }
 
     /**
@@ -204,28 +203,24 @@ public class AuthClientTokenService {
             loginRequest.setLoginPass(authClientProperties.getLoginPass());
             loginRequest.setLoginSecret(authClientProperties.getLoginSecret());
             loginRequest.setForceLogin(true);
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            String credentials = JsonUtils.toString(loginRequest);
-            RequestEntity<String> requestEntity = new RequestEntity<>(credentials, headers, HttpMethod.POST, URI.create(loginUrl));
-            ResponseEntity<ResponseData<List<TokenResponse>>> loginResponseEntity = restTemplate.exchange(requestEntity,
-                    new ParameterizedTypeReference<ResponseData<List<TokenResponse>>>() {
-                    });
-            if (loginResponseEntity.getStatusCode().value() == HttpStatus.OK.value()) {
-                ResponseData<List<TokenResponse>> loginResponse = loginResponseEntity.getBody();
-                if (loginResponse != null && loginResponse.isSuccess()) {
-                    List<TokenResponse> tokenList = loginResponse.getData();
-                    if (tokenList != null && !tokenList.isEmpty()) {
-                        TokenResponse tokenResponse = tokenList.getFirst();
-                        if (tokenResponse != null) {
-                            applyToken(tokenResponse.getToken(), tokenResponse.getRefreshToken(),
-                                    tokenResponse.getCreateAt(), tokenResponse.getExpiresIn());
-                        }
+            ResponseData<List<TokenResponse>> loginResponse = restClient.post()
+                    .uri(URI.create(loginUrl))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(loginRequest)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<ResponseData<List<TokenResponse>>>() {});
+            if (loginResponse != null && loginResponse.isSuccess()) {
+                List<TokenResponse> tokenList = loginResponse.getData();
+                if (tokenList != null && !tokenList.isEmpty()) {
+                    TokenResponse tokenResponse = tokenList.getFirst();
+                    if (tokenResponse != null) {
+                        applyToken(tokenResponse.getToken(), tokenResponse.getRefreshToken(),
+                                tokenResponse.getCreateAt(), tokenResponse.getExpiresIn());
                     }
                 }
             }
             if (StringUtils.isBlank(token)) {
-                log.error("!!!AuthClient登录出错! response: {}", loginResponseEntity);
+                log.error("!!!AuthClient登录出错! response: {}", loginResponse);
             }
         } catch (Error e) {
             log.error("!!!AuthClient登录出错! {}", e.getMessage(), e);
@@ -255,28 +250,25 @@ public class AuthClientTokenService {
         retryTimes++;
         try {
             String refreshTokenUrl = authClientProperties.getAuthCenterHost() + authClientProperties.getRefreshEntryPoint();
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
             MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
             map.add("refreshToken", refreshToken);
             map.add("loginAgent",
                     authClientProperties.getAppName() + ":" + authClientProperties.getAppVersion() + "/" + authClientProperties.getAppHost() + ":" + authClientProperties.getAppPort());
-            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
-            ResponseEntity<ResponseData<TokenResponse>> responseEntity = restTemplate.exchange(refreshTokenUrl, HttpMethod.POST, request,
-                    new ParameterizedTypeReference<ResponseData<TokenResponse>>() {
-                    });
-            if (responseEntity.getStatusCode().value() == HttpStatus.OK.value()) {
-                ResponseData<TokenResponse> responseBody = responseEntity.getBody();
-                if (responseBody != null && responseBody.isSuccess()) {
-                    TokenResponse tokenResponse = responseBody.getData();
-                    if (tokenResponse != null) {
-                        applyToken(tokenResponse.getToken(), tokenResponse.getRefreshToken(),
-                                tokenResponse.getCreateAt(), tokenResponse.getExpiresIn());
-                    }
+            ResponseData<TokenResponse> responseBody = restClient.post()
+                    .uri(refreshTokenUrl)
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(map)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<ResponseData<TokenResponse>>() {});
+            if (responseBody != null && responseBody.isSuccess()) {
+                TokenResponse tokenResponse = responseBody.getData();
+                if (tokenResponse != null) {
+                    applyToken(tokenResponse.getToken(), tokenResponse.getRefreshToken(),
+                            tokenResponse.getCreateAt(), tokenResponse.getExpiresIn());
                 }
             }
             if (StringUtils.isBlank(token)) {
-                log.error("!!!AuthClient刷新token出错! response: {}", responseEntity);
+                log.error("!!!AuthClient刷新token出错! response: {}", responseBody);
             }
         } catch (Error e) {
             log.error("!!!AuthClient刷新token出错! {}", e.getMessage(), e);

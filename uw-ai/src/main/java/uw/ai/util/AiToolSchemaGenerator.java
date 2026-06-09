@@ -8,7 +8,7 @@ import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import com.github.victools.jsonschema.module.jackson.JacksonOption;
 import com.github.victools.jsonschema.module.swagger2.Swagger2Module;
 import org.springframework.util.Assert;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;

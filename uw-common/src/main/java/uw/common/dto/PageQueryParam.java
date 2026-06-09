@@ -1,4 +1,4 @@
-package uw.dao;
+package uw.common.dto;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;

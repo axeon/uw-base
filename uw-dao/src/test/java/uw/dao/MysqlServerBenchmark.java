@@ -57,7 +57,7 @@ public class MysqlServerBenchmark {
     @Benchmark
     @CompilerControl(CompilerControl.Mode.INLINE)
     public static void getSeq() throws TransactionException {
-        dao.queryForDataSet(LOAD_SEQ, new Object[]{"SysCritLog"});
+        dao.queryForRowSet(LOAD_SEQ, new Object[]{"SysCritLog"});
     }
 
 }

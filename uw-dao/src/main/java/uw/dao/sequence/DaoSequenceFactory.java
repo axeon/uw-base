@@ -3,7 +3,7 @@ package uw.dao.sequence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.dao.DaoFactory;
-import uw.dao.DataSet;
+import uw.common.data.PageRowSet;
 import uw.dao.conf.DaoConfigManager;
 
 import java.util.Map;
@@ -210,7 +210,7 @@ public class DaoSequenceFactory {
         try {
             String connName = DaoConfigManager.getRouteMapping("sys_seq", "write");
             // 从数据库中获取当前值。
-            DataSet ds = dao.queryForDataSet(connName, LOAD_SEQ, new Object[]{seqName});
+            PageRowSet ds = dao.queryForRowSet(connName, LOAD_SEQ, new Object[]{seqName});
             if (ds.next()) {
                 currentId = ds.getLong(0);
                 incrementNum = ds.getInt(1);
@@ -219,7 +219,7 @@ public class DaoSequenceFactory {
             }
             // 自动递增id到我们规定的递增累加值。
             long newId = currentId + Math.max(incrementNum, value);
-            int effectedNum = dao.executeCommand(connName, UPDATE_SEQ, new Object[]{newId, seqName, currentId});
+            int effectedNum = dao.execute(connName, UPDATE_SEQ, new Object[]{newId, seqName, currentId});
             success = (effectedNum == 1);
             if (success) {
                 if (value > 1) {
@@ -240,7 +240,7 @@ public class DaoSequenceFactory {
      */
     private void initSequence() {
         try {
-            dao.executeCommand(DaoConfigManager.getRouteMapping("sys_seq", "write"), INIT_SEQ, new Object[]{seqName, currentId, seqName, incrementNum});
+            dao.execute(DaoConfigManager.getRouteMapping("sys_seq", "write"), INIT_SEQ, new Object[]{seqName, currentId, seqName, incrementNum});
         } catch (Throwable e) {
             logger.error("DaoSequenceFactory initSeq exception! {}", e.getMessage(), e);
         }
@@ -256,7 +256,7 @@ public class DaoSequenceFactory {
     private boolean resetSequenceId(long initSeq, int incrementNum) {
         boolean success = false;
         try {
-            int effectedNum = dao.executeCommand(DaoConfigManager.getRouteMapping("sys_seq", "write"), RESET_SEQ, new Object[]{initSeq, incrementNum, seqName});
+            int effectedNum = dao.execute(DaoConfigManager.getRouteMapping("sys_seq", "write"), RESET_SEQ, new Object[]{initSeq, incrementNum, seqName});
             success = (effectedNum == 1);
             if (success) {
                 this.maxId = 0;

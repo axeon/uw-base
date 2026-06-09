@@ -2,7 +2,7 @@ package uw.oauth2.client.constant;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import uw.common.dto.ResponseCode;
+import uw.common.response.ResponseCode;
 import uw.common.util.EnumUtils;
 
 /**

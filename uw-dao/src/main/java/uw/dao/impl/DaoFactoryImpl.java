@@ -4,6 +4,10 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.data.PageList;
+import uw.common.data.PageRowSet;
+import uw.common.dto.PageQueryParam;
+import uw.common.dto.QueryParam;
 import uw.dao.*;
 import uw.dao.conf.DaoConfigManager;
 import uw.dao.service.DaoService;
@@ -553,7 +557,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param entityCls 要映射的对象类型
      * @param <T>       映射的类型
      * @param id        主键数值
-     * @return DataList对象
+     * @return PageList对象
      * @throws TransactionException 事务异常
      */
     @Override
@@ -568,7 +572,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param <T>       映射的类型
      * @param tableName 指定表名
      * @param id        主键数值
-     * @return DataList对象
+     * @return PageList对象
      * @throws TransactionException 事务异常
      */
     @Override
@@ -583,7 +587,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param entityCls 要映射的对象类型
      * @param <T>       映射的类型
      * @param id        主键数值
-     * @return DataList对象
+     * @return PageList对象
      * @throws TransactionException 事务异常
      */
     @Override
@@ -599,7 +603,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param <T>       映射的类型
      * @param tableName 指定表名
      * @param id        主键数值
-     * @return DataList对象
+     * @return PageList对象
      * @throws TransactionException 事务异常
      */
     @Override
@@ -608,37 +612,37 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls 要映射的对象类型
      * @param selectSql 查询的SQL
      * @param <T>       映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> DataList<T> list(Class<T> entityCls, String selectSql) throws TransactionException {
+    public <T> PageList<T> list(Class<T> entityCls, String selectSql) throws TransactionException {
         return EntityCommandImpl.list(this, null, entityCls, selectSql, null, 0, 0, false);
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls  要映射的对象类型
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param <T>        映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> DataList<T> list(Class<T> entityCls, String selectSql, int startIndex, int resultNum) throws TransactionException {
+    public <T> PageList<T> list(Class<T> entityCls, String selectSql, int startIndex, int resultNum) throws TransactionException {
         return EntityCommandImpl.list(this, null, entityCls, selectSql, null, startIndex, resultNum, false);
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls  要映射的对象类型
      * @param selectSql  查询的SQL
@@ -646,31 +650,31 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
      * @param <T>        映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> DataList<T> list(Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+    public <T> PageList<T> list(Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
         return EntityCommandImpl.list(this, null, entityCls, selectSql, null, startIndex, resultNum, autoCount);
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls 要映射的对象类型
      * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
      * @param <T>       映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> DataList<T> list(Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException {
+    public <T> PageList<T> list(Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException {
         return EntityCommandImpl.list(this, null, entityCls, selectSql, paramList, 0, 0, false);
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls  要映射的对象类型
      * @param selectSql  查询的SQL
@@ -678,16 +682,16 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param <T>        映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> DataList<T> list(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException {
+    public <T> PageList<T> list(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException {
         return EntityCommandImpl.list(this, null, entityCls, selectSql, paramList, startIndex, resultNum, false);
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls  要映射的对象类型
      * @param selectSql  查询的SQL
@@ -696,31 +700,31 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
      * @param <T>        映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> DataList<T> list(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+    public <T> PageList<T> list(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
         return EntityCommandImpl.list(this, null, entityCls, selectSql, paramList, startIndex, resultNum, autoCount);
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls 要映射的对象类型
      * @param selectSql 查询的SQL
      * @param <T>       映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> DataList<T> list(String connName, Class<T> entityCls, String selectSql) throws TransactionException {
+    public <T> PageList<T> list(String connName, Class<T> entityCls, String selectSql) throws TransactionException {
         return EntityCommandImpl.list(this, connName, entityCls, selectSql, null, 0, 0, false);
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls  要映射的对象类型
@@ -728,16 +732,16 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param <T>        映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> DataList<T> list(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum) throws TransactionException {
+    public <T> PageList<T> list(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum) throws TransactionException {
         return EntityCommandImpl.list(this, connName, entityCls, selectSql, null, startIndex, resultNum, false);
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls  要映射的对象类型
@@ -746,32 +750,32 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
      * @param <T>        映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> DataList<T> list(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+    public <T> PageList<T> list(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
         return EntityCommandImpl.list(this, connName, entityCls, selectSql, null, startIndex, resultNum, autoCount);
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls 要映射的对象类型
      * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
      * @param <T>       映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> DataList<T> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException {
+    public <T> PageList<T> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException {
         return EntityCommandImpl.list(this, connName, entityCls, selectSql, paramList, 0, 0, false);
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls  要映射的对象类型
@@ -780,16 +784,16 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> DataList<T> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException {
+    public <T> PageList<T> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException {
         return EntityCommandImpl.list(this, connName, entityCls, selectSql, paramList, startIndex, resultNum, false);
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls  要映射的对象类型
@@ -799,72 +803,72 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> DataList<T> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+    public <T> PageList<T> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
         return EntityCommandImpl.list(this, connName, entityCls, selectSql, paramList, startIndex, resultNum, autoCount);
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls      要映射的对象类型
      * @param pageQueryParam 分页查询对象
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> DataList<T> list(Class<T> entityCls, PageQueryParam pageQueryParam) throws TransactionException {
+    public <T> PageList<T> list(Class<T> entityCls, PageQueryParam pageQueryParam) throws TransactionException {
         return list(null, entityCls, pageQueryParam);
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls      要映射的对象类型
      * @param tableName      附加表名，在特定分表情况下。
      * @param pageQueryParam 分页查询对象
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> DataList<T> list(Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) throws TransactionException {
+    public <T> PageList<T> list(Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) throws TransactionException {
         return list(null, entityCls, tableName, pageQueryParam);
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName       指定连接名
      * @param entityCls      要映射的对象类型
      * @param pageQueryParam 分页查询对象
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> DataList<T> list(String connName, Class<T> entityCls, PageQueryParam pageQueryParam) throws TransactionException {
+    public <T> PageList<T> list(String connName, Class<T> entityCls, PageQueryParam pageQueryParam) throws TransactionException {
         return list(connName, entityCls, null, pageQueryParam);
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName
      * @param entityCls      要映射的对象类型
      * @param tableName      附加表名，在特定分表情况下。
      * @param pageQueryParam 分页查询对象
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> DataList<T> list(String connName, Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) throws TransactionException {
+    public <T> PageList<T> list(String connName, Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) throws TransactionException {
         QueryParamResult queryParamResult = QueryParamUtils.parseQueryParam(entityCls, tableName, pageQueryParam);
         if (pageQueryParam.CHECK_ONLY_COUNT()) {
             String countSql = "select count(1) from (" + queryParamResult.getSql().toString() + ") must_alias";
             int allSize = SQLCommandImpl.selectForSingleValue(this, connName, Integer.class, countSql, queryParamResult.getParamList());
-            return new DataList<>(null, pageQueryParam.START_INDEX(), pageQueryParam.RESULT_NUM(), allSize);
+            return new PageList<>(null, pageQueryParam.START_INDEX(), pageQueryParam.RESULT_NUM(), allSize);
         } else {
             return EntityCommandImpl.list(this, connName, entityCls, queryParamResult.getSql().toString(), queryParamResult.getParamList(), pageQueryParam.START_INDEX(), pageQueryParam.RESULT_NUM(), pageQueryParam.CHECK_AUTO_COUNT());
         }
@@ -880,7 +884,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleValue(Class<T> valueCls, String sql) throws TransactionException {
+    public <T> T queryForValue(Class<T> valueCls, String sql) throws TransactionException {
         return SQLCommandImpl.selectForSingleValue(this, null, valueCls, sql, null);
     }
 
@@ -895,7 +899,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleValue(String connName, Class<T> valueCls, String sql) throws TransactionException {
+    public <T> T queryForValue(String connName, Class<T> valueCls, String sql) throws TransactionException {
         return SQLCommandImpl.selectForSingleValue(this, connName, valueCls, sql, null);
     }
 
@@ -910,7 +914,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleValue(Class<T> valueCls, String sql, Object[] paramList) throws TransactionException {
+    public <T> T queryForValue(Class<T> valueCls, String sql, Object[] paramList) throws TransactionException {
         return SQLCommandImpl.selectForSingleValue(this, null, valueCls, sql, paramList);
     }
 
@@ -926,7 +930,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleValue(String connName, Class<T> valueCls, String sql, Object[] paramList) throws TransactionException {
+    public <T> T queryForValue(String connName, Class<T> valueCls, String sql, Object[] paramList) throws TransactionException {
         return SQLCommandImpl.selectForSingleValue(this, connName, valueCls, sql, paramList);
     }
 
@@ -939,7 +943,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleValue(Class<T> valueCls, QueryParam queryParam) throws TransactionException {
+    public <T> T queryForValue(Class<T> valueCls, QueryParam queryParam) throws TransactionException {
         QueryParamResult queryParamResult = QueryParamUtils.parseQueryParam(null, null, queryParam);
         return SQLCommandImpl.selectForSingleValue(this, null, valueCls, queryParamResult.getSql().toString(), queryParamResult.getParamList());
     }
@@ -954,7 +958,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleValue(String connName, Class<T> valueCls, QueryParam queryParam) throws TransactionException {
+    public <T> T queryForValue(String connName, Class<T> valueCls, QueryParam queryParam) throws TransactionException {
         QueryParamResult queryParamResult = QueryParamUtils.parseQueryParam(null, null, queryParam);
         return SQLCommandImpl.selectForSingleValue(this, connName, valueCls, queryParamResult.getSql().toString(), queryParamResult.getParamList());
     }
@@ -965,11 +969,11 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param valueCls 要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param <T>      映射的类型
      * @param sql      查询的SQL
-     * @return DataSet对象
+     * @return PageTable对象
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> ArrayList<T> queryForSingleList(Class<T> valueCls, String sql) throws TransactionException {
+    public <T> ArrayList<T> queryForValueList(Class<T> valueCls, String sql) throws TransactionException {
         return SQLCommandImpl.selectForSingleList(this, null, valueCls, sql, null);
     }
 
@@ -984,7 +988,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> ArrayList<T> queryForSingleList(String connName, Class<T> valueCls, String sql) throws TransactionException {
+    public <T> ArrayList<T> queryForValueList(String connName, Class<T> valueCls, String sql) throws TransactionException {
         return SQLCommandImpl.selectForSingleList(this, connName, valueCls, sql, null);
     }
 
@@ -993,12 +997,12 @@ public class DaoFactoryImpl extends DaoFactory {
      *
      * @param valueCls   要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param queryParam 查询参数
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> ArrayList<T> queryForSingleList(Class<T> valueCls, QueryParam queryParam) throws TransactionException {
-        return queryForSingleList(null, valueCls, queryParam);
+    public <T> ArrayList<T> queryForValueList(Class<T> valueCls, QueryParam queryParam) throws TransactionException {
+        return queryForValueList(null, valueCls, queryParam);
     }
 
     /**
@@ -1007,11 +1011,11 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param valueCls   要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param queryParam 查询参数
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> ArrayList<T> queryForSingleList(String connName, Class<T> valueCls, QueryParam queryParam) throws TransactionException {
+    public <T> ArrayList<T> queryForValueList(String connName, Class<T> valueCls, QueryParam queryParam) throws TransactionException {
         QueryParamResult queryParamResult = QueryParamUtils.parseQueryParam(null, null, queryParam);
         return SQLCommandImpl.selectForSingleList(this, connName, valueCls, queryParamResult.getSql().toString(), queryParamResult.getParamList());
     }
@@ -1027,7 +1031,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> ArrayList<T> queryForSingleList(Class<T> valueCls, String sql, Object[] paramList) throws TransactionException {
+    public <T> ArrayList<T> queryForValueList(Class<T> valueCls, String sql, Object[] paramList) throws TransactionException {
         return SQLCommandImpl.selectForSingleList(this, null, valueCls, sql, paramList);
     }
 
@@ -1043,7 +1047,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> ArrayList<T> queryForSingleList(String connName, Class<T> valueCls, String sql, Object[] paramList) throws TransactionException {
+    public <T> ArrayList<T> queryForValueList(String connName, Class<T> valueCls, String sql, Object[] paramList) throws TransactionException {
         return SQLCommandImpl.selectForSingleList(this, connName, valueCls, sql, paramList);
     }
 
@@ -1057,7 +1061,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleObject(Class<T> entityCls, String selectSql) throws TransactionException {
+    public <T> T queryForObject(Class<T> entityCls, String selectSql) throws TransactionException {
         return EntityCommandImpl.listSingle(this, null, entityCls, selectSql, null);
     }
 
@@ -1072,7 +1076,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleObject(Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException {
+    public <T> T queryForObject(Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException {
         return EntityCommandImpl.listSingle(this, null, entityCls, selectSql, paramList);
     }
 
@@ -1087,7 +1091,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleObject(String connName, Class<T> entityCls, String selectSql) throws TransactionException {
+    public <T> T queryForObject(String connName, Class<T> entityCls, String selectSql) throws TransactionException {
         return EntityCommandImpl.listSingle(this, connName, entityCls, selectSql, null);
     }
 
@@ -1103,7 +1107,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleObject(String connName, Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException {
+    public <T> T queryForObject(String connName, Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException {
         return EntityCommandImpl.listSingle(this, connName, entityCls, selectSql, paramList);
     }
 
@@ -1116,8 +1120,8 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleObject(Class<T> entityCls, QueryParam queryParam) throws TransactionException {
-        return queryForSingleObject(null, entityCls, null, queryParam);
+    public <T> T queryForObject(Class<T> entityCls, QueryParam queryParam) throws TransactionException {
+        return queryForObject(null, entityCls, null, queryParam);
     }
 
     /**
@@ -1130,8 +1134,8 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleObject(Class<T> entityCls, String tableName, QueryParam queryParam) throws TransactionException {
-        return queryForSingleObject(null, entityCls, tableName, queryParam);
+    public <T> T queryForObject(Class<T> entityCls, String tableName, QueryParam queryParam) throws TransactionException {
+        return queryForObject(null, entityCls, tableName, queryParam);
     }
 
     /**
@@ -1144,8 +1148,8 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleObject(String connName, Class<T> entityCls, QueryParam queryParam) throws TransactionException {
-        return queryForSingleObject(null, entityCls, null, queryParam);
+    public <T> T queryForObject(String connName, Class<T> entityCls, QueryParam queryParam) throws TransactionException {
+        return queryForObject(null, entityCls, null, queryParam);
     }
 
     /**
@@ -1158,174 +1162,174 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public <T> T queryForSingleObject(String connName, Class<T> entityCls, String tableName, QueryParam queryParam) throws TransactionException {
+    public <T> T queryForObject(String connName, Class<T> entityCls, String tableName, QueryParam queryParam) throws TransactionException {
         QueryParamResult queryParamResult = QueryParamUtils.parseQueryParam(entityCls, tableName, queryParam);
         return EntityCommandImpl.listSingle(this, connName, entityCls, queryParamResult.getSql().append(" limit 1").toString(), queryParamResult.getParamList());
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql 查询的SQL
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String selectSql) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, null, selectSql, null, 0, 0, false);
+    public PageRowSet queryForRowSet(String selectSql) throws TransactionException {
+        return SQLCommandImpl.selectForRowSet(this, null, selectSql, null, 0, 0, false);
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String selectSql, int startIndex, int resultNum) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, null, selectSql, null, startIndex, resultNum, false);
+    public PageRowSet queryForRowSet(String selectSql, int startIndex, int resultNum) throws TransactionException {
+        return SQLCommandImpl.selectForRowSet(this, null, selectSql, null, startIndex, resultNum, false);
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, null, selectSql, null, startIndex, resultNum, autoCount);
+    public PageRowSet queryForRowSet(String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+        return SQLCommandImpl.selectForRowSet(this, null, selectSql, null, startIndex, resultNum, autoCount);
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String selectSql, Object[] paramList) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, null, selectSql, paramList, 0, 0, false);
+    public PageRowSet queryForRowSet(String selectSql, Object[] paramList) throws TransactionException {
+        return SQLCommandImpl.selectForRowSet(this, null, selectSql, paramList, 0, 0, false);
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, null, selectSql, paramList, startIndex, resultNum, false);
+    public PageRowSet queryForRowSet(String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException {
+        return SQLCommandImpl.selectForRowSet(this, null, selectSql, paramList, startIndex, resultNum, false);
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, null, selectSql, paramList, startIndex, resultNum, autoCount);
+    public PageRowSet queryForRowSet(String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+        return SQLCommandImpl.selectForRowSet(this, null, selectSql, paramList, startIndex, resultNum, autoCount);
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName  连接名，当设置为null时候，根据sql语句或表名确定
      * @param selectSql 查询的SQL
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String connName, String selectSql) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, connName, selectSql, null, 0, 0, false);
+    public PageRowSet queryForRowSet(String connName, String selectSql) throws TransactionException {
+        return SQLCommandImpl.selectForRowSet(this, connName, selectSql, null, 0, 0, false);
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String connName, String selectSql, int startIndex, int resultNum) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, connName, selectSql, null, startIndex, resultNum, false);
+    public PageRowSet queryForRowSet(String connName, String selectSql, int startIndex, int resultNum) throws TransactionException {
+        return SQLCommandImpl.selectForRowSet(this, connName, selectSql, null, startIndex, resultNum, false);
 
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String connName, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, connName, selectSql, null, startIndex, resultNum, autoCount);
+    public PageRowSet queryForRowSet(String connName, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+        return SQLCommandImpl.selectForRowSet(this, connName, selectSql, null, startIndex, resultNum, autoCount);
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String connName, String selectSql, Object[] paramList) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, connName, selectSql, paramList, 0, 0, false);
+    public PageRowSet queryForRowSet(String connName, String selectSql, Object[] paramList) throws TransactionException {
+        return SQLCommandImpl.selectForRowSet(this, connName, selectSql, paramList, 0, 0, false);
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, connName, selectSql, paramList, startIndex, resultNum, false);
+    public PageRowSet queryForRowSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException {
+        return SQLCommandImpl.selectForRowSet(this, connName, selectSql, paramList, startIndex, resultNum, false);
 
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
@@ -1333,36 +1337,36 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
-        return SQLCommandImpl.selectForDataSet(this, connName, selectSql, paramList, startIndex, resultNum, autoCount);
+    public PageRowSet queryForRowSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+        return SQLCommandImpl.selectForRowSet(this, connName, selectSql, paramList, startIndex, resultNum, autoCount);
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param queryParam 查询参数
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(QueryParam queryParam) throws TransactionException {
-        return queryForDataSet(null, queryParam);
+    public PageRowSet queryForRowSet(QueryParam queryParam) throws TransactionException {
+        return queryForRowSet(null, queryParam);
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param queryParam 查询参数
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
     @Override
-    public DataSet queryForDataSet(String connName, QueryParam queryParam) throws TransactionException {
+    public PageRowSet queryForRowSet(String connName, QueryParam queryParam) throws TransactionException {
         QueryParamResult queryParamResult = QueryParamUtils.parseQueryParam(null, null, queryParam);
         int startIndex = 0;
         int resultNum = 0;
@@ -1372,7 +1376,7 @@ public class DaoFactoryImpl extends DaoFactory {
             resultNum = param.RESULT_NUM();
             autoCount = param.CHECK_AUTO_COUNT();
         }
-        return SQLCommandImpl.selectForDataSet(this, connName, queryParamResult.getSql().toString(), queryParamResult.getParamList(), startIndex, resultNum, autoCount);
+        return SQLCommandImpl.selectForRowSet(this, connName, queryParamResult.getSql().toString(), queryParamResult.getParamList(), startIndex, resultNum, autoCount);
     }
 
     /**
@@ -1383,7 +1387,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public int executeCommand(String sql) throws TransactionException {
+    public int execute(String sql) throws TransactionException {
         return SQLCommandImpl.executeSQL(this, null, sql, null);
 
     }
@@ -1397,7 +1401,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public int executeCommand(String sql, Object[] paramList) throws TransactionException {
+    public int execute(String sql, Object[] paramList) throws TransactionException {
         return SQLCommandImpl.executeSQL(this, null, sql, paramList);
 
     }
@@ -1411,7 +1415,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public int executeCommand(String connName, String sql) throws TransactionException {
+    public int execute(String connName, String sql) throws TransactionException {
         return SQLCommandImpl.executeSQL(this, connName, sql, null);
 
     }
@@ -1426,7 +1430,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @throws TransactionException 事务异常
      */
     @Override
-    public int executeCommand(String connName, String sql, Object[] paramList) throws TransactionException {
+    public int execute(String connName, String sql, Object[] paramList) throws TransactionException {
         return SQLCommandImpl.executeSQL(this, connName, sql, paramList);
     }
 

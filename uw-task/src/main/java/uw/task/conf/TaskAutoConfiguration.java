@@ -33,7 +33,7 @@ import org.springframework.data.redis.connection.lettuce.LettuceClientConfigurat
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import uw.log.es.LogClient;
 import uw.task.TaskFactory;
 import uw.task.TaskListenerManager;
@@ -285,14 +285,14 @@ public class TaskAutoConfiguration {
      *
      * @param context
      * @param taskProperties
-     * @param authRestTemplate
+     * @param authRestClient
      * @param clientResources
      * @param logClient
      * @return
      */
     @Bean
     TaskFactory taskFactory(final ApplicationContext context, final TaskProperties taskProperties, final TaskListenerManager taskListenerManager,
-                            @Qualifier("authRestTemplate") final RestTemplate authRestTemplate, final ClientResources clientResources, final LogClient logClient) {
+                            @Qualifier("authRestClient") final RestClient authRestClient, final ClientResources clientResources, final LogClient logClient) {
         // task自定义的rabbit连接工厂
         ConnectionFactory taskRabbitConnectionFactory = getTaskRabbitConnectionFactory(taskProperties.getRabbitmq());
         // task自定义的redis连接工厂
@@ -304,7 +304,7 @@ public class TaskAutoConfiguration {
         // 全局sequence管理器
         TaskSequenceManager taskSequenceManager = new TaskSequenceManager(taskRedisConnectionFactory);
         // 任务交互API
-        TaskApiClient taskApiClient = new TaskApiClient(taskProperties, authRestTemplate, logClient);
+        TaskApiClient taskApiClient = new TaskApiClient(taskProperties, authRestClient, logClient);
         // rabbit模板
         RabbitTemplate rabbitTemplate = getTaskRabbitTemplate(taskRabbitConnectionFactory);
         // rabbit管理器

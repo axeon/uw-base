@@ -1,7 +1,7 @@
 package uw.ai.rpc;
 
 import uw.ai.vo.AiToolMeta;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
 import java.util.List;
 

@@ -4,10 +4,8 @@ package uw.tinyurl.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.web.client.RestTemplate;
-import uw.common.dto.ResponseData;
+import org.springframework.web.client.RestClient;
+import uw.common.response.ResponseData;
 import uw.tinyurl.client.conf.UwTinyurlProperties;
 import uw.tinyurl.client.vo.TinyurlParam;
 
@@ -18,30 +16,24 @@ import uw.tinyurl.client.vo.TinyurlParam;
 public class TinyurlClientHelper {
 
     private static final Logger log = LoggerFactory.getLogger(TinyurlClientHelper.class);
-    /**
-     * Rest模板类
-     */
-    private static RestTemplate authRestTemplate;
+
+    private static RestClient authRestClient;
 
     private static UwTinyurlProperties uwTinyurlProperties;
 
-    public TinyurlClientHelper(UwTinyurlProperties uwTinyurlProperties, RestTemplate authRestTemplate) {
-        TinyurlClientHelper.authRestTemplate = authRestTemplate;
+    public TinyurlClientHelper(UwTinyurlProperties uwTinyurlProperties, RestClient authRestClient) {
+        TinyurlClientHelper.authRestClient = authRestClient;
         TinyurlClientHelper.uwTinyurlProperties = uwTinyurlProperties;
     }
 
-    /**
-     * 生成短链。
-     *
-     * @param tinyurlParam
-     * @return
-     */
     public static ResponseData<String> generate(TinyurlParam tinyurlParam) {
         String targetUrl = uwTinyurlProperties.getTinyurlCenterHost() + "/rpc/tinyurl/generate";
         try {
-            ResponseData<String> result = authRestTemplate.exchange(targetUrl, HttpMethod.POST, new HttpEntity<>(tinyurlParam),
-                    new ParameterizedTypeReference<ResponseData<String>>() {
-                    }).getBody();
+            ResponseData<String> result = authRestClient.post()
+                    .uri(targetUrl)
+                    .body(tinyurlParam)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<ResponseData<String>>() {});
             if (result == null) {
                 return ResponseData.errorMsg("TinyurlClientHelper.generate() returned null body");
             }

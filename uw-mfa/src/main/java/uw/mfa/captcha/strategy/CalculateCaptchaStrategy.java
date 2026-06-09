@@ -2,7 +2,7 @@ package uw.mfa.captcha.strategy;
 
 
 import org.apache.commons.lang3.StringUtils;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.mfa.captcha.CaptchaStrategy;
 import uw.mfa.captcha.util.CaptchaImageUtils;
 import uw.mfa.captcha.vo.CaptchaData;

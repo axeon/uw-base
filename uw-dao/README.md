@@ -632,7 +632,7 @@ String[] cols = ds.getColumnNames();
 ### 7.2 executeCommand 执行更新
 
 ```java
-int rows = dao.executeCommand(
+int rows = dao.execute(
     "update sys_user set state=? where id=?",
     new Object[]{0, userId}
 );
@@ -788,7 +788,7 @@ SQL: SELECT * FROM order_2024 WHERE ...
 ```java
 // 所有 DaoFactory/DaoManager 方法均有 connName 前缀重载
 dao.load("order-write", Order.class, orderId);
-dao.executeCommand("order-write", "update order_2024 set ...", params);
+dao.execute("order-write", "update order_2024 set ...", params);
 ```
 
 ---

@@ -1,12 +1,15 @@
 package uw.auth.client.conf;
 
+import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.core5.http.HeaderElement;
 import org.apache.hc.core5.http.message.BasicHeaderElementIterator;
 import org.apache.hc.core5.util.TimeValue;
+import org.apache.hc.core5.util.Timeout;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -23,17 +26,14 @@ import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.http.converter.support.AllEncompassingFormHttpMessageConverter;
 import org.springframework.http.converter.xml.SourceHttpMessageConverter;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.client.WebClient;
 import uw.auth.client.filter.AuthTokenHeaderFilter;
 import uw.auth.client.interceptor.AuthTokenHeaderInterceptor;
 import uw.auth.client.service.AuthClientTokenService;
 
-import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 自动装配类。
@@ -44,9 +44,6 @@ public class AuthClientAutoConfiguration {
 
     private final List<HttpMessageConverter<?>> messageConverters = new ArrayList<HttpMessageConverter<?>>();
 
-    /**
-     * 初始化Message Converters
-     */
     public AuthClientAutoConfiguration() {
         messageConverters.add(new ByteArrayHttpMessageConverter());
         messageConverters.add(new StringHttpMessageConverter());
@@ -57,94 +54,70 @@ public class AuthClientAutoConfiguration {
     }
 
     /**
-     * auth-client自用的RestTemplate。
-     *
-     * @param authClientHttpRequestFactory
-     * @return
+     * auth-client自用的RestClient（不带认证拦截器）。
      */
-    @Bean("baseAuthClientRestTemplate")
+    @Bean("baseAuthClientRestClient")
     @LoadBalanced
     @ConditionalOnProperty(prefix = "uw.auth.client", name = "enable-spring-cloud", havingValue = "true", matchIfMissing = true)
-    public RestTemplate scBaseAuthClientRestTemplate(final ClientHttpRequestFactory authClientHttpRequestFactory) {
-        RestTemplate restTemplate = new RestTemplate(authClientHttpRequestFactory);
-        restTemplate.setMessageConverters(messageConverters);
-        return restTemplate;
+    public RestClient scBaseAuthClientRestClient(final ClientHttpRequestFactory authClientHttpRequestFactory) {
+        return RestClient.builder()
+                .requestFactory(authClientHttpRequestFactory)
+                .messageConverters(messageConverters)
+                .build();
     }
 
     /**
-     * client自用的RestTemplate。
-     *
-     * @param authClientHttpRequestFactory
-     * @return
+     * client自用的RestClient（不带认证拦截器）。
      */
-    @Bean("baseAuthClientRestTemplate")
+    @Bean("baseAuthClientRestClient")
     @ConditionalOnProperty(prefix = "uw.auth.client", name = "enable-spring-cloud", havingValue = "false")
-    public RestTemplate baseAuthClientRestTemplate(final ClientHttpRequestFactory authClientHttpRequestFactory) {
-        RestTemplate restTemplate = new RestTemplate(authClientHttpRequestFactory);
-        restTemplate.setMessageConverters(messageConverters);
-        return restTemplate;
+    public RestClient baseAuthClientRestClient(final ClientHttpRequestFactory authClientHttpRequestFactory) {
+        return RestClient.builder()
+                .requestFactory(authClientHttpRequestFactory)
+                .messageConverters(messageConverters)
+                .build();
     }
 
-    /**
-     * 认证Token的拦截器。
-     *
-     * @param authClientProperties
-     * @param restTemplate
-     * @return
-     */
     @Bean
-    public AuthClientTokenService authClientTokenHelper(final AuthClientProperties authClientProperties, @Qualifier("baseAuthClientRestTemplate") final RestTemplate restTemplate) {
-        return new AuthClientTokenService(authClientProperties, restTemplate);
+    public AuthClientTokenService authClientTokenHelper(final AuthClientProperties authClientProperties, @Qualifier("baseAuthClientRestClient") final RestClient restClient) {
+        return new AuthClientTokenService(authClientProperties, restClient);
     }
 
     /**
-     * 负载均衡的RestTemplate
-     *
-     * @param authClientHttpRequestFactory
-     * @return
+     * 负载均衡的RestClient（带认证拦截器）。
      */
-    @Bean("authRestTemplate")
+    @Bean("authRestClient")
     @LoadBalanced
     @Primary
     @ConditionalOnProperty(prefix = "uw.auth.client", name = "enable-spring-cloud", havingValue = "true", matchIfMissing = true)
-    public RestTemplate lbAuthRestTemplate(final ClientHttpRequestFactory authClientHttpRequestFactory, final AuthClientTokenService authClientTokenService) {
-        RestTemplate authRestTemplate = new RestTemplate(authClientHttpRequestFactory);
-        authRestTemplate.setInterceptors(Collections.singletonList(new AuthTokenHeaderInterceptor(authClientTokenService)));
-        authRestTemplate.setMessageConverters(messageConverters);
-        return authRestTemplate;
+    public RestClient lbAuthRestClient(final ClientHttpRequestFactory authClientHttpRequestFactory, final AuthClientTokenService authClientTokenService) {
+        return RestClient.builder()
+                .requestFactory(authClientHttpRequestFactory)
+                .requestInterceptor(new AuthTokenHeaderInterceptor(authClientTokenService))
+                .messageConverters(messageConverters)
+                .build();
     }
 
     /**
-     * 非Spring cloud环境下的RestTemplate
-     *
-     * @param authClientHttpRequestFactory
-     * @return
+     * 非Spring cloud环境下的RestClient（带认证拦截器）。
      */
-    @Bean("authRestTemplate")
+    @Bean("authRestClient")
     @Primary
     @ConditionalOnProperty(prefix = "uw.auth.client", name = "enable-spring-cloud", havingValue = "false")
-    public RestTemplate authRestTemplate(final ClientHttpRequestFactory authClientHttpRequestFactory, final AuthClientTokenService authClientTokenService) {
-        RestTemplate authRestTemplate = new RestTemplate(authClientHttpRequestFactory);
-        authRestTemplate.setInterceptors(Collections.singletonList(new AuthTokenHeaderInterceptor(authClientTokenService)));
-        authRestTemplate.setMessageConverters(messageConverters);
-        return authRestTemplate;
+    public RestClient authRestClient(final ClientHttpRequestFactory authClientHttpRequestFactory, final AuthClientTokenService authClientTokenService) {
+        return RestClient.builder()
+                .requestFactory(authClientHttpRequestFactory)
+                .requestInterceptor(new AuthTokenHeaderInterceptor(authClientTokenService))
+                .messageConverters(messageConverters)
+                .build();
     }
 
-    /**
-     * 创建被 @LoadBalanced 修饰的 Builder。
-     */
     @Bean
     @LoadBalanced
     public WebClient.Builder webClientloadBalancedBuilder() {
         return WebClient.builder();
     }
 
-    /**
-     * 认证Token的WebClient
-     *
-     * @param authClientTokenService
-     * @return
-     */
     @Bean("authWebClient")
     @Primary
     public WebClient authWebClient(WebClient.Builder webClientloadBalancedBuilder, final AuthClientTokenService authClientTokenService) {
@@ -154,22 +127,29 @@ public class AuthClientAutoConfiguration {
     }
 
     /**
-     * Http Client连接池配置
-     *
-     * @param authClientProperties
-     * @return
+     * Http Client连接池配置。
      */
     @Bean
     public ClientHttpRequestFactory authClientHttpRequestFactory(final AuthClientProperties authClientProperties) {
-        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
-        connectionManager.setMaxTotal(authClientProperties.getHttpPool().getMaxTotal());
-        connectionManager.setDefaultMaxPerRoute(authClientProperties.getHttpPool().getDefaultMaxPerRoute());
-        RequestConfig config = RequestConfig.custom()
-                .setConnectTimeout(authClientProperties.getHttpPool().getConnectTimeout(), TimeUnit.MILLISECONDS)
-                .setConnectionRequestTimeout(authClientProperties.getHttpPool().getConnectionRequestTimeout(), TimeUnit.MILLISECONDS)
+        AuthClientProperties.HttpPool pool = authClientProperties.getHttpPool();
+
+        PoolingHttpClientConnectionManager connectionManager = PoolingHttpClientConnectionManagerBuilder.create()
+                .setMaxConnTotal(pool.getMaxTotal())
+                .setMaxConnPerRoute(pool.getDefaultMaxPerRoute())
+                .setDefaultConnectionConfig(ConnectionConfig.custom()
+                        .setConnectTimeout(Timeout.ofMilliseconds(pool.getConnectTimeout()))
+                        .setSocketTimeout(Timeout.ofMilliseconds(pool.getSocketTimeout()))
+                        .setValidateAfterInactivity(TimeValue.ofSeconds(30))
+                        .build())
                 .build();
-        CloseableHttpClient httpClient = HttpClientBuilder.create().setConnectionManager(connectionManager)
-                .setDefaultRequestConfig(config)
+
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectionRequestTimeout(Timeout.ofMilliseconds(pool.getConnectionRequestTimeout()))
+                .build();
+
+        CloseableHttpClient httpClient = HttpClientBuilder.create()
+                .setConnectionManager(connectionManager)
+                .setDefaultRequestConfig(requestConfig)
                 .setKeepAliveStrategy((response, context) -> {
                     BasicHeaderElementIterator iterator = new BasicHeaderElementIterator(response.headerIterator("Keep-Alive"));
                     while (iterator.hasNext()) {
@@ -177,13 +157,15 @@ public class AuthClientAutoConfiguration {
                         String param = he.getName();
                         String value = he.getValue();
                         if (value != null && param.equalsIgnoreCase("timeout")) {
-                            return TimeValue.of(Long.parseLong(value) * 1000, TimeUnit.MILLISECONDS);
+                            return TimeValue.ofSeconds(Long.parseLong(value));
                         }
                     }
-                    return TimeValue.of(authClientProperties.getHttpPool().getKeepAliveTimeIfNotPresent(), TimeUnit.MILLISECONDS);
-                }).build();
-        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
-        factory.setReadTimeout(Duration.ofMillis(authClientProperties.getHttpPool().getSocketTimeout()));
-        return factory;
+                    return pool.getKeepAliveTimeIfNotPresent() > 0
+                            ? TimeValue.ofMilliseconds(pool.getKeepAliveTimeIfNotPresent())
+                            : TimeValue.ZERO_MILLISECONDS;
+                })
+                .build();
+
+        return new HttpComponentsClientHttpRequestFactory(httpClient);
     }
 }

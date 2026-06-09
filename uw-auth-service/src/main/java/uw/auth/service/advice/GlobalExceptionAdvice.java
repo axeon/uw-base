@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import uw.auth.service.constant.AuthServiceConstants;
 import uw.auth.service.exception.*;
 import uw.auth.service.util.IpWebUtils;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.ExceptionUtils;
 
 import java.io.IOException;

@@ -1,8 +1,8 @@
 package uw.common.app.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import uw.dao.QueryParam;
 import uw.dao.annotation.QueryMeta;
+import uw.common.dto.QueryParam;
 
 import java.io.Serializable;
 import java.util.Map;

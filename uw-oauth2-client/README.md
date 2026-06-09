@@ -590,7 +590,7 @@ public class MscAuthHelper {
      * @param providerCode
      */
     public static ResponseData<Integer> oauthUnbind(long saasId, long userId, String providerCode) {
-        return dao.executeCommand("update msc_oauth_info set status=0,unbind_date=? where saas_id=? and user_id=? and provider_code=?", new Object[]{SystemClock.nowDate(), saasId, userId, providerCode});
+        return dao.execute("update msc_oauth_info set status=0,unbind_date=? where saas_id=? and user_id=? and provider_code=?", new Object[]{SystemClock.nowDate(), saasId, userId, providerCode});
     }
 
     /**

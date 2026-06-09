@@ -8,7 +8,7 @@ import uw.common.app.constant.ValidateResponseCode;
 import uw.common.app.vo.JsonConfigBox;
 import uw.common.app.vo.JsonConfigParam;
 import uw.common.app.vo.ValidateResult;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.DateUtils;
 import uw.common.util.JsonUtils;
 

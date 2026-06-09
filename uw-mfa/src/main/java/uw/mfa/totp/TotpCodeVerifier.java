@@ -6,7 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cglib.core.CodeGenerationException;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.mfa.constant.HmacAlgorithm;
 import uw.mfa.constant.MfaResponseCode;
 

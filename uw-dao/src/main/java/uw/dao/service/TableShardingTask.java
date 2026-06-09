@@ -3,7 +3,7 @@ package uw.dao.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.dao.DaoFactory;
-import uw.dao.DataSet;
+import uw.common.data.PageRowSet;
 import uw.dao.SequenceFactory;
 import uw.dao.TransactionException;
 import uw.dao.conf.DaoConfig;
@@ -155,7 +155,7 @@ public class TableShardingTask implements Runnable {
             return null;
         }
         try {
-            DataSet ds = dao.queryForDataSet(dao.getConnectionName(tableName, "all"), "show create table " + tableName);
+            PageRowSet ds = dao.queryForRowSet(dao.getConnectionName(tableName, "all"), "show create table " + tableName);
             if (ds.next()) {
                 script = ds.getString(1);
             }
@@ -175,7 +175,7 @@ public class TableShardingTask implements Runnable {
     private int exeCreateTable(String tableName, String createScript) {
         int effectedNum = 0;
         try {
-            effectedNum = dao.executeCommand(dao.getConnectionName(tableName, "all"), createScript);
+            effectedNum = dao.execute(dao.getConnectionName(tableName, "all"), createScript);
         } catch (TransactionException e) {
             log.error(e.getMessage(), e);
         }

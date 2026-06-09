@@ -3,7 +3,7 @@ package uw.common.app.constant;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import uw.common.dto.ResponseCode;
+import uw.common.response.ResponseCode;
 import uw.common.util.EnumUtils;
 
 /**

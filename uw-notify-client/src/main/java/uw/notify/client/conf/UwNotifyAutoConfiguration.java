@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import uw.notify.client.NotifyClientHelper;
 
 /**
@@ -19,7 +19,7 @@ public class UwNotifyAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public NotifyClientHelper notifyClientHelper(UwNotifyProperties uwNotifyProperties, RestTemplate authRestTemplate) {
-        return new NotifyClientHelper(uwNotifyProperties, authRestTemplate);
+    public NotifyClientHelper notifyClientHelper(UwNotifyProperties uwNotifyProperties, RestClient authRestClient) {
+        return new NotifyClientHelper(uwNotifyProperties, authRestClient);
     }
 }

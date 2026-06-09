@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import uw.auth.service.AuthServiceHelper;
 import uw.auth.service.constant.UserType;
 import uw.auth.service.token.AuthTokenData;
-import uw.dao.QueryParam;
 import uw.dao.annotation.QueryMeta;
+import uw.common.dto.QueryParam;
 
 import java.io.Serializable;
 import java.util.Map;

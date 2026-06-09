@@ -1,16 +1,12 @@
 package uw.ai.rpc.impl;
 
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.client.RestClient;
 import uw.ai.conf.UwAiProperties;
 import uw.ai.rpc.AiToolRpc;
 import uw.ai.vo.AiToolMeta;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
-import java.net.URI;
 import java.util.List;
 
 /**
@@ -18,30 +14,27 @@ import java.util.List;
  */
 public class AiToolRpcImpl implements AiToolRpc {
 
-    /**
-     * Rest模板类
-     */
-    private final RestTemplate authRestTemplate;
+    private final RestClient authRestClient;
 
     private final UwAiProperties uwAiProperties;
 
-    public AiToolRpcImpl(UwAiProperties uwAiProperties, RestTemplate authRestTemplate) {
-        this.authRestTemplate = authRestTemplate;
+    public AiToolRpcImpl(UwAiProperties uwAiProperties, RestClient authRestClient) {
+        this.authRestClient = authRestClient;
         this.uwAiProperties = uwAiProperties;
     }
 
     /**
-     * 获取工具元数据。
+     * 列出指定appName下的工具列表。
      *
-     * @param appName
-     * @return
+     * @param appName 应用名称
+     * @return 工具元数据列表
      */
     @Override
     public ResponseData<List<AiToolMeta>> listToolMeta(String appName) {
-        URI targetUrl =
-                UriComponentsBuilder.fromUriString(uwAiProperties.getAiCenterHost()).path("/rpc/tool/listToolMeta").queryParam("appName", appName).build().encode().toUri();
-        ResponseData<List<AiToolMeta>> result = authRestTemplate.exchange(targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<List<AiToolMeta>>>() {
-        }).getBody();
+        ResponseData<List<AiToolMeta>> result = authRestClient.get()
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/tool/listToolMeta?appName={appName}", appName)
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<List<AiToolMeta>>>() {});
         if (result == null) {
             return ResponseData.errorMsg("AiToolRpcImpl.listToolMeta() returned null body");
         }
@@ -49,15 +42,18 @@ public class AiToolRpcImpl implements AiToolRpc {
     }
 
     /**
-     * 更新工具元数据。
+     * 更新工具配置信息。
      *
-     * @param aiToolMeta
-     * @return
+     * @param aiToolMeta 工具元数据
+     * @return 更新结果
      */
     @Override
     public ResponseData updateToolMeta(AiToolMeta aiToolMeta) {
-        String url = uwAiProperties.getAiCenterHost() + "/rpc/tool/updateToolMeta";
-        ResponseData result = authRestTemplate.postForObject(url, aiToolMeta, ResponseData.class);
+        ResponseData result = authRestClient.post()
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/tool/updateToolMeta")
+                .body(aiToolMeta)
+                .retrieve()
+                .body(ResponseData.class);
         if (result == null) {
             return ResponseData.errorMsg("AiToolRpcImpl.updateToolMeta() returned null body");
         }

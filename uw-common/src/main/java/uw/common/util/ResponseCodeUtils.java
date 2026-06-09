@@ -1,6 +1,6 @@
 package uw.common.util;
 
-import uw.common.dto.ResponseCode;
+import uw.common.response.ResponseCode;
 
 import java.util.Properties;
 

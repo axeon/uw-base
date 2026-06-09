@@ -1,7 +1,7 @@
 package uw.common.app.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import uw.common.dto.ResponseCode;
+import uw.common.response.ResponseCode;
 import uw.common.util.JsonUtils;
 
 /**

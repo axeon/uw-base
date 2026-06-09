@@ -3,7 +3,7 @@ package uw.task.conf;
 import com.rabbitmq.client.AMQP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;

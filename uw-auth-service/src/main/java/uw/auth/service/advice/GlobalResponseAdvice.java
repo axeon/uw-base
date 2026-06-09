@@ -16,7 +16,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 import uw.auth.service.AuthServiceHelper;
 import uw.auth.service.annotation.ResponseAdviceIgnore;
 import uw.auth.service.vo.MscActionLog;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.JsonUtils;
 
 import java.util.LinkedHashMap;

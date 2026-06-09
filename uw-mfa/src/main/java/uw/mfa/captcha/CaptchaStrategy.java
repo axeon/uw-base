@@ -1,7 +1,7 @@
 package uw.mfa.captcha;
 
 
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.mfa.captcha.strategy.*;
 import uw.mfa.captcha.vo.CaptchaData;
 

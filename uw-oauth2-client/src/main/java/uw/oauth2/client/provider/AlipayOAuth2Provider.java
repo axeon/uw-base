@@ -1,6 +1,6 @@
 package uw.oauth2.client.provider;
 
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.JsonUtils;
 import uw.httpclient.http.HttpData;
 import uw.oauth2.client.conf.OAuth2ClientProperties;

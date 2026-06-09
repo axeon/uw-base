@@ -1,6 +1,8 @@
 package uw.dao;
 
 import uw.common.util.SystemClock;
+import uw.common.dto.PageQueryParam;
+import uw.common.dto.QueryParam;
 import uw.dao.annotation.QueryMeta;
 import uw.dao.annotation.TableMeta;
 import uw.dao.vo.QueryParamResult;

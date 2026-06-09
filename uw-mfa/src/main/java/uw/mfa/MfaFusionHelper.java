@@ -1,6 +1,6 @@
 package uw.mfa;
 
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.mfa.captcha.vo.CaptchaQuestion;
 import uw.mfa.helper.MfaCaptchaHelper;
 import uw.mfa.helper.MfaDeviceCodeHelper;

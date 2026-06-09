@@ -178,7 +178,7 @@ public class DaoService {
                 + "PRIMARY KEY (id)\n"
                 + ") ENGINE=INNODB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPRESSED";
         try {
-            dao.executeCommand(dao.getConnectionName(STATS_BASE_TABLE, "all"), sql);
+            dao.execute(dao.getConnectionName(STATS_BASE_TABLE, "all"), sql);
             logger.info("init table: {}", STATS_BASE_TABLE);
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);

@@ -14,7 +14,7 @@ import uw.ai.tool.AiToolParam;
 import uw.ai.vo.AiToolExecuteParam;
 import uw.auth.service.annotation.MscPermDeclare;
 import uw.auth.service.constant.UserType;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
 /**
  * 运行AipVendor的容器。

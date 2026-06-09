@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import uw.auth.service.AuthServiceHelper;
 import uw.auth.service.constant.UserType;
 import uw.auth.service.token.AuthTokenData;
-import uw.dao.PageQueryParam;
+import uw.common.dto.PageQueryParam;
 import uw.dao.annotation.QueryMeta;
 
 /**

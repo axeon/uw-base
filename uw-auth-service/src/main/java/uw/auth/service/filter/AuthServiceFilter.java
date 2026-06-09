@@ -26,7 +26,7 @@ import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.util.logging.LoggingHttpServletRequestWrapper;
 import uw.auth.service.util.logging.LoggingHttpServletResponseWrapper;
 import uw.auth.service.vo.MscActionLog;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.IpMatchUtils;
 import uw.common.util.JsonUtils;
 import uw.common.util.SystemClock;

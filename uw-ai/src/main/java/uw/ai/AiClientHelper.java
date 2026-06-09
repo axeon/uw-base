@@ -10,7 +10,7 @@ import uw.ai.rpc.AiToolRpc;
 import uw.ai.rpc.AiTranslateRpc;
 import uw.ai.util.BeanOutputConverter;
 import uw.ai.vo.*;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
 import java.util.List;
 

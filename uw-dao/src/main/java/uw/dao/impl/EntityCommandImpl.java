@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 import uw.common.util.JsonUtils;
 import uw.common.util.SystemClock;
 import uw.dao.DataEntity;
-import uw.dao.DataList;
+import uw.common.data.PageList;
 import uw.dao.DataUpdateInfo;
 import uw.dao.TransactionException;
 import uw.dao.conf.DaoConfigManager;
@@ -635,7 +635,7 @@ public class EntityCommandImpl {
      * @return 列表
      * @throws TransactionException 事务异常
      */
-    static <T> DataList<T> list(DaoFactoryImpl dao, String connName, Class<T> cls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+    static <T> PageList<T> list(DaoFactoryImpl dao, String connName, Class<T> cls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
         long startMillis = SystemClock.now();
         long connMillis = 0, dbMillis = 0, allMillis = 0;
         int connId = 0;
@@ -738,6 +738,6 @@ public class EntityCommandImpl {
                 allSize = SQLCommandImpl.selectForSingleValue(dao, connName, Integer.class, countSql, paramList);
             }
         }
-        return new DataList<>(list, startIndex, resultNum, allSize);
+        return new PageList<>(list, startIndex, resultNum, allSize);
     }
 }

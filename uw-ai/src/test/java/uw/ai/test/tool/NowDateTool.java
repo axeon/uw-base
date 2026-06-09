@@ -2,7 +2,7 @@ package uw.ai.test.tool;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import uw.ai.tool.AiToolParam;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;

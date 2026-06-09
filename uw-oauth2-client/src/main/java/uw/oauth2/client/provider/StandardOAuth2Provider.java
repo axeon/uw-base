@@ -1,7 +1,7 @@
 package uw.oauth2.client.provider;
 
 import org.apache.commons.lang3.StringUtils;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.JsonUtils;
 import uw.oauth2.client.conf.OAuth2ClientProperties;
 import uw.oauth2.client.vo.OAuth2Token;

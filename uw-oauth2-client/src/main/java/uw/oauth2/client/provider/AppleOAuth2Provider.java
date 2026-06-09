@@ -3,7 +3,7 @@ package uw.oauth2.client.provider;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import org.apache.commons.lang3.StringUtils;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.JsonUtils;
 import uw.common.util.SystemClock;
 import uw.oauth2.client.conf.OAuth2ClientProperties;

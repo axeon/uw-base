@@ -8,7 +8,7 @@ import uw.auth.service.constant.AuthType;
 import uw.auth.service.constant.TokenType;
 import uw.auth.service.constant.UserType;
 import uw.auth.service.token.AuthTokenData;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
 import java.util.Collections;
 import java.util.Map;

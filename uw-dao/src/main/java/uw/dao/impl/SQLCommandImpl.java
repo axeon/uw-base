@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.util.JsonUtils;
 import uw.common.util.SystemClock;
-import uw.dao.DataSet;
+import uw.common.data.PageRowSet;
 import uw.dao.TransactionException;
 import uw.dao.connectionpool.ConnectionManager;
 import uw.dao.dialect.Dialect;
@@ -15,8 +15,10 @@ import uw.dao.util.SQLUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 为了更为高效的执行数据库命令，是该类产生的根本原因。 具体使用请自行参照源代码.
@@ -229,7 +231,7 @@ public class SQLCommandImpl {
     }
 
     /**
-     * 获取以DataSet为结果的数据集合.
+     * 获取以PageTable为结果的数据集合.
      *
      * @param dao        DAOFactoryImpl对象
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
@@ -241,7 +243,7 @@ public class SQLCommandImpl {
      * @return 数据集合
      * @throws TransactionException 事务异常
      */
-    public static DataSet selectForDataSet(DaoFactoryImpl dao, String connName, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+    public static PageRowSet selectForRowSet(DaoFactoryImpl dao, String connName, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
         long startMillis = SystemClock.now();
         long connMillis = 0, dbMillis = 0, allMillis = 0;
         int connId = 0, dsSize = 0;
@@ -269,7 +271,7 @@ public class SQLCommandImpl {
             pagedParamList = ArrayUtils.addAll(paramList, po[1], po[2]);
         }
 
-        DataSet ds = DataSet.EMPTY;
+        PageRowSet ds = PageRowSet.EMPTY;
         Connection con = null;
         PreparedStatement pstmt = null;
         try {
@@ -288,8 +290,22 @@ public class SQLCommandImpl {
             connMillis = dbStartMillis - startMillis;
             ResultSet rs = pstmt.executeQuery();
             dbMillis = SystemClock.now() - dbStartMillis;
-            ds = new DataSet(rs, startIndex, resultNum, allSize);
+            ResultSetMetaData rsm = rs.getMetaData();
+            int colsCount = rsm.getColumnCount();
+            String[] columns = new String[colsCount];
+            for (int i = 0; i < colsCount; i++) {
+                columns[i] = rsm.getColumnLabel(i + 1).toLowerCase();
+            }
+            List<Object[]> dataList = resultNum > 0 ? new ArrayList<>(resultNum) : new ArrayList<>();
+            while (rs.next()) {
+                Object[] row = new Object[colsCount];
+                for (int i = 0; i < colsCount; i++) {
+                    row[i] = rs.getObject(i + 1);
+                }
+                dataList.add(row);
+            }
             rs.close();
+            ds = new PageRowSet(columns, dataList, startIndex, resultNum, allSize);
             dsSize = ds.size();
         } catch (Exception e) {
             exception = e.toString();

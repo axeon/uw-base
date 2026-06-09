@@ -2,7 +2,7 @@ package uw.auth.service.exception;
 
 import org.apache.commons.lang3.StringUtils;
 import uw.auth.service.constant.AuthServiceConstants;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
 /**
  * 认证异常处理.

@@ -3,7 +3,7 @@ package uw.mfa.captcha.strategy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.JsonUtils;
 import uw.mfa.captcha.CaptchaStrategy;
 import uw.mfa.captcha.util.CaptchaImageUtils;

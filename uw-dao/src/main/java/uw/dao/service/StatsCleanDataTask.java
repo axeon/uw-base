@@ -37,7 +37,7 @@ public class StatsCleanDataTask implements Runnable {
         HashSet<String> set = new HashSet<>();
         List<String> list = null;
         try {
-            list = dao.queryForSingleList(dao.getConnectionName(DaoService.STATS_BASE_TABLE, "all"), String.class,
+            list = dao.queryForValueList(dao.getConnectionName(DaoService.STATS_BASE_TABLE, "all"), String.class,
                     "show tables");
             if (list != null) {
                 for (String s : list) {
@@ -77,7 +77,7 @@ public class StatsCleanDataTask implements Runnable {
                 continue;
             }
             try {
-                dao.executeCommand("DROP TABLE IF EXISTS " + tableName);
+                dao.execute("DROP TABLE IF EXISTS " + tableName);
                 logger.info("DROP TABLE IF EXISTS [{}].", tableName);
             } catch (TransactionException e) {
                 logger.error(e.getMessage());

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serializable;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -21,7 +21,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
     /**
      * 空的PageList.
      */
-    public static final PageList<?> EMPTY = new PageList<>();
+    public static final PageList<?> EMPTY = new PageList<>(null, 0, 0, 0);
 
     /**
      * 开始的索引.
@@ -70,7 +70,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      */
     @JsonProperty
     @Schema(title = "数据列表", description = "数据列表")
-    private List<T> list = Collections.emptyList();
+    private ArrayList<T> list;
 
     /**
      * 构造函数.
@@ -88,12 +88,10 @@ public class PageList<T> implements Iterable<T>, Serializable {
      * @param sizeAll    总数据量
      */
     public PageList(List<T> list, int startIndex, int resultNum, int sizeAll) {
-        this.list = list;
+        this.list = toArrayList(list);
         this.startIndex = startIndex;
         this.resultNum = resultNum;
-        if (this.list != null) {
-            this.size = this.list.size();
-        }
+        this.size = this.list.size();
         calcPages(sizeAll);
     }
 
@@ -129,10 +127,10 @@ public class PageList<T> implements Iterable<T>, Serializable {
      * @return 指定位置的对象，如果list为null则返回null
      */
     public T get(int index) {
-        if (list != null) {
-            return list.get(index);
+        if (list == null) {
+            return null;
         }
-        return null;
+        return list.get(index);
     }
 
     /**
@@ -266,7 +264,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      */
     public List<T> list() {
         if (this.list == null) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
         return this.list;
     }
@@ -277,12 +275,8 @@ public class PageList<T> implements Iterable<T>, Serializable {
      * @param list 数据列表
      */
     public void reset(List<T> list) {
-        this.list = list;
-        if (this.list == null) {
-            this.size = 0;
-        } else if (this.size != list.size()) {
-            this.size = list.size();
-        }
+        this.list = toArrayList(list);
+        this.size = this.list.size();
     }
 
     // ===== Iterable/Stream =====
@@ -295,7 +289,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
     @Override
     public Iterator<T> iterator() {
         if (this.list == null) {
-            return Collections.emptyIterator();
+            return java.util.Collections.emptyIterator();
         }
         return this.list.iterator();
     }
@@ -310,6 +304,17 @@ public class PageList<T> implements Iterable<T>, Serializable {
             return Stream.empty();
         }
         return this.list.stream();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> ArrayList<T> toArrayList(List<T> list) {
+        if (list == null) {
+            return new ArrayList<>();
+        }
+        if (list instanceof ArrayList<T> al) {
+            return al;
+        }
+        return new ArrayList<>(list);
     }
 
 }

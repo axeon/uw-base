@@ -25,7 +25,7 @@ public class PageRowSet implements Serializable {
     /**
      * 空的PageRowSet.
      */
-    public static final PageRowSet EMPTY = new PageRowSet();
+    public static final PageRowSet EMPTY = new PageRowSet(new String[0], null, 0, 0, 0);
 
     /**
      * 当前索引位置.
@@ -87,7 +87,7 @@ public class PageRowSet implements Serializable {
      */
     @JsonProperty
     @Schema(title = "数据集", description = "数据集")
-    private List<Object[]> list = Collections.emptyList();
+    private ArrayList<Object[]> list;
 
     // ===== 构造函数（不再接受ResultSet，由DAO层负责转换） =====
 
@@ -108,12 +108,10 @@ public class PageRowSet implements Serializable {
      */
     public PageRowSet(String[] columns, List<Object[]> list, int startIndex, int resultNum, int sizeAll) {
         this.columns = columns;
-        this.list = list;
+        this.list = toArrayList(list);
         this.startIndex = startIndex;
         this.resultNum = resultNum;
-        if (this.list != null) {
-            this.size = this.list.size();
-        }
+        this.size = this.list.size();
         calcPages(sizeAll);
     }
 
@@ -189,11 +187,13 @@ public class PageRowSet implements Serializable {
      * remove当前行.
      */
     public void remove() {
-        if (list != null) {
-            this.list.remove(currentIndex);
-            this.size--;
-            this.sizeAll--;
+        if (list == null) {
+            return;
         }
+        this.list.remove(currentIndex);
+        this.size--;
+        this.sizeAll--;
+        currentIndex--;
     }
 
     /**
@@ -516,6 +516,16 @@ public class PageRowSet implements Serializable {
             resultList.add(function.apply(this));
         }
         return new PageList<>(resultList, startIndex, resultNum, sizeAll);
+    }
+
+    private static ArrayList<Object[]> toArrayList(List<Object[]> list) {
+        if (list == null) {
+            return new ArrayList<>();
+        }
+        if (list instanceof ArrayList<Object[]> al) {
+            return al;
+        }
+        return new ArrayList<>(list);
     }
 
 }

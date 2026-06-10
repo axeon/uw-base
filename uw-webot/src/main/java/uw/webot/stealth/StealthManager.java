@@ -44,10 +44,7 @@ public class StealthManager {
      * @return 验证码服务
      */
     public StealthService getDefaultStealthService() {
-        if (serviceMap.isEmpty()) {
-            return null;
-        }
-        return serviceMap.firstEntry().getValue();
+        return serviceMap.isEmpty() ? null : serviceMap.firstEntry().getValue();
     }
 
     /**
@@ -66,14 +63,14 @@ public class StealthManager {
     /**
      * 应用指定配置的验证码服务。
      *
-     * @param browserTab 浏览器标签
+     * @param browserTab       浏览器标签
      * @param stealthConfigKey 配置名称
      */
     public void apply(BrowserTab browserTab, String stealthConfigKey) {
         StealthService stealthService = getStealthService(stealthConfigKey);
         if (stealthService == null) {
             DEFAULT_SERVICE.applyStealth(browserTab);
-        }else {
+        } else {
             stealthService.applyStealth(browserTab);
         }
     }

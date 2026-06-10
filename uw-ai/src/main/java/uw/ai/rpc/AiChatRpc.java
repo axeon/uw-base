@@ -2,7 +2,7 @@ package uw.ai.rpc;
 
 import reactor.core.publisher.Flux;
 import uw.ai.vo.AiChatGenerateParam;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
 /**
  * AiChatRpc.

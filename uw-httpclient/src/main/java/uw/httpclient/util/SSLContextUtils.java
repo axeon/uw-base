@@ -13,7 +13,7 @@ import java.security.cert.X509Certificate;
 
 public class SSLContextUtils {
 
-    private static final Logger logger = LoggerFactory.getLogger( SSLContextUtils.class );
+    private static final Logger logger = LoggerFactory.getLogger(SSLContextUtils.class);
     /**
      * 全部信任证书管理器。
      */
@@ -45,10 +45,10 @@ public class SSLContextUtils {
      */
     static {
         try {
-            TRUST_ALL_CONTEXT = SSLContext.getInstance( "TLS" );
-            TRUST_ALL_CONTEXT.init( null, new TrustManager[]{TRUEST_ALL_MANAGER}, new java.security.SecureRandom() );
+            TRUST_ALL_CONTEXT = SSLContext.getInstance("TLS");
+            TRUST_ALL_CONTEXT.init(null, new TrustManager[]{TRUEST_ALL_MANAGER}, new java.security.SecureRandom());
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            logger.error( "全部信任SSL证书环境初始化失败！{}", e.getMessage(), e );
+            logger.error("全部信任SSL证书环境初始化失败！{}", e.getMessage(), e);
         }
     }
 
@@ -67,14 +67,15 @@ public class SSLContextUtils {
      * @return 全部信任的SSLSocketFactory。
      */
     public static SSLSocketFactory getTruestAllSocketFactory() {
-    	return TRUST_ALL_CONTEXT.getSocketFactory();
+        return TRUST_ALL_CONTEXT.getSocketFactory();
     }
 
     /**
      * 获取全部信任的X509TrustManager。
+     *
      * @return
      */
-    public static X509TrustManager getTrustAllManager(){
+    public static X509TrustManager getTrustAllManager() {
         return TRUEST_ALL_MANAGER;
     }
 

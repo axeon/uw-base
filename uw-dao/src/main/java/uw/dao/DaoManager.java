@@ -2,7 +2,11 @@ package uw.dao;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.common.dto.ResponseData;
+import uw.common.data.PageList;
+import uw.common.data.PageRowSet;
+import uw.common.dto.PageQueryParam;
+import uw.common.dto.QueryParam;
+import uw.common.response.ResponseData;
 import uw.dao.conf.DaoConfigManager;
 import uw.dao.constant.DaoResponseCode;
 import uw.dao.vo.QueryParamResult;
@@ -565,7 +569,7 @@ public class DaoManager {
      *
      * @param entityCls 要映射的对象类型
      * @param id        主键数值
-     * @return DataList对象
+     * @return PageList对象
      */
     public <T> ResponseData<T> load(Class<T> entityCls, Serializable id) {
         try {
@@ -581,7 +585,7 @@ public class DaoManager {
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls 要映射的对象类型
      * @param id        主键数值
-     * @return DataList对象
+     * @return PageList对象
      */
     public <T> ResponseData<T> load(String connName, Class<T> entityCls, Serializable id) {
         try {
@@ -597,7 +601,7 @@ public class DaoManager {
      * @param entityCls 要映射的对象类型
      * @param tableName 指定表名
      * @param id        主键数值
-     * @return DataList对象
+     * @return PageList对象
      */
     public <T> ResponseData<T> load(Class<T> entityCls, String tableName, Serializable id) {
         try {
@@ -614,7 +618,7 @@ public class DaoManager {
      * @param entityCls 要映射的对象类型
      * @param tableName 指定表名
      * @param id        主键数值
-     * @return DataList对象
+     * @return PageList对象
      */
     public <T> ResponseData<T> load(String connName, Class<T> entityCls, String tableName, Serializable id) {
         try {
@@ -627,92 +631,92 @@ public class DaoManager {
     // list相关方法
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls 要映射的对象类型
      * @param selectSql 查询的SQL
-     * @return DataList列表
+     * @return PageList列表
      */
-    public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String selectSql) {
+    public <T> ResponseData<PageList<T>> list(Class<T> entityCls, String selectSql) {
         try {
             return responseData(daoFactory.list(entityCls, selectSql));
         } catch (TransactionException e) {
-            return responseError(DataList.empty(), e);
+            return responseError(PageList.empty(), e);
         }
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls  要映射的对象类型
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataList列表
+     * @return PageList列表
      */
-    public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String selectSql, int startIndex, int resultNum) {
+    public <T> ResponseData<PageList<T>> list(Class<T> entityCls, String selectSql, int startIndex, int resultNum) {
         try {
             return responseData(daoFactory.list(entityCls, selectSql, startIndex, resultNum));
         } catch (TransactionException e) {
-            return responseError(DataList.empty(), e);
+            return responseError(PageList.empty(), e);
         }
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls  要映射的对象类型
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) {
+    public <T> ResponseData<PageList<T>> list(Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) {
         try {
             return responseData(daoFactory.list(entityCls, selectSql, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
-            return responseError(DataList.empty(), e);
+            return responseError(PageList.empty(), e);
         }
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls 要映射的对象类型
      * @param selectSql 查询的SQL
-     * @return DataList列表
+     * @return PageList列表
      */
-    public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String selectSql) {
+    public <T> ResponseData<PageList<T>> list(String connName, Class<T> entityCls, String selectSql) {
         try {
             return responseData(daoFactory.list(connName, entityCls, selectSql));
         } catch (TransactionException e) {
-            return responseError(DataList.empty(), e);
+            return responseError(PageList.empty(), e);
         }
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls  要映射的对象类型
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataList列表
+     * @return PageList列表
      */
-    public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum) {
+    public <T> ResponseData<PageList<T>> list(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum) {
         try {
             return responseData(daoFactory.list(connName, entityCls, selectSql, startIndex, resultNum));
         } catch (TransactionException e) {
-            return responseError(DataList.empty(), e);
+            return responseError(PageList.empty(), e);
         }
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls  要映射的对象类型
@@ -720,70 +724,70 @@ public class DaoManager {
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) {
+    public <T> ResponseData<PageList<T>> list(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) {
         try {
             return responseData(daoFactory.list(connName, entityCls, selectSql, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
-            return responseError(DataList.empty(), e);
+            return responseError(PageList.empty(), e);
         }
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls 要映射的对象类型
      * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
-     * @return DataList列表
+     * @return PageList列表
      */
-    public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String selectSql, Object[] paramList) {
+    public <T> ResponseData<PageList<T>> list(Class<T> entityCls, String selectSql, Object[] paramList) {
         try {
             return responseData(daoFactory.list(entityCls, selectSql, paramList));
         } catch (TransactionException e) {
-            return responseError(DataList.empty(), e);
+            return responseError(PageList.empty(), e);
         }
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls 要映射的对象类型
      * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
-     * @return DataList列表
+     * @return PageList列表
      */
-    public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList) {
+    public <T> ResponseData<PageList<T>> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList) {
         try {
             return responseData(daoFactory.list(connName, entityCls, selectSql, paramList));
         } catch (TransactionException e) {
-            return responseError(DataList.empty(), e);
+            return responseError(PageList.empty(), e);
         }
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls  要映射的对象类型
      * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataList列表
+     * @return PageList列表
      */
-    public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) {
+    public <T> ResponseData<PageList<T>> list(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) {
         try {
             return responseData(daoFactory.list(entityCls, selectSql, paramList, startIndex, resultNum));
         } catch (TransactionException e) {
-            return responseError(DataList.empty(), e);
+            return responseError(PageList.empty(), e);
         }
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls  要映射的对象类型
@@ -791,18 +795,18 @@ public class DaoManager {
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataList列表
+     * @return PageList列表
      */
-    public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) {
+    public <T> ResponseData<PageList<T>> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) {
         try {
             return responseData(daoFactory.list(connName, entityCls, selectSql, paramList, startIndex, resultNum));
         } catch (TransactionException e) {
-            return responseError(DataList.empty(), e);
+            return responseError(PageList.empty(), e);
         }
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls  要映射的对象类型
      * @param selectSql  查询的SQL
@@ -810,18 +814,18 @@ public class DaoManager {
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataList列表
+     * @return PageList列表
      */
-    public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
+    public <T> ResponseData<PageList<T>> list(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
         try {
             return responseData(daoFactory.list(entityCls, selectSql, paramList, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
-            return responseError(DataList.empty(), e);
+            return responseError(PageList.empty(), e);
         }
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls  要映射的对象类型
@@ -830,79 +834,145 @@ public class DaoManager {
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataList列表
+     * @return PageList列表
      */
-    public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
+    public <T> ResponseData<PageList<T>> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
         try {
             return responseData(daoFactory.list(connName, entityCls, selectSql, paramList, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
-            return responseError(DataList.empty(), e);
+            return responseError(PageList.empty(), e);
         }
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls      要映射的对象类型
      * @param pageQueryParam 分页查询对象
-     * @return DataList列表
+     * @return PageList列表
      */
-    public <T> ResponseData<DataList<T>> list(Class<T> entityCls, PageQueryParam pageQueryParam) {
+    public <T> ResponseData<PageList<T>> list(Class<T> entityCls, PageQueryParam pageQueryParam) {
         try {
             return responseData(daoFactory.list(entityCls, pageQueryParam));
         } catch (TransactionException e) {
-            return responseError(DataList.empty(), e);
+            return responseError(PageList.empty(), e);
         }
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls      要映射的对象类型
      * @param tableName      附加表名，在特定分表情况下。
      * @param pageQueryParam 分页查询对象
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public <T> ResponseData<DataList<T>> list(Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) {
+    public <T> ResponseData<PageList<T>> list(Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) {
         try {
             return responseData(daoFactory.list(entityCls, tableName, pageQueryParam));
         } catch (TransactionException e) {
-            return responseError(DataList.empty(), e);
+            return responseError(PageList.empty(), e);
         }
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName
      * @param entityCls      要映射的对象类型
      * @param pageQueryParam 分页查询对象
-     * @return DataList列表
+     * @return PageList列表
      */
-    public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, PageQueryParam pageQueryParam) {
+    public <T> ResponseData<PageList<T>> list(String connName, Class<T> entityCls, PageQueryParam pageQueryParam) {
         try {
             return responseData(daoFactory.list(connName, entityCls, pageQueryParam));
         } catch (TransactionException e) {
-            return responseError(DataList.empty(), e);
+            return responseError(PageList.empty(), e);
         }
     }
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName
      * @param entityCls      要映射的对象类型
      * @param tableName      附加表名，在特定分表情况下。
      * @param pageQueryParam 分页查询对象
-     * @return DataList列表
+     * @return PageList列表
      */
-    public <T> ResponseData<DataList<T>> list(String connName, Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) {
+    public <T> ResponseData<PageList<T>> list(String connName, Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) {
         try {
             return responseData(daoFactory.list(connName, entityCls, tableName, pageQueryParam));
         } catch (TransactionException e) {
-            return responseError(DataList.empty(), e);
+            return responseError(PageList.empty(), e);
         }
+    }
+
+    // ===== queryForList: 委托到 list() 方法 =====
+
+    public <T> ResponseData<PageList<T>> queryForList(Class<T> entityCls, String selectSql) {
+        return list(entityCls, selectSql);
+    }
+
+    public <T> ResponseData<PageList<T>> queryForList(Class<T> entityCls, String selectSql, int startIndex, int resultNum) {
+        return list(entityCls, selectSql, startIndex, resultNum);
+    }
+
+    public <T> ResponseData<PageList<T>> queryForList(Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) {
+        return list(entityCls, selectSql, startIndex, resultNum, autoCount);
+    }
+
+    public <T> ResponseData<PageList<T>> queryForList(Class<T> entityCls, String selectSql, Object[] paramList) {
+        return list(entityCls, selectSql, paramList);
+    }
+
+    public <T> ResponseData<PageList<T>> queryForList(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) {
+        return list(entityCls, selectSql, paramList, startIndex, resultNum);
+    }
+
+    public <T> ResponseData<PageList<T>> queryForList(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
+        return list(entityCls, selectSql, paramList, startIndex, resultNum, autoCount);
+    }
+
+    public <T> ResponseData<PageList<T>> queryForList(String connName, Class<T> entityCls, String selectSql) {
+        return list(connName, entityCls, selectSql);
+    }
+
+    public <T> ResponseData<PageList<T>> queryForList(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum) {
+        return list(connName, entityCls, selectSql, startIndex, resultNum);
+    }
+
+    public <T> ResponseData<PageList<T>> queryForList(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) {
+        return list(connName, entityCls, selectSql, startIndex, resultNum, autoCount);
+    }
+
+    public <T> ResponseData<PageList<T>> queryForList(String connName, Class<T> entityCls, String selectSql, Object[] paramList) {
+        return list(connName, entityCls, selectSql, paramList);
+    }
+
+    public <T> ResponseData<PageList<T>> queryForList(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) {
+        return list(connName, entityCls, selectSql, paramList, startIndex, resultNum);
+    }
+
+    public <T> ResponseData<PageList<T>> queryForList(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
+        return list(connName, entityCls, selectSql, paramList, startIndex, resultNum, autoCount);
+    }
+
+    public <T> ResponseData<PageList<T>> queryForList(Class<T> entityCls, PageQueryParam pageQueryParam) {
+        return list(entityCls, pageQueryParam);
+    }
+
+    public <T> ResponseData<PageList<T>> queryForList(Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) {
+        return list(entityCls, tableName, pageQueryParam);
+    }
+
+    public <T> ResponseData<PageList<T>> queryForList(String connName, Class<T> entityCls, PageQueryParam pageQueryParam) {
+        return list(connName, entityCls, pageQueryParam);
+    }
+
+    public <T> ResponseData<PageList<T>> queryForList(String connName, Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) {
+        return list(connName, entityCls, tableName, pageQueryParam);
     }
 
     // query相关方法
@@ -914,9 +984,9 @@ public class DaoManager {
      * @param sql 查询的SQL
      * @return 单个对象
      */
-    public <T> ResponseData<T> queryForSingleValue(Class<T> cls, String sql) {
+    public <T> ResponseData<T> queryForValue(Class<T> cls, String sql) {
         try {
-            return responseData(daoFactory.queryForSingleValue(cls, sql));
+            return responseData(daoFactory.queryForValue(cls, sql));
         } catch (TransactionException e) {
             return responseError(null, e);
         }
@@ -930,9 +1000,9 @@ public class DaoManager {
      * @param sql      查询的SQL
      * @return 单个对象
      */
-    public <T> ResponseData<T> queryForSingleValue(String connName, Class<T> cls, String sql) {
+    public <T> ResponseData<T> queryForValue(String connName, Class<T> cls, String sql) {
         try {
-            return responseData(daoFactory.queryForSingleValue(connName, cls, sql));
+            return responseData(daoFactory.queryForValue(connName, cls, sql));
         } catch (TransactionException e) {
             return responseError(null, e);
         }
@@ -946,9 +1016,9 @@ public class DaoManager {
      * @param paramList 查询SQL的参数
      * @return 单个对象
      */
-    public <T> ResponseData<T> queryForSingleValue(Class<T> cls, String sql, Object[] paramList) {
+    public <T> ResponseData<T> queryForValue(Class<T> cls, String sql, Object[] paramList) {
         try {
-            return responseData(daoFactory.queryForSingleValue(cls, sql, paramList));
+            return responseData(daoFactory.queryForValue(cls, sql, paramList));
         } catch (TransactionException e) {
             return responseError(null, e);
         }
@@ -963,9 +1033,9 @@ public class DaoManager {
      * @param paramList 查询SQL的参数
      * @return 单个对象
      */
-    public <T> ResponseData<T> queryForSingleValue(String connName, Class<T> cls, String sql, Object[] paramList) {
+    public <T> ResponseData<T> queryForValue(String connName, Class<T> cls, String sql, Object[] paramList) {
         try {
-            return responseData(daoFactory.queryForSingleValue(connName, cls, sql, paramList));
+            return responseData(daoFactory.queryForValue(connName, cls, sql, paramList));
         } catch (TransactionException e) {
             return responseError(null, e);
         }
@@ -978,9 +1048,9 @@ public class DaoManager {
      * @param queryParam 查询参数
      * @return 单个对象
      */
-    public <T> ResponseData<T> queryForSingleValue(Class<T> valueCls, QueryParam queryParam) {
+    public <T> ResponseData<T> queryForValue(Class<T> valueCls, QueryParam queryParam) {
         try {
-            return responseData(daoFactory.queryForSingleValue(valueCls, queryParam));
+            return responseData(daoFactory.queryForValue(valueCls, queryParam));
         } catch (TransactionException e) {
             return responseError(null, e);
         }
@@ -994,9 +1064,9 @@ public class DaoManager {
      * @param queryParam 查询参数
      * @return 单个对象
      */
-    public <T> ResponseData<T> queryForSingleValue(String connName, Class<T> valueCls, QueryParam queryParam) {
+    public <T> ResponseData<T> queryForValue(String connName, Class<T> valueCls, QueryParam queryParam) {
         try {
-            return responseData(daoFactory.queryForSingleValue(connName, valueCls, queryParam));
+            return responseData(daoFactory.queryForValue(connName, valueCls, queryParam));
         } catch (TransactionException e) {
             return responseError(null, e);
         }
@@ -1007,11 +1077,11 @@ public class DaoManager {
      *
      * @param valueCls 要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param sql      查询的SQL
-     * @return DataSet对象
+     * @return PageTable对象
      */
-    public <T> ResponseData<List<T>> queryForSingleList(Class<T> valueCls, String sql) {
+    public <T> ResponseData<List<T>> queryForValueList(Class<T> valueCls, String sql) {
         try {
-            return responseData(daoFactory.queryForSingleList(valueCls, sql));
+            return responseData(daoFactory.queryForValueList(valueCls, sql));
         } catch (TransactionException e) {
             return responseError(Collections.emptyList(), e);
         }
@@ -1025,9 +1095,9 @@ public class DaoManager {
      * @param sql      查询的SQL
      * @return 单个对象
      */
-    public <T> ResponseData<List<T>> queryForSingleList(String connName, Class<T> valueCls, String sql) {
+    public <T> ResponseData<List<T>> queryForValueList(String connName, Class<T> valueCls, String sql) {
         try {
-            return responseData(daoFactory.queryForSingleList(connName, valueCls, sql));
+            return responseData(daoFactory.queryForValueList(connName, valueCls, sql));
         } catch (TransactionException e) {
             return responseError(Collections.emptyList(), e);
         }
@@ -1038,11 +1108,11 @@ public class DaoManager {
      *
      * @param valueCls   要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param queryParam 查询参数
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      */
-    public <T> ResponseData<List<T>> queryForSingleList(Class<T> valueCls, QueryParam queryParam) {
+    public <T> ResponseData<List<T>> queryForValueList(Class<T> valueCls, QueryParam queryParam) {
         try {
-            return responseData(daoFactory.queryForSingleList(valueCls, queryParam));
+            return responseData(daoFactory.queryForValueList(valueCls, queryParam));
         } catch (TransactionException e) {
             return responseError(Collections.emptyList(), e);
         }
@@ -1054,12 +1124,12 @@ public class DaoManager {
      * @param connName
      * @param valueCls   要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param queryParam 查询参数
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public <T> ResponseData<List<T>> queryForSingleList(String connName, Class<T> valueCls, QueryParam queryParam) {
+    public <T> ResponseData<List<T>> queryForValueList(String connName, Class<T> valueCls, QueryParam queryParam) {
         try {
-            return responseData(daoFactory.queryForSingleList(connName, valueCls, queryParam));
+            return responseData(daoFactory.queryForValueList(connName, valueCls, queryParam));
         } catch (TransactionException e) {
             return responseError(Collections.emptyList(), e);
         }
@@ -1074,9 +1144,9 @@ public class DaoManager {
      * @param paramList 查询SQL的参数
      * @return 单个对象
      */
-    public <T> ResponseData<List<T>> queryForSingleList(String connName, Class<T> valueCls, String sql, Object[] paramList) {
+    public <T> ResponseData<List<T>> queryForValueList(String connName, Class<T> valueCls, String sql, Object[] paramList) {
         try {
-            return responseData(daoFactory.queryForSingleList(connName, valueCls, sql, paramList));
+            return responseData(daoFactory.queryForValueList(connName, valueCls, sql, paramList));
         } catch (TransactionException e) {
             return responseError(Collections.emptyList(), e);
         }
@@ -1090,9 +1160,9 @@ public class DaoManager {
      * @param paramList 查询SQL的参数
      * @return 单个对象
      */
-    public <T> ResponseData<List<T>> queryForSingleList(Class<T> valueCls, String sql, Object[] paramList) {
+    public <T> ResponseData<List<T>> queryForValueList(Class<T> valueCls, String sql, Object[] paramList) {
         try {
-            return responseData(daoFactory.queryForSingleList(valueCls, sql, paramList));
+            return responseData(daoFactory.queryForValueList(valueCls, sql, paramList));
         } catch (TransactionException e) {
             return responseError(Collections.emptyList(), e);
         }
@@ -1105,9 +1175,9 @@ public class DaoManager {
      * @param selectSql 查询的SQL
      * @return 单个对象
      */
-    public <T> ResponseData<T> queryForSingleObject(Class<T> entityCls, String selectSql) {
+    public <T> ResponseData<T> queryForObject(Class<T> entityCls, String selectSql) {
         try {
-            return responseData(daoFactory.queryForSingleObject(entityCls, selectSql));
+            return responseData(daoFactory.queryForObject(entityCls, selectSql));
         } catch (TransactionException e) {
             return responseError(null, e);
         }
@@ -1121,9 +1191,9 @@ public class DaoManager {
      * @param selectSql 查询的SQL
      * @return 单个对象
      */
-    public <T> ResponseData<T> queryForSingleObject(String connName, Class<T> entityCls, String selectSql) {
+    public <T> ResponseData<T> queryForObject(String connName, Class<T> entityCls, String selectSql) {
         try {
-            return responseData(daoFactory.queryForSingleObject(connName, entityCls, selectSql));
+            return responseData(daoFactory.queryForObject(connName, entityCls, selectSql));
         } catch (TransactionException e) {
             return responseError(null, e);
         }
@@ -1136,9 +1206,9 @@ public class DaoManager {
      * @param queryParam 查询参数
      * @return 单个对象
      */
-    public <T> ResponseData<T> queryForSingleObject(Class<T> entityCls, QueryParam queryParam) {
+    public <T> ResponseData<T> queryForObject(Class<T> entityCls, QueryParam queryParam) {
         try {
-            return responseData(daoFactory.queryForSingleObject(entityCls, queryParam));
+            return responseData(daoFactory.queryForObject(entityCls, queryParam));
         } catch (TransactionException e) {
             return responseError(null, e);
         }
@@ -1153,9 +1223,9 @@ public class DaoManager {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public <T> ResponseData<T> queryForSingleObject(Class<T> entityCls, String tableName, QueryParam queryParam) {
+    public <T> ResponseData<T> queryForObject(Class<T> entityCls, String tableName, QueryParam queryParam) {
         try {
-            return responseData(daoFactory.queryForSingleObject(entityCls, tableName, queryParam));
+            return responseData(daoFactory.queryForObject(entityCls, tableName, queryParam));
         } catch (TransactionException e) {
             return responseError(null, e);
         }
@@ -1169,9 +1239,9 @@ public class DaoManager {
      * @param queryParam 查询参数
      * @return 单个对象
      */
-    public <T> ResponseData<T> queryForSingleObject(String connName, Class<T> entityCls, QueryParam queryParam) {
+    public <T> ResponseData<T> queryForObject(String connName, Class<T> entityCls, QueryParam queryParam) {
         try {
-            return responseData(daoFactory.queryForSingleObject(connName, entityCls, queryParam));
+            return responseData(daoFactory.queryForObject(connName, entityCls, queryParam));
         } catch (TransactionException e) {
             return responseError(null, e);
         }
@@ -1185,9 +1255,9 @@ public class DaoManager {
      * @param paramList 查询SQL的参数
      * @return 单个对象
      */
-    public <T> ResponseData<T> queryForSingleObject(Class<T> entityCls, String selectSql, Object[] paramList) {
+    public <T> ResponseData<T> queryForObject(Class<T> entityCls, String selectSql, Object[] paramList) {
         try {
-            return responseData(daoFactory.queryForSingleObject(entityCls, selectSql, paramList));
+            return responseData(daoFactory.queryForObject(entityCls, selectSql, paramList));
         } catch (TransactionException e) {
             return responseError(null, e);
         }
@@ -1202,9 +1272,9 @@ public class DaoManager {
      * @param paramList 查询SQL的参数
      * @return 单个对象
      */
-    public <T> ResponseData<T> queryForSingleObject(String connName, Class<T> entityCls, String selectSql, Object[] paramList) {
+    public <T> ResponseData<T> queryForObject(String connName, Class<T> entityCls, String selectSql, Object[] paramList) {
         try {
-            return responseData(daoFactory.queryForSingleObject(connName, entityCls, selectSql, paramList));
+            return responseData(daoFactory.queryForObject(connName, entityCls, selectSql, paramList));
         } catch (TransactionException e) {
             return responseError(null, e);
         }
@@ -1219,200 +1289,200 @@ public class DaoManager {
      * @param queryParam 查询参数
      * @return 单个对象
      */
-    public <T> ResponseData<T> queryForSingleObject(String connName, Class<T> entityCls, String tableName, QueryParam queryParam) {
+    public <T> ResponseData<T> queryForObject(String connName, Class<T> entityCls, String tableName, QueryParam queryParam) {
         try {
-            return responseData(daoFactory.queryForSingleObject(connName, entityCls, tableName, queryParam));
+            return responseData(daoFactory.queryForObject(connName, entityCls, tableName, queryParam));
         } catch (TransactionException e) {
             return responseError(null, e);
         }
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql 查询的SQL
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      */
-    public ResponseData<DataSet> queryForDataSet(String selectSql) {
+    public ResponseData<PageRowSet> queryForRowSet(String selectSql) {
         try {
-            return responseData(daoFactory.queryForDataSet(selectSql));
+            return responseData(daoFactory.queryForRowSet(selectSql));
         } catch (TransactionException e) {
-            return responseError(DataSet.EMPTY, e);
+            return responseError(PageRowSet.EMPTY, e);
         }
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName  连接名，当设置为null时候，根据sql语句或表名确定
      * @param selectSql 查询的SQL
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      */
-    public ResponseData<DataSet> queryForDataSet(String connName, String selectSql) {
+    public ResponseData<PageRowSet> queryForRowSet(String connName, String selectSql) {
         try {
-            return responseData(daoFactory.queryForDataSet(connName, selectSql));
+            return responseData(daoFactory.queryForRowSet(connName, selectSql));
         } catch (TransactionException e) {
-            return responseError(DataSet.EMPTY, e);
+            return responseError(PageRowSet.EMPTY, e);
         }
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      */
-    public ResponseData<DataSet> queryForDataSet(String selectSql, int startIndex, int resultNum) {
+    public ResponseData<PageRowSet> queryForRowSet(String selectSql, int startIndex, int resultNum) {
         try {
-            return responseData(daoFactory.queryForDataSet(selectSql, startIndex, resultNum));
+            return responseData(daoFactory.queryForRowSet(selectSql, startIndex, resultNum));
         } catch (TransactionException e) {
-            return responseError(DataSet.EMPTY, e);
+            return responseError(PageRowSet.EMPTY, e);
         }
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      */
-    public ResponseData<DataSet> queryForDataSet(String selectSql, Object[] paramList) {
+    public ResponseData<PageRowSet> queryForRowSet(String selectSql, Object[] paramList) {
         try {
-            return responseData(daoFactory.queryForDataSet(selectSql, paramList));
+            return responseData(daoFactory.queryForRowSet(selectSql, paramList));
         } catch (TransactionException e) {
-            return responseError(DataSet.EMPTY, e);
+            return responseError(PageRowSet.EMPTY, e);
         }
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      */
-    public ResponseData<DataSet> queryForDataSet(String connName, String selectSql, int startIndex, int resultNum) {
+    public ResponseData<PageRowSet> queryForRowSet(String connName, String selectSql, int startIndex, int resultNum) {
         try {
-            return responseData(daoFactory.queryForDataSet(connName, selectSql, startIndex, resultNum));
+            return responseData(daoFactory.queryForRowSet(connName, selectSql, startIndex, resultNum));
         } catch (TransactionException e) {
-            return responseError(DataSet.EMPTY, e);
+            return responseError(PageRowSet.EMPTY, e);
         }
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public ResponseData<DataSet> queryForDataSet(String connName, String selectSql, int startIndex, int resultNum, boolean autoCount) {
+    public ResponseData<PageRowSet> queryForRowSet(String connName, String selectSql, int startIndex, int resultNum, boolean autoCount) {
         try {
-            return responseData(daoFactory.queryForDataSet(connName, selectSql, startIndex, resultNum, autoCount));
+            return responseData(daoFactory.queryForRowSet(connName, selectSql, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
-            return responseError(DataSet.EMPTY, e);
+            return responseError(PageRowSet.EMPTY, e);
         }
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      */
-    public ResponseData<DataSet> queryForDataSet(String connName, String selectSql, Object[] paramList) {
+    public ResponseData<PageRowSet> queryForRowSet(String connName, String selectSql, Object[] paramList) {
         try {
-            return responseData(daoFactory.queryForDataSet(connName, selectSql, paramList));
+            return responseData(daoFactory.queryForRowSet(connName, selectSql, paramList));
         } catch (TransactionException e) {
-            return responseError(DataSet.EMPTY, e);
+            return responseError(PageRowSet.EMPTY, e);
         }
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public ResponseData<DataSet> queryForDataSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum) {
+    public ResponseData<PageRowSet> queryForRowSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum) {
         try {
-            return responseData(daoFactory.queryForDataSet(connName, selectSql, paramList, startIndex, resultNum));
+            return responseData(daoFactory.queryForRowSet(connName, selectSql, paramList, startIndex, resultNum));
         } catch (TransactionException e) {
-            return responseError(DataSet.EMPTY, e);
+            return responseError(PageRowSet.EMPTY, e);
         }
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      */
-    public ResponseData<DataSet> queryForDataSet(String selectSql, Object[] paramList, int startIndex, int resultNum) {
+    public ResponseData<PageRowSet> queryForRowSet(String selectSql, Object[] paramList, int startIndex, int resultNum) {
         try {
-            return responseData(daoFactory.queryForDataSet(selectSql, paramList, startIndex, resultNum));
+            return responseData(daoFactory.queryForRowSet(selectSql, paramList, startIndex, resultNum));
         } catch (TransactionException e) {
-            return responseError(DataSet.EMPTY, e);
+            return responseError(PageRowSet.EMPTY, e);
         }
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public ResponseData<DataSet> queryForDataSet(String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
+    public ResponseData<PageRowSet> queryForRowSet(String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
         try {
-            return responseData(daoFactory.queryForDataSet(selectSql, paramList, startIndex, resultNum, autoCount));
+            return responseData(daoFactory.queryForRowSet(selectSql, paramList, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
-            return responseError(DataSet.EMPTY, e);
+            return responseError(PageRowSet.EMPTY, e);
         }
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      */
-    public ResponseData<DataSet> queryForDataSet(String selectSql, int startIndex, int resultNum, boolean autoCount) {
+    public ResponseData<PageRowSet> queryForRowSet(String selectSql, int startIndex, int resultNum, boolean autoCount) {
         try {
-            return responseData(daoFactory.queryForDataSet(selectSql, startIndex, resultNum, autoCount));
+            return responseData(daoFactory.queryForRowSet(selectSql, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
-            return responseError(DataSet.EMPTY, e);
+            return responseError(PageRowSet.EMPTY, e);
         }
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
@@ -1420,42 +1490,42 @@ public class DaoManager {
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      */
-    public ResponseData<DataSet> queryForDataSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
+    public ResponseData<PageRowSet> queryForRowSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
         try {
-            return responseData(daoFactory.queryForDataSet(connName, selectSql, paramList, startIndex, resultNum, autoCount));
+            return responseData(daoFactory.queryForRowSet(connName, selectSql, paramList, startIndex, resultNum, autoCount));
         } catch (TransactionException e) {
-            return responseError(DataSet.EMPTY, e);
+            return responseError(PageRowSet.EMPTY, e);
         }
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param queryParam 查询参数
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      */
-    public ResponseData<DataSet> queryForDataSet(String connName, QueryParam queryParam) {
+    public ResponseData<PageRowSet> queryForRowSet(String connName, QueryParam queryParam) {
         try {
-            return responseData(daoFactory.queryForDataSet(connName, queryParam));
+            return responseData(daoFactory.queryForRowSet(connName, queryParam));
         } catch (TransactionException e) {
-            return responseError(DataSet.EMPTY, e);
+            return responseError(PageRowSet.EMPTY, e);
         }
     }
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param queryParam 查询参数
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      */
-    public ResponseData<DataSet> queryForDataSet(QueryParam queryParam) {
+    public ResponseData<PageRowSet> queryForRowSet(QueryParam queryParam) {
         try {
-            return responseData(daoFactory.queryForDataSet(queryParam));
+            return responseData(daoFactory.queryForRowSet(queryParam));
         } catch (TransactionException e) {
-            return responseError(DataSet.EMPTY, e);
+            return responseError(PageRowSet.EMPTY, e);
         }
     }
 
@@ -1467,9 +1537,9 @@ public class DaoManager {
      * @param sql 查询的SQL
      * @return 影响的行数
      */
-    public ResponseData<Integer> executeCommand(String sql) {
+    public ResponseData<Integer> execute(String sql) {
         try {
-            int effectedNum = daoFactory.executeCommand(sql);
+            int effectedNum = daoFactory.execute(sql);
             if (effectedNum < 1) {
                 return ResponseData.warn(effectedNum, DaoResponseCode.DATA_NOT_FOUND_WARN);
             } else {
@@ -1487,9 +1557,9 @@ public class DaoManager {
      * @param sql      查询的SQL
      * @return 影响的行数
      */
-    public ResponseData<Integer> executeCommand(String connName, String sql) {
+    public ResponseData<Integer> execute(String connName, String sql) {
         try {
-            int effectedNum = daoFactory.executeCommand(connName, sql);
+            int effectedNum = daoFactory.execute(connName, sql);
             if (effectedNum < 1) {
                 return ResponseData.warn(effectedNum, DaoResponseCode.DATA_NOT_FOUND_WARN);
             } else {
@@ -1507,9 +1577,9 @@ public class DaoManager {
      * @param paramList 查询SQL的参数
      * @return 影响的行数
      */
-    public ResponseData<Integer> executeCommand(String sql, Object[] paramList) {
+    public ResponseData<Integer> execute(String sql, Object[] paramList) {
         try {
-            int effectedNum = daoFactory.executeCommand(sql, paramList);
+            int effectedNum = daoFactory.execute(sql, paramList);
             if (effectedNum < 1) {
                 return ResponseData.warn(effectedNum, DaoResponseCode.DATA_NOT_FOUND_WARN);
             } else {
@@ -1529,9 +1599,9 @@ public class DaoManager {
      * @param paramList 查询SQL的参数
      * @return 影响的行数
      */
-    public ResponseData<Integer> executeCommand(String connName, String sql, Object[] paramList) {
+    public ResponseData<Integer> execute(String connName, String sql, Object[] paramList) {
         try {
-            int effectedNum = daoFactory.executeCommand(connName, sql, paramList);
+            int effectedNum = daoFactory.execute(connName, sql, paramList);
             if (effectedNum < 1) {
                 return ResponseData.warn(effectedNum, DaoResponseCode.DATA_NOT_FOUND_WARN);
             } else {

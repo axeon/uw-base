@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 import uw.common.util.JsonUtils;
 import uw.common.util.SystemClock;
 import uw.dao.DataEntity;
-import uw.dao.DataList;
+import uw.common.data.PageList;
 import uw.dao.DataUpdateInfo;
 import uw.dao.TransactionException;
 import uw.dao.conf.DaoConfigManager;
@@ -25,7 +25,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -73,6 +72,9 @@ public class EntityCommandImpl {
         StringBuilder sb = new StringBuilder();
         // 写入所有的列
         Collection<FieldMetaInfo> fieldMetaInfos = emi.getFieldInfoMap().values();
+        if (fieldMetaInfos.isEmpty()) {
+            throw new TransactionException("No fields defined for " + tableName);
+        }
         //参数列表。
         Object[] paramList = new Object[fieldMetaInfos.size()];
         sb.append("insert into ").append(tableName).append(" (");
@@ -176,7 +178,6 @@ public class EntityCommandImpl {
         }
         sb.deleteCharAt(sb.length() - 1);
         sb.append(") values ");
-        sb.deleteCharAt(sb.length() - 1);
         for (T entity : entityList) {
             sb.append("(");
             sb.append("?,".repeat(fieldMetaInfos.size()));
@@ -268,11 +269,12 @@ public class EntityCommandImpl {
         }
         StringBuilder sb = new StringBuilder();
         List<FieldMetaInfo> pks = emi.getPkList();
-        sb.append("select * from ").append(tableName).append(" where ");
-        if (pks.size() > 0) {
-            FieldMetaInfo fmi = pks.getFirst();
-            sb.append(fmi.getColumnName()).append("=? ");
+        if (pks.isEmpty()) {
+            throw new TransactionException("No primary key defined for " + tableName);
         }
+        sb.append("select * from ").append(tableName).append(" where ");
+        FieldMetaInfo pksFirst = pks.getFirst();
+        sb.append(pksFirst.getColumnName()).append("=? ");
 
         T entity = null;
 
@@ -633,7 +635,7 @@ public class EntityCommandImpl {
      * @return 列表
      * @throws TransactionException 事务异常
      */
-    static <T> DataList<T> list(DaoFactoryImpl dao, String connName, Class<T> cls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+    static <T> PageList<T> list(DaoFactoryImpl dao, String connName, Class<T> cls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
         long startMillis = SystemClock.now();
         long connMillis = 0, dbMillis = 0, allMillis = 0;
         int connId = 0;
@@ -736,6 +738,6 @@ public class EntityCommandImpl {
                 allSize = SQLCommandImpl.selectForSingleValue(dao, connName, Integer.class, countSql, paramList);
             }
         }
-        return new DataList<>(list, startIndex, resultNum, allSize);
+        return new PageList<>(list, startIndex, resultNum, allSize);
     }
 }

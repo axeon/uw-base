@@ -6,21 +6,21 @@ package uw.task.exception;
  * @author axeon
  */
 public class TaskPartnerException extends RuntimeException {
-    
+
     public TaskPartnerException() {
         super();
     }
 
     public TaskPartnerException(String msg) {
-        super( msg );
+        super(msg);
     }
 
     public TaskPartnerException(Throwable nestedThrowable) {
-        super( nestedThrowable );
+        super(nestedThrowable);
     }
 
     public TaskPartnerException(String msg, Throwable nestedThrowable) {
-        super( msg, nestedThrowable );
+        super(msg, nestedThrowable);
     }
 
 }

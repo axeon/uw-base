@@ -8,13 +8,13 @@ import uw.dao.sequence.DaoSequenceFactory;
 public class UwDaoTestApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run( UwDaoTestApplication.class, args );
+        SpringApplication.run(UwDaoTestApplication.class, args);
         String seqName = "test5";
 //        long dbSeqId = DaoSequenceFactory.allocateSequenceRange( seqName, 1000 );
 //        System.out.println(dbSeqId);
-        System.out.println(DaoSequenceFactory.getSequenceId( seqName ));
-        for (int i=0;i<3005;i++) {
-            SequenceFactory.getSequenceId( seqName );
+        System.out.println(DaoSequenceFactory.getSequenceId(seqName));
+        for (int i = 0; i < 3005; i++) {
+            SequenceFactory.getSequenceId(seqName);
 //            System.out.println( SequenceFactory.getSequenceId( seqName ) );
 //            System.out.println(DaoSequenceFactory.getSequenceId( seqName ));
         }

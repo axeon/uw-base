@@ -6,7 +6,7 @@ import uw.log.es.service.LogService;
 import uw.log.es.vo.LogInterface;
 
 /**
- * 
+ *
  * @since 2018-07-27
  */
 public class LogClientWriteModeMain {

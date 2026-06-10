@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import uw.auth.service.AuthServiceHelper;
 import uw.auth.service.constant.UserType;
 import uw.auth.service.token.AuthTokenData;
-import uw.dao.QueryParam;
 import uw.dao.annotation.QueryMeta;
+import uw.common.dto.QueryParam;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -20,14 +20,14 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
      * ID。
      */
     @QueryMeta(expr = "id=?")
-    @Schema(title="ID", description = "ID")
+    @Schema(title = "ID", description = "ID")
     private Serializable id;
 
     /**
      * 数组ID。
      */
     @QueryMeta(expr = "id in (?)")
-    @Schema(title="ID数组", description = "ID数组，可同时匹配多个。")
+    @Schema(title = "ID数组", description = "ID数组，可同时匹配多个。")
     private Serializable[] ids;
 
     /**
@@ -353,14 +353,14 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
     /**
      * 获取大于等于-1: 删除; 0: 冻结; 1: 启用。
      */
-    public Integer getStateGte(){
+    public Integer getStateGte() {
         return this.stateGte;
     }
 
     /**
      * 设置大于等于-1: 删除; 0: 冻结; 1: 启用。
      */
-    public void setStateGte(Integer stateGte){
+    public void setStateGte(Integer stateGte) {
         this.stateGte = stateGte;
     }
 
@@ -375,14 +375,14 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
     /**
      * 获取小于等于-1: 删除; 0: 冻结; 1: 启用。
      */
-    public Integer getStateLte(){
+    public Integer getStateLte() {
         return this.stateLte;
     }
 
     /**
      * 获取小于等于-1: 删除; 0: 冻结; 1: 启用。
      */
-    public void setStateLte(Integer stateLte){
+    public void setStateLte(Integer stateLte) {
         this.stateLte = stateLte;
     }
 

@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.web.util.HtmlUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -15,7 +16,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 import uw.auth.service.AuthServiceHelper;
 import uw.auth.service.annotation.ResponseAdviceIgnore;
 import uw.auth.service.vo.MscActionLog;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.JsonUtils;
 
 import java.util.LinkedHashMap;
@@ -95,7 +96,7 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
                 }
                 response.setStatusCode(HttpStatusCode.valueOf(statusCode));
                 String code = "http.status." + statusCode;
-                String msg = "RequestPath: [" + String.valueOf(data.get("path")) + "], Msg: " + String.valueOf(data.get("message"));
+                String msg = "RequestPath: [" + HtmlUtils.htmlEscape(String.valueOf(data.get("path"))) + "], Msg: " + HtmlUtils.htmlEscape(String.valueOf(data.get("message")));
                 return logResponseData(returnType, ResponseData.errorCode(code, msg));
             }
         }

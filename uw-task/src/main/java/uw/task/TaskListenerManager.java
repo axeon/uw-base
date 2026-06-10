@@ -3,7 +3,8 @@ package uw.task;
 import uw.task.listener.CronerTaskListener;
 import uw.task.listener.RunnerTaskListener;
 
-import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * 任务监听管理器。
@@ -15,12 +16,12 @@ public class TaskListenerManager {
     /**
      * runner监听器列表。
      */
-    private final ArrayList<RunnerTaskListener> runnerListenerList = new ArrayList<>();
+    private final List<RunnerTaskListener> runnerListenerList = new CopyOnWriteArrayList<>();
 
     /**
      * croner监听器列表。
      */
-    private final ArrayList<CronerTaskListener> cronerListenerList = new ArrayList<>();
+    private final List<CronerTaskListener> cronerListenerList = new CopyOnWriteArrayList<>();
 
     /**
      * 加入一个RunnerListener。
@@ -59,7 +60,7 @@ public class TaskListenerManager {
      *
      * @return
      */
-    public ArrayList<RunnerTaskListener> getRunnerListenerList() {
+    public List<RunnerTaskListener> getRunnerListenerList() {
         return runnerListenerList;
     }
 
@@ -68,7 +69,7 @@ public class TaskListenerManager {
      *
      * @return
      */
-    public ArrayList<CronerTaskListener> getCronerListenerList() {
+    public List<CronerTaskListener> getCronerListenerList() {
         return cronerListenerList;
     }
 

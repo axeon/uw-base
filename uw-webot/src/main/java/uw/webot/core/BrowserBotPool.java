@@ -311,7 +311,7 @@ public class BrowserBotPool {
          * @return 使用率（0.0 - 1.0）
          */
         public double utilRate() {
-            return (double) activeTabs / maxTabs;
+            return maxTabs == 0 ? 0.0 : (double) activeTabs / maxTabs;
         }
 
     }

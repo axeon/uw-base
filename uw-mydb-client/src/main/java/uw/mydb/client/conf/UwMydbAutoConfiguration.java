@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import uw.mydb.client.MydbClientHelper;
 
 /**
@@ -19,7 +19,7 @@ public class UwMydbAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public MydbClientHelper mydbClientHelper(UwMydbClientProperties uwNotifyProperties, RestTemplate authRestTemplate) {
-        return new MydbClientHelper( uwNotifyProperties, authRestTemplate );
+    public MydbClientHelper mydbClientHelper(UwMydbClientProperties uwMydbClientProperties, RestClient authRestClient) {
+        return new MydbClientHelper(uwMydbClientProperties, authRestClient);
     }
 }

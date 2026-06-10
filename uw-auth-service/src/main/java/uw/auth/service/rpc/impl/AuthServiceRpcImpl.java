@@ -1,10 +1,10 @@
 package uw.auth.service.rpc.impl;
 
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.http.MediaType;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClient;
 import uw.auth.client.vo.TokenResponse;
 import uw.auth.service.conf.AuthServiceProperties;
 import uw.auth.service.rpc.AuthServiceRpc;
@@ -12,9 +12,8 @@ import uw.auth.service.token.AuthTokenData;
 import uw.auth.service.vo.MscUserGroupVo;
 import uw.auth.service.vo.MscUserRegister;
 import uw.auth.service.vo.MscUserVo;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
-import java.net.URI;
 import java.util.List;
 
 /**
@@ -24,282 +23,402 @@ import java.util.List;
  */
 public class AuthServiceRpcImpl implements AuthServiceRpc {
 
-    /**
-     * 属性配置器
-     */
     private final AuthServiceProperties authServiceProperties;
+    private final RestClient authRestClient;
 
-    /**
-     * RPC Client
-     */
-    private final RestTemplate authRestTemplate;
-
-    /**
-     * @param authServiceProperties
-     * @param authRestTemplate
-     */
-    public AuthServiceRpcImpl(final AuthServiceProperties authServiceProperties, final RestTemplate authRestTemplate) {
+    public AuthServiceRpcImpl(final AuthServiceProperties authServiceProperties, final RestClient authRestClient) {
         this.authServiceProperties = authServiceProperties;
-        this.authRestTemplate = authRestTemplate;
+        this.authRestClient = authRestClient;
     }
 
     /**
-     * 验证收到的token。
+     * 验证token有效性。
      *
-     * @param token
-     * @return
+     * @param token 认证token
+     * @return token数据
      */
     @Override
     public ResponseData<AuthTokenData> verifyToken(String token) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/verifyToken").queryParam("token", token).build().encode().toUri();
-        ResponseData<AuthTokenData> responseData = authRestTemplate.exchange(targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<AuthTokenData>>() {
-        }).getBody();
-        return responseData;
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("token", token);
+        return authRestClient.post()
+                .uri(baseUrl + "/rpc/service/verifyToken")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(formData)
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<AuthTokenData>>() {});
     }
 
     /**
-     * 生成guest的id。
+     * 生成用户ID。
      *
-     * @return
+     * @return 新用户ID
      */
     @Override
     public ResponseData<Long> genUserId() {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/genUserId").build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<Long>>() {
-        }).getBody();
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        return authRestClient.get()
+                .uri(baseUrl + "/rpc/service/genUserId")
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<Long>>() {});
     }
 
     /**
-     * 生成guest的token。
+     * 生成访客token。
      *
-     * @return
+     * @param loginAgent 登录代理
+     * @param clientAgent 客户端代理
+     * @param loginType 登录类型
+     * @param loginId 登录ID
+     * @param saasId SaaS ID
+     * @param mchId 商户ID
+     * @param userId 用户ID
+     * @param userName 用户名
+     * @param nickName 昵称
+     * @param realName 真实姓名
+     * @param mobile 手机号
+     * @param email 邮箱
+     * @param userIp 用户IP
+     * @param remark 备注
+     * @param checkDoubleLogin 是否检查重复登录
+     * @return token响应
      */
     @Override
     public TokenResponse genGuestToken(String loginAgent, String clientAgent, int loginType, String loginId, long saasId, long mchId, long userId, String userName, String nickName, String realName, String mobile, String email, String userIp, String remark, boolean checkDoubleLogin) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/genGuestToken").queryParam("loginAgent", loginAgent).queryParam("clientAgent", clientAgent).queryParam("loginType", loginType).queryParam("loginId", loginId).queryParam("saasId", saasId).queryParam("mchId", mchId).queryParam("userId", userId).queryParam("userName", userName).queryParam("nickName", nickName).queryParam("realName", realName).queryParam("mobile", mobile).queryParam("email", email).queryParam("userIp", userIp).queryParam("remark", remark).queryParam("checkDoubleLogin", checkDoubleLogin).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.POST, HttpEntity.EMPTY, TokenResponse.class).getBody();
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("loginAgent", loginAgent);
+        formData.add("clientAgent", clientAgent);
+        formData.add("loginType", String.valueOf(loginType));
+        formData.add("loginId", loginId);
+        formData.add("saasId", String.valueOf(saasId));
+        formData.add("mchId", String.valueOf(mchId));
+        formData.add("userId", String.valueOf(userId));
+        formData.add("userName", userName);
+        formData.add("nickName", nickName);
+        formData.add("realName", realName);
+        formData.add("mobile", mobile);
+        formData.add("email", email);
+        formData.add("userIp", userIp);
+        formData.add("remark", remark);
+        formData.add("checkDoubleLogin", String.valueOf(checkDoubleLogin));
+        return authRestClient.post()
+                .uri(baseUrl + "/rpc/service/genGuestToken")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(formData)
+                .retrieve()
+                .body(TokenResponse.class);
     }
 
-
     /**
-     * 通知guest登录失败。
+     * 通知访客登录失败。
      *
-     * @param loginAgent
-     * @param saasId
-     * @param mchId
-     * @param userId
-     * @param userName
-     * @param nickName
-     * @param realName
-     * @param userIp     登录用户Ip。
-     * @param remark
-     * @return
-     * @throws Exception
+     * @param loginAgent 登录代理
+     * @param clientAgent 客户端代理
+     * @param loginType 登录类型
+     * @param loginId 登录ID
+     * @param saasId SaaS ID
+     * @param mchId 商户ID
+     * @param userId 用户ID
+     * @param userName 用户名
+     * @param nickName 昵称
+     * @param realName 真实姓名
+     * @param mobile 手机号
+     * @param email 邮箱
+     * @param userIp 用户IP
+     * @param remark 备注
+     * @return 处理结果
      */
     @Override
     public ResponseData notifyGuestLoginFail(String loginAgent, String clientAgent, int loginType, String loginId, long saasId, long mchId, long userId, String userName, String nickName, String realName, String mobile, String email, String userIp, String remark) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/notifyGuestLoginFail").queryParam("loginAgent", loginAgent).queryParam("clientAgent", clientAgent).queryParam("loginType", loginType).queryParam("loginId", loginId).queryParam("saasId", saasId).queryParam("mchId", mchId).queryParam("userId", userId).queryParam("userName", userName).queryParam("nickName", nickName).queryParam("realName", realName).queryParam("mobile", mobile).queryParam("email", email).queryParam("userIp", userIp).queryParam("remark", remark).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.POST, HttpEntity.EMPTY, ResponseData.class).getBody();
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("loginAgent", loginAgent);
+        formData.add("clientAgent", clientAgent);
+        formData.add("loginType", String.valueOf(loginType));
+        formData.add("loginId", loginId);
+        formData.add("saasId", String.valueOf(saasId));
+        formData.add("mchId", String.valueOf(mchId));
+        formData.add("userId", String.valueOf(userId));
+        formData.add("userName", userName);
+        formData.add("nickName", nickName);
+        formData.add("realName", realName);
+        formData.add("mobile", mobile);
+        formData.add("email", email);
+        formData.add("userIp", userIp);
+        formData.add("remark", remark);
+        return authRestClient.post()
+                .uri(baseUrl + "/rpc/service/notifyGuestLoginFail")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(formData)
+                .retrieve()
+                .body(ResponseData.class);
     }
 
     /**
-     * 踢出Guest用户。
+     * 踢出访客。
      *
-     * @param loginAgent
-     * @param saasId
-     * @param userId
-     * @param remark
+     * @param loginAgent 登录代理
+     * @param saasId SaaS ID
+     * @param userId 用户ID
+     * @param remark 备注
+     * @return 处理结果
      */
     @Override
     public ResponseData kickoutGuest(String loginAgent, long saasId, long userId, String remark) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/kickoutGuest").queryParam("loginAgent", loginAgent).queryParam("saasId", saasId).queryParam("userId", userId).queryParam("remark", remark).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.POST, HttpEntity.EMPTY, ResponseData.class).getBody();
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        return authRestClient.post()
+                .uri(baseUrl + "/rpc/service/kickoutGuest?loginAgent={loginAgent}&saasId={saasId}&userId={userId}&remark={remark}",
+                        loginAgent, saasId, userId, remark)
+                .retrieve()
+                .body(ResponseData.class);
     }
 
     /**
-     * 获取应用的权限ID列表
+     * 获取应用SaaS权限配置。
      *
-     * @param appNames
-     * @return
+     * @param appNames 应用名称数组
+     * @return 权限配置JSON
      */
     @Override
     public ResponseData<String> getAppSaasPerm(String[] appNames) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/getAppSaasPerm").queryParam("appNames", (Object[]) appNames).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<String>>() {
-        }).getBody();
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        return authRestClient.get()
+                .uri(baseUrl + "/rpc/service/getAppSaasPerm?appNames={appNames}", (Object) appNames)
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<String>>() {});
     }
 
     /**
-     * 初始化Saas权限。
-     * 这里不赋权
+     * 初始化SaaS权限。
      *
-     * @param saasId
-     * @param saasName saas名称。
-     * @return
+     * @param saasId SaaS ID
+     * @param saasName SaaS名称
+     * @param initAppNames 初始化应用名称数组
+     * @param adminPasswd 管理员密码
+     * @param adminMobile 管理员手机号
+     * @param adminEmail 管理员邮箱
+     * @return 初始化结果
      */
     @Override
     public ResponseData initSaasPerm(long saasId, String saasName, String[] initAppNames, String adminPasswd, String adminMobile, String adminEmail) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/initSaasPerm").queryParam("saasId", saasId).queryParam("saasName", saasName).queryParam("initAppNames", (Object[]) initAppNames).queryParam("adminPasswd", adminPasswd).queryParam("adminMobile", adminMobile).queryParam("adminEmail", adminEmail).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.POST, HttpEntity.EMPTY, ResponseData.class).getBody();
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("adminPasswd", adminPasswd);
+        formData.add("adminMobile", adminMobile);
+        formData.add("adminEmail", adminEmail);
+        return authRestClient.post()
+                .uri(baseUrl + "/rpc/service/initSaasPerm?saasId={saasId}&saasName={saasName}&initAppNames={initAppNames}", saasId, saasName, initAppNames)
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(formData)
+                .retrieve()
+                .body(ResponseData.class);
     }
 
     /**
-     * 更新saas名称。
+     * 更新SaaS名称。
      *
-     * @param saasId
-     * @param saasName
+     * @param saasId SaaS ID
+     * @param saasName SaaS名称
+     * @return 更新结果
      */
     @Override
     public ResponseData updateSaasName(long saasId, String saasName) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/updateSaasName").queryParam("saasId", saasId).queryParam("saasName", saasName).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class).getBody();
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        return authRestClient.put()
+                .uri(baseUrl + "/rpc/service/updateSaasName?saasId={saasId}&saasName={saasName}", saasId, saasName)
+                .retrieve()
+                .body(ResponseData.class);
     }
 
     /**
-     * 根据saasHost获取saasId。
+     * 根据域名获取SaaS ID。
      *
-     * @param saasHost
-     * @return
+     * @param saasHost SaaS域名
+     * @return SaaS ID
      */
     @Override
     public ResponseData<Long> getSaasIdByHost(String saasHost) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/getSaasIdByHost").queryParam("saasHost", saasHost).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<Long>>() {
-        }).getBody();
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        return authRestClient.get()
+                .uri(baseUrl + "/rpc/service/getSaasIdByHost?saasHost={saasHost}", saasHost)
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<Long>>() {});
     }
 
     /**
-     * 授予Saas权限。
+     * 授予SaaS权限。
      *
-     * @return
+     * @param saasId SaaS ID
+     * @param permIds 权限ID列表
+     * @param remark 备注
+     * @return 授权结果
      */
     @Override
     public ResponseData grantSaasPerm(long saasId, String permIds, String remark) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/grantSaasPerm").queryParam("saasId", saasId).queryParam("permIds", permIds).queryParam("remark", remark).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class).getBody();
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        return authRestClient.put()
+                .uri(baseUrl + "/rpc/service/grantSaasPerm?saasId={saasId}&permIds={permIds}&remark={remark}", saasId, permIds, remark)
+                .retrieve()
+                .body(ResponseData.class);
     }
 
     /**
-     * 撤销Saas权限。
+     * 撤销SaaS权限。
      *
-     * @return
+     * @param saasId SaaS ID
+     * @param permIds 权限ID列表
+     * @param remark 备注
+     * @return 撤销结果
      */
     @Override
     public ResponseData revokeSaasPerm(long saasId, String permIds, String remark) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/revokeSaasPerm").queryParam("saasId", saasId).queryParam("permIds", permIds).queryParam("remark", remark).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class).getBody();
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        return authRestClient.put()
+                .uri(baseUrl + "/rpc/service/revokeSaasPerm?saasId={saasId}&permIds={permIds}&remark={remark}", saasId, permIds, remark)
+                .retrieve()
+                .body(ResponseData.class);
     }
 
     /**
-     * 启用指定SAAS权限。
+     * 启用SaaS权限。
      *
-     * @param saasId saas编号
-     * @param remark
-     * @return
+     * @param saasId SaaS ID
+     * @param remark 备注
+     * @return 启用结果
      */
     @Override
     public ResponseData enableSaasPerm(long saasId, String remark) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/enableSaasPerm").queryParam("saasId", saasId).queryParam("remark", remark).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class).getBody();
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        return authRestClient.put()
+                .uri(baseUrl + "/rpc/service/enableSaasPerm?saasId={saasId}&remark={remark}", saasId, remark)
+                .retrieve()
+                .body(ResponseData.class);
     }
 
     /**
-     * 停用指定SAAS权限。
+     * 禁用SaaS权限。
      *
-     * @param saasId saas编号
-     * @param remark
-     * @return
+     * @param saasId SaaS ID
+     * @param remark 备注
+     * @return 禁用结果
      */
     @Override
     public ResponseData disableSaasPerm(long saasId, String remark) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/disableSaasPerm").queryParam("saasId", saasId).queryParam("remark", remark).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class).getBody();
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        return authRestClient.put()
+                .uri(baseUrl + "/rpc/service/disableSaasPerm?saasId={saasId}&remark={remark}", saasId, remark)
+                .retrieve()
+                .body(ResponseData.class);
     }
 
     /**
-     * 修改SAAS用户数限制。
+     * 更新SaaS用户数量限制。
      *
-     * @param saasId
-     * @param userLimit
-     * @param remark
-     * @return
+     * @param saasId SaaS ID
+     * @param userLimit 用户数量限制
+     * @param remark 备注
+     * @return 更新结果
      */
     @Override
     public ResponseData updateSaasUserLimit(long saasId, int userLimit, String remark) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/updateSaasUserLimit").queryParam("saasId", saasId).queryParam("remark", remark).queryParam("userLimit", userLimit).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.PUT, HttpEntity.EMPTY, ResponseData.class).getBody();
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        return authRestClient.put()
+                .uri(baseUrl + "/rpc/service/updateSaasUserLimit?saasId={saasId}&remark={remark}&userLimit={userLimit}", saasId, remark, userLimit)
+                .retrieve()
+                .body(ResponseData.class);
     }
 
     /**
-     * 获取Saas用户数限制。
+     * 获取SaaS用户数量限制。
      *
-     * @param saasId
+     * @param saasId SaaS ID
+     * @return 用户数量限制
      */
     @Override
     public ResponseData<Integer> getSaasUserLimit(long saasId) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/getSaasUserLimit").queryParam("saasId", saasId).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<Integer>>() {
-        }).getBody();
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        return authRestClient.get()
+                .uri(baseUrl + "/rpc/service/getSaasUserLimit?saasId={saasId}", saasId)
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<Integer>>() {});
     }
 
     /**
-     * 创建SaasUser。
+     * 创建用户。
      *
-     * @param mscUserRegister
-     * @return
+     * @param mscUserRegister 用户注册信息
+     * @return 创建结果
      */
     @Override
     public ResponseData createUser(MscUserRegister mscUserRegister) {
-        return authRestTemplate.postForObject(authServiceProperties.getAuthCenterHost() + "/rpc/service/createUser", mscUserRegister, ResponseData.class);
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        return authRestClient.post()
+                .uri(baseUrl + "/rpc/service/createUser")
+                .body(mscUserRegister)
+                .retrieve()
+                .body(ResponseData.class);
     }
 
     /**
-     * 获取用户信息
+     * 加载用户信息。
      *
-     * @param userId
-     * @return
+     * @param userId 用户ID
+     * @return 用户信息
      */
     @Override
     public ResponseData<MscUserVo> loadUser(long userId) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/loadUser").queryParam("userId", userId).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<MscUserVo>>() {
-        }).getBody();
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        return authRestClient.get()
+                .uri(baseUrl + "/rpc/service/loadUser?userId={userId}", userId)
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<MscUserVo>>() {});
     }
 
     /**
-     * 获取saas用户列表。
+     * 查询用户列表。
      *
-     * @param saasId
-     * @param mchId
-     * @param groupId
-     * @param userId
-     * @param userName
-     * @param nickName
-     * @param realName
-     * @param mobile
-     * @param email
+     * @param saasId SaaS ID
+     * @param userType 用户类型
+     * @param mchId 商户ID
+     * @param groupId 分组ID
+     * @param userId 用户ID
+     * @param userName 用户名
+     * @param nickName 昵称
+     * @param realName 真实姓名
+     * @param mobile 手机号
+     * @param email 邮箱
+     * @return 用户列表
      */
     @Override
     public ResponseData<List<MscUserVo>> listUser(long saasId, int userType, long mchId, long groupId, long userId, String userName, String nickName, String realName, String mobile, String email) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/listUser").queryParam("saasId", saasId).queryParam("userType", userType).queryParam("mchId", mchId).queryParam("groupId", groupId).queryParam("userId", userId).queryParam("userName", userName).queryParam("nickName", nickName).queryParam("realName", realName).queryParam("mobile", mobile).queryParam("email", email).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<List<MscUserVo>>>() {
-        }).getBody();
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        return authRestClient.get()
+                .uri(baseUrl + "/rpc/service/listUser?saasId={saasId}&userType={userType}&mchId={mchId}&groupId={groupId}&userId={userId}&userName={userName}&nickName={nickName}&realName={realName}&mobile={mobile}&email={email}",
+                        saasId, userType, mchId, groupId, userId, userName, nickName, realName, mobile, email)
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<List<MscUserVo>>>() {});
     }
 
     /**
-     * 获取saas用户组列表。
+     * 查询用户分组列表。
      *
-     * @param saasId
-     * @param mchId
-     * @param groupId
-     * @param groupName
+     * @param saasId SaaS ID
+     * @param userType 用户类型
+     * @param mchId 商户ID
+     * @param groupId 分组ID
+     * @param groupName 分组名称
+     * @return 用户分组列表
      */
     @Override
     public ResponseData<List<MscUserGroupVo>> listUserGroup(long saasId, int userType, long mchId, long groupId, String groupName) {
-        URI targetUrl = UriComponentsBuilder.fromUriString(authServiceProperties.getAuthCenterHost()).path("/rpc/service/listUserGroup").queryParam("saasId", saasId).queryParam("userType", userType).queryParam("mchId", mchId).queryParam("groupId", groupId).queryParam("groupName", groupName).build().encode().toUri();
-        return authRestTemplate.exchange(targetUrl, HttpMethod.GET, HttpEntity.EMPTY, new ParameterizedTypeReference<ResponseData<List<MscUserGroupVo>>>() {
-        }).getBody();
+        String baseUrl = authServiceProperties.getAuthCenterHost();
+        return authRestClient.get()
+                .uri(baseUrl + "/rpc/service/listUserGroup?saasId={saasId}&userType={userType}&mchId={mchId}&groupId={groupId}&groupName={groupName}",
+                        saasId, userType, mchId, groupId, groupName)
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<List<MscUserGroupVo>>>() {});
     }
-
 
 }

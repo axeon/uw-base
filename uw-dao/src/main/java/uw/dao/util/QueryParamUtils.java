@@ -2,7 +2,7 @@ package uw.dao.util;
 
 
 import org.apache.commons.lang3.StringUtils;
-import uw.dao.QueryParam;
+import uw.common.dto.QueryParam;
 import uw.dao.annotation.QueryMeta;
 import uw.dao.vo.QueryMetaInfo;
 import uw.dao.vo.QueryParamResult;

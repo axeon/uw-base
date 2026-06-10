@@ -4,8 +4,8 @@ import uw.webot.core.BrowserConfig;
 import uw.webot.proxy.ProxyConfig;
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Webot会话对象。
@@ -39,7 +39,7 @@ public class WebotSession implements Serializable {
     /**
      * 属性存储。
      */
-    private Map<String, Object> extParam = new HashMap<>();
+    private Map<String, Object> extParam = new ConcurrentHashMap<>();
 
     /**
      * 浏览器配置。

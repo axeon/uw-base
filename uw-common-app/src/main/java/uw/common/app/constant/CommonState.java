@@ -10,9 +10,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(title = "全局公共状态", description = "全局公共状态")
 public enum CommonState {
 
-    DELETED( -1, "标记删除" ),
-    DISABLED( 0, "禁用状态" ),
-    ENABLED( 1, "启用状态" );
+    DELETED(-1, "标记删除"),
+    DISABLED(0, "禁用状态"),
+    ENABLED(1, "启用状态");
 
     /**
      * 状态值

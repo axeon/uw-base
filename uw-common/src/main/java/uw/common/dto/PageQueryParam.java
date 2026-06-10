@@ -1,4 +1,4 @@
-package uw.dao;
+package uw.common.dto;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -79,9 +79,9 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
     }
 
 
-
     /**
      * 当前页码。
+     *
      * @return
      */
     public int PAGE() {
@@ -93,6 +93,7 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
 
     /**
      * 设置当前页码。
+     *
      * @param PAGE
      * @return
      */
@@ -107,14 +108,16 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
 
     /**
      * 设置当前页码。
+     *
      * @param page
      */
     public void set$pg(int page) {
-        PAGE( page );
+        PAGE(page);
     }
 
     /**
      * 每页条数。
+     *
      * @return
      */
     public int RESULT_NUM() {
@@ -128,6 +131,7 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
 
     /**
      * 设置每页条数。
+     *
      * @param RESULT_NUM
      * @return
      */
@@ -143,14 +147,16 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
 
     /**
      * 设置每页条数。
+     *
      * @param resultNum
      */
     public void set$rn(int resultNum) {
-        RESULT_NUM( resultNum );
+        RESULT_NUM(resultNum);
     }
 
     /**
      * 起始位置，此数值和分页数2选一。
+     *
      * @return
      */
     public int START_INDEX() {
@@ -166,6 +172,7 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
 
     /**
      * 设置起始位置，此数值和分页数2选一。
+     *
      * @param START_INDEX
      * @return
      */
@@ -183,14 +190,16 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
 
     /**
      * 设置起始位置，此数值和分页数2选一。
+     *
      * @param startIndex
      */
     public void set$si(int startIndex) {
-        START_INDEX( startIndex );
+        START_INDEX(startIndex);
     }
 
     /**
      * 请求类型。
+     *
      * @return
      */
     public int REQUEST_TYPE() {
@@ -199,6 +208,7 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
 
     /**
      * 设置请求类型。
+     *
      * @param REQUEST_TYPE
      * @return
      */
@@ -210,6 +220,7 @@ public class PageQueryParam extends QueryParam<PageQueryParam> {
 
     /**
      * 设置请求类型。
+     *
      * @param requestType
      */
     public void set$rt(int requestType) {

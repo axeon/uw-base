@@ -3,7 +3,7 @@ package uw.oauth2.client;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.oauth2.client.conf.OAuth2ClientProperties;
 import uw.oauth2.client.constant.OAuth2ClientAuthStatus;
 import uw.oauth2.client.constant.OAuth2ClientResponseCode;

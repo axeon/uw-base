@@ -68,7 +68,6 @@ uw:
 
 ### 3. 系统集成库表变动
 
-
 #### 3.1 现有用户表（范例），不需要额外改造。
 
 ```sql
@@ -125,6 +124,7 @@ CREATE TABLE `msc_oauth_info` (
 ### 4. Java新增实体类
 
 #### 4.1 MscOauthInfo类（忽略get/set）
+
 ```java
 
 /**
@@ -287,7 +287,9 @@ public class MscOauthInfo implements DataEntity,Serializable {
     private int state;
 }
 ```
+
 #### 4.2 OAuthTokenResponse 响应类（忽略get/set）
+
 ```java
 
 /**
@@ -471,6 +473,7 @@ public class MscOAuth2Controller {
 }
 
 ```
+
 #### 5.2 MscUserController 控制器类(用于登录后的账号绑定、解绑、登录的关键操作)
 
 ```java
@@ -587,7 +590,7 @@ public class MscAuthHelper {
      * @param providerCode
      */
     public static ResponseData<Integer> oauthUnbind(long saasId, long userId, String providerCode) {
-        return dao.executeCommand("update msc_oauth_info set status=0,unbind_date=? where saas_id=? and user_id=? and provider_code=?", new Object[]{SystemClock.nowDate(), saasId, userId, providerCode});
+        return dao.execute("update msc_oauth_info set status=0,unbind_date=? where saas_id=? and user_id=? and provider_code=?", new Object[]{SystemClock.nowDate(), saasId, userId, providerCode});
     }
 
     /**
@@ -837,27 +840,31 @@ OAuth2ClientHelper.registerProvider(new CustomOAuth2Provider("custom", config, r
 ### 7. 前端集成说明
 
 #### 7.1 页面鉴权流程
+
 1. 调用`/oauth2/buildAuthUrl`接口，传入`providerCode`参数，返回授权页面URL，引导用户点击授权。
 2. 用户执行授权，跳转到授权页面，完成授权操作。
-3. 在跳转页面获取授权码`code`,`state`参数，并调用`/oauth2/login`接口，传入`authCode`,`authStateId`参数进行登录，其它参数放入extParam中传入。
-3.1 如果登录成功，则返回登录成功信息，包含token信息，直接进行登录跳转。
-3.2 如果登录失败，则返回登录失败信息，提示用户重新授权。
-3.3 如果登录警告Code为`OAUTH_NOT_BIND_ERROR`，将OAuthUserInfo保存到LocalStorage中，引导客户登录后绑定。
-3.3.1 客户登录成功后，将LocalStorage中的OAuthUserInfo信息传入`/user/bindOAuth`接口进行绑定。
-3.3.2 如果返回值中的authType为"qrcode"，则直接返回给用户登录成功信息即可，不需要跳转。
+3. 在跳转页面获取授权码`code`,`state`参数，并调用`/oauth2/login`接口，传入`authCode`,`authStateId`
+   参数进行登录，其它参数放入extParam中传入。
+   3.1 如果登录成功，则返回登录成功信息，包含token信息，直接进行登录跳转。
+   3.2 如果登录失败，则返回登录失败信息，提示用户重新授权。
+   3.3 如果登录警告Code为`OAUTH_NOT_BIND_ERROR`，将OAuthUserInfo保存到LocalStorage中，引导客户登录后绑定。
+   3.3.1 客户登录成功后，将LocalStorage中的OAuthUserInfo信息传入`/user/bindOAuth`接口进行绑定。
+   3.3.2 如果返回值中的authType为"qrcode"，则直接返回给用户登录成功信息即可，不需要跳转。
 
 #### 7.2 页面扫码流程
+
 1. 调用`/oauth2/buildQrcode`接口，传入`providerCode`参数，渲染成二维码，引导用户扫码。
 2. 用户执行授权，跳转到授权页面，完成授权操作，此时应注意用户手机端走的是7.1流程。
 3. 前端程序间隔3S调用`/oauth2/checkState`接口，传入`authStateId`参数，监听扫码信息。
-3.1 如果返回SCANNED，说明用户扫码成功，可在UI界面提示进度信息。
-3.2 如果返回EXPIRED, 调用`/oauth2/buildQrcode`接口，重新生成二维码。
-3.3 如果返回FAILD信息，说明用户扫码失败，可在UI界面提示错误信息,并提示客户重新生成二维码。
-3.4 如果返回CONFIRMED，说明用户授权成功，调用`/oauth2/getToken`接口，获取token信息。
-3.4.1 如果登录警告Code为`OAUTH_NOT_BIND_ERROR`，将OAuthUserInfo保存到LocalStorage中，引导客户登录后绑定。
-3.4.2 如果登录成功，返回登录成功信息，包含token信息，直接进行登录跳转。
+   3.1 如果返回SCANNED，说明用户扫码成功，可在UI界面提示进度信息。
+   3.2 如果返回EXPIRED, 调用`/oauth2/buildQrcode`接口，重新生成二维码。
+   3.3 如果返回FAILD信息，说明用户扫码失败，可在UI界面提示错误信息,并提示客户重新生成二维码。
+   3.4 如果返回CONFIRMED，说明用户授权成功，调用`/oauth2/getToken`接口，获取token信息。
+   3.4.1 如果登录警告Code为`OAUTH_NOT_BIND_ERROR`，将OAuthUserInfo保存到LocalStorage中，引导客户登录后绑定。
+   3.4.2 如果登录成功，返回登录成功信息，包含token信息，直接进行登录跳转。
 
 #### 7.3 绑定管理
+
 1. 绑定列表：调用`/user/listOAuthInfo`接口，返回绑定信息列表，提供客户解绑操作按钮。
 2. 解绑操作：调用`/user/unbindOAuth`接口，传入`providerCode`参数，执行解绑操作。
 3. 新增绑定：用户点击页面授权后，引流用户鉴权成功后，调用`/user/bindOAuth`接口进行绑定。

@@ -18,13 +18,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.event.EventListener;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import uw.auth.service.AuthServiceHelper;
+import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.advice.GlobalExceptionAdvice;
 import uw.auth.service.advice.GlobalResponseAdvice;
 import uw.auth.service.filter.AuthServiceFilter;
@@ -60,6 +61,15 @@ public class AuthServiceAutoConfiguration {
      * 应用更新服务
      */
     private MscAppUpdateService appUpdateService;
+
+    /**
+     * AuthService配置
+     */
+    private final AuthServiceProperties authServiceProperties;
+
+    public AuthServiceAutoConfiguration(AuthServiceProperties authServiceProperties) {
+        this.authServiceProperties = authServiceProperties;
+    }
 
 
     /**
@@ -171,12 +181,12 @@ public class AuthServiceAutoConfiguration {
      * AuthAppRpc 接口
      *
      * @param authServiceProperties
-     * @param authRestTemplate
+     * @param authRestClient
      * @return
      */
     @Bean
-    public AuthAppRpc authAppRpc(final AuthServiceProperties authServiceProperties, @Qualifier("authRestTemplate") final RestTemplate authRestTemplate) {
-        return new AuthAppRpcImpl(authServiceProperties, authRestTemplate);
+    public AuthAppRpc authAppRpc(final AuthServiceProperties authServiceProperties, @Qualifier("authRestClient") final RestClient authRestClient) {
+        return new AuthAppRpcImpl(authServiceProperties, authRestClient);
     }
 
 
@@ -184,12 +194,12 @@ public class AuthServiceAutoConfiguration {
      * AuthServiceRpc 接口
      *
      * @param authServiceProperties
-     * @param authRestTemplate
+     * @param authRestClient
      * @return
      */
     @Bean
-    public AuthServiceRpc authServiceRpc(final AuthServiceProperties authServiceProperties, @Qualifier("authRestTemplate") final RestTemplate authRestTemplate) {
-        return new AuthServiceRpcImpl(authServiceProperties, authRestTemplate);
+    public AuthServiceRpc authServiceRpc(final AuthServiceProperties authServiceProperties, @Qualifier("authRestClient") final RestClient authRestClient) {
+        return new AuthServiceRpcImpl(authServiceProperties, authRestClient);
     }
 
     /**
@@ -207,7 +217,10 @@ public class AuthServiceAutoConfiguration {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
-        appUpdateService.init();
+        IpWebUtils.initTrustedProxies(authServiceProperties.getTrustedProxies());
+        if (appUpdateService != null) {
+            appUpdateService.init();
+        }
     }
 
 }

@@ -1,7 +1,7 @@
 package uw.auth.service.rpc;
 
 import uw.auth.service.vo.*;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
 /**
  * auth-server向auth-center 交互信息。

@@ -5,9 +5,9 @@ package uw.mfa.constant;
  */
 public enum HmacAlgorithm {
 
-    SHA1( "HmacSHA1", "SHA1" ),
-    SHA256( "HmacSHA256", "SHA256" ),
-    SHA512( "HmacSHA512", "SHA512" );
+    SHA1("HmacSHA1", "SHA1"),
+    SHA256("HmacSHA256", "SHA256"),
+    SHA512("HmacSHA512", "SHA512");
 
     private final String value;
     private final String label;

@@ -3,7 +3,7 @@ package uw.dao.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.dao.DaoFactory;
-import uw.dao.DataSet;
+import uw.common.data.PageRowSet;
 import uw.dao.SequenceFactory;
 import uw.dao.TransactionException;
 import uw.dao.conf.DaoConfig;
@@ -32,7 +32,7 @@ public class TableShardingTask implements Runnable {
     /**
      * 日志.
      */
-    private static final Logger log = LoggerFactory.getLogger( TableShardingTask.class );
+    private static final Logger log = LoggerFactory.getLogger(TableShardingTask.class);
     /**
      * dao配置文件。
      */
@@ -57,39 +57,39 @@ public class TableShardingTask implements Runnable {
             String baseTableName = kv.getKey();
             TableShardConfig tc = kv.getValue();
             if (tc.isAutoGen()) {
-                String createScript = getCreateScript( baseTableName );
+                String createScript = getCreateScript(baseTableName);
                 String currentTable = "", nextTable = "";
-                if ("date".equalsIgnoreCase( tc.getShardType() )) {
+                if ("date".equalsIgnoreCase(tc.getShardType())) {
                     // 计算当前表和下一个表
                     nextTable = switch (tc.getShardRule()) {
                         case "month" -> {
-                            currentTable = now.format( ShardingTableUtils.FORMATTER_MONTH );
-                            yield now.plusMonths( 1 ).format( ShardingTableUtils.FORMATTER_MONTH );
+                            currentTable = now.format(ShardingTableUtils.FORMATTER_MONTH);
+                            yield now.plusMonths(1).format(ShardingTableUtils.FORMATTER_MONTH);
                         }
                         case "year" -> {
-                            currentTable = now.format( ShardingTableUtils.FORMATTER_YEAR );
-                            yield now.plusYears( 1 ).format( ShardingTableUtils.FORMATTER_YEAR );
+                            currentTable = now.format(ShardingTableUtils.FORMATTER_YEAR);
+                            yield now.plusYears(1).format(ShardingTableUtils.FORMATTER_YEAR);
                         }
                         default -> {
-                            currentTable = now.format( ShardingTableUtils.FORMATTER_DAY );
-                            yield now.plusDays( 1 ).format( ShardingTableUtils.FORMATTER_DAY );
+                            currentTable = now.format(ShardingTableUtils.FORMATTER_DAY);
+                            yield now.plusDays(1).format(ShardingTableUtils.FORMATTER_DAY);
                         }
                     };
                     currentTable = baseTableName + "_" + currentTable;
                     nextTable = baseTableName + "_" + nextTable;
 
-                } else if ("id".equalsIgnoreCase( tc.getShardType() )) {
-                    long batchSize = Long.parseLong( tc.getShardRule() );
-                    long current = SequenceFactory.getCurrentId( DaoStringUtils.toUpperFirst( DaoStringUtils.toClearCase( baseTableName ) ) ) / batchSize;
+                } else if ("id".equalsIgnoreCase(tc.getShardType())) {
+                    long batchSize = Long.parseLong(tc.getShardRule());
+                    long current = SequenceFactory.getCurrentId(DaoStringUtils.toUpperFirst(DaoStringUtils.toClearCase(baseTableName))) / batchSize;
                     currentTable = baseTableName + "_" + current;
                     nextTable = baseTableName + "_" + (current + 1);
                 }
                 //开始创建表
-                if (!checkTableExist( currentTable )) {
-                    exeCreateTable( currentTable, createScript.replaceAll( baseTableName, currentTable ) );
+                if (!checkTableExist(currentTable)) {
+                    exeCreateTable(currentTable, createScript.replace(baseTableName, currentTable));
                 }
-                if (!checkTableExist( nextTable )) {
-                    exeCreateTable( nextTable, createScript.replaceAll( baseTableName, nextTable ) );
+                if (!checkTableExist(nextTable)) {
+                    exeCreateTable(nextTable, createScript.replace(baseTableName, nextTable));
                 }
             }
         }
@@ -102,12 +102,12 @@ public class TableShardingTask implements Runnable {
      * @return boolean
      */
     private boolean checkTableExist(String tableName) {
-        String connName = dao.getConnectionName( tableName, "all" );
-        List<String> tablist = tableListMap.get( connName );
+        String connName = dao.getConnectionName(tableName, "all");
+        List<String> tablist = tableListMap.get(connName);
         if (tablist == null) {
-            tablist = loadTableList( connName );
+            tablist = loadTableList(connName);
         }
-        return tablist.contains( tableName );
+        return tablist.contains(tableName);
     }
 
     /**
@@ -121,21 +121,21 @@ public class TableShardingTask implements Runnable {
         ResultSet rs = null;
         List<String> list = new ArrayList<String>();
         try {
-            conn = dao.getConnection( connName );
+            conn = dao.getConnection(connName);
             DatabaseMetaData metaData = conn.getMetaData();
-            rs = metaData.getTables( null, null, null, new String[]{"TABLE"} );
+            rs = metaData.getTables(null, null, null, new String[]{"TABLE"});
             while (rs.next()) {
-                list.add( rs.getString( "TABLE_NAME" ) );
+                list.add(rs.getString("TABLE_NAME"));
             }
             rs.close();
         } catch (SQLException e) {
-            log.error( e.getMessage(), e );
+            log.error(e.getMessage(), e);
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    log.error( e.getMessage(), e );
+                    log.error(e.getMessage(), e);
                 }
             }
         }
@@ -150,13 +150,17 @@ public class TableShardingTask implements Runnable {
      */
     private String getCreateScript(String tableName) {
         String script = null;
+        if (!isValidTableName(tableName)) {
+            log.warn("Skipping unexpected table name: [{}]", tableName);
+            return null;
+        }
         try {
-            DataSet ds = dao.queryForDataSet( dao.getConnectionName( tableName, "all" ), "show create table " + tableName );
+            PageRowSet ds = dao.queryForRowSet(dao.getConnectionName(tableName, "all"), "show create table " + tableName);
             if (ds.next()) {
-                script = ds.getString( 1 );
+                script = ds.getString(1);
             }
         } catch (TransactionException e) {
-            log.error( e.getMessage(), e );
+            log.error(e.getMessage(), e);
         }
         return script;
     }
@@ -171,11 +175,15 @@ public class TableShardingTask implements Runnable {
     private int exeCreateTable(String tableName, String createScript) {
         int effectedNum = 0;
         try {
-            effectedNum = dao.executeCommand( dao.getConnectionName( tableName, "all" ), createScript );
+            effectedNum = dao.execute(dao.getConnectionName(tableName, "all"), createScript);
         } catch (TransactionException e) {
-            log.error( e.getMessage(), e );
+            log.error(e.getMessage(), e);
         }
         return effectedNum;
+    }
+
+    private boolean isValidTableName(String tableName) {
+        return tableName != null && tableName.matches("[a-zA-Z_][a-zA-Z0-9_]*");
     }
 
 }

@@ -14,45 +14,45 @@ public enum UserType {
      * 任意用户类型
      * 未指定权限类型时候的默认值
      */
-    ANY( 0, "任意用户" ),
+    ANY(0, "任意用户"),
 
     /**
      * C站用户类型
      * 用于登录C站
      */
-    GUEST( 1, "C站用户" ),
+    GUEST(1, "C站用户"),
 
     /**
      * RPC用户类型
      */
-    RPC( 10, "RPC用户" ),
+    RPC(10, "RPC用户"),
 
     /**
      * 超级管理员。
      */
-    ROOT( 100, "超级管理员" ),
+    ROOT(100, "超级管理员"),
 
     /**
      * devops用户。
      * 用于登陆开发和运维管理工具。
      */
-    OPS( 110, "开发运维" ),
+    OPS(110, "开发运维"),
 
     /**
      * 平台管理员。
      * 用于登录业务管理后台。
      */
-    ADMIN( 200, "平台管理员" ),
+    ADMIN(200, "平台管理员"),
 
     /**
      * SAAS用户。
      */
-    SAAS( 300, "SAAS运营商" ),
+    SAAS(300, "SAAS运营商"),
 
     /**
      * SAAS商户。
      */
-    MCH( 310, "SAAS商户" );
+    MCH(310, "SAAS商户");
 
 
     /**
@@ -107,7 +107,7 @@ public enum UserType {
      * @return
      */
     public static String getLabel(int value) {
-        return findByValue( value ).label;
+        return findByValue(value).label;
     }
 
 

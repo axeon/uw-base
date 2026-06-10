@@ -5,7 +5,7 @@ import uw.task.TaskData;
 import uw.task.entity.TaskRunnerLog;
 
 /**
- * 
+ *
  * @since 2018-05-31
  */
 public class TaskLogSerSpec {

@@ -13,7 +13,7 @@ import uw.log.es.vo.LogInterfaceOrder;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 
+ *
  * @since 2018-07-27
  */
 public class LogClientWriteModeTest {

@@ -22,8 +22,8 @@ public class BenchmarkIPHashTest {
     }
 
     public static void main(String[] args) throws RunnerException {
-        Options opts = new OptionsBuilder().include( BenchmarkIPHashTest.class.getSimpleName() ).forks( 1 ).build();
-        new Runner( opts ).run();
+        Options opts = new OptionsBuilder().include(BenchmarkIPHashTest.class.getSimpleName()).forks(1).build();
+        new Runner(opts).run();
     }
 
     @Setup
@@ -38,12 +38,12 @@ public class BenchmarkIPHashTest {
 
     @Benchmark
     public void testIpSplit() {
-        ipToLongSplit( IP_ADDRESS );
+        ipToLongSplit(IP_ADDRESS);
     }
 
     @Benchmark
     public void testIpIndexOf() {
-        ipToLongIndexOf( IP_ADDRESS );
+        ipToLongIndexOf(IP_ADDRESS);
     }
 
     @TearDown
@@ -57,16 +57,16 @@ public class BenchmarkIPHashTest {
      * @return
      */
     private static long ipToLongSplit(String ipStr) {
-        String[] ips = ipStr.split( "\\." );
+        String[] ips = ipStr.split("\\.");
         long[] ip = new long[4];
         if (ips.length != 4) {
             return -1;
         }
         try {
-            ip[0] = Long.parseLong( ips[0] );
-            ip[1] = Long.parseLong( ips[1] );
-            ip[2] = Long.parseLong( ips[2] );
-            ip[3] = Long.parseLong( ips[3] );
+            ip[0] = Long.parseLong(ips[0]);
+            ip[1] = Long.parseLong(ips[1]);
+            ip[2] = Long.parseLong(ips[2]);
+            ip[3] = Long.parseLong(ips[3]);
         } catch (Exception e) {
             ip = new long[4];
         }
@@ -81,16 +81,16 @@ public class BenchmarkIPHashTest {
      * @return
      */
     private static long ipToLongIndexOf(String ipStr) {
-        int pos1 = ipStr.indexOf( "." );
-        int pos2 = ipStr.indexOf( ".", pos1 + 1 );
-        int pos3 = ipStr.indexOf( ".", pos2 + 1 );
+        int pos1 = ipStr.indexOf(".");
+        int pos2 = ipStr.indexOf(".", pos1 + 1);
+        int pos3 = ipStr.indexOf(".", pos2 + 1);
         if (pos1 == -1 || pos2 == -1 || pos3 == -1 || pos1 > 15 || pos2 > 15 || pos3 > 15) {
             return -1;
         }
-        long ip = Long.parseLong( ipStr.substring( 0, pos1 ) ) << 24;
-        ip += Long.parseLong( ipStr.substring( pos1 + 1, pos2 ) ) << 16;
-        ip += Long.parseLong( ipStr.substring( pos2 + 1, pos3 ) ) << 8;
-        ip += Long.parseLong( ipStr.substring( pos3 + 1 ) );
+        long ip = Long.parseLong(ipStr.substring(0, pos1)) << 24;
+        ip += Long.parseLong(ipStr.substring(pos1 + 1, pos2)) << 16;
+        ip += Long.parseLong(ipStr.substring(pos2 + 1, pos3)) << 8;
+        ip += Long.parseLong(ipStr.substring(pos3 + 1));
         return ip;
 
     }

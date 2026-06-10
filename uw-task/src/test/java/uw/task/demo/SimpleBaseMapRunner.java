@@ -8,7 +8,7 @@ import uw.task.entity.TaskRunnerConfig;
 import java.util.Map;
 
 /**
- * 
+ *
  * @since 2018-05-30
  */
 public abstract class SimpleBaseMapRunner extends TaskRunner<Map<String, String>, Map<String, String>> {

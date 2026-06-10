@@ -1,4 +1,4 @@
-package uw.dao;
+package uw.common.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -8,26 +8,24 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
 /**
- * 存储并转化ResultSet对象数据.
+ * 分页行集数据容器。存储行列结构的二维数据，支持游标遍历和按列名访问。
+ * 不依赖java.sql，由DAO层负责ResultSet到PageRowSet的转换。
  *
  * @author zhangjin
  */
-@Schema(title = "DataSet结果集", description = "DataSet结果集")
-public class DataSet implements Serializable {
+@Schema(title = "分页行集", description = "分页行集数据容器")
+public class PageRowSet implements Serializable {
 
     /**
-     * 空数据集.
+     * 空的PageRowSet.
      */
-    public static final DataSet EMPTY = new DataSet();
+    public static final PageRowSet EMPTY = new PageRowSet(new String[0], null, 0, 0, 0);
 
     /**
      * 当前索引位置.
@@ -39,14 +37,14 @@ public class DataSet implements Serializable {
      * 开始的索引.
      */
     @JsonProperty
-    @Schema(title = "请求的起始索引", description = "请求的起始索引")
+    @Schema(title = "起始索引", description = "请求的起始索引")
     private int startIndex = 0;
 
     /**
      * 返回的结果集大小.
      */
     @JsonProperty
-    @Schema(title = "请求的结果集大小", description = "请求的结果集大小")
+    @Schema(title = "每页大小", description = "请求的结果集大小")
     private int resultNum = 0;
 
     /**
@@ -60,7 +58,7 @@ public class DataSet implements Serializable {
      * 整个表数据量大小.
      */
     @JsonProperty
-    @Schema(title = "总数据大小", description = "总数据大小")
+    @Schema(title = "总数据量", description = "总数据量")
     private int sizeAll = 0;
 
     /**
@@ -82,102 +80,90 @@ public class DataSet implements Serializable {
      */
     @JsonProperty
     @Schema(title = "列名数组", description = "列名数组")
-    private String[] cols;
+    private String[] columns;
 
     /**
      * 数据存放数组.
      */
     @JsonProperty
     @Schema(title = "数据集", description = "数据集")
-    private List<Object[]> results;
+    private ArrayList<Object[]> list;
+
+    // ===== 构造函数（不再接受ResultSet，由DAO层负责转换） =====
 
     /**
      * 构造函数.
      */
-    public DataSet() {
-        results = Collections.emptyList();
+    public PageRowSet() {
     }
 
     /**
      * 构造器.
      *
-     * @param rs         结果集
+     * @param columns    列名数组
+     * @param list       数据列表
      * @param startIndex 开始位置
-     * @param resultNum  结果集大小
-     * @param sizeAll    整个表数据量大小
-     * @throws SQLException SQL异常
+     * @param resultNum  每页大小
+     * @param sizeAll    总数据量
      */
-    public DataSet(ResultSet rs, int startIndex, int resultNum, int sizeAll) throws SQLException {
-        // 设置参数
+    public PageRowSet(String[] columns, List<Object[]> list, int startIndex, int resultNum, int sizeAll) {
+        this.columns = columns;
+        this.list = toArrayList(list);
         this.startIndex = startIndex;
         this.resultNum = resultNum;
-        // 获取字段列表
-        ResultSetMetaData rsm = rs.getMetaData();
-        int colsCount = rsm.getColumnCount();
-        this.cols = new String[colsCount];
-        for (int i = 0; i < colsCount; i++) {
-            this.cols[i] = rsm.getColumnLabel(i + 1).toLowerCase();
-        }
-        // 开始赋值
-        if (resultNum > 0) {
-            this.results = new ArrayList<>(resultNum);
-        } else {
-            this.results = new ArrayList<>();
-        }
-        while (rs.next()) {
-            Object[] result = new Object[cols.length];
-            for (int x = 0; x < cols.length; x++) {
-                // 将对应列名的值放入二维数组中
-                result[x] = rs.getObject(x + 1);
-            }
-            this.results.add(result);
-        }
-        this.size = this.results.size();
-        // 计算页数信息
+        this.size = this.list.size();
         calcPages(sizeAll);
     }
 
+    // ===== 静态工厂 =====
+
     /**
-     * 获取一个空的DataSet.
+     * 获取空的PageRowSet.
      *
-     * @return
+     * @return 空的PageRowSet
      */
-    public static DataSet empty() {
+    public static PageRowSet empty() {
         return EMPTY;
     }
 
+    // ===== 列名访问 =====
+
     /**
-     * 获取列名列表.
+     * 获取列名数组.
      *
-     * @return 列名列表
+     * @return 列名数组
      */
     public String[] getColumnNames() {
-        return cols;
+        return columns;
     }
+
+    // ===== 分页计算 =====
 
     /**
      * 计算页面参数信息。
+     *
+     * @param sizeAll 总数据量
      */
     public void calcPages(int sizeAll) {
         this.sizeAll = sizeAll;
         if (this.sizeAll > 0 && this.resultNum > 0) {
-            // 计算当前页
             this.page = (int) Math.ceil((float) startIndex / (float) resultNum);
-            // 计算总页数
             this.pageCount = (int) Math.ceil((float) sizeAll / (float) resultNum);
         }
     }
 
+    // ===== 游标遍历 =====
+
     /**
      * 到下一条记录，检查是否还有下一行数据.
      *
-     * @return boolean
+     * @return 是否有下一行
      */
     public boolean next() {
-        if (results == null) {
+        if (list == null) {
             return false;
         }
-        boolean flag = results.size() > currentIndex + 1;
+        boolean flag = list.size() > currentIndex + 1;
         if (flag) {
             currentIndex++;
         }
@@ -187,7 +173,7 @@ public class DataSet implements Serializable {
     /**
      * 到上一条记录，检查是否还有上一行数据.
      *
-     * @return boolean
+     * @return 是否有上一行
      */
     public boolean previous() {
         boolean flag = currentIndex > -1;
@@ -201,20 +187,13 @@ public class DataSet implements Serializable {
      * remove当前行.
      */
     public void remove() {
-        if (results != null) {
-            this.results.remove(currentIndex);
-            this.size--;
-            this.sizeAll--;
+        if (list == null) {
+            return;
         }
-    }
-
-    /**
-     * 返回结果集数组.
-     *
-     * @return 结果集数组
-     */
-    public List<Object[]> results() {
-        return results;
+        this.list.remove(currentIndex);
+        this.size--;
+        this.sizeAll--;
+        currentIndex--;
     }
 
     /**
@@ -226,6 +205,8 @@ public class DataSet implements Serializable {
         this.currentIndex = index - 1;
     }
 
+    // ===== 大小信息 =====
+
     /**
      * 获取当前List大小.
      *
@@ -236,183 +217,154 @@ public class DataSet implements Serializable {
     }
 
     /**
-     * 获取该表/视图所有的数据大小.
+     * 获取总数据量.
      *
-     * @return 该表/视图所有的数据大小
-     * 事务异常
+     * @return 总数据量
      */
     public int sizeAll() {
         return this.sizeAll;
     }
 
     /**
-     * 按照总记录数和每页条数计算出页数.
+     * 获取总页数.
      *
-     * @return 页数
+     * @return 总页数
      */
     public int pageCount() {
         return this.pageCount;
     }
 
     /**
-     * 当前页.
+     * 获取当前页.
      *
-     * @return 页数
+     * @return 当前页
      */
     public int page() {
         return this.page;
     }
 
     /**
-     * 在整个数据集中的开始索引位置.
+     * 获取起始索引.
      *
-     * @return 开始位置
+     * @return 起始索引
      */
     public int startIndex() {
         return this.startIndex;
     }
 
     /**
-     * 返回结果集大小.
+     * 获取每页大小.
      *
-     * @return 结果集大小
+     * @return 每页大小
      */
     public int resultNum() {
         return this.resultNum;
     }
 
+    // ===== 空判断 =====
+
     /**
-     * 获取数组中指定位置的数据.
+     * 判断是否为空.
      *
-     * @param colName 列名
-     * @return 数组中指定位置的数据
+     * @return 是否为空
      */
-    public Object get(String colName) {
-        if (results == null) {
-            return null;
-        }
-        return results.get(currentIndex)[getColumnPos(colName)];
+    public boolean isEmpty() {
+        return this.size == 0;
     }
 
     /**
-     * 返回值为boolean.
+     * 判断是否非空.
+     *
+     * @return 是否非空
+     */
+    public boolean isNotEmpty() {
+        return this.size > 0;
+    }
+
+    // ===== 数据获取 =====
+
+    /**
+     * 返回数据列表.
+     *
+     * @return 数据列表
+     */
+    public List<Object[]> list() {
+        if (this.list == null) {
+            return Collections.emptyList();
+        }
+        return this.list;
+    }
+
+    // ===== 按列名获取数据 =====
+
+    /**
+     * 获取当前行指定列名的数据.
      *
      * @param colName 列名
-     * @return int
+     * @return 数据值
      */
+    public Object get(String colName) {
+        if (list == null || currentIndex < 0 || currentIndex >= list.size()) {
+            return null;
+        }
+        return list.get(currentIndex)[getColumnPos(colName)];
+    }
+
     public boolean getBoolean(String colName) {
         return getBoolean(getColumnPos(colName));
     }
 
-    /**
-     * 返回值为int.
-     *
-     * @param colName 列名
-     * @return int
-     */
     public int getInt(String colName) {
         return getInt(getColumnPos(colName));
     }
 
-    /**
-     * 返回值为long.
-     *
-     * @param colName 列名
-     * @return long
-     */
     public long getLong(String colName) {
         return getLong(getColumnPos(colName));
     }
 
-    /**
-     * 返回值为double.
-     *
-     * @param colName 列名
-     * @return double
-     */
     public double getDouble(String colName) {
         return getDouble(getColumnPos(colName));
     }
 
-    /**
-     * 返回值为float.
-     *
-     * @param colName 列名
-     * @return float
-     */
     public float getFloat(String colName) {
         return getFloat(getColumnPos(colName));
     }
 
-    /**
-     * 返回值为String.
-     *
-     * @param colName 列名
-     * @return String
-     */
     public String getString(String colName) {
         return getString(getColumnPos(colName));
     }
 
-    /**
-     * 返回值为BigInteger.
-     *
-     * @param colName 列名
-     * @return BigInteger
-     */
     public BigInteger getBigInteger(String colName) {
         return getBigInteger(getColumnPos(colName));
     }
 
-    /**
-     * 返回值为BigDecimal.
-     *
-     * @param colName 列名
-     * @return BigDecimal
-     */
     public BigDecimal getDecimal(String colName) {
         return getDecimal(getColumnPos(colName));
     }
 
-    /**
-     * 返回值为byte[].
-     *
-     * @param colName
-     * @return
-     */
     public byte[] getBytes(String colName) {
         return getBytes(getColumnPos(colName));
     }
 
-    /**
-     * 返回值为Date.
-     *
-     * @param colName 列名
-     * @return Date
-     */
     public java.util.Date getDate(String colName) {
         return getDate(getColumnPos(colName));
     }
 
-    /**
-     * 获取数组中指定位置的数据.
-     *
-     * @param colIndex 列位置
-     * @return 数组中指定位置的数据
-     */
-    public Object get(int colIndex) {
-        if (results == null) {
-            return null;
-        }
-        return results.get(currentIndex)[colIndex];
-    }
+    // ===== 按列索引获取数据 =====
 
     /**
-     * 返回值为boolean.
+     * 获取当前行指定列索引的数据.
      *
-     * @param colIndex 列位置
-     * @return int
+     * @param colIndex 列索引
+     * @return 数据值
      */
+    public Object get(int colIndex) {
+        if (list == null) {
+            return null;
+        }
+        return list.get(currentIndex)[colIndex];
+    }
+
     public boolean getBoolean(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -425,12 +377,6 @@ public class DataSet implements Serializable {
         }
     }
 
-    /**
-     * 返回值为int.
-     *
-     * @param colIndex 列位置
-     * @return int
-     */
     public int getInt(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -443,12 +389,6 @@ public class DataSet implements Serializable {
         }
     }
 
-    /**
-     * 返回值为long.
-     *
-     * @param colIndex 列位置
-     * @return long
-     */
     public long getLong(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -461,12 +401,6 @@ public class DataSet implements Serializable {
         }
     }
 
-    /**
-     * 返回值为double.
-     *
-     * @param colIndex 列位置
-     * @return double
-     */
     public double getDouble(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -481,12 +415,6 @@ public class DataSet implements Serializable {
         }
     }
 
-    /**
-     * 返回值为float.
-     *
-     * @param colIndex 列位置
-     * @return float
-     */
     public float getFloat(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -499,12 +427,6 @@ public class DataSet implements Serializable {
         }
     }
 
-    /**
-     * 返回值为String.
-     *
-     * @param colIndex 列位置
-     * @return String
-     */
     public String getString(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -517,12 +439,6 @@ public class DataSet implements Serializable {
         }
     }
 
-    /**
-     * 返回值为BigInteger.
-     *
-     * @param colIndex
-     * @return
-     */
     public BigInteger getBigInteger(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -535,12 +451,6 @@ public class DataSet implements Serializable {
         }
     }
 
-    /**
-     * 返回值为BigDecimal.
-     *
-     * @param colIndex
-     * @return
-     */
     public BigDecimal getDecimal(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -553,12 +463,6 @@ public class DataSet implements Serializable {
         }
     }
 
-    /**
-     * 返回值为bytes.
-     *
-     * @param colIndex
-     * @return
-     */
     public byte[] getBytes(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -567,12 +471,6 @@ public class DataSet implements Serializable {
         return (byte[]) data;
     }
 
-    /**
-     * 返回值为Date.
-     *
-     * @param colIndex 列位置
-     * @return Date
-     */
     public java.util.Date getDate(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -580,6 +478,8 @@ public class DataSet implements Serializable {
         }
         return (java.util.Date) data;
     }
+
+    // ===== 列名位置查找 =====
 
     /**
      * 获取列名位置.
@@ -589,9 +489,9 @@ public class DataSet implements Serializable {
      */
     public int getColumnPos(String colName) {
         int index = -1;
-        if (cols != null) {
-            for (int i = 0; i < cols.length; i++) {
-                if (colName.equalsIgnoreCase(cols[i])) {
+        if (columns != null) {
+            for (int i = 0; i < columns.length; i++) {
+                if (colName.equalsIgnoreCase(columns[i])) {
                     index = i;
                     break;
                 }
@@ -600,20 +500,32 @@ public class DataSet implements Serializable {
         return index;
     }
 
+    // ===== 类型转换 =====
+
     /**
-     * map类型转换。
+     * map类型转换，将PageRowSet转换为PageList.
      *
-     * @param function
-     * @param <R>
-     * @return
+     * @param function 转换函数
+     * @param <R>      目标类型
+     * @return PageList
      */
     @JsonIgnore
-    public <R> DataList<R> map(Function<DataSet, R> function) {
-        ArrayList<R> list = new ArrayList<>();
+    public <R> PageList<R> map(Function<PageRowSet, R> function) {
+        ArrayList<R> resultList = new ArrayList<>();
         while (next()) {
-            list.add(function.apply(this));
+            resultList.add(function.apply(this));
         }
-        return new DataList<>(list, startIndex, resultNum, sizeAll);
+        return new PageList<>(resultList, startIndex, resultNum, sizeAll);
+    }
+
+    private static ArrayList<Object[]> toArrayList(List<Object[]> list) {
+        if (list == null) {
+            return new ArrayList<>();
+        }
+        if (list instanceof ArrayList<Object[]> al) {
+            return al;
+        }
+        return new ArrayList<>(list);
     }
 
 }

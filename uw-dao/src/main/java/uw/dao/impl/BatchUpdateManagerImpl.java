@@ -28,6 +28,7 @@ public class BatchUpdateManagerImpl implements BatchUpdateManager {
 
     /**
      * pstmt集合.key:sql,value:pstmt
+     * 非线程安全：仅在事务内单线程使用。
      */
     private LinkedHashMap<String, PreparedStatementWrapper> pstmtMap = null;
 

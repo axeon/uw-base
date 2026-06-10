@@ -28,10 +28,10 @@ public class MysqlServerBenchmark {
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
-                .include( MysqlServerBenchmark.class.getSimpleName() )
-                .forks( 0 )
+                .include(MysqlServerBenchmark.class.getSimpleName())
+                .forks(0)
                 .build();
-        new Runner( opt ).run();
+        new Runner(opt).run();
     }
 
     @Setup
@@ -39,25 +39,25 @@ public class MysqlServerBenchmark {
         DaoConfig daoConfig = new DaoConfig();
         DaoConfig.ConnPool pool = new DaoConfig.ConnPool();
         DaoConfig.ConnPoolConfig poolConfig = new DaoConfig.ConnPoolConfig();
-        poolConfig.setDriver( "com.mysql.cj.jdbc.Driver" );
-        poolConfig.setUrl( "jdbc:mysql://192.168.88.21:3308/uw_auth?zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true" );
-        poolConfig.setUsername( "root" );
-        poolConfig.setPassword( "mysqlRootPassword" );
-        poolConfig.setMinConn( 10 );
-        poolConfig.setMaxConn( 100 );
-        poolConfig.setConnMaxAge( 3600 );
-        poolConfig.setConnBusyTimeout( 120 );
-        poolConfig.setConnIdleTimeout( 120 );
-        pool.setRoot( poolConfig );
-        pool.setList( new LinkedHashMap<>() );
-        daoConfig.setConnPool( pool );
-        DaoConfigManager.setConfig( daoConfig );
+        poolConfig.setDriver("com.mysql.cj.jdbc.Driver");
+        poolConfig.setUrl("jdbc:mysql://192.168.88.21:3308/uw_auth?zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true");
+        poolConfig.setUsername("root");
+        poolConfig.setPassword("mysqlRootPassword");
+        poolConfig.setMinConn(10);
+        poolConfig.setMaxConn(100);
+        poolConfig.setConnMaxAge(3600);
+        poolConfig.setConnBusyTimeout(120);
+        poolConfig.setConnIdleTimeout(120);
+        pool.setRoot(poolConfig);
+        pool.setList(new LinkedHashMap<>());
+        daoConfig.setConnPool(pool);
+        DaoConfigManager.setConfig(daoConfig);
     }
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.INLINE)
     public static void getSeq() throws TransactionException {
-        dao.queryForDataSet( LOAD_SEQ, new Object[]{"SysCritLog"} );
+        dao.queryForRowSet(LOAD_SEQ, new Object[]{"SysCritLog"});
     }
 
 }

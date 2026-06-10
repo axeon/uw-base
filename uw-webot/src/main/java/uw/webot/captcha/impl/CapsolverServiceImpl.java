@@ -6,8 +6,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.util.JsonUtils;
-import uw.webot.captcha.CaptchaService;
 import uw.webot.captcha.CaptchaConfig;
+import uw.webot.captcha.CaptchaService;
 
 import java.net.URI;
 import java.net.http.HttpClient;

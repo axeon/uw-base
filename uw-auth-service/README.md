@@ -3,25 +3,25 @@
 ## 目录
 
 - [1. 项目概述](#1-项目概述)
-  - [1.1 简介](#11-简介)
-  - [1.2 核心特性](#12-核心特性)
+    - [1.1 简介](#11-简介)
+    - [1.2 核心特性](#12-核心特性)
 - [2. 技术栈](#2-技术栈)
 - [3. 安装与配置](#3-安装与配置)
-  - [3.1 Maven依赖](#31-maven依赖)
-  - [3.2 基础配置](#32-基础配置)
+    - [3.1 Maven依赖](#31-maven依赖)
+    - [3.2 基础配置](#32-基础配置)
 - [4. 核心功能详解](#4-核心功能详解)
-  - [4.1 权限声明注解](#41-权限声明注解)
-  - [4.2 用户类型](#42-用户类型)
-  - [4.3 授权类型](#43-授权类型)
-  - [4.4 操作日志类型](#44-操作日志类型)
-  - [4.5 Token认证流程](#45-token认证流程)
-  - [4.6 全局响应处理](#46-全局响应处理)
-  - [4.7 全局异常处理](#47-全局异常处理)
+    - [4.1 权限声明注解](#41-权限声明注解)
+    - [4.2 用户类型](#42-用户类型)
+    - [4.3 授权类型](#43-授权类型)
+    - [4.4 操作日志类型](#44-操作日志类型)
+    - [4.5 Token认证流程](#45-token认证流程)
+    - [4.6 全局响应处理](#46-全局响应处理)
+    - [4.7 全局异常处理](#47-全局异常处理)
 - [5. API使用指南](#5-api使用指南)
-  - [5.1 声明接口权限](#51-声明接口权限)
-  - [5.2 获取当前用户信息](#52-获取当前用户信息)
-  - [5.3 生成Guest Token](#53-生成guest-token)
-  - [5.4 记录操作日志](#54-记录操作日志)
+    - [5.1 声明接口权限](#51-声明接口权限)
+    - [5.2 获取当前用户信息](#52-获取当前用户信息)
+    - [5.3 生成Guest Token](#53-生成guest-token)
+    - [5.4 记录操作日志](#54-记录操作日志)
 - [6. 核心类说明](#6-核心类说明)
 - [7. 最佳实践](#7-最佳实践)
 - [8. 常见问题](#8-常见问题)
@@ -32,31 +32,32 @@
 
 ### 1.1 简介
 
-`uw-auth-service` 是 UW Base 的认证授权服务模块，为 Web 应用提供统一的认证、授权和日志记录功能。该模块作为服务端的认证组件，通过与 uw-auth-center 认证中心交互，实现 Token 验证、权限检查、操作日志记录等功能。
+`uw-auth-service` 是 UW Base 的认证授权服务模块，为 Web 应用提供统一的认证、授权和日志记录功能。该模块作为服务端的认证组件，通过与
+uw-auth-center 认证中心交互，实现 Token 验证、权限检查、操作日志记录等功能。
 
 ### 1.2 核心特性
 
-| 特性 | 说明 |
-|------|------|
-| **权限注解** | 通过 `@MscPermDeclare` 注解声明接口权限 |
-| **多用户类型** | 支持 RPC、ROOT、OPS、ADMIN、SAAS、MCH、GUEST 等多种用户类型 |
-| **分级授权** | 支持 NONE、TEMP、USER、PERM、SUDO 五级授权类型 |
-| **Token缓存** | 使用 Caffeine 缓存用户 Token，减少认证中心调用 |
-| **全局响应包装** | 自动将响应包装为 `ResponseData` 格式 |
-| **全局异常处理** | 统一处理认证异常，返回标准错误码 |
-| **操作日志记录** | 支持 BASE、REQUEST、RESPONSE、ALL、CRIT 多级日志记录 |
-| **IP白名单** | 支持 RPC/Agent 路径的 IP 白名单保护 |
+| 特性          | 说明                                           |
+|-------------|----------------------------------------------|
+| **权限注解**    | 通过 `@MscPermDeclare` 注解声明接口权限                |
+| **多用户类型**   | 支持 RPC、ROOT、OPS、ADMIN、SAAS、MCH、GUEST 等多种用户类型 |
+| **分级授权**    | 支持 NONE、TEMP、USER、PERM、SUDO 五级授权类型           |
+| **Token缓存** | 使用 Caffeine 缓存用户 Token，减少认证中心调用              |
+| **全局响应包装**  | 自动将响应包装为 `ResponseData` 格式                   |
+| **全局异常处理**  | 统一处理认证异常，返回标准错误码                             |
+| **操作日志记录**  | 支持 BASE、REQUEST、RESPONSE、ALL、CRIT 多级日志记录     |
+| **IP白名单**   | 支持 RPC/Agent 路径的 IP 白名单保护                    |
 
 ---
 
 ## 2. 技术栈
 
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| Spring Boot | 3.x | 基础框架 |
-| Spring Security | 6.x | 安全框架 |
-| Caffeine | 3.x | 本地缓存（Token缓存） |
-| LogClient | - | 日志记录（Elasticsearch） |
+| 技术              | 版本  | 用途                  |
+|-----------------|-----|---------------------|
+| Spring Boot     | 3.x | 基础框架                |
+| Spring Security | 6.x | 安全框架                |
+| Caffeine        | 3.x | 本地缓存（Token缓存）       |
+| LogClient       | -   | 日志记录（Elasticsearch） |
 
 ---
 
@@ -91,7 +92,7 @@ uw:
       ip-protected-paths: /rpc/*,/agent/*
       
       # IP白名单列表
-      ip-white-list: 127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+      ip-white-list: 127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fe80::/10,FC00::/7
       
       # 应用ID（由auth-center分配）
       app-id: 0
@@ -132,37 +133,37 @@ public @interface MscPermDeclare {
 
 ### 4.2 用户类型
 
-| 用户类型 | 值 | 说明 |
-|---------|-----|------|
-| ANY | 0 | 任意用户 |
-| GUEST | 1 | C站用户（访客） |
-| RPC | 10 | RPC用户（内部服务） |
-| ROOT | 100 | 超级管理员 |
-| OPS | 110 | 开发运维用户 |
-| ADMIN | 200 | 平台管理员 |
-| SAAS | 300 | SAAS运营商 |
-| MCH | 310 | SAAS商户 |
+| 用户类型  | 值   | 说明          |
+|-------|-----|-------------|
+| ANY   | 0   | 任意用户        |
+| GUEST | 1   | C站用户（访客）    |
+| RPC   | 10  | RPC用户（内部服务） |
+| ROOT  | 100 | 超级管理员       |
+| OPS   | 110 | 开发运维用户      |
+| ADMIN | 200 | 平台管理员       |
+| SAAS  | 300 | SAAS运营商     |
+| MCH   | 310 | SAAS商户      |
 
 ### 4.3 授权类型
 
-| 授权类型 | 值 | 说明 |
-|---------|-----|------|
-| NONE | 0 | 不验证鉴权 |
-| TEMP | 1 | 临时授权 |
-| USER | 2 | 仅验证用户类型 |
+| 授权类型 | 值 | 说明        |
+|------|---|-----------|
+| NONE | 0 | 不验证鉴权     |
+| TEMP | 1 | 临时授权      |
+| USER | 2 | 仅验证用户类型   |
 | PERM | 3 | 验证用户类型和权限 |
-| SUDO | 6 | 超级用户权限 |
+| SUDO | 6 | 超级用户权限    |
 
 ### 4.4 操作日志类型
 
-| 日志类型 | 值 | 说明 |
-|---------|-----|------|
-| NONE | -1 | 不记录 |
-| BASE | 0 | 记录基本信息 |
-| REQUEST | 1 | 记录请求参数 |
-| RESPONSE | 2 | 记录返回结果 |
-| ALL | 3 | 记录全部信息 |
-| CRIT | 9 | 记录全部数据，同时写入ES和数据库 |
+| 日志类型     | 值  | 说明                |
+|----------|----|-------------------|
+| NONE     | -1 | 不记录               |
+| BASE     | 0  | 记录基本信息            |
+| REQUEST  | 1  | 记录请求参数            |
+| RESPONSE | 2  | 记录返回结果            |
+| ALL      | 3  | 记录全部信息            |
+| CRIT     | 9  | 记录全部数据，同时写入ES和数据库 |
 
 ### 4.5 Token认证流程
 
@@ -205,14 +206,14 @@ public @interface MscPermDeclare {
 
 `GlobalExceptionAdvice` 统一处理认证相关异常：
 
-| 异常类型 | HTTP状态码 | 说明 |
-|---------|-----------|------|
-| TokenInvalidException | 401 | Token无效 |
-| TokenExpiredException | 498 | Token已过期 |
-| TokenPermException | 403 | 权限不足 |
-| TokenPayException | 402 | 需要支付 |
-| TokenServiceException | 503 | 服务不可用 |
-| TokenSudoException | 423 | 需要SUDO权限 |
+| 异常类型                  | HTTP状态码 | 说明       |
+|-----------------------|---------|----------|
+| TokenInvalidException | 401     | Token无效  |
+| TokenExpiredException | 498     | Token已过期 |
+| TokenPermException    | 403     | 权限不足     |
+| TokenPayException     | 402     | 需要支付     |
+| TokenServiceException | 503     | 服务不可用    |
+| TokenSudoException    | 423     | 需要SUDO权限 |
 
 ---
 
@@ -359,22 +360,22 @@ public class LogService {
 
 ## 6. 核心类说明
 
-| 类名 | 说明 |
-|------|------|
-| `AuthServiceHelper` | 认证服务辅助类，提供获取当前用户信息、生成Token等方法 |
-| `AuthServiceFilter` | 认证过滤器，处理Token验证和权限检查 |
-| `MscAuthPermService` | 权限服务，处理权限验证逻辑 |
-| `AuthServiceRpc` | 认证中心RPC接口，与uw-auth-center交互 |
-| `AuthAppRpc` | 应用注册和状态报告RPC接口 |
-| `AuthTokenData` | Token数据对象，包含用户认证信息 |
-| `MscActionLog` | 操作日志VO，记录请求响应信息 |
-| `GlobalResponseAdvice` | 全局响应处理器，包装ResponseData |
-| `GlobalExceptionAdvice` | 全局异常处理器，统一处理认证异常 |
-| `AuthCriticalLogStorage` | 关键日志存储接口 |
-| `MscPermDeclare` | 权限声明注解 |
-| `UserType` | 用户类型枚举 |
-| `AuthType` | 授权类型枚举 |
-| `ActionLog` | 操作日志级别枚举 |
+| 类名                       | 说明                            |
+|--------------------------|-------------------------------|
+| `AuthServiceHelper`      | 认证服务辅助类，提供获取当前用户信息、生成Token等方法 |
+| `AuthServiceFilter`      | 认证过滤器，处理Token验证和权限检查          |
+| `MscAuthPermService`     | 权限服务，处理权限验证逻辑                 |
+| `AuthServiceRpc`         | 认证中心RPC接口，与uw-auth-center交互   |
+| `AuthAppRpc`             | 应用注册和状态报告RPC接口                |
+| `AuthTokenData`          | Token数据对象，包含用户认证信息            |
+| `MscActionLog`           | 操作日志VO，记录请求响应信息               |
+| `GlobalResponseAdvice`   | 全局响应处理器，包装ResponseData        |
+| `GlobalExceptionAdvice`  | 全局异常处理器，统一处理认证异常              |
+| `AuthCriticalLogStorage` | 关键日志存储接口                      |
+| `MscPermDeclare`         | 权限声明注解                        |
+| `UserType`               | 用户类型枚举                        |
+| `AuthType`               | 授权类型枚举                        |
+| `ActionLog`              | 操作日志级别枚举                      |
 
 ---
 

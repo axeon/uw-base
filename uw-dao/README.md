@@ -5,32 +5,32 @@
 ## 目录
 
 - [1. 项目概述](#1-项目概述)
-  - [1.1 简介](#11-简介)
-  - [1.2 核心特性](#12-核心特性)
-  - [1.3 架构总览](#13-架构总览)
+    - [1.1 简介](#11-简介)
+    - [1.2 核心特性](#12-核心特性)
+    - [1.3 架构总览](#13-架构总览)
 - [2. 技术栈](#2-技术栈)
 - [3. 安装与配置](#3-安装与配置)
-  - [3.1 Maven 依赖](#31-maven-依赖)
-  - [3.2 完整配置参考](#32-完整配置参考)
-  - [3.3 配置项详解](#33-配置项详解)
+    - [3.1 Maven 依赖](#31-maven-依赖)
+    - [3.2 完整配置参考](#32-完整配置参考)
+    - [3.3 配置项详解](#33-配置项详解)
 - [4. 核心概念](#4-核心概念)
-  - [4.1 DaoManager vs DaoFactory](#41-daomanager-vs-daofactory)
-  - [4.2 实体类定义（DataEntity）](#42-实体类定义dataentity)
-  - [4.3 注解说明](#43-注解说明)
+    - [4.1 DaoManager vs DaoFactory](#41-daomanager-vs-daofactory)
+    - [4.2 实体类定义（DataEntity）](#42-实体类定义dataentity)
+    - [4.3 注解说明](#43-注解说明)
 - [5. CRUD 操作](#5-crud-操作)
-  - [5.1 新增（save）](#51-新增save)
-  - [5.2 查询（load）](#52-查询load)
-  - [5.3 更新（update）](#53-更新update)
-  - [5.4 删除（delete）](#54-删除delete)
+    - [5.1 新增（save）](#51-新增save)
+    - [5.2 查询（load）](#52-查询load)
+    - [5.3 更新（update）](#53-更新update)
+    - [5.4 删除（delete）](#54-删除delete)
 - [6. 查询参数（QueryParam）](#6-查询参数queryparam)
-  - [6.1 PageQueryParam 分页查询](#61-pagequaryparam-分页查询)
-  - [6.2 QueryParam 条件查询](#62-queryparam-条件查询)
-  - [6.3 @QueryMeta 注解表达式](#63-querymeta-注解表达式)
-  - [6.4 排序支持](#64-排序支持)
+    - [6.1 PageQueryParam 分页查询](#61-pagequaryparam-分页查询)
+    - [6.2 QueryParam 条件查询](#62-queryparam-条件查询)
+    - [6.3 @QueryMeta 注解表达式](#63-querymeta-注解表达式)
+    - [6.4 排序支持](#64-排序支持)
 - [7. 原生 SQL 操作](#7-原生-sql-操作)
-  - [7.1 DataSet 结果集](#71-dataset-结果集)
-  - [7.2 executeCommand 执行更新](#72-executecommand-执行更新)
-  - [7.3 queryForSingleValue / queryForSingleList](#73-queryforsinglevalue--queryforsinglelist)
+    - [7.1 DataSet 结果集](#71-dataset-结果集)
+    - [7.2 executeCommand 执行更新](#72-executecommand-执行更新)
+    - [7.3 queryForSingleValue / queryForSingleList](#73-queryforsinglevalue--queryforsinglelist)
 - [8. 事务管理](#8-事务管理)
 - [9. 批量更新（BatchUpdateManager）](#9-批量更新batchupdatemanager)
 - [10. 分布式序列（SequenceFactory）](#10-分布式序列sequencefactory)
@@ -47,7 +47,8 @@
 
 ### 1.1 简介
 
-`uw-dao` 是 `uw-base` 基础平台的数据访问层（DAL）类库，基于原生 JDBC 封装，提供 JPA 风格的 ORM 操作和原生 SQL 映射能力。以注解驱动 + 反射缓存为核心，兼顾开发效率和运行性能。
+`uw-dao` 是 `uw-base` 基础平台的数据访问层（DAL）类库，基于原生 JDBC 封装，提供 JPA 风格的 ORM 操作和原生 SQL
+映射能力。以注解驱动 + 反射缓存为核心，兼顾开发效率和运行性能。
 
 - **GroupId**: `com.umtone`
 - **ArtifactId**: `uw-dao`
@@ -56,20 +57,20 @@
 
 ### 1.2 核心特性
 
-| 特性 | 说明 |
-|------|------|
-| **注解驱动 ORM** | `@TableMeta` / `@ColumnMeta` 定义实体映射，反射元数据全局缓存，无需 XML |
-| **差量更新** | 实体字段级变更追踪（`DataUpdateInfo`），UPDATE 时只更新已修改的字段 |
-| **多数据源路由** | 按表名前缀路由到不同连接池，支持读写分离，轮询负载均衡 |
-| **HikariCP 连接池** | 每个数据源独立 HikariCP 池，可配置最小/最大连接、超时、最大存活时间 |
-| **多方言支持** | 内置 MySQL / Oracle / SQL Server 分页方言，自动识别驱动类型 |
-| **自动分表** | 按日期（天/月/年）或 ID 范围自动创建分片表，后台定时预创建 |
-| **分布式序列** | DB 乐观锁序列（`DaoSequenceFactory`）+ Redis `INCR` 高速序列（`FusionSequenceFactory`） |
-| **事务管理** | 轻量 `TransactionManager`，支持标准隔离级别 |
-| **批量更新** | `BatchUpdateManager` 复用 `PreparedStatement`，自动按批次提交 |
-| **SQL 执行监控** | 慢 SQL 统计写入按天分片的 `dao_sql_stats_YYYYMMDD` 表，自动清理过期数据 |
-| **双入口设计** | `DaoFactory`（抛异常风格）+ `DaoManager`（`ResponseData` 包装风格） |
-| **国际化** | 错误码消息支持 12 种语言（zh-CN/zh-TW/en/ja/ko/de/fr/es/it/pt/ar/ru） |
+| 特性               | 说明                                                                         |
+|------------------|----------------------------------------------------------------------------|
+| **注解驱动 ORM**     | `@TableMeta` / `@ColumnMeta` 定义实体映射，反射元数据全局缓存，无需 XML                       |
+| **差量更新**         | 实体字段级变更追踪（`DataUpdateInfo`），UPDATE 时只更新已修改的字段                              |
+| **多数据源路由**       | 按表名前缀路由到不同连接池，支持读写分离，轮询负载均衡                                                |
+| **HikariCP 连接池** | 每个数据源独立 HikariCP 池，可配置最小/最大连接、超时、最大存活时间                                    |
+| **多方言支持**        | 内置 MySQL / Oracle / SQL Server 分页方言，自动识别驱动类型                               |
+| **自动分表**         | 按日期（天/月/年）或 ID 范围自动创建分片表，后台定时预创建                                           |
+| **分布式序列**        | DB 乐观锁序列（`DaoSequenceFactory`）+ Redis `INCR` 高速序列（`FusionSequenceFactory`） |
+| **事务管理**         | 轻量 `TransactionManager`，支持标准隔离级别                                           |
+| **批量更新**         | `BatchUpdateManager` 复用 `PreparedStatement`，自动按批次提交                        |
+| **SQL 执行监控**     | 慢 SQL 统计写入按天分片的 `dao_sql_stats_YYYYMMDD` 表，自动清理过期数据                        |
+| **双入口设计**        | `DaoFactory`（抛异常风格）+ `DaoManager`（`ResponseData` 包装风格）                     |
+| **国际化**          | 错误码消息支持 12 种语言（zh-CN/zh-TW/en/ja/ko/de/fr/es/it/pt/ar/ru）                  |
 
 ### 1.3 架构总览
 
@@ -97,19 +98,19 @@
 
 ## 2. 技术栈
 
-| 技术/库 | 版本 | 用途 |
-|---------|------|------|
-| Java | 21 | 编程语言 |
-| Spring Boot | 3.x | 自动配置、生命周期管理 |
-| HikariCP | — | JDBC 连接池 |
-| MySQL Connector/J | — | MySQL JDBC 驱动 |
-| Spring Data Redis / Lettuce | — | FusionSequenceFactory Redis 支持（可选） |
-| Apache Commons Lang3 | — | 字符串工具 |
-| Apache Commons Pool2 | — | Lettuce 连接池 |
-| Jackson | — | 实体/结果 JSON 序列化 |
-| Swagger / OpenAPI 3 | — | `@Schema` 注解支持 |
-| `uw-common` | — | `ResponseData`、`JsonUtils`、`SystemClock` |
-| JMH | — | 微基准测试（test scope） |
+| 技术/库                        | 版本  | 用途                                       |
+|-----------------------------|-----|------------------------------------------|
+| Java                        | 21  | 编程语言                                     |
+| Spring Boot                 | 3.x | 自动配置、生命周期管理                              |
+| HikariCP                    | —   | JDBC 连接池                                 |
+| MySQL Connector/J           | —   | MySQL JDBC 驱动                            |
+| Spring Data Redis / Lettuce | —   | FusionSequenceFactory Redis 支持（可选）       |
+| Apache Commons Lang3        | —   | 字符串工具                                    |
+| Apache Commons Pool2        | —   | Lettuce 连接池                              |
+| Jackson                     | —   | 实体/结果 JSON 序列化                           |
+| Swagger / OpenAPI 3         | —   | `@Schema` 注解支持                           |
+| `uw-common`                 | —   | `ResponseData`、`JsonUtils`、`SystemClock` |
+| JMH                         | —   | 微基准测试（test scope）                        |
 
 ---
 
@@ -204,43 +205,44 @@ uw:
 
 #### ConnPoolConfig（连接池）
 
-| 属性 | 默认值 | 说明 |
-|------|--------|------|
-| `driver` | — | JDBC 驱动类名 |
-| `url` | — | JDBC 连接 URL |
-| `username` | — | 数据库用户名 |
-| `password` | — | 数据库密码 |
-| `test-sql` | `select 1` | 连接健康检测 SQL |
-| `min-conn` | `1` | 最小连接数 |
-| `max-conn` | `1` | 最大连接数 |
-| `conn-idle-timeout` | `300` | 空闲连接超时（秒） |
-| `conn-busy-timeout` | `1800` | 繁忙连接超时（秒） |
-| `conn-max-age` | `3600` | 连接最大存活时间（秒） |
+| 属性                  | 默认值        | 说明          |
+|---------------------|------------|-------------|
+| `driver`            | —          | JDBC 驱动类名   |
+| `url`               | —          | JDBC 连接 URL |
+| `username`          | —          | 数据库用户名      |
+| `password`          | —          | 数据库密码       |
+| `test-sql`          | `select 1` | 连接健康检测 SQL  |
+| `min-conn`          | `1`        | 最小连接数       |
+| `max-conn`          | `1`        | 最大连接数       |
+| `conn-idle-timeout` | `300`      | 空闲连接超时（秒）   |
+| `conn-busy-timeout` | `1800`     | 繁忙连接超时（秒）   |
+| `conn-max-age`      | `3600`     | 连接最大存活时间（秒） |
 
 #### ConnRouteConfig（路由）
 
-| 属性 | 说明 |
-|------|------|
+| 属性            | 说明            |
+|---------------|---------------|
 | `write-pools` | 写操作连接池名列表（轮询） |
-| `read-pools` | 读操作连接池名列表（轮询） |
+| `read-pools`  | 读操作连接池名列表（轮询） |
 
-路由匹配规则：`conn-route.list` 中的 key 作为**表名前缀**（如 `order_` 匹配 `order_2024`、`order_item` 等），未命中任何前缀时使用 `root` 路由。
+路由匹配规则：`conn-route.list` 中的 key 作为**表名前缀**（如 `order_` 匹配 `order_2024`、`order_item` 等），未命中任何前缀时使用
+`root` 路由。
 
 #### TableShardConfig（分表）
 
-| 属性 | 可选值 | 说明 |
-|------|--------|------|
-| `shard-type` | `date` / `id` | 分片类型 |
-| `shard-rule` | `day` / `month` / `year` / 整数 | 日期粒度或每片 ID 数量 |
-| `auto-gen` | `true` / `false` | 是否自动建表（默认 true） |
+| 属性           | 可选值                           | 说明              |
+|--------------|-------------------------------|-----------------|
+| `shard-type` | `date` / `id`                 | 分片类型            |
+| `shard-rule` | `day` / `month` / `year` / 整数 | 日期粒度或每片 ID 数量   |
+| `auto-gen`   | `true` / `false`              | 是否自动建表（默认 true） |
 
 #### SqlStatsConfig（SQL 统计）
 
-| 属性 | 默认值 | 说明 |
-|------|--------|------|
-| `enable` | `false` | 是否启用 SQL 统计 |
-| `sql-cost-min` | `100` | 慢 SQL 阈值（毫秒） |
-| `data-keep-days` | `100` | 统计数据保留天数 |
+| 属性               | 默认值     | 说明           |
+|------------------|---------|--------------|
+| `enable`         | `false` | 是否启用 SQL 统计  |
+| `sql-cost-min`   | `100`   | 慢 SQL 阈值（毫秒） |
+| `data-keep-days` | `100`   | 统计数据保留天数     |
 
 ---
 
@@ -248,15 +250,16 @@ uw:
 
 ### 4.1 DaoManager vs DaoFactory
 
-| 对比项 | `DaoManager` | `DaoFactory` |
-|--------|--------------|--------------|
-| 获取实例 | `DaoManager.getInstance()` | `DaoFactory.getInstance()` |
-| 返回类型 | `ResponseData<T>` | 直接返回值 |
-| 异常处理 | 异常封装在 `ResponseData` 中 | 抛出 `TransactionException` |
-| 更新 0 行时 | 返回 `ResponseData.warnCode(DATA_NOT_FOUND_WARN)` | 返回 `0` |
-| 适用场景 | 新项目、Spring MVC 服务层 | 需要细粒度异常控制的场景 |
+| 对比项     | `DaoManager`                                    | `DaoFactory`               |
+|---------|-------------------------------------------------|----------------------------|
+| 获取实例    | `DaoManager.getInstance()`                      | `DaoFactory.getInstance()` |
+| 返回类型    | `ResponseData<T>`                               | 直接返回值                      |
+| 异常处理    | 异常封装在 `ResponseData` 中                          | 抛出 `TransactionException`  |
+| 更新 0 行时 | 返回 `ResponseData.warnCode(DATA_NOT_FOUND_WARN)` | 返回 `0`                     |
+| 适用场景    | 新项目、Spring MVC 服务层                              | 需要细粒度异常控制的场景               |
 
-> **注意**：每次调用 `getInstance()` 都会创建一个新的实例（非单例），每个实例持有独立的事务状态和批量更新状态，请勿将实例存储为 Spring Bean 的成员变量用于共享。
+> **注意**：每次调用 `getInstance()` 都会创建一个新的实例（非单例），每个实例持有独立的事务状态和批量更新状态，请勿将实例存储为
+> Spring Bean 的成员变量用于共享。
 
 ```java
 // DaoManager 风格（推荐）
@@ -350,7 +353,8 @@ public class User implements DataEntity {
 }
 ```
 
-> **差量更新原理**：调用 `load()` 后，框架将 `_IS_LOADED` 置为 `true`。此后每次调用 setter，变更记录到 `DataUpdateInfo`。执行 `update()` 时，框架仅对有变更的字段生成 `SET col=?`，大幅减少无效更新。
+> **差量更新原理**：调用 `load()` 后，框架将 `_IS_LOADED` 置为 `true`。此后每次调用 setter，变更记录到 `DataUpdateInfo`。执行
+`update()` 时，框架仅对有变更的字段生成 `SET col=?`，大幅减少无效更新。
 
 ### 4.3 注解说明
 
@@ -487,12 +491,12 @@ ResponseData<Integer> resp3 = dao.delete(user, "sys_user_20240101");
 
 `PageQueryParam` 继承 `QueryParam`，添加分页控制：
 
-| 属性 | HTTP 参数别名 | 说明 | 默认值 |
-|------|-------------|------|--------|
-| `PAGE` | `$pg` | 当前页码（从 1 开始） | `1` |
-| `RESULT_NUM` | `$rn` | 每页记录数（最大 10000） | `10` |
-| `START_INDEX` | `$si` | 起始偏移（优先级高于 PAGE） | `0` |
-| `REQUEST_TYPE` | `$rt` | `0`=仅计数, `1`=仅数据（默认）, `2`=数据+计数 | `1` |
+| 属性             | HTTP 参数别名 | 说明                              | 默认值  |
+|----------------|-----------|---------------------------------|------|
+| `PAGE`         | `$pg`     | 当前页码（从 1 开始）                    | `1`  |
+| `RESULT_NUM`   | `$rn`     | 每页记录数（最大 10000）                 | `10` |
+| `START_INDEX`  | `$si`     | 起始偏移（优先级高于 PAGE）                | `0`  |
+| `REQUEST_TYPE` | `$rt`     | `0`=仅计数, `1`=仅数据（默认）, `2`=数据+计数 | `1`  |
 
 ```java
 PageQueryParam param = new PageQueryParam();
@@ -549,17 +553,18 @@ ResponseData<DataList<User>> resp = dao.list(User.class, param);
 
 ### 6.3 @QueryMeta 注解表达式
 
-| 表达式示例 | 说明 | 字段类型 |
-|-----------|------|---------|
-| `"col=?"` | 等值匹配 | 任意 |
-| `"col like ?"` | 模糊匹配 | String |
-| `"col>=?"` | 范围比较 | 数值/日期 |
-| `"col in (?)"` | IN 查询 | 数组 / List |
-| `"col between ? and ?"` | 区间查询 | 长度为 2 的数组 |
-| `"(c1 like ? or c2 like ?)"` | 多列 OR 匹配 | String（值同时绑定到两个占位符） |
-| `"state>=0"` | 无占位符（仅判断字段非 null 时激活） | 任意 |
+| 表达式示例                        | 说明                    | 字段类型                |
+|------------------------------|-----------------------|---------------------|
+| `"col=?"`                    | 等值匹配                  | 任意                  |
+| `"col like ?"`               | 模糊匹配                  | String              |
+| `"col>=?"`                   | 范围比较                  | 数值/日期               |
+| `"col in (?)"`               | IN 查询                 | 数组 / List           |
+| `"col between ? and ?"`      | 区间查询                  | 长度为 2 的数组           |
+| `"(c1 like ? or c2 like ?)"` | 多列 OR 匹配              | String（值同时绑定到两个占位符） |
+| `"state>=0"`                 | 无占位符（仅判断字段非 null 时激活） | 任意                  |
 
-> `like` 表达式有最小长度保护：`LIKE_QUERY_PARAM_MIN_LEN`（默认 3 字符），短于此长度时该条件被跳过，可通过 `param.LIKE_QUERY_PARAM_MIN_LEN(1)` 调整。
+> `like` 表达式有最小长度保护：`LIKE_QUERY_PARAM_MIN_LEN`（默认 3 字符），短于此长度时该条件被跳过，可通过
+`param.LIKE_QUERY_PARAM_MIN_LEN(1)` 调整。
 
 ### 6.4 排序支持
 
@@ -621,12 +626,13 @@ DataList<UserVO> list = ds.map(row -> {
 String[] cols = ds.getColumnNames();
 ```
 
-**DataSet 支持的类型转换方法**：`getBoolean`, `getInt`, `getLong`, `getDouble`, `getFloat`, `getString`, `getBigInteger`, `getDecimal`, `getBytes`, `getDate`，均支持按列名或按列索引（0-based）访问。
+**DataSet 支持的类型转换方法**：`getBoolean`, `getInt`, `getLong`, `getDouble`, `getFloat`, `getString`, `getBigInteger`,
+`getDecimal`, `getBytes`, `getDate`，均支持按列名或按列索引（0-based）访问。
 
 ### 7.2 executeCommand 执行更新
 
 ```java
-int rows = dao.executeCommand(
+int rows = dao.execute(
     "update sys_user set state=? where id=?",
     new Object[]{0, userId}
 );
@@ -676,13 +682,13 @@ tx.setTransactionIsolation(TransactionManager.TRANSACTION_READ_COMMITTED);
 
 **支持的隔离级别常量**：
 
-| 常量 | 说明 |
-|------|------|
-| `TRANSACTION_NONE` | 不支持事务 |
-| `TRANSACTION_READ_UNCOMMITTED` | 读未提交 |
-| `TRANSACTION_READ_COMMITTED` | 读已提交 |
-| `TRANSACTION_REPEATABLE_READ` | 可重复读 |
-| `TRANSACTION_SERIALIZABLE` | 串行化 |
+| 常量                             | 说明    |
+|--------------------------------|-------|
+| `TRANSACTION_NONE`             | 不支持事务 |
+| `TRANSACTION_READ_UNCOMMITTED` | 读未提交  |
+| `TRANSACTION_READ_COMMITTED`   | 读已提交  |
+| `TRANSACTION_REPEATABLE_READ`  | 可重复读  |
+| `TRANSACTION_SERIALIZABLE`     | 串行化   |
 
 > `DaoManager` 同样支持通过 `getDaoFactory().beginTransaction()` 获取 `TransactionManager`。
 
@@ -729,12 +735,12 @@ SequenceFactory.resetSequenceId("order_seq", 1000000L);
 
 ### 两种实现对比
 
-| 特性 | `DaoSequenceFactory`（DB） | `FusionSequenceFactory`（Redis+DB） |
-|------|--------------------------|-------------------------------------|
-| 依赖 | 仅数据库 | 数据库 + Redis |
-| 吞吐量 | 约 `incrementNum × 100` TPS | 约 `DB吞吐 × 10000` TPS |
-| 持久化 | 全量持久化到 `sys_seq` 表 | Redis `INCR` + 定期同步到 DB |
-| 适用场景 | 中低并发 | 高并发 ID 生成 |
+| 特性   | `DaoSequenceFactory`（DB）   | `FusionSequenceFactory`（Redis+DB） |
+|------|----------------------------|-----------------------------------|
+| 依赖   | 仅数据库                       | 数据库 + Redis                       |
+| 吞吐量  | 约 `incrementNum × 100` TPS | 约 `DB吞吐 × 10000` TPS              |
+| 持久化  | 全量持久化到 `sys_seq` 表         | Redis `INCR` + 定期同步到 DB           |
+| 适用场景 | 中低并发                       | 高并发 ID 生成                         |
 
 ### 依赖的数据库表
 
@@ -782,7 +788,7 @@ SQL: SELECT * FROM order_2024 WHERE ...
 ```java
 // 所有 DaoFactory/DaoManager 方法均有 connName 前缀重载
 dao.load("order-write", Order.class, orderId);
-dao.executeCommand("order-write", "update order_2024 set ...", params);
+dao.execute("order-write", "update order_2024 set ...", params);
 ```
 
 ---
@@ -831,6 +837,7 @@ dao.save(profile, table);
 ### 自动建表
 
 框架后台 `TableShardingTask` 每小时运行一次，自动：
+
 1. 检查当前分片表和下一分片表是否存在
 2. 若不存在，执行 `SHOW CREATE TABLE 基表` 并创建同结构的分片表
 
@@ -871,17 +878,17 @@ dao.disableSqlExecuteStats();
 
 `SqlExecuteStats` 关键字段：
 
-| 字段 | 说明 |
-|------|------|
-| `connName` | 使用的连接池名 |
-| `sql` | 带 `?` 占位符的 SQL |
-| `paramList` | 参数值数组 |
-| `connMillis` | 获取连接耗时（ms） |
-| `dbMillis` | SQL 执行耗时（ms） |
-| `allMillis` | 总耗时（ms） |
-| `rowNum` | 影响/返回行数 |
-| `exception` | 异常信息（无异常为 null） |
-| `actionDate` | 执行时间 |
+| 字段           | 说明              |
+|--------------|-----------------|
+| `connName`   | 使用的连接池名         |
+| `sql`        | 带 `?` 占位符的 SQL  |
+| `paramList`  | 参数值数组           |
+| `connMillis` | 获取连接耗时（ms）      |
+| `dbMillis`   | SQL 执行耗时（ms）    |
+| `allMillis`  | 总耗时（ms）         |
+| `rowNum`     | 影响/返回行数         |
+| `exception`  | 异常信息（无异常为 null） |
+| `actionDate` | 执行时间            |
 
 ---
 
@@ -964,7 +971,8 @@ CREATE TABLE `dao_sql_stats_20240101` (
 
 ### Q1：DaoManager.load() 返回的 ResponseData.getData() 为 null？
 
-`DaoManager` 不会因为查询无结果而返回 `warn`，结果为 null 时 `getData()` 返回 null。更新操作返回 0 行时才触发 `DATA_NOT_FOUND_WARN`。建议：
+`DaoManager` 不会因为查询无结果而返回 `warn`，结果为 null 时 `getData()` 返回 null。更新操作返回 0 行时才触发
+`DATA_NOT_FOUND_WARN`。建议：
 
 ```java
 ResponseData<User> resp = dao.load(User.class, id);
@@ -975,7 +983,8 @@ if (resp.isSuccess() && resp.getData() != null) {
 
 ### Q2：多次调用 update() 后发现 SQL 只更新了部分字段？
 
-这是差量更新的正常行为。若实体不是通过 `load()` 获取的（`_IS_LOADED=false`），则 `update()` 会更新所有 `@ColumnMeta` 字段（非主键）。若是通过 `load()` 获取的，只有 setter 被调用过的字段才会出现在 UPDATE 语句中。
+这是差量更新的正常行为。若实体不是通过 `load()` 获取的（`_IS_LOADED=false`），则 `update()` 会更新所有 `@ColumnMeta`
+字段（非主键）。若是通过 `load()` 获取的，只有 setter 被调用过的字段才会出现在 UPDATE 语句中。
 
 ### Q3：如何配置读写分离？
 
@@ -1015,11 +1024,13 @@ for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
 
 ### Q5：enableSqlExecuteStats() 对性能有影响吗？
 
-有轻微影响：每次 SQL 执行都会创建 `SqlExecuteStats` 对象并追加到列表。建议仅在开发/调试阶段使用，生产环境通过 `sql-stats.enable=true` + `sql-cost-min` 阈值来只记录慢 SQL。
+有轻微影响：每次 SQL 执行都会创建 `SqlExecuteStats` 对象并追加到列表。建议仅在开发/调试阶段使用，生产环境通过
+`sql-stats.enable=true` + `sql-cost-min` 阈值来只记录慢 SQL。
 
 ### Q6：FusionSequenceFactory 在 Redis 故障时怎么办？
 
 Redis 故障时 `FusionSequenceFactory` 的 `INCR` 操作会抛出异常，序列生成失败。建议：
+
 1. 配置 Redis Sentinel 或 Cluster 保障高可用
 2. 业务层对序列生成做重试和降级处理
 

@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import uw.tinyurl.client.TinyurlClientHelper;
 
 /**
@@ -19,7 +19,7 @@ public class UwTinyurlAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public TinyurlClientHelper tinyurlClientHelper(UwTinyurlProperties uwTinyurlProperties, RestTemplate authRestTemplate) {
-        return new TinyurlClientHelper( uwTinyurlProperties, authRestTemplate );
+    public TinyurlClientHelper tinyurlClientHelper(UwTinyurlProperties uwTinyurlProperties, RestClient authRestClient) {
+        return new TinyurlClientHelper(uwTinyurlProperties, authRestClient);
     }
 }

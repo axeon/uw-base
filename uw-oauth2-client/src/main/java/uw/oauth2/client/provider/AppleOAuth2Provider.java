@@ -3,7 +3,7 @@ package uw.oauth2.client.provider;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import org.apache.commons.lang3.StringUtils;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.JsonUtils;
 import uw.common.util.SystemClock;
 import uw.oauth2.client.conf.OAuth2ClientProperties;
@@ -101,8 +101,8 @@ public class AppleOAuth2Provider extends AbstractOAuth2Provider {
             if (idTokenMap != null) {
                 token.setOpenId(getUserIdFromMap(idTokenMap));
                 token.setUsername(getUsernameFromMap(idTokenMap));
-                token.setEmail(String.valueOf(idTokenMap.get("email")));
-                token.setPhone(String.valueOf(idTokenMap.get("phone")));
+                token.setEmail((String) idTokenMap.get("email"));
+                token.setPhone((String) idTokenMap.get("phone"));
                 token.setAvatar(getAvatarFromMap(idTokenMap));
             }
         }
@@ -175,7 +175,7 @@ public class AppleOAuth2Provider extends AbstractOAuth2Provider {
      * @return JWT令牌
      */
     private String genClientSecret(String teamId, String clientId, String keyId, String p8Key) {
-        if (CLIENT_SECRET == null || SystemClock.now() - CLIENT_SECRET_TIMESTAMP > 24 * 60 * 1000) {
+        if (CLIENT_SECRET == null || SystemClock.now() - CLIENT_SECRET_TIMESTAMP > 30L * 24 * 60 * 60 * 1000) {
             synchronized (this) {
                 // 读取并解析.p8私钥文件
                 ECPrivateKey privateKey = null;
@@ -187,9 +187,7 @@ public class AppleOAuth2Provider extends AbstractOAuth2Provider {
                     privateKey = (ECPrivateKey) keyFactory.generatePrivate(keySpec);
                 } catch (Throwable e) {
                     logger.error("Failed to read P8 key: {}", e.getMessage());
-                }
-                if (privateKey == null) {
-                    return null;
+                    throw new RuntimeException("Failed to parse Apple P8 private key", e);
                 }
                 // 有效期设置为6个月（Apple允许的最大值）[^45^]
                 Date nowDate = new Date(SystemClock.now());

@@ -10,7 +10,6 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 /**
  * Http Basic 验证器
  *
- * 
  * @since 2018-04-28
  */
 public class HttpBasicAuthenticator implements Authenticator {

@@ -1,7 +1,7 @@
 package uw.oauth2.client.provider;
 
 import org.apache.commons.lang3.StringUtils;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.JsonUtils;
 import uw.oauth2.client.conf.OAuth2ClientProperties;
 import uw.oauth2.client.vo.OAuth2Token;
@@ -43,8 +43,8 @@ public class StandardOAuth2Provider extends AbstractOAuth2Provider {
             if (idTokenMap != null) {
                 token.setOpenId(getUserIdFromMap(idTokenMap));
                 token.setUsername(getUsernameFromMap(idTokenMap));
-                token.setEmail(String.valueOf(idTokenMap.get("email")));
-                token.setPhone(String.valueOf(idTokenMap.get("phone")));
+                token.setEmail((String) idTokenMap.get("email"));
+                token.setPhone((String) idTokenMap.get("phone"));
                 token.setAvatar(getAvatarFromMap(idTokenMap));
             }
         }

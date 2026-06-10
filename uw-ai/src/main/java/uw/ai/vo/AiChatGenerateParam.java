@@ -66,7 +66,7 @@ public class AiChatGenerateParam {
      * 工具上下文。
      */
     @Schema(title = "工具上下文", description = "工具上下文", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private Map<String,Object> toolContext;
+    private Map<String, Object> toolContext;
 
     /**
      * rag知识库id列表。
@@ -120,7 +120,7 @@ public class AiChatGenerateParam {
     /**
      * 绑定授权信息。
      */
-    public void bindAuthInfo(){
+    public void bindAuthInfo() {
         this.saasId = AuthServiceHelper.getSaasId();
         this.userId = AuthServiceHelper.getUserId();
         this.userType = AuthServiceHelper.getUserType();
@@ -234,7 +234,7 @@ public class AiChatGenerateParam {
         /**
          * 绑定授权信息。
          */
-        public Builder bindAuthInfo(){
+        public Builder bindAuthInfo() {
             this.saasId = AuthServiceHelper.getSaasId();
             this.userId = AuthServiceHelper.getUserId();
             this.userType = AuthServiceHelper.getUserType();

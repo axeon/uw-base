@@ -1,5 +1,9 @@
 package uw.dao;
 
+import uw.common.data.PageList;
+import uw.common.data.PageRowSet;
+import uw.common.dto.PageQueryParam;
+import uw.common.dto.QueryParam;
 import uw.dao.impl.DaoFactoryImpl;
 import uw.dao.vo.QueryParamResult;
 import uw.dao.vo.SqlExecuteStats;
@@ -353,7 +357,7 @@ public abstract class DaoFactory {
      * @param entityCls 要映射的对象类型
      * @param <T>       映射的类型
      * @param id        主键数值
-     * @return DataList对象
+     * @return PageList对象
      * @throws TransactionException 事务异常
      */
     public abstract <T> T load(Class<T> entityCls, Serializable id) throws TransactionException;
@@ -365,7 +369,7 @@ public abstract class DaoFactory {
      * @param <T>       映射的类型
      * @param tableName 指定表名
      * @param id        主键数值
-     * @return DataList对象
+     * @return PageList对象
      * @throws TransactionException 事务异常
      */
     public abstract <T> T load(Class<T> entityCls, String tableName, Serializable id) throws TransactionException;
@@ -377,7 +381,7 @@ public abstract class DaoFactory {
      * @param entityCls 要映射的对象类型
      * @param <T>       映射的类型
      * @param id        主键数值
-     * @return DataList对象
+     * @return PageList对象
      * @throws TransactionException 事务异常
      */
     public abstract <T> T load(String connName, Class<T> entityCls, Serializable id) throws TransactionException;
@@ -390,37 +394,37 @@ public abstract class DaoFactory {
      * @param <T>       映射的类型
      * @param tableName 指定表名
      * @param id        主键数值
-     * @return DataList对象
+     * @return PageList对象
      * @throws TransactionException 事务异常
      */
     public abstract <T> T load(String connName, Class<T> entityCls, String tableName, Serializable id) throws TransactionException;
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls 要映射的对象类型
      * @param selectSql 查询的SQL
      * @param <T>       映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> DataList<T> list(Class<T> entityCls, String selectSql) throws TransactionException;
+    public abstract <T> PageList<T> list(Class<T> entityCls, String selectSql) throws TransactionException;
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls  要映射的对象类型
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param <T>        映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> DataList<T> list(Class<T> entityCls, String selectSql, int startIndex, int resultNum) throws TransactionException;
+    public abstract <T> PageList<T> list(Class<T> entityCls, String selectSql, int startIndex, int resultNum) throws TransactionException;
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls  要映射的对象类型
      * @param selectSql  查询的SQL
@@ -428,25 +432,25 @@ public abstract class DaoFactory {
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
      * @param <T>        映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> DataList<T> list(Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException;
+    public abstract <T> PageList<T> list(Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException;
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls 要映射的对象类型
      * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
      * @param <T>       映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> DataList<T> list(Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException;
+    public abstract <T> PageList<T> list(Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException;
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls  要映射的对象类型
      * @param selectSql  查询的SQL
@@ -454,13 +458,13 @@ public abstract class DaoFactory {
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param <T>        映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> DataList<T> list(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException;
+    public abstract <T> PageList<T> list(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException;
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls  要映射的对象类型
      * @param selectSql  查询的SQL
@@ -469,25 +473,25 @@ public abstract class DaoFactory {
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
      * @param <T>        映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> DataList<T> list(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException;
+    public abstract <T> PageList<T> list(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException;
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls 要映射的对象类型
      * @param selectSql 查询的SQL
      * @param <T>       映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> DataList<T> list(String connName, Class<T> entityCls, String selectSql) throws TransactionException;
+    public abstract <T> PageList<T> list(String connName, Class<T> entityCls, String selectSql) throws TransactionException;
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls  要映射的对象类型
@@ -495,13 +499,13 @@ public abstract class DaoFactory {
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param <T>        映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> DataList<T> list(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum) throws TransactionException;
+    public abstract <T> PageList<T> list(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum) throws TransactionException;
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls  要映射的对象类型
@@ -510,26 +514,26 @@ public abstract class DaoFactory {
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
      * @param <T>        映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> DataList<T> list(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException;
+    public abstract <T> PageList<T> list(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException;
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls 要映射的对象类型
      * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
      * @param <T>       映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> DataList<T> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException;
+    public abstract <T> PageList<T> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException;
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls  要映射的对象类型
@@ -538,13 +542,13 @@ public abstract class DaoFactory {
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> DataList<T> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException;
+    public abstract <T> PageList<T> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException;
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param entityCls  要映射的对象类型
@@ -554,57 +558,123 @@ public abstract class DaoFactory {
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> DataList<T> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException;
+    public abstract <T> PageList<T> list(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException;
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls      要映射的对象类型
      * @param pageQueryParam 分页查询对象
      * @param <T>            映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> DataList<T> list(Class<T> entityCls, PageQueryParam pageQueryParam) throws TransactionException;
+    public abstract <T> PageList<T> list(Class<T> entityCls, PageQueryParam pageQueryParam) throws TransactionException;
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls      要映射的对象类型
      * @param tableName      附加表名，在特定分表情况下。
      * @param pageQueryParam 分页查询对象
      * @param <T>            映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> DataList<T> list(Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) throws TransactionException;
+    public abstract <T> PageList<T> list(Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) throws TransactionException;
 
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param entityCls      要映射的对象类型
      * @param pageQueryParam 分页查询对象
      * @param <T>            映射的类型
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> DataList<T> list(String connName, Class<T> entityCls, PageQueryParam pageQueryParam) throws TransactionException;
+    public abstract <T> PageList<T> list(String connName, Class<T> entityCls, PageQueryParam pageQueryParam) throws TransactionException;
 
     /**
-     * 根据指定的映射类型，返回一个DataList列表.
+     * 根据指定的映射类型，返回一个PageList列表.
      *
      * @param connName
      * @param entityCls      要映射的对象类型
      * @param tableName      附加表名，在特定分表情况下。
      * @param pageQueryParam 分页查询对象
-     * @return DataList列表
+     * @return PageList列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> DataList<T> list(String connName, Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) throws TransactionException;
+    public abstract <T> PageList<T> list(String connName, Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) throws TransactionException;
+
+    // ===== queryForList: 委托到 list() 方法 =====
+
+    public <T> PageList<T> queryForList(Class<T> entityCls, String selectSql) throws TransactionException {
+        return list(entityCls, selectSql);
+    }
+
+    public <T> PageList<T> queryForList(Class<T> entityCls, String selectSql, int startIndex, int resultNum) throws TransactionException {
+        return list(entityCls, selectSql, startIndex, resultNum);
+    }
+
+    public <T> PageList<T> queryForList(Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+        return list(entityCls, selectSql, startIndex, resultNum, autoCount);
+    }
+
+    public <T> PageList<T> queryForList(Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException {
+        return list(entityCls, selectSql, paramList);
+    }
+
+    public <T> PageList<T> queryForList(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException {
+        return list(entityCls, selectSql, paramList, startIndex, resultNum);
+    }
+
+    public <T> PageList<T> queryForList(Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+        return list(entityCls, selectSql, paramList, startIndex, resultNum, autoCount);
+    }
+
+    public <T> PageList<T> queryForList(String connName, Class<T> entityCls, String selectSql) throws TransactionException {
+        return list(connName, entityCls, selectSql);
+    }
+
+    public <T> PageList<T> queryForList(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum) throws TransactionException {
+        return list(connName, entityCls, selectSql, startIndex, resultNum);
+    }
+
+    public <T> PageList<T> queryForList(String connName, Class<T> entityCls, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+        return list(connName, entityCls, selectSql, startIndex, resultNum, autoCount);
+    }
+
+    public <T> PageList<T> queryForList(String connName, Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException {
+        return list(connName, entityCls, selectSql, paramList);
+    }
+
+    public <T> PageList<T> queryForList(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException {
+        return list(connName, entityCls, selectSql, paramList, startIndex, resultNum);
+    }
+
+    public <T> PageList<T> queryForList(String connName, Class<T> entityCls, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException {
+        return list(connName, entityCls, selectSql, paramList, startIndex, resultNum, autoCount);
+    }
+
+    public <T> PageList<T> queryForList(Class<T> entityCls, PageQueryParam pageQueryParam) throws TransactionException {
+        return list(entityCls, pageQueryParam);
+    }
+
+    public <T> PageList<T> queryForList(Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) throws TransactionException {
+        return list(entityCls, tableName, pageQueryParam);
+    }
+
+    public <T> PageList<T> queryForList(String connName, Class<T> entityCls, PageQueryParam pageQueryParam) throws TransactionException {
+        return list(connName, entityCls, pageQueryParam);
+    }
+
+    public <T> PageList<T> queryForList(String connName, Class<T> entityCls, String tableName, PageQueryParam pageQueryParam) throws TransactionException {
+        return list(connName, entityCls, tableName, pageQueryParam);
+    }
 
     /**
      * 查询单个基本数值（单个字段）.
@@ -615,7 +685,7 @@ public abstract class DaoFactory {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleValue(Class<T> cls, String sql) throws TransactionException;
+    public abstract <T> T queryForValue(Class<T> cls, String sql) throws TransactionException;
 
     /**
      * 查询单个基本数值（单个字段）.
@@ -627,7 +697,7 @@ public abstract class DaoFactory {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleValue(String connName, Class<T> cls, String sql) throws TransactionException;
+    public abstract <T> T queryForValue(String connName, Class<T> cls, String sql) throws TransactionException;
 
     /**
      * 查询单个基本数值（单个字段）.
@@ -639,7 +709,7 @@ public abstract class DaoFactory {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleValue(Class<T> cls, String sql, Object[] paramList) throws TransactionException;
+    public abstract <T> T queryForValue(Class<T> cls, String sql, Object[] paramList) throws TransactionException;
 
     /**
      * 查询单个基本数值（单个字段）.
@@ -652,7 +722,7 @@ public abstract class DaoFactory {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleValue(String connName, Class<T> cls, String sql, Object[] paramList) throws TransactionException;
+    public abstract <T> T queryForValue(String connName, Class<T> cls, String sql, Object[] paramList) throws TransactionException;
 
     /**
      * 查询单个基本数值（单个字段）.
@@ -662,7 +732,7 @@ public abstract class DaoFactory {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleValue(Class<T> valueCls, QueryParam queryParam) throws TransactionException;
+    public abstract <T> T queryForValue(Class<T> valueCls, QueryParam queryParam) throws TransactionException;
 
     /**
      * 查询单个基本数值（单个字段）.
@@ -673,7 +743,7 @@ public abstract class DaoFactory {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleValue(String connName, Class<T> valueCls, QueryParam queryParam) throws TransactionException;
+    public abstract <T> T queryForValue(String connName, Class<T> valueCls, QueryParam queryParam) throws TransactionException;
 
     /**
      * 查询单个基本数值列表（多行单个字段）.
@@ -681,10 +751,10 @@ public abstract class DaoFactory {
      * @param valueCls 要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param <T>      映射的类型
      * @param sql      查询的SQL
-     * @return DataSet对象
+     * @return PageTable对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> ArrayList<T> queryForSingleList(Class<T> valueCls, String sql) throws TransactionException;
+    public abstract <T> ArrayList<T> queryForValueList(Class<T> valueCls, String sql) throws TransactionException;
 
     /**
      * 查询单个基本数值列表（多行单个字段）.
@@ -696,17 +766,17 @@ public abstract class DaoFactory {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> ArrayList<T> queryForSingleList(String connName, Class<T> valueCls, String sql) throws TransactionException;
+    public abstract <T> ArrayList<T> queryForValueList(String connName, Class<T> valueCls, String sql) throws TransactionException;
 
     /**
      * 查询单个基本数值列表（多行单个字段）.
      *
      * @param valueCls   要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param queryParam 查询参数
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> ArrayList<T> queryForSingleList(Class<T> valueCls, QueryParam queryParam) throws TransactionException;
+    public abstract <T> ArrayList<T> queryForValueList(Class<T> valueCls, QueryParam queryParam) throws TransactionException;
 
 
     /**
@@ -715,10 +785,10 @@ public abstract class DaoFactory {
      * @param valueCls   要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param queryParam 查询参数
      * @param <T>        映射的类型
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract <T> ArrayList<T> queryForSingleList(String connName, Class<T> valueCls, QueryParam queryParam) throws TransactionException;
+    public abstract <T> ArrayList<T> queryForValueList(String connName, Class<T> valueCls, QueryParam queryParam) throws TransactionException;
 
     /**
      * 查询单个基本数值列表（多行单个字段）.
@@ -730,7 +800,7 @@ public abstract class DaoFactory {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> ArrayList<T> queryForSingleList(Class<T> valueCls, String sql, Object[] paramList) throws TransactionException;
+    public abstract <T> ArrayList<T> queryForValueList(Class<T> valueCls, String sql, Object[] paramList) throws TransactionException;
 
     /**
      * 查询单个基本数值列表（多行单个字段）.
@@ -743,7 +813,7 @@ public abstract class DaoFactory {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> ArrayList<T> queryForSingleList(String connName, Class<T> valueCls, String sql, Object[] paramList) throws TransactionException;
+    public abstract <T> ArrayList<T> queryForValueList(String connName, Class<T> valueCls, String sql, Object[] paramList) throws TransactionException;
 
     /**
      * 查询单个对象（单行数据）。 使用sql中探测到的表名来决定连接名.
@@ -754,7 +824,7 @@ public abstract class DaoFactory {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleObject(Class<T> entityCls, String selectSql) throws TransactionException;
+    public abstract <T> T queryForObject(Class<T> entityCls, String selectSql) throws TransactionException;
 
     /**
      * 查询单个对象（单行数据）。 使用sql中探测到的表名来决定连接名.
@@ -766,7 +836,7 @@ public abstract class DaoFactory {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleObject(Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException;
+    public abstract <T> T queryForObject(Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException;
 
     /**
      * 查询单个对象（单行数据）.
@@ -778,7 +848,7 @@ public abstract class DaoFactory {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleObject(String connName, Class<T> entityCls, String selectSql) throws TransactionException;
+    public abstract <T> T queryForObject(String connName, Class<T> entityCls, String selectSql) throws TransactionException;
 
     /**
      * 查询单个对象（单行数据）.
@@ -791,7 +861,7 @@ public abstract class DaoFactory {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleObject(String connName, Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException;
+    public abstract <T> T queryForObject(String connName, Class<T> entityCls, String selectSql, Object[] paramList) throws TransactionException;
 
 
     /**
@@ -803,7 +873,7 @@ public abstract class DaoFactory {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleObject(Class<T> entityCls, QueryParam queryParam) throws TransactionException;
+    public abstract <T> T queryForObject(Class<T> entityCls, QueryParam queryParam) throws TransactionException;
 
     /**
      * 查询单个对象（单行数据）.
@@ -815,7 +885,7 @@ public abstract class DaoFactory {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleObject(Class<T> entityCls, String tableName, QueryParam queryParam) throws TransactionException;
+    public abstract <T> T queryForObject(Class<T> entityCls, String tableName, QueryParam queryParam) throws TransactionException;
 
     /**
      * 查询单个对象（单行数据）.
@@ -826,7 +896,7 @@ public abstract class DaoFactory {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleObject(String connName, Class<T> entityCls, QueryParam queryParam) throws TransactionException;
+    public abstract <T> T queryForObject(String connName, Class<T> entityCls, QueryParam queryParam) throws TransactionException;
 
     /**
      * 查询单个对象（单行数据）.
@@ -839,136 +909,136 @@ public abstract class DaoFactory {
      * @return 单个对象
      * @throws TransactionException 事务异常
      */
-    public abstract <T> T queryForSingleObject(String connName, Class<T> entityCls, String tableName, QueryParam queryParam) throws TransactionException;
+    public abstract <T> T queryForObject(String connName, Class<T> entityCls, String tableName, QueryParam queryParam) throws TransactionException;
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql 查询的SQL
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(String selectSql) throws TransactionException;
+    public abstract PageRowSet queryForRowSet(String selectSql) throws TransactionException;
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(String selectSql, int startIndex, int resultNum) throws TransactionException;
+    public abstract PageRowSet queryForRowSet(String selectSql, int startIndex, int resultNum) throws TransactionException;
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException;
+    public abstract PageRowSet queryForRowSet(String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException;
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(String selectSql, Object[] paramList) throws TransactionException;
+    public abstract PageRowSet queryForRowSet(String selectSql, Object[] paramList) throws TransactionException;
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException;
+    public abstract PageRowSet queryForRowSet(String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException;
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException;
+    public abstract PageRowSet queryForRowSet(String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException;
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName  连接名，当设置为null时候，根据sql语句或表名确定
      * @param selectSql 查询的SQL
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(String connName, String selectSql) throws TransactionException;
+    public abstract PageRowSet queryForRowSet(String connName, String selectSql) throws TransactionException;
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(String connName, String selectSql, int startIndex, int resultNum) throws TransactionException;
+    public abstract PageRowSet queryForRowSet(String connName, String selectSql, int startIndex, int resultNum) throws TransactionException;
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(String connName, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException;
+    public abstract PageRowSet queryForRowSet(String connName, String selectSql, int startIndex, int resultNum, boolean autoCount) throws TransactionException;
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(String connName, String selectSql, Object[] paramList) throws TransactionException;
+    public abstract PageRowSet queryForRowSet(String connName, String selectSql, Object[] paramList) throws TransactionException;
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException;
+    public abstract PageRowSet queryForRowSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum) throws TransactionException;
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
@@ -976,30 +1046,30 @@ public abstract class DaoFactory {
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException;
+    public abstract PageRowSet queryForRowSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) throws TransactionException;
 
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param queryParam 查询参数
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(QueryParam queryParam) throws TransactionException;
+    public abstract PageRowSet queryForRowSet(QueryParam queryParam) throws TransactionException;
 
     /**
-     * 返回一个DataSet数据列表。 相比较DataList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param queryParam 查询参数
-     * @return DataSet数据列表
+     * @return PageTable数据列表
      * @throws TransactionException 事务异常
      */
-    public abstract DataSet queryForDataSet(String connName, QueryParam queryParam) throws TransactionException;
+    public abstract PageRowSet queryForRowSet(String connName, QueryParam queryParam) throws TransactionException;
 
     /**
      * 执行一条SQL语句.
@@ -1008,7 +1078,7 @@ public abstract class DaoFactory {
      * @return 影响的行数
      * @throws TransactionException 事务异常
      */
-    public abstract int executeCommand(String sql) throws TransactionException;
+    public abstract int execute(String sql) throws TransactionException;
 
     /**
      * 执行一条SQL语句.
@@ -1018,7 +1088,7 @@ public abstract class DaoFactory {
      * @return 影响的行数
      * @throws TransactionException 事务异常
      */
-    public abstract int executeCommand(String sql, Object[] paramList) throws TransactionException;
+    public abstract int execute(String sql, Object[] paramList) throws TransactionException;
 
     /**
      * 执行一条SQL语句.
@@ -1028,7 +1098,7 @@ public abstract class DaoFactory {
      * @return 影响的行数
      * @throws TransactionException 事务异常
      */
-    public abstract int executeCommand(String connName, String sql) throws TransactionException;
+    public abstract int execute(String connName, String sql) throws TransactionException;
 
     /**
      * 执行一条SQL语句.
@@ -1039,7 +1109,7 @@ public abstract class DaoFactory {
      * @return 影响的行数
      * @throws TransactionException 事务异常
      */
-    public abstract int executeCommand(String connName, String sql, Object[] paramList) throws TransactionException;
+    public abstract int execute(String connName, String sql, Object[] paramList) throws TransactionException;
 
 
     /**

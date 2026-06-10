@@ -1,7 +1,7 @@
 package uw.common.util;
 
 
-import java.util.Random;
+import java.security.SecureRandom;
 
 /**
  * 数字编码工具类。
@@ -50,7 +50,7 @@ public class NumCodeUtils {
             return num;
         }
         //混淆掩码。掩码为1-9。
-        int mask = (num[num.length - 1] % 9) + 1;
+        int mask = (num[num.length - 1] - '0') % 9 + 1;
         if (mask > num.length) {
             mask = mask % num.length;
         } else if (mask == num.length) {
@@ -60,8 +60,8 @@ public class NumCodeUtils {
         numEnc[0] = num[num.length - 1];
         int copyLen = num.length - mask;
         //前后位置对调。
-        System.arraycopy( num, 0, numEnc, copyLen, mask );
-        System.arraycopy( num, mask, numEnc, 1, copyLen - 1 );
+        System.arraycopy(num, 0, numEnc, copyLen, mask);
+        System.arraycopy(num, mask, numEnc, 1, copyLen - 1);
         return numEnc;
     }
 
@@ -76,7 +76,7 @@ public class NumCodeUtils {
             return numEnc;
         }
         //混淆掩码。掩码为1-9。
-        int mask = (numEnc[0] % 9) + 1;
+        int mask = (numEnc[0] - '0') % 9 + 1;
         if (mask > numEnc.length) {
             mask = mask % numEnc.length;
         } else if (mask == numEnc.length) {
@@ -86,8 +86,8 @@ public class NumCodeUtils {
         num[num.length - 1] = numEnc[0];
         int copyLen = numEnc.length - mask;
         //前后位置对调。
-        System.arraycopy( numEnc, 1, num, mask, copyLen - 1 );
-        System.arraycopy( numEnc, copyLen, num, 0, mask );
+        System.arraycopy(numEnc, 1, num, mask, copyLen - 1);
+        System.arraycopy(numEnc, copyLen, num, 0, mask);
         return num;
     }
 
@@ -150,9 +150,9 @@ public class NumCodeUtils {
      * @param numChars
      */
     private static char[] shuffleChars(char[] numChars) {
-        Random random = new Random();
+        SecureRandom random = new SecureRandom();
         for (int i = numChars.length - 1; i > 0; i--) {
-            int j = random.nextInt( i + 1 );
+            int j = random.nextInt(i + 1);
             char temp = numChars[i];
             numChars[i] = numChars[j];
             numChars[j] = temp;
@@ -180,12 +180,12 @@ public class NumCodeUtils {
      */
     private static String printCode(String name, char[] numChars) {
         StringBuilder sb = new StringBuilder();
-        sb.append( "private static final char[] " ).append( name ).append( " = new char[]{" );
+        sb.append("private static final char[] ").append(name).append(" = new char[]{");
         for (char c : numChars) {
-            sb.append( "'" ).append( c ).append( "'," );
+            sb.append("'").append(c).append("',");
         }
-        sb.deleteCharAt( sb.length() - 1 );
-        sb.append( "};" );
+        sb.deleteCharAt(sb.length() - 1);
+        sb.append("};");
         return sb.toString();
     }
 

@@ -159,15 +159,18 @@ public interface HttpData {
 
     /**
      * 设置返回的contentType。
+     *
      * @param responseType
      */
     void setResponseType(String responseType);
 
     /**
      * 返回的contentType。
+     *
      * @return
      */
     String getResponseType();
+
     /**
      * 获取错误信息。
      *

@@ -35,7 +35,7 @@ public class ByteArrayUtils {
      */
     public static byte[] shortToByteArrayForLittleEndian(short num, int length) {
         byte[] b = new byte[length];
-        for (int i = length - 1; i > 0; i--) {
+        for (int i = length - 1; i >= 0; i--) {
             b[i] = (byte) (num >>> (i * 8));
         }
         return b;
@@ -545,6 +545,9 @@ public class ByteArrayUtils {
      * @return
      */
     public static byte[] binStrToByteArray(String bs) {
+        if (bs == null || bs.length() % 8 != 0) {
+            throw new IllegalArgumentException("Binary string length must be a multiple of 8, got: " + (bs == null ? "null" : bs.length()));
+        }
         int bsLen = bs.length();
         byte[] data = new byte[bsLen / 8];
         for (int i = 0; i < data.length; i++) {
@@ -816,6 +819,7 @@ public class ByteArrayUtils {
                     for (int k = 1; k < sub.length; k++)
                         if (array[i + k] != sub[k]) {
                             flag = false;
+                            break;
                         }
                 }
                 if (flag)

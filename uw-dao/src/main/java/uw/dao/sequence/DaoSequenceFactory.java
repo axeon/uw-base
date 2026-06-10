@@ -3,7 +3,7 @@ package uw.dao.sequence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.dao.DaoFactory;
-import uw.dao.DataSet;
+import uw.common.data.PageRowSet;
 import uw.dao.conf.DaoConfigManager;
 
 import java.util.Map;
@@ -21,7 +21,7 @@ public class DaoSequenceFactory {
     /**
      * 日志.
      */
-    private static final Logger logger = LoggerFactory.getLogger( DaoSequenceFactory.class );
+    private static final Logger logger = LoggerFactory.getLogger(DaoSequenceFactory.class);
     /**
      * 初始化seq.
      */
@@ -64,12 +64,12 @@ public class DaoSequenceFactory {
     /**
      * 当前id.
      */
-    private transient long currentId = 0;
+    private transient volatile long currentId = 0;
 
     /**
      * 当前可以获取的最大id.
      */
-    private transient long maxId = 0;
+    private transient volatile long maxId = 0;
 
     /**
      * 增量数，高并发应用应该保持较高的增量数字。
@@ -93,7 +93,7 @@ public class DaoSequenceFactory {
      * @return 下一个值
      */
     public static long getCurrentId(String seqName) {
-        DaoSequenceFactory manager = seqFactory.computeIfAbsent( seqName, x -> new DaoSequenceFactory( seqName ) );
+        DaoSequenceFactory manager = seqFactory.computeIfAbsent(seqName, x -> new DaoSequenceFactory(seqName));
         return manager.currentId;
     }
 
@@ -104,9 +104,9 @@ public class DaoSequenceFactory {
      * @return 下一个值
      */
     public static long getSequenceId(String seqName) {
-        DaoSequenceFactory manager = seqFactory.computeIfAbsent( seqName, x -> new DaoSequenceFactory( seqName ) );
+        DaoSequenceFactory manager = seqFactory.computeIfAbsent(seqName, x -> new DaoSequenceFactory(seqName));
         synchronized (manager.seqName.intern()) {
-            return manager.getSequenceId( 1 );
+            return manager.getSequenceId(1);
         }
     }
 
@@ -118,9 +118,9 @@ public class DaoSequenceFactory {
      * @return 起始号码
      */
     public static long allocateSequenceRange(String seqName, long range) {
-        DaoSequenceFactory manager = seqFactory.computeIfAbsent( seqName, x -> new DaoSequenceFactory( seqName ) );
+        DaoSequenceFactory manager = seqFactory.computeIfAbsent(seqName, x -> new DaoSequenceFactory(seqName));
         synchronized (manager.seqName.intern()) {
-            return manager.getSequenceId( range );
+            return manager.getSequenceId(range);
         }
     }
 
@@ -132,10 +132,10 @@ public class DaoSequenceFactory {
      * @return 起始号码
      */
     public static long alignmentSequenceRange(String seqName, int range) {
-        DaoSequenceFactory manager = seqFactory.computeIfAbsent( seqName, x -> new DaoSequenceFactory( seqName ) );
+        DaoSequenceFactory manager = seqFactory.computeIfAbsent(seqName, x -> new DaoSequenceFactory(seqName));
         synchronized (manager.seqName.intern()) {
-            manager.getSequenceId( 1 );
-            return manager.getSequenceId( range - manager.maxId % range ) - manager.incrementNum;
+            manager.getSequenceId(1);
+            return manager.getSequenceId(range - manager.maxId % range) - manager.incrementNum;
         }
     }
 
@@ -148,9 +148,9 @@ public class DaoSequenceFactory {
      * @return
      */
     public static boolean resetSequenceId(String seqName, long initSeq, int incrementNum) {
-        DaoSequenceFactory manager = seqFactory.computeIfAbsent( seqName, x -> new DaoSequenceFactory( seqName ) );
+        DaoSequenceFactory manager = seqFactory.computeIfAbsent(seqName, x -> new DaoSequenceFactory(seqName));
         synchronized (manager.seqName.intern()) {
-            return manager.resetSequenceId( initSeq, incrementNum );
+            return manager.resetSequenceId(initSeq, incrementNum);
         }
     }
 
@@ -163,7 +163,7 @@ public class DaoSequenceFactory {
      */
     private long getSequenceId(long value) {
         if (currentId + value > maxId) {
-            if (!getNextBlock( value )) {
+            if (!getNextBlock(value)) {
                 return -1;
             }
         }
@@ -177,15 +177,17 @@ public class DaoSequenceFactory {
      */
     private boolean getNextBlock(long value) {
         for (int i = 0; i < MAX_RETRY_TIMES; i++) {
-            if (getNextBlockImpl( value )) {
+            if (getNextBlockImpl(value)) {
                 return true;
             }
-            logger.warn( "WARNING: DaoSequenceFactory[{}] failed to obtain Sequence next ID block . Trying {}...", this.seqName, i + 1 );
+            logger.warn("WARNING: DaoSequenceFactory[{}] failed to obtain Sequence next ID block . Trying {}...", this.seqName, i + 1);
             // 如果不成功，再次调用改方法。
             try {
-                Thread.sleep( 100 );
+                Thread.sleep(100);
             } catch (InterruptedException e) {
-                logger.error( e.getMessage(), e );
+                Thread.currentThread().interrupt();
+                logger.error(e.getMessage(), e);
+                break;
             }
         }
         return false;
@@ -206,18 +208,18 @@ public class DaoSequenceFactory {
     private boolean getNextBlockImpl(long value) {
         boolean success = false;
         try {
-            String connName = DaoConfigManager.getRouteMapping( "sys_seq", "write" );
+            String connName = DaoConfigManager.getRouteMapping("sys_seq", "write");
             // 从数据库中获取当前值。
-            DataSet ds = dao.queryForDataSet( connName, LOAD_SEQ, new Object[]{seqName} );
+            PageRowSet ds = dao.queryForRowSet(connName, LOAD_SEQ, new Object[]{seqName});
             if (ds.next()) {
-                currentId = ds.getLong( 0 );
-                incrementNum = ds.getInt( 1 );
+                currentId = ds.getLong(0);
+                incrementNum = ds.getInt(1);
             } else {
                 initSequence();
             }
             // 自动递增id到我们规定的递增累加值。
-            long newId = currentId + Math.max( incrementNum, value );
-            int effectedNum = dao.executeCommand( connName, UPDATE_SEQ, new Object[]{newId, seqName, currentId} );
+            long newId = currentId + Math.max(incrementNum, value);
+            int effectedNum = dao.execute(connName, UPDATE_SEQ, new Object[]{newId, seqName, currentId});
             success = (effectedNum == 1);
             if (success) {
                 if (value > 1) {
@@ -228,7 +230,7 @@ public class DaoSequenceFactory {
                 }
             }
         } catch (Throwable e) {
-            logger.error( "DaoSequenceFactory getNextBlockImpl exception! {}", e.getMessage(), e );
+            logger.error("DaoSequenceFactory getNextBlockImpl exception! {}", e.getMessage(), e);
         }
         return success;
     }
@@ -238,9 +240,9 @@ public class DaoSequenceFactory {
      */
     private void initSequence() {
         try {
-            dao.executeCommand( DaoConfigManager.getRouteMapping( "sys_seq", "write" ), INIT_SEQ, new Object[]{seqName, currentId, seqName, incrementNum} );
+            dao.execute(DaoConfigManager.getRouteMapping("sys_seq", "write"), INIT_SEQ, new Object[]{seqName, currentId, seqName, incrementNum});
         } catch (Throwable e) {
-            logger.error( "DaoSequenceFactory initSeq exception! {}", e.getMessage(), e );
+            logger.error("DaoSequenceFactory initSeq exception! {}", e.getMessage(), e);
         }
     }
 
@@ -254,13 +256,13 @@ public class DaoSequenceFactory {
     private boolean resetSequenceId(long initSeq, int incrementNum) {
         boolean success = false;
         try {
-            int effectedNum = dao.executeCommand( DaoConfigManager.getRouteMapping( "sys_seq", "write" ), RESET_SEQ, new Object[]{initSeq, incrementNum, seqName} );
+            int effectedNum = dao.execute(DaoConfigManager.getRouteMapping("sys_seq", "write"), RESET_SEQ, new Object[]{initSeq, incrementNum, seqName});
             success = (effectedNum == 1);
             if (success) {
                 this.maxId = 0;
             }
         } catch (Throwable e) {
-            logger.error( "DaoSequenceFactory resetSeq exception! {}", e.getMessage(), e );
+            logger.error("DaoSequenceFactory resetSeq exception! {}", e.getMessage(), e);
         }
         return success;
     }

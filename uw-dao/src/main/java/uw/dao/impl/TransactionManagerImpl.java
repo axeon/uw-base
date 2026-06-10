@@ -93,14 +93,14 @@ public class TransactionManagerImpl implements TransactionManager {
             return ConnectionManager.getConnection(configName);
         } else {
             return connMap.computeIfAbsent(configName, (key) -> {
-                Connection con = null;
                 try {
-                    con = ConnectionManager.getConnection(key);
+                    Connection con = ConnectionManager.getConnection(key);
                     con.setAutoCommit(false);
+                    return con;
                 } catch (SQLException e) {
                     logger.error(e.getMessage(), e);
+                    throw new RuntimeException("Failed to get connection for [" + key + "]", e);
                 }
-                return con;
             });
         }
     }

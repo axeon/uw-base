@@ -15,7 +15,7 @@ public @interface QueryMeta {
     /**
      * sql中需要包含字段，表达式，预算符，占位信息。
      * 比如"col=?,col like ?,col in (?)"。
-     *
+     * <p>
      * 特殊情况支持：
      * 1.无占位符情况。 expr="cols>0", value="1"。只要value有数值，即生效。
      * 2.多占位符支持。 expr="(col1 like ? or col2 like ? or col3 like ?)", value="value"。

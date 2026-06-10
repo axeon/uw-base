@@ -10,7 +10,8 @@ public interface CacheChangeNotifyListener<K, V> {
 
     /**
      * 响应消息。
-     * @param key key
+     *
+     * @param key      key
      * @param oldValue 旧数值
      * @param newValue 新数值
      */

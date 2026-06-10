@@ -8,7 +8,7 @@ import uw.task.entity.TaskContact;
 import uw.task.entity.TaskRunnerConfig;
 
 /**
- * 
+ *
  * @since 2018-05-30
  */
 public class SimpleRunner extends SimpleBaseRunner {

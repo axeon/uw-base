@@ -40,6 +40,15 @@ public class AuthServiceProperties {
     private String ipWhiteList = "127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fe80::/10,FC00::/7";
 
     /**
+     * 可信代理IP列表。
+     * <p>
+     * 仅当请求的直接来源IP在此列表内时，才会信任 X-Forwarded-For / X-Real-IP 头。
+     * 默认包含所有内网地址和 localhost，适用于应用部署在内网且由前置 Nginx/网关代理的场景。
+     * 支持单IP（如 10.0.1.100）和CIDR网段（如 10.0.1.0/24）。
+     */
+    private String trustedProxies = "127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fe80::/10,FC00::/7";
+
+    /**
      * 应用Id,统一由auth-center分配，一般不需要指派。
      */
     private long appId;
@@ -121,6 +130,14 @@ public class AuthServiceProperties {
 
     public void setIpWhiteList(String ipWhiteList) {
         this.ipWhiteList = ipWhiteList;
+    }
+
+    public String getTrustedProxies() {
+        return trustedProxies;
+    }
+
+    public void setTrustedProxies(String trustedProxies) {
+        this.trustedProxies = trustedProxies;
     }
 
     public long getAppId() {

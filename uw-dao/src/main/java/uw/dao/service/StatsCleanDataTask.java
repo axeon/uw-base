@@ -37,7 +37,7 @@ public class StatsCleanDataTask implements Runnable {
         HashSet<String> set = new HashSet<>();
         List<String> list = null;
         try {
-            list = dao.queryForSingleList(dao.getConnectionName(DaoService.STATS_BASE_TABLE, "all"), String.class,
+            list = dao.queryForValueList(dao.getConnectionName(DaoService.STATS_BASE_TABLE, "all"), String.class,
                     "show tables");
             if (list != null) {
                 for (String s : list) {
@@ -70,15 +70,34 @@ public class StatsCleanDataTask implements Runnable {
         }
         // 循环删除过期数据
         for (int i = start; i < list.size(); i++) {
+            String tableName = list.get(i);
+            // 安全校验：只允许删除以 STATS_BASE_TABLE 开头的表
+            if (!isValidStatsTable(tableName)) {
+                logger.warn("Skipping unexpected table name: [{}]", tableName);
+                continue;
+            }
             try {
-                dao.executeCommand("DROP TABLE IF EXISTS " + list.get(i));
-                logger.info( "DROP TABLE IF EXISTS [{}].", list.get( i ) );
+                dao.execute("DROP TABLE IF EXISTS " + tableName);
+                logger.info("DROP TABLE IF EXISTS [{}].", tableName);
             } catch (TransactionException e) {
                 logger.error(e.getMessage());
             }
         }
         logger.info("StatsInfo Clean Task is run end!");
 
+    }
+
+    /**
+     * 校验表名是否为合法的统计分片表。
+     * 合法表名格式：以 STATS_BASE_TABLE 开头 + "_" + 日期后缀(yyyyMMdd)，仅包含字母数字和下划线。
+     */
+    private boolean isValidStatsTable(String tableName) {
+        if (tableName == null || !tableName.startsWith(DaoService.STATS_BASE_TABLE + "_")) {
+            return false;
+        }
+        String suffix = tableName.substring(DaoService.STATS_BASE_TABLE.length() + 1);
+        // 日期后缀应为纯数字（yyyyMMdd）
+        return !suffix.isEmpty() && suffix.matches("\\d+");
     }
 
 }

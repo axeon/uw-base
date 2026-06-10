@@ -1,12 +1,10 @@
 package uw.auth.service.rpc.impl;
 
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import uw.auth.service.conf.AuthServiceProperties;
 import uw.auth.service.rpc.AuthAppRpc;
 import uw.auth.service.vo.*;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
 /**
  * auth-server向auth-center RPC实现
@@ -15,56 +13,39 @@ import uw.common.dto.ResponseData;
  */
 public class AuthAppRpcImpl implements AuthAppRpc {
 
-    /**
-     * 属性配置器
-     */
     private final AuthServiceProperties authServiceProperties;
+    private final RestClient authRestClient;
 
-    /**
-     * RPC Client
-     */
-    private final RestTemplate authRestTemplate;
-
-    /**
-     * @param authServiceProperties
-     * @param authRestTemplate
-     */
-    public AuthAppRpcImpl(final AuthServiceProperties authServiceProperties, final RestTemplate authRestTemplate) {
+    public AuthAppRpcImpl(final AuthServiceProperties authServiceProperties, final RestClient authRestClient) {
         this.authServiceProperties = authServiceProperties;
-        this.authRestTemplate = authRestTemplate;
+        this.authRestClient = authRestClient;
     }
 
-    /**
-     * 发布当前App
-     *
-     * @param appRegRequest
-     * @return
-     */
     @Override
     public MscAppRegResponse regApp(MscAppRegRequest appRegRequest) {
-        return authRestTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/app/regApp", appRegRequest, MscAppRegResponse.class );
+        return authRestClient.post()
+                .uri(authServiceProperties.getAuthCenterHost() + "/rpc/app/regApp")
+                .body(appRegRequest)
+                .retrieve()
+                .body(MscAppRegResponse.class);
     }
 
-    /**
-     * 报告状态，同时拉取非法TokenData。
-     *
-     * @param mscAppReportRequest
-     * @return
-     */
     @Override
     public MscAppReportResponse reportStatus(MscAppReportRequest mscAppReportRequest) {
-        return authRestTemplate.postForObject( authServiceProperties.getAuthCenterHost() + "/rpc/app/reportStatus", mscAppReportRequest, MscAppReportResponse.class );
+        return authRestClient.post()
+                .uri(authServiceProperties.getAuthCenterHost() + "/rpc/app/reportStatus")
+                .body(mscAppReportRequest)
+                .retrieve()
+                .body(MscAppReportResponse.class);
     }
 
-    /**
-     * 更新mscPerm授权状态。
-     *
-     * @return
-     */
     @Override
     public ResponseData updatePermLicense(MscPermLicenseRequest mscPermLicenseRequest) {
-        return authRestTemplate.exchange( authServiceProperties.getAuthCenterHost() + "/rpc/app/updatePermLicense", HttpMethod.PUT, new HttpEntity<>( mscPermLicenseRequest ),
-                ResponseData.class ).getBody();
+        return authRestClient.put()
+                .uri(authServiceProperties.getAuthCenterHost() + "/rpc/app/updatePermLicense")
+                .body(mscPermLicenseRequest)
+                .retrieve()
+                .body(ResponseData.class);
     }
 
 }

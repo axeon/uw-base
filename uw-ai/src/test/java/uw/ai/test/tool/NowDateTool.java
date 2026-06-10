@@ -2,7 +2,7 @@ package uw.ai.test.tool;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import uw.ai.tool.AiToolParam;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -48,7 +48,7 @@ public class NowDateTool implements uw.ai.tool.AiTool<NowDateTool.ToolParam, Res
      */
     @Override
     public ResponseData<String> apply(ToolParam toolParam) {
-        return ResponseData.success( LocalDateTime.now().toString() );
+        return ResponseData.success(LocalDateTime.now().toString());
     }
 
     /**

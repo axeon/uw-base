@@ -2,6 +2,7 @@ package uw.task.container;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.ExceptionUtils;
 import uw.common.util.SystemClock;
 import uw.task.TaskData;
 import uw.task.TaskFactory;
@@ -15,12 +16,11 @@ import uw.task.entity.TaskRunnerLog;
 import uw.task.exception.TaskDataException;
 import uw.task.exception.TaskPartnerException;
 import uw.task.listener.RunnerTaskListener;
-import uw.task.util.MiscUtils;
 import uw.task.util.TaskGlobalRateLimiter;
 import uw.task.util.TaskLocalRateLimiter;
 import uw.task.util.TaskStatsService;
 
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 在此处接受MQ信息，并进行处理。
@@ -29,7 +29,7 @@ import java.util.ArrayList;
  */
 public class TaskRunnerContainer {
 
-    private static final Logger log = LoggerFactory.getLogger( TaskRunnerContainer.class );
+    private static final Logger log = LoggerFactory.getLogger(TaskRunnerContainer.class);
 
 
     /**
@@ -91,17 +91,24 @@ public class TaskRunnerContainer {
     @SuppressWarnings("ALL")
     public TaskData process(TaskData taskData) {
         if (taskData == null) {
-            log.warn( "正在处理的TaskData为NULL，请检查日志." );
+            log.warn("正在处理的TaskData为NULL，请检查日志.");
             return null;
         }
         // 设置开始消费时间
-        taskData.setConsumeDate( SystemClock.nowDate() );
+        taskData.setConsumeDate(SystemClock.nowDate());
         // 获取任务实例
-        TaskRunner<?, ?> taskRunner = taskMetaInfoManager.getRunnerInstance( taskData.getTaskClass() );
+        TaskRunner<?, ?> taskRunner = taskMetaInfoManager.getRunnerInstance(taskData.getTaskClass());
+        if (taskRunner == null) {
+            log.error("未找到TaskRunner实例: {}", taskData.getTaskClass());
+            taskData.setState(TaskData.STATE_FAIL_PROGRAM);
+            taskData.setErrorInfo("TaskRunner not found: " + taskData.getTaskClass());
+            taskData.setFinishDate(SystemClock.nowDate());
+            return taskData;
+        }
         // 获取任务设置数据
-        TaskRunnerConfig taskConfig = taskMetaInfoManager.getRunnerConfigByData( taskData );
+        TaskRunnerConfig taskConfig = taskMetaInfoManager.getRunnerConfigByData(taskData);
         // 增加执行信息
-        taskData.setRanTimes( taskData.getRanTimes() + 1 );
+        taskData.setRanTimes(taskData.getRanTimes() + 1);
 
         // 限制标记，0时说明无限制
         long noLimitFlag = 0;
@@ -110,41 +117,41 @@ public class TaskRunnerContainer {
             if (taskConfig.getRateLimitType() != TaskRunnerConfig.RATE_LIMIT_NONE) {
                 if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_LOCAL) {
                     // 进程内限制
-                    boolean flag = taskLocalRateLimiter.tryAcquire( "", taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), taskConfig.getRateLimitWait(), 1 );
+                    boolean flag = taskLocalRateLimiter.tryAcquire("", taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), taskConfig.getRateLimitWait(), 1);
                     noLimitFlag = flag ? 0 : -1;
                 } else if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_LOCAL_TASK) {
                     // 进程内+任务名限制
-                    boolean flag = taskLocalRateLimiter.tryAcquire( taskData.getTaskClass(), taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(),
-                            taskConfig.getRateLimitWait(), 1 );
+                    boolean flag = taskLocalRateLimiter.tryAcquire(taskData.getTaskClass(), taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(),
+                            taskConfig.getRateLimitWait(), 1);
                     noLimitFlag = flag ? 0 : -1;
                 } else if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_LOCAL_TASK_TAG) {
                     // 进程内+任务名限制
                     String locker = taskData.getTaskClass() + "$" + taskData.getRateLimitTag();
-                    boolean flag = taskLocalRateLimiter.tryAcquire( locker, taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), taskConfig.getRateLimitWait(), 1 );
+                    boolean flag = taskLocalRateLimiter.tryAcquire(locker, taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), taskConfig.getRateLimitWait(), 1);
                     noLimitFlag = flag ? 0 : -1;
                 } else {
-                    StringBuilder locker = new StringBuilder( 50 ).append( taskData.getTaskClass() );
+                    StringBuilder locker = new StringBuilder(50).append(taskData.getTaskClass());
                     switch (taskConfig.getRateLimitType()) {
                         case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TAG:
-                            locker.append( "$" ).append( taskData.getRateLimitTag() );
+                            locker.append("$").append(taskData.getRateLimitTag());
                             break;
                         case TaskRunnerConfig.RATE_LIMIT_GLOBAL_HOST:
-                            locker.append( "$@" ).append( taskProperties.getAppHost() );
+                            locker.append("$@").append(taskProperties.getAppHost());
                             break;
                         case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK:
-                            locker.append( "$" );
+                            locker.append("$");
                             break;
                         case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TAG_HOST:
-                            locker.append( "$" ).append( taskData.getRateLimitTag() ).append( "@" ).append( taskProperties.getAppHost() );
+                            locker.append("$").append(taskData.getRateLimitTag()).append("@").append(taskProperties.getAppHost());
                             break;
                         case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_TAG:
-                            locker.append( "$" ).append( taskData.getRateLimitTag() );
+                            locker.append("$").append(taskData.getRateLimitTag());
                             break;
                         case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_HOST:
-                            locker.append( "$@" ).append( taskProperties.getAppHost() );
+                            locker.append("$@").append(taskProperties.getAppHost());
                             break;
                         case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_TAG_HOST:
-                            locker.append( "$" ).append( taskData.getRateLimitTag() ).append( "@" ).append( taskProperties.getAppHost() );
+                            locker.append("$").append(taskData.getRateLimitTag()).append("@").append(taskProperties.getAppHost());
                             break;
                     }
                     // 全局流量限制
@@ -152,14 +159,15 @@ public class TaskRunnerContainer {
                     // 开始进行延时等待
                     long end = SystemClock.now() + taskConfig.getRateLimitWait() * 1000;
                     while (SystemClock.now() <= end) {
-                        noLimitFlag = taskGlobalRateLimiter.tryAcquire( locker.toString(), taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), 1 );
+                        noLimitFlag = taskGlobalRateLimiter.tryAcquire(locker.toString(), taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), 1);
                         if (noLimitFlag == 0) {
                             break;
                         }
                         try {
-                            Thread.sleep( noLimitFlag );
+                            Thread.sleep(noLimitFlag);
                         } catch (InterruptedException e) {
-                            log.error( e.getMessage(), e );
+                            Thread.currentThread().interrupt();
+                            break;
                         }
                     }
                 }
@@ -171,72 +179,72 @@ public class TaskRunnerContainer {
             long delaySleep = taskData.getTaskDelay() - (SystemClock.now() - taskData.getQueueDate().getTime());
             if (delaySleep > 0) {
                 try {
-                    Thread.sleep( delaySleep );
+                    Thread.sleep(delaySleep);
                 } catch (InterruptedException e) {
-                    log.error( e.getMessage(), e );
+                    Thread.currentThread().interrupt();
                 }
             }
         }
         // 设置开始执行时间
-        taskData.setRunDate( SystemClock.nowDate() );
+        taskData.setRunDate(SystemClock.nowDate());
         // 如果允许，则开始执行。
         if (noLimitFlag == 0) {
-            ArrayList<RunnerTaskListener> runnerListenerList = taskListenerManager.getRunnerListenerList();
+            List<RunnerTaskListener> runnerListenerList = taskListenerManager.getRunnerListenerList();
             try {
                 // 执行任务
-                taskData.setResultData( taskRunner.runTask( taskData ) );
-                taskData.setState( TaskData.STATE_SUCCESS );
+                taskData.setResultData(taskRunner.runTask(taskData));
+                taskData.setState(TaskData.STATE_SUCCESS);
             } catch (TaskDataException e) {
                 // 出现TaskDataException，说明是数据错误。
-                taskData.setState( TaskData.STATE_FAIL_DATA );
-                taskData.setErrorInfo( MiscUtils.exceptionToString( e ) );
+                taskData.setState(TaskData.STATE_FAIL_DATA);
+                taskData.setErrorInfo(ExceptionUtils.exceptionToString(e));
             } catch (TaskPartnerException e) {
                 // 出现TaskPartnerException，说明是合作方的错误。
-                taskData.setState( TaskData.STATE_FAIL_PARTNER );
-                taskData.setErrorInfo( MiscUtils.exceptionToString( e ) );
+                taskData.setState(TaskData.STATE_FAIL_PARTNER);
+                taskData.setErrorInfo(ExceptionUtils.exceptionToString(e));
             } catch (Throwable e) {
                 // 设置异常状态
-                taskData.setState( TaskData.STATE_FAIL_PROGRAM );
+                taskData.setState(TaskData.STATE_FAIL_PROGRAM);
                 // 设置异常信息，自动屏蔽spring自己的输出。
-                taskData.setErrorInfo( MiscUtils.exceptionToString( e ) );
-                log.error( e.getMessage(), e );
+                taskData.setErrorInfo(ExceptionUtils.exceptionToString(e));
+                log.error(e.getMessage(), e);
             }
             // 执行监听器操作
             if (runnerListenerList != null && runnerListenerList.size() > 0) {
                 try {
                     for (RunnerTaskListener listener : runnerListenerList) {
-                        listener.onPostExecute( taskData );
+                        listener.onPostExecute(taskData);
                     }
                 } catch (Throwable e) {
-                    log.error( e.getMessage(), e );
+                    log.error(e.getMessage(), e);
                 }
             }
             // 清除refObject。
-            taskData.setRefObject( null );
+            taskData.setRefObject(null);
         } else {
-            taskData.setErrorInfo( "RateLimit!!!" + taskConfig.getRateLimitValue() + "/" + taskConfig.getRateLimitTime() + "s, Wait " + taskConfig.getRateLimitWait() + "s!" );
-            taskData.setState( TaskData.STATE_FAIL_CONFIG );
+            taskData.setErrorInfo("RateLimit!!!" + taskConfig.getRateLimitValue() + "/" + taskConfig.getRateLimitTime() + "s, Wait " + taskConfig.getRateLimitWait() + "s!");
+            taskData.setState(TaskData.STATE_FAIL_CONFIG);
         }
 
         // 不管如何，都给设定结束日期。
-        taskData.setFinishDate( SystemClock.nowDate() );
+        taskData.setFinishDate(SystemClock.nowDate());
         //开始输出统计数据。
-        TaskStatsService.updateRunnerStats( taskConfig.getId(), 1,
+        TaskStatsService.updateRunnerStats(taskConfig.getId(), 1,
                 taskData.getState() == TaskData.STATE_FAIL_PROGRAM ? 1 : 0,
                 taskData.getState() == TaskData.STATE_FAIL_CONFIG ? 1 : 0,
                 taskData.getState() == TaskData.STATE_FAIL_DATA ? 1 : 0,
                 taskData.getState() == TaskData.STATE_FAIL_PARTNER ? 1 : 0,
-                (int) (taskData.getConsumeDate().getTime() - taskData.getQueueDate().getTime()),
+                (int) (taskData.getConsumeDate().getTime() - (taskData.getQueueDate() != null ? taskData.getQueueDate().getTime() : taskData.getConsumeDate().getTime())),
                 (int) (taskData.getRunDate().getTime() - taskData.getConsumeDate().getTime()),
-                (int) (taskData.getFinishDate().getTime() - taskData.getRunDate().getTime()) );
+                (int) (taskData.getFinishDate().getTime() - taskData.getRunDate().getTime()));
         // 保存日志与统计信息
         int logLevel = taskConfig.getLogLevel();
         if (logLevel > TaskRunnerConfig.TASK_LOG_TYPE_NONE) {
-            TaskRunnerLog log = new TaskRunnerLog( taskData );
-            log.setLogLevel( logLevel );
-            log.setLogLimitSize( taskConfig.getLogLimitSize() );
-            log.setTaskId( taskConfig.getId() );
-            taskApiClient.sendTaskRunnerLog( log );
+            TaskRunnerLog log = new TaskRunnerLog(taskData);
+            log.setLogLevel(logLevel);
+            log.setLogLimitSize(taskConfig.getLogLimitSize());
+            log.setTaskId(taskConfig.getId());
+            taskApiClient.sendTaskRunnerLog(log);
         }
 
         if (taskData.getRunType() == TaskData.RUN_TYPE_GLOBAL_RPC || taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
@@ -244,14 +252,14 @@ public class TaskRunnerContainer {
             if (taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO) {
                 if (taskData.getState() > TaskData.STATE_SUCCESS) {
                     //设置任务延时，原计划使用Math.pow(2,x)的，后来决定不用了
-                    taskData.setTaskDelay( taskData.getRanTimes() * taskProperties.getTaskRpcRetryDelay() );
+                    taskData.setTaskDelay(taskData.getRanTimes() * taskProperties.getTaskRpcRetryDelay());
                     if (taskData.getState() == TaskData.STATE_FAIL_CONFIG) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
-                            taskData = TaskFactory.getInstance().runTaskLocal( cleanTaskInfo( taskData ) );
+                            taskData = TaskFactory.getInstance().runTaskLocal(cleanTaskInfo(taskData));
                         }
                     } else if (taskData.getState() == TaskData.STATE_FAIL_PARTNER) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByPartner()) {
-                            taskData = TaskFactory.getInstance().runTaskLocal( cleanTaskInfo( taskData ) );
+                            taskData = TaskFactory.getInstance().runTaskLocal(cleanTaskInfo(taskData));
                         }
                     }
                 }
@@ -262,14 +270,14 @@ public class TaskRunnerContainer {
             if (taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO) {
                 if (taskData.getState() > TaskData.STATE_SUCCESS) {
                     //设置任务延时，原计划使用Math.pow(2,x)的，后来决定不用了
-                    taskData.setTaskDelay( taskData.getRanTimes() * taskProperties.getTaskQueueRetryDelay() );
+                    taskData.setTaskDelay(taskData.getRanTimes() * taskProperties.getTaskQueueRetryDelay());
                     if (taskData.getState() == TaskData.STATE_FAIL_CONFIG) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
-                            TaskFactory.getInstance().sendToQueue( cleanTaskInfo( taskData ) );
+                            TaskFactory.getInstance().sendToQueue(cleanTaskInfo(taskData));
                         }
                     } else if (taskData.getState() == TaskData.STATE_FAIL_PARTNER) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByPartner()) {
-                            TaskFactory.getInstance().sendToQueue( cleanTaskInfo( taskData ) );
+                            TaskFactory.getInstance().sendToQueue(cleanTaskInfo(taskData));
                         }
                     }
                 }
@@ -286,13 +294,13 @@ public class TaskRunnerContainer {
     private TaskData cleanTaskInfo(TaskData srcData) {
         TaskData taskData = srcData.copy();
         //先清除一些任务信息。
-        taskData.setRefObject( null );
-        taskData.setConsumeDate( null );
-        taskData.setRunDate( null );
-        taskData.setFinishDate( null );
-        taskData.setResultData( null );
-        taskData.setErrorInfo( null );
-        taskData.setState( TaskData.STATE_UNKNOWN );
+        taskData.setRefObject(null);
+        taskData.setConsumeDate(null);
+        taskData.setRunDate(null);
+        taskData.setFinishDate(null);
+        taskData.setResultData(null);
+        taskData.setErrorInfo(null);
+        taskData.setState(TaskData.STATE_UNKNOWN);
         return taskData;
     }
 

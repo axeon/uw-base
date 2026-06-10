@@ -60,12 +60,12 @@ public class DaoService {
     /**
      * 可以记录的sqlCostMin最小时间。
      */
-    private static int sqlCostMin = 100;
+    private static volatile int sqlCostMin = 100;
 
     /**
      * 是否开启sql统计。
      */
-    private static boolean enableSqlStats = false;
+    private static volatile boolean enableSqlStats = false;
 
     /**
      * 是否开启table sharding。
@@ -178,7 +178,7 @@ public class DaoService {
                 + "PRIMARY KEY (id)\n"
                 + ") ENGINE=INNODB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPRESSED";
         try {
-            dao.executeCommand(dao.getConnectionName(STATS_BASE_TABLE, "all"), sql);
+            dao.execute(dao.getConnectionName(STATS_BASE_TABLE, "all"), sql);
             logger.info("init table: {}", STATS_BASE_TABLE);
         } catch (TransactionException e) {
             logger.error(e.getMessage(), e);

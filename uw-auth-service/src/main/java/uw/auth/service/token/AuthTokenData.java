@@ -125,7 +125,7 @@ public class AuthTokenData {
 
     }
 
-    public AuthTokenData(int tokenType,long saasId, int userType, long userId, long mchId, long groupId, int isMaster, String userName, String nickName, String realName, String mobile,
+    public AuthTokenData(int tokenType, long saasId, int userType, long userId, long mchId, long groupId, int isMaster, String userName, String nickName, String realName, String mobile,
                          String email, String userIp, int userGrade) {
 
         this.tokenType = tokenType;
@@ -305,7 +305,7 @@ public class AuthTokenData {
      * @return
      */
     public String getConfig(String paramName) {
-        return getConfig( paramName, null );
+        return getConfig(paramName, null);
     }
 
     /**
@@ -315,7 +315,7 @@ public class AuthTokenData {
      * @return 参数的值
      */
     public int getIntConfig(String paramName) {
-        return getIntConfig( paramName, 0 );
+        return getIntConfig(paramName, 0);
     }
 
     /**
@@ -325,7 +325,7 @@ public class AuthTokenData {
      * @return 参数的值
      */
     public long getLongConfig(String paramName) {
-        return getLongConfig( paramName, 0 );
+        return getLongConfig(paramName, 0);
     }
 
     /**
@@ -339,10 +339,10 @@ public class AuthTokenData {
         if (configMap == null || configMap.isEmpty()) {
             return defaultValue;
         }
-        String temp = configMap.get( paramName );
+        String temp = configMap.get(paramName);
         if (temp != null && !temp.isEmpty()) {
             try {
-                return Long.parseLong( temp );
+                return Long.parseLong(temp);
             } catch (Exception ignored) {
             }
         }
@@ -356,7 +356,7 @@ public class AuthTokenData {
      * @return 参数的值
      */
     public double getDoubleConfig(String paramName) {
-        return getDoubleConfig( paramName, 0 );
+        return getDoubleConfig(paramName, 0);
     }
 
     /**
@@ -370,10 +370,10 @@ public class AuthTokenData {
         if (configMap == null || configMap.isEmpty()) {
             return defaultValue;
         }
-        String temp = configMap.get( paramName );
+        String temp = configMap.get(paramName);
         if (temp != null && !temp.isEmpty()) {
             try {
-                return Double.parseDouble( temp );
+                return Double.parseDouble(temp);
             } catch (Exception ignored) {
             }
         }
@@ -387,7 +387,7 @@ public class AuthTokenData {
      * @return 参数的值
      */
     public float getFloatConfig(String paramName) {
-        return getFloatConfig( paramName, 0 );
+        return getFloatConfig(paramName, 0);
     }
 
     /**
@@ -401,10 +401,10 @@ public class AuthTokenData {
         if (configMap == null || configMap.isEmpty()) {
             return defaultValue;
         }
-        String temp = configMap.get( paramName );
+        String temp = configMap.get(paramName);
         if (temp != null && !temp.isEmpty()) {
             try {
-                return Float.parseFloat( temp );
+                return Float.parseFloat(temp);
             } catch (Exception ignored) {
             }
         }
@@ -418,7 +418,7 @@ public class AuthTokenData {
      * @return 参数的值
      */
     public boolean getBooleanConfig(String paramName) {
-        return getBooleanConfig( paramName, false );
+        return getBooleanConfig(paramName, false);
     }
 
     /**
@@ -432,10 +432,10 @@ public class AuthTokenData {
         if (configMap == null || configMap.isEmpty()) {
             return defaultValue;
         }
-        String temp = configMap.get( paramName );
+        String temp = configMap.get(paramName);
         if (temp != null && !temp.isEmpty()) {
             try {
-                return Boolean.parseBoolean( temp );
+                return Boolean.parseBoolean(temp);
             } catch (Exception ignored) {
             }
         }
@@ -453,7 +453,7 @@ public class AuthTokenData {
         if (configMap == null || configMap.isEmpty()) {
             return defaultValue;
         }
-        String temp = configMap.get( paramName );
+        String temp = configMap.get(paramName);
         if (temp != null && !temp.isEmpty()) {
             return temp;
         }
@@ -471,10 +471,10 @@ public class AuthTokenData {
         if (configMap == null || configMap.isEmpty()) {
             return defaultValue;
         }
-        String temp = configMap.get( paramName );
+        String temp = configMap.get(paramName);
         if (temp != null && !temp.isEmpty()) {
             try {
-                return Integer.parseInt( temp );
+                return Integer.parseInt(temp);
             } catch (Exception ignored) {
             }
         }

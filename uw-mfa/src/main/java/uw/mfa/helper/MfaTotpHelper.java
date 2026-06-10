@@ -9,7 +9,7 @@ import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.ValueOperations;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.mfa.conf.UwMfaProperties;
 import uw.mfa.constant.MfaResponseCode;
 import uw.mfa.totp.ToptRecoveryCodeGenerator;

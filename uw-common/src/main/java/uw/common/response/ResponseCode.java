@@ -1,4 +1,4 @@
-package uw.common.dto;
+package uw.common.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.context.MessageSource;

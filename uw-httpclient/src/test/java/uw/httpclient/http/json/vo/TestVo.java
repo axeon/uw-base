@@ -3,7 +3,7 @@ package uw.httpclient.http.json.vo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * 
+ *
  * @since 2018-03-01
  */
 public class TestVo {

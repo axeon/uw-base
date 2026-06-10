@@ -8,7 +8,6 @@ import java.io.Serializable;
 /**
  * 订单接口日志Vo
  *
- * 
  * @since 2018-04-25
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)

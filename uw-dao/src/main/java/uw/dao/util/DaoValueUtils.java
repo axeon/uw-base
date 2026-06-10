@@ -4,8 +4,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import uw.common.util.JsonUtils;
 
-import java.util.Arrays;
-
 /**
  * dao的数值工具类.
  */
@@ -81,7 +79,7 @@ public class DaoValueUtils {
             Object param = paramList[i];
             if (param instanceof String) {
                 sb.append("'");
-                sb.append(paramList[i]);
+                sb.append(paramList[i].toString().replace("'", "\\'"));
                 sb.append("'");
             } else if (param instanceof java.util.Date) {
                 sb.append("'");

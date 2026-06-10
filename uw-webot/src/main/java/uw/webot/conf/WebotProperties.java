@@ -1,18 +1,14 @@
 package uw.webot.conf;
 
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 import uw.webot.captcha.CaptchaConfig;
-import uw.webot.core.BrowserConfig;
 import uw.webot.proxy.ProxyConfig;
 import uw.webot.session.SessionConfig;
 import uw.webot.stealth.StealthConfig;
 
-import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 

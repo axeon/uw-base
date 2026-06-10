@@ -21,7 +21,7 @@ import java.util.Base64;
  */
 public class RSAUtils {
 
-    private static final Logger log = LoggerFactory.getLogger( RSAUtils.class );
+    private static final Logger log = LoggerFactory.getLogger(RSAUtils.class);
 
     /**
      * 从字符串中加载公钥。
@@ -31,11 +31,11 @@ public class RSAUtils {
      */
     public static RSAPublicKey loadPublicKeyFromBytes(byte[] buffer) {
         try {
-            KeyFactory keyFactory = KeyFactory.getInstance( "RSA" );
-            X509EncodedKeySpec keySpec = new X509EncodedKeySpec( buffer );
-            return (RSAPublicKey) keyFactory.generatePublic( keySpec );
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(buffer);
+            return (RSAPublicKey) keyFactory.generatePublic(keySpec);
         } catch (Throwable e) {
-            log.error( "RSAUtils loadPublicKeyFromBytes error! {}", e.toString() );
+            log.error("RSAUtils loadPublicKeyFromBytes error! {}", e.toString());
         }
         return null;
     }
@@ -48,11 +48,11 @@ public class RSAUtils {
      */
     public static RSAPrivateKey loadPrivateKeyFromBytes(byte[] buffer) {
         try {
-            KeyFactory keyFactory = KeyFactory.getInstance( "RSA" );
-            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec( buffer );
-            return (RSAPrivateKey) keyFactory.generatePrivate( keySpec );
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(buffer);
+            return (RSAPrivateKey) keyFactory.generatePrivate(keySpec);
         } catch (Throwable e) {
-            log.error( "RSAUtils loadPrivateKeyFromBytes error! {}", e.toString() );
+            log.error("RSAUtils loadPrivateKeyFromBytes error! {}", e.toString());
         }
         return null;
     }
@@ -65,8 +65,8 @@ public class RSAUtils {
      * @throws Exception 加载公钥时产生的异常
      */
     public static RSAPublicKey loadPublicKeyFromBase64(String publicKeyStr) {
-        if (StringUtils.isNotBlank( publicKeyStr )) {
-            return loadPublicKeyFromBytes( Base64.getDecoder().decode( publicKeyStr ) );
+        if (StringUtils.isNotBlank(publicKeyStr)) {
+            return loadPublicKeyFromBytes(Base64.getDecoder().decode(publicKeyStr));
         } else {
             return null;
         }
@@ -80,8 +80,8 @@ public class RSAUtils {
      * @throws Exception
      */
     public static RSAPrivateKey loadPrivateKeyFromBase64(String privateKeyStr) {
-        if (StringUtils.isNotBlank( privateKeyStr )) {
-            return loadPrivateKeyFromBytes( Base64.getDecoder().decode( privateKeyStr ) );
+        if (StringUtils.isNotBlank(privateKeyStr)) {
+            return loadPrivateKeyFromBytes(Base64.getDecoder().decode(privateKeyStr));
         } else {
             return null;
         }
@@ -101,23 +101,23 @@ public class RSAUtils {
         }
         try {
             // 使用默认RSA
-            Cipher cipher = Cipher.getInstance( "RSA" );
-            cipher.init( Cipher.ENCRYPT_MODE, privateKey );
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.ENCRYPT_MODE, privateKey);
             //数据块大小
             int blockSize = privateKey.getModulus().bitLength() / 8 - 11;
             int inputLen = plainData.length;
-            ByteArrayOutputStream out = new ByteArrayOutputStream( plainData.length * 3 );
+            ByteArrayOutputStream out = new ByteArrayOutputStream(plainData.length * 3);
             int offset = 0;
             byte[] cache;
             int i = 0;
             // 对数据分段解密
             while (inputLen - offset > 0) {
                 if (inputLen - offset > blockSize) {
-                    cache = cipher.doFinal( plainData, offset, blockSize );
+                    cache = cipher.doFinal(plainData, offset, blockSize);
                 } else {
-                    cache = cipher.doFinal( plainData, offset, inputLen - offset );
+                    cache = cipher.doFinal(plainData, offset, inputLen - offset);
                 }
-                out.write( cache, 0, cache.length );
+                out.write(cache, 0, cache.length);
                 i++;
                 offset = i * blockSize;
             }
@@ -125,7 +125,7 @@ public class RSAUtils {
             out.close();
             return encryptedData;
         } catch (Throwable e) {
-            log.error( "RSAUtils encrypt error! {}", e.toString() );
+            log.error("RSAUtils encrypt error! {}", e.toString());
         }
         return null;
     }
@@ -144,23 +144,23 @@ public class RSAUtils {
         }
         try {
             // 使用默认RSA
-            Cipher cipher = Cipher.getInstance( "RSA" );
-            cipher.init( Cipher.ENCRYPT_MODE, publicKey );
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.ENCRYPT_MODE, publicKey);
             //数据块大小
             int blockSize = publicKey.getModulus().bitLength() / 8 - 11;
             int inputLen = plainData.length;
-            ByteArrayOutputStream out = new ByteArrayOutputStream( plainData.length * 3 );
+            ByteArrayOutputStream out = new ByteArrayOutputStream(plainData.length * 3);
             int offset = 0;
             byte[] cache;
             int i = 0;
             // 对数据分段解密
             while (inputLen - offset > 0) {
                 if (inputLen - offset > blockSize) {
-                    cache = cipher.doFinal( plainData, offset, blockSize );
+                    cache = cipher.doFinal(plainData, offset, blockSize);
                 } else {
-                    cache = cipher.doFinal( plainData, offset, inputLen - offset );
+                    cache = cipher.doFinal(plainData, offset, inputLen - offset);
                 }
-                out.write( cache, 0, cache.length );
+                out.write(cache, 0, cache.length);
                 i++;
                 offset = i * blockSize;
             }
@@ -168,7 +168,7 @@ public class RSAUtils {
             out.close();
             return encryptedData;
         } catch (Throwable e) {
-            log.error( "RSAUtils encrypt error! {}", e.toString() );
+            log.error("RSAUtils encrypt error! {}", e.toString());
         }
         return null;
     }
@@ -188,23 +188,23 @@ public class RSAUtils {
         }
         try {
             // 使用默认RSA
-            Cipher cipher = Cipher.getInstance( "RSA" );
-            cipher.init( Cipher.DECRYPT_MODE, publicKey );
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.DECRYPT_MODE, publicKey);
             //数据块大小
             int blockSize = publicKey.getModulus().bitLength() / 8;
             int inputLen = cipherData.length;
-            ByteArrayOutputStream out = new ByteArrayOutputStream( cipherData.length / 2 );
+            ByteArrayOutputStream out = new ByteArrayOutputStream(cipherData.length / 2);
             int offset = 0;
             byte[] cache;
             int i = 0;
             // 对数据分段解密
             while (inputLen - offset > 0) {
                 if (inputLen - offset > blockSize) {
-                    cache = cipher.doFinal( cipherData, offset, blockSize );
+                    cache = cipher.doFinal(cipherData, offset, blockSize);
                 } else {
-                    cache = cipher.doFinal( cipherData, offset, inputLen - offset );
+                    cache = cipher.doFinal(cipherData, offset, inputLen - offset);
                 }
-                out.write( cache, 0, cache.length );
+                out.write(cache, 0, cache.length);
                 i++;
                 offset = i * blockSize;
             }
@@ -212,7 +212,7 @@ public class RSAUtils {
             out.close();
             return decryptedData;
         } catch (Throwable e) {
-            log.error( "RSAUtils decrypt error! {}", e.toString() );
+            log.error("RSAUtils decrypt error! {}", e.toString());
         }
         return null;
     }
@@ -231,23 +231,23 @@ public class RSAUtils {
         }
         try {
             // 使用默认RSA
-            Cipher cipher = Cipher.getInstance( "RSA" );
-            cipher.init( Cipher.DECRYPT_MODE, privateKey );
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
             //数据块大小
             int blockSize = privateKey.getModulus().bitLength() / 8;
             int inputLen = cipherData.length;
-            ByteArrayOutputStream out = new ByteArrayOutputStream( cipherData.length / 2 );
+            ByteArrayOutputStream out = new ByteArrayOutputStream(cipherData.length / 2);
             int offset = 0;
             byte[] cache;
             int i = 0;
             // 对数据分段解密
             while (inputLen - offset > 0) {
                 if (inputLen - offset > blockSize) {
-                    cache = cipher.doFinal( cipherData, offset, blockSize );
+                    cache = cipher.doFinal(cipherData, offset, blockSize);
                 } else {
-                    cache = cipher.doFinal( cipherData, offset, inputLen - offset );
+                    cache = cipher.doFinal(cipherData, offset, inputLen - offset);
                 }
-                out.write( cache, 0, cache.length );
+                out.write(cache, 0, cache.length);
                 i++;
                 offset = i * blockSize;
             }
@@ -255,7 +255,7 @@ public class RSAUtils {
             out.close();
             return decryptedData;
         } catch (Throwable e) {
-            log.error( "RSAUtils decrypt error! {}", e.toString() );
+            log.error("RSAUtils decrypt error! {}", e.toString());
         }
         return null;
     }
@@ -272,12 +272,12 @@ public class RSAUtils {
             return null;
         }
         try {
-            Signature signature = Signature.getInstance( "SHA1WithRSA" );
-            signature.initSign( privateKey );
-            signature.update( content );
+            Signature signature = Signature.getInstance("SHA1WithRSA");
+            signature.initSign(privateKey);
+            signature.update(content);
             return signature.sign();
         } catch (Throwable e) {
-            log.error( "RSAUtils sign error! {}", e.toString() );
+            log.error("RSAUtils sign error! {}", e.toString());
         }
         return null;
     }
@@ -292,12 +292,12 @@ public class RSAUtils {
      */
     public static boolean checkSign(RSAPublicKey publicKey, byte[] sign, byte[] content) {
         try {
-            Signature signature = Signature.getInstance( "SHA1WithRSA" );
-            signature.initVerify( publicKey );
-            signature.update( content );
-            return signature.verify( sign );
+            Signature signature = Signature.getInstance("SHA1WithRSA");
+            signature.initVerify(publicKey);
+            signature.update(content);
+            return signature.verify(sign);
         } catch (Throwable e) {
-            log.error( "RSAUtils checkSign error! {}", e.toString() );
+            log.error("RSAUtils checkSign error! {}", e.toString());
         }
         return false;
     }
@@ -387,12 +387,12 @@ public class RSAUtils {
         // KeyPairGenerator类用于生成公钥和私钥对，基于RSA算法生成对象S
         KeyPairGenerator keyPairGen = null;
         try {
-            keyPairGen = KeyPairGenerator.getInstance( "RSA" );
+            keyPairGen = KeyPairGenerator.getInstance("RSA");
         } catch (NoSuchAlgorithmException e) {
-            log.error( e.getMessage(), e );
+            log.error(e.getMessage(), e);
         }
         // 初始化密钥对生成器，密钥大小为96-2048位
-        keyPairGen.initialize( keySize, new SecureRandom() );
+        keyPairGen.initialize(keySize, new SecureRandom());
         // 生成一个密钥对，保存在keyPair中
         KeyPair keyPair = keyPairGen.generateKeyPair();
         return keyPair;
@@ -408,7 +408,7 @@ public class RSAUtils {
         byte[] privateKey = keyPair.getPrivate().getEncoded();
         // 得到公钥
         byte[] publicKey = keyPair.getPublic().getEncoded();
-        byte[] allKey = ByteBuffer.allocate( publicKey.length + privateKey.length + 4 ).putInt( publicKey.length ).put( publicKey ).put( privateKey ).array();
+        byte[] allKey = ByteBuffer.allocate(publicKey.length + privateKey.length + 4).putInt(publicKey.length).put(publicKey).put(privateKey).array();
         return allKey;
     }
 
@@ -419,13 +419,13 @@ public class RSAUtils {
      * @return
      */
     public static Pair<RSAPublicKey, RSAPrivateKey> deserializeRSAKeys(byte[] allKeyData) {
-        ByteBuffer bb = ByteBuffer.wrap( allKeyData );
+        ByteBuffer bb = ByteBuffer.wrap(allKeyData);
         int publicKeySize = bb.getInt();
         byte[] publicKeyData = new byte[publicKeySize];
         byte[] privateKeyData = new byte[allKeyData.length - 4 - publicKeySize];
-        bb.get( publicKeyData );
-        bb.get( privateKeyData );
-        return new ImmutablePair<>( loadPublicKeyFromBytes( publicKeyData ), loadPrivateKeyFromBytes( privateKeyData ) );
+        bb.get(publicKeyData);
+        bb.get(privateKeyData);
+        return new ImmutablePair<>(loadPublicKeyFromBytes(publicKeyData), loadPrivateKeyFromBytes(privateKeyData));
     }
 
 

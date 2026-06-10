@@ -5,7 +5,7 @@ import uw.auth.service.token.AuthTokenData;
 import uw.auth.service.vo.MscUserGroupVo;
 import uw.auth.service.vo.MscUserRegister;
 import uw.auth.service.vo.MscUserVo;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
 import java.util.List;
 
@@ -93,6 +93,7 @@ public interface AuthServiceRpc {
 
     /**
      * 根据saasHost获取saasId。
+     *
      * @param saasHost
      * @return
      */

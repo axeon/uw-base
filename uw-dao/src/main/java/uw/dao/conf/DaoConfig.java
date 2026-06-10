@@ -4,6 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.LinkedHashMap;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * dao配置表.
@@ -317,13 +318,13 @@ public class DaoConfig {
          * 写入节点位置。
          * 不需要配置，程序运行期使用。
          */
-        private transient int writePos;
+        private transient AtomicInteger writePos = new AtomicInteger(0);
 
         /**
          * 读取节点位置。
          * 不需要配置，程序运行期使用。
          */
-        private transient int readPos;
+        private transient AtomicInteger readPos = new AtomicInteger(0);
 
         /**
          * 写连接.
@@ -341,14 +342,14 @@ public class DaoConfig {
          * @return
          */
         public String getFitWritePool() {
-            return writePools[writePos++ % writePools.length];
+            return writePools[Math.abs(writePos.getAndIncrement()) % writePools.length];
         }
 
         /**
          * @return
          */
         public String getFitReadPool() {
-            return readPools[readPos++ % readPools.length];
+            return readPools[Math.abs(readPos.getAndIncrement()) % readPools.length];
         }
 
         public String[] getWritePools() {

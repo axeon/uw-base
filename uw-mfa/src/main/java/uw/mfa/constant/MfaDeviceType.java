@@ -15,22 +15,22 @@ public enum MfaDeviceType {
     /**
      * TOTP恢复码登录
      */
-    TOTP_RECOVERY_CODE( 20, "TOTP恢复码登录" ),
+    TOTP_RECOVERY_CODE(20, "TOTP恢复码登录"),
 
     /**
      * TOTP验证码登录
      */
-    TOTP_CODE( 21, "TOTP验证码登录" ),
+    TOTP_CODE(21, "TOTP验证码登录"),
 
     /**
      * Email验证码登录
      */
-    EMAIL_CODE( 22, "Email验证码登录" ),
+    EMAIL_CODE(22, "Email验证码登录"),
 
     /**
      * 手机验证码登录
      */
-    MOBILE_CODE( 23, "手机验证码登录" );
+    MOBILE_CODE(23, "手机验证码登录");
 
     /**
      * 参数值
@@ -54,7 +54,7 @@ public enum MfaDeviceType {
      * @return
      */
     public static boolean checkTypeValid(int value) {
-        return valueOf( value ) != null;
+        return valueOf(value) != null;
     }
 
     /**
@@ -69,6 +69,7 @@ public enum MfaDeviceType {
 
     /**
      * 获取TOTP验证码登录类型。
+     *
      * @return
      */
     public static Set<MfaDeviceType> totpCodeTypes() {
@@ -77,6 +78,7 @@ public enum MfaDeviceType {
 
     /**
      * 获取TOTP登录类型。
+     *
      * @return
      */
     public static Set<MfaDeviceType> totpTypes() {

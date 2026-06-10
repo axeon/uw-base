@@ -43,11 +43,11 @@ public class DaoAutoConfiguration {
     /**
      * 日志.
      */
-    private static final Logger log = LoggerFactory.getLogger( DaoAutoConfiguration.class );
+    private static final Logger log = LoggerFactory.getLogger(DaoAutoConfiguration.class);
 
 
     public DaoAutoConfiguration(ApplicationContext context, DaoConfig daoConfig, final ClientResources clientResources) {
-        init( context, daoConfig, clientResources );
+        init(context, daoConfig, clientResources);
     }
 
     /**
@@ -56,21 +56,21 @@ public class DaoAutoConfiguration {
      */
     public void init(ApplicationContext context, DaoConfig daoConfig, final ClientResources clientResources) {
 
-        log.info( "uw-dao start auto configuration..." );
+        log.info("uw-dao start auto configuration...");
 
         if (daoConfig == null) {
-            log.warn( "uw-dao start failed, because the config missing!!! " );
+            log.warn("uw-dao start failed, because the config missing!!! ");
             return;
         }
         // 检测环境
         String[] activeProfiles = context.getEnvironment().getActiveProfiles();
         for (String profile : activeProfiles) {
             log.info("uw-dao detecting profile: {}", profile);
-            if (StringUtils.isNotBlank( profile)) {
+            if (StringUtils.isNotBlank(profile)) {
                 profile = profile.trim().toLowerCase();
                 for (String prodProfile : daoConfig.getProdProfiles()) {
-                    if (profile.startsWith(prodProfile)){
-                        daoConfig.setProdProfile( true );
+                    if (profile.startsWith(prodProfile)) {
+                        daoConfig.setProdProfile(true);
                         log.info("uw-dao detected prod profile: {}", profile);
                         break;
                     }
@@ -84,7 +84,7 @@ public class DaoAutoConfiguration {
         //如果root配置没有，直接返回吧。
         ConnPoolConfig rootPoolConfig = daoConfig.getConnPool().getRoot();
         if (rootPoolConfig == null) {
-            log.warn( "uw-dao not found root conn config!!!" );
+            log.warn("uw-dao not found root conn config!!!");
             return;
         }
 
@@ -94,51 +94,51 @@ public class DaoAutoConfiguration {
             for (Entry<String, ConnPoolConfig> kv : poolMap.entrySet()) {
                 ConnPoolConfig poolConfig = kv.getValue();
                 if (poolConfig.getDriver() == null) {
-                    poolConfig.setDriver( rootPoolConfig.getDriver() );
+                    poolConfig.setDriver(rootPoolConfig.getDriver());
                 }
                 if (poolConfig.getTestSql() == null) {
-                    poolConfig.setTestSql( rootPoolConfig.getTestSql() );
+                    poolConfig.setTestSql(rootPoolConfig.getTestSql());
                 }
                 if (poolConfig.getMinConn() == 0) {
-                    poolConfig.setMinConn( rootPoolConfig.getMinConn() );
+                    poolConfig.setMinConn(rootPoolConfig.getMinConn());
                 }
                 if (poolConfig.getMaxConn() == 0) {
-                    poolConfig.setMaxConn( rootPoolConfig.getMaxConn() );
+                    poolConfig.setMaxConn(rootPoolConfig.getMaxConn());
                 }
                 if (poolConfig.getConnIdleTimeout() == 0) {
-                    poolConfig.setConnIdleTimeout( rootPoolConfig.getConnIdleTimeout() );
+                    poolConfig.setConnIdleTimeout(rootPoolConfig.getConnIdleTimeout());
                 }
                 if (poolConfig.getConnBusyTimeout() == 0) {
-                    poolConfig.setConnBusyTimeout( rootPoolConfig.getConnBusyTimeout() );
+                    poolConfig.setConnBusyTimeout(rootPoolConfig.getConnBusyTimeout());
                 }
                 if (poolConfig.getConnMaxAge() == 0) {
-                    poolConfig.setConnMaxAge( rootPoolConfig.getConnMaxAge() );
+                    poolConfig.setConnMaxAge(rootPoolConfig.getConnMaxAge());
                 }
             }
         }
         // 给值
-        DaoConfigManager.setConfig( daoConfig );
+        DaoConfigManager.setConfig(daoConfig);
         // 启动连接池。
         ConnectionManager.start();
         if (daoConfig.getSqlStats().isEnable()) {
             // 加入统计日志表到sharding配置中。
             TableShardConfig config = new TableShardConfig();
-            config.setShardType( "date" );
-            config.setShardRule( "day" );
-            config.setAutoGen( true );
-            daoConfig.getTableShard().put( DaoService.STATS_BASE_TABLE, config );
+            config.setShardType("date");
+            config.setShardRule("day");
+            config.setAutoGen(true);
+            daoConfig.getTableShard().put(DaoService.STATS_BASE_TABLE, config);
         }
         DaoService.start();
         //处理Sequence问题。
         if (daoConfig.getRedis() != null) {
-            log.info( "uw-dao FusionSequenceFactory init! " );
+            log.info("uw-dao FusionSequenceFactory init! ");
             RedisTemplate<String, Long> redisTemplate = new RedisTemplate<>();
-            redisTemplate.setKeySerializer( new StringRedisSerializer() );
-            redisTemplate.setValueSerializer( new GenericToStringSerializer( Long.class ) );
-            redisTemplate.setConnectionFactory( redisConnectionFactory( daoConfig.getRedis(), clientResources ) );
-            redisTemplate.setEnableDefaultSerializer( false );
+            redisTemplate.setKeySerializer(new StringRedisSerializer());
+            redisTemplate.setValueSerializer(new GenericToStringSerializer(Long.class));
+            redisTemplate.setConnectionFactory(redisConnectionFactory(daoConfig.getRedis(), clientResources));
+            redisTemplate.setEnableDefaultSerializer(false);
             redisTemplate.afterPropertiesSet();
-            new FusionSequenceFactory( redisTemplate );
+            new FusionSequenceFactory(redisTemplate);
         }
     }
 
@@ -147,7 +147,7 @@ public class DaoAutoConfiguration {
      */
     @PreDestroy
     public void destroy() {
-        log.info( "uw-dao destroy configuration..." );
+        log.info("uw-dao destroy configuration...");
         DaoService.stop();
         ConnectionManager.stop();
     }
@@ -163,23 +163,23 @@ public class DaoAutoConfiguration {
         //设置连接池。
         RedisProperties.Pool poolProperties = redisProperties.getLettuce().getPool();
         GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
-        poolConfig.setMaxTotal( poolProperties.getMaxActive() );
-        poolConfig.setMaxIdle( poolProperties.getMaxIdle() );
-        poolConfig.setMinIdle( poolProperties.getMinIdle() );
+        poolConfig.setMaxTotal(poolProperties.getMaxActive());
+        poolConfig.setMaxIdle(poolProperties.getMaxIdle());
+        poolConfig.setMinIdle(poolProperties.getMinIdle());
         if (poolProperties.getMaxWait() != null) {
-            poolConfig.setMaxWait( poolProperties.getMaxWait() );
+            poolConfig.setMaxWait(poolProperties.getMaxWait());
         }
-        LettucePoolingClientConfiguration.LettucePoolingClientConfigurationBuilder builder = LettucePoolingClientConfiguration.builder().poolConfig( poolConfig );
+        LettucePoolingClientConfiguration.LettucePoolingClientConfigurationBuilder builder = LettucePoolingClientConfiguration.builder().poolConfig(poolConfig);
         if (redisProperties.getTimeout() != null) {
-            builder.commandTimeout( redisProperties.getTimeout() );
+            builder.commandTimeout(redisProperties.getTimeout());
         }
         //设置shutdownTimeout。
         RedisProperties.Lettuce lettuce = redisProperties.getLettuce();
         if (lettuce.getShutdownTimeout() != null && !lettuce.getShutdownTimeout().isZero()) {
-            builder.shutdownTimeout( redisProperties.getLettuce().getShutdownTimeout() );
+            builder.shutdownTimeout(redisProperties.getLettuce().getShutdownTimeout());
         }
         //设置clientResources。
-        builder.clientResources( clientResources );
+        builder.clientResources(clientResources);
         //设置ssl。
         if (redisProperties.getSsl().isEnabled()) {
             builder.useSsl();
@@ -187,16 +187,16 @@ public class DaoAutoConfiguration {
         //构建standaloneConfig。
         LettuceClientConfiguration clientConfig = builder.build();
         RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration();
-        standaloneConfig.setHostName( redisProperties.getHost() );
-        standaloneConfig.setPort( redisProperties.getPort() );
-        standaloneConfig.setDatabase( redisProperties.getDatabase() );
+        standaloneConfig.setHostName(redisProperties.getHost());
+        standaloneConfig.setPort(redisProperties.getPort());
+        standaloneConfig.setDatabase(redisProperties.getDatabase());
         if (StringUtils.isNotBlank(redisProperties.getUsername())) {
-            standaloneConfig.setUsername( redisProperties.getUsername() );
+            standaloneConfig.setUsername(redisProperties.getUsername());
         }
         if (StringUtils.isNotBlank(redisProperties.getPassword())) {
-            standaloneConfig.setPassword( RedisPassword.of( redisProperties.getPassword() ) );
+            standaloneConfig.setPassword(RedisPassword.of(redisProperties.getPassword()));
         }
-        LettuceConnectionFactory factory = new LettuceConnectionFactory( standaloneConfig, clientConfig );
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(standaloneConfig, clientConfig);
         factory.afterPropertiesSet();
         return factory;
     }

@@ -2,6 +2,7 @@ package uw.log.es;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.data.PageList;
 import uw.log.es.service.LogService;
 import uw.log.es.vo.*;
 
@@ -17,7 +18,7 @@ public class LogClient {
     /**
      * 提供一个静态实例化对象，便于各种调用。
      */
-    private static LogClient INSTANCE = null;
+    private static volatile LogClient INSTANCE = null;
 
     /**
      * 内部的logService对象。
@@ -52,7 +53,7 @@ public class LogClient {
      * @param <T>
      * @return
      */
-    public static <T> ESDataList<T> mapQueryResponseToEDataList(SearchResponse<T> response, int startIndex, int pageSize) {
+    public static <T> PageList<T> mapQueryResponseToPageList(SearchResponse<T> response, int startIndex, int pageSize) {
         ArrayList<T> dataList = new ArrayList<>();
         if (response != null) {
             SearchResponse.HitResponse<T> hitsResponse = response.getHitResponse();
@@ -63,13 +64,13 @@ public class LogClient {
                 }
 
                 if (Objects.nonNull(hitsResponse.getTotal())) {
-                    return new ESDataList<>(dataList, startIndex, pageSize, hitsResponse.getTotal().getValue());
+                    return new PageList<>(dataList, startIndex, pageSize, hitsResponse.getTotal().getValue());
                 } else {
-                    return new ESDataList<>(dataList, startIndex, pageSize, hitsResponse.getHits().size());
+                    return new PageList<>(dataList, startIndex, pageSize, hitsResponse.getHits().size());
                 }
             }
         }
-        return new ESDataList<>(dataList, startIndex, pageSize, 0);
+        return new PageList<>(dataList, startIndex, pageSize, 0);
     }
 
     /**

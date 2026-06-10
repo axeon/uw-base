@@ -6,7 +6,6 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 /**
  * 解析带命名空间的Xml
  *
- * 
  * @since 2018/1/9
  */
 @JacksonXmlRootElement(namespace = "i", localName = "Response")

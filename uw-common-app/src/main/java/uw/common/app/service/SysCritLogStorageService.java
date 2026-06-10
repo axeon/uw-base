@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+
+import jakarta.annotation.PreDestroy;
 import uw.auth.service.log.AuthCriticalLogStorage;
 import uw.auth.service.vo.MscActionLog;
 import uw.common.app.conf.CommonAppProperties;
@@ -20,7 +22,7 @@ import java.util.concurrent.Executors;
 @Primary
 public class SysCritLogStorageService implements AuthCriticalLogStorage {
 
-    private static final Logger log = LoggerFactory.getLogger( SysCritLogStorageService.class );
+    private static final Logger log = LoggerFactory.getLogger(SysCritLogStorageService.class);
 
     private static final DaoFactory dao = DaoFactory.getInstance();
 
@@ -41,10 +43,10 @@ public class SysCritLogStorageService implements AuthCriticalLogStorage {
     @Override
     public void save(MscActionLog mscActionLog) {
         if (enableCritLog) {
-            executor.submit( () -> {
+            executor.submit(() -> {
                 SysCritLog critLog = new SysCritLog();
-                critLog.setId( dao.getSequenceId( SysCritLog.class ) );
-                critLog.setSaasId( mscActionLog.getSaasId() );
+                critLog.setId(dao.getSequenceId(SysCritLog.class));
+                critLog.setSaasId(mscActionLog.getSaasId());
                 critLog.setMchId(mscActionLog.getMchId());
                 critLog.setUserId(mscActionLog.getUserId());
                 critLog.setUserType(mscActionLog.getUserType());
@@ -69,11 +71,20 @@ public class SysCritLogStorageService implements AuthCriticalLogStorage {
                 critLog.setAppInfo(mscActionLog.getAppInfo());
                 critLog.setAppHost(mscActionLog.getAppHost());
                 try {
-                    dao.save( critLog );
+                    dao.save(critLog);
                 } catch (Exception e) {
-                    log.error( "系统关键日志保存数据库失败:{}", e.getMessage(), e );
+                    log.error("系统关键日志保存数据库失败:{}", e.getMessage(), e);
                 }
-            } );
+            });
         }
     }
+
+    /**
+     * 销毁任务执行器。
+     */
+    @PreDestroy
+    public void shutdown() {
+        executor.shutdown();
+    }
+
 }

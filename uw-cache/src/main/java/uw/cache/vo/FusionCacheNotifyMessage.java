@@ -40,7 +40,7 @@ public class FusionCacheNotifyMessage {
 
     @Override
     public String toString() {
-        return JsonUtils.toString( this);
+        return JsonUtils.toString(this);
     }
 
     public long getSenderId() {

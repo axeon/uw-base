@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class GlobalLocker {
 
-    private static final Logger log = LoggerFactory.getLogger( GlobalLocker.class );
+    private static final Logger log = LoggerFactory.getLogger(GlobalLocker.class);
 
     /**
      * redis前缀。
@@ -42,7 +42,7 @@ public class GlobalLocker {
      * @return stamp 锁stamp，如果stamp>0则锁定成功。
      */
     public static long tryLock(Class<?> entityType, Object lockerId, long lockTimeMillis) {
-        return tryLock( entityType.getSimpleName(), lockerId, lockTimeMillis );
+        return tryLock(entityType.getSimpleName(), lockerId, lockTimeMillis);
     }
 
     /**
@@ -58,8 +58,8 @@ public class GlobalLocker {
             return 0;
         }
         long stamp = System.nanoTime();
-        if (Boolean.TRUE.equals( longCacheRedisTemplate.opsForValue().setIfAbsent( RedisKeyUtils.buildTypeId( REDIS_PREFIX, lockerType, lockerId ), stamp, lockTimeMillis,
-                TimeUnit.MILLISECONDS ) )) {
+        if (Boolean.TRUE.equals(longCacheRedisTemplate.opsForValue().setIfAbsent(RedisKeyUtils.buildTypeId(REDIS_PREFIX, lockerType, lockerId), stamp, lockTimeMillis,
+                TimeUnit.MILLISECONDS))) {
             return stamp;
         } else {
             return 0;
@@ -77,7 +77,7 @@ public class GlobalLocker {
      * @return 是否锁定成功
      */
     public static boolean keepLock(Class<?> entityType, Object lockerId, long stamp, long lockTimeMillis) {
-        return keepLock( entityType.getSimpleName(), lockerId, stamp, lockTimeMillis );
+        return keepLock(entityType.getSimpleName(), lockerId, stamp, lockTimeMillis);
     }
 
     /**
@@ -93,15 +93,15 @@ public class GlobalLocker {
         if (lockerType == null || lockerId == null || stamp < 1) {
             return false;
         }
-        String redisKey = RedisKeyUtils.buildTypeId( REDIS_PREFIX, lockerType, lockerId );
-        Long data = longCacheRedisTemplate.opsForValue().get( redisKey );
+        String redisKey = RedisKeyUtils.buildTypeId(REDIS_PREFIX, lockerType, lockerId);
+        Long data = longCacheRedisTemplate.opsForValue().get(redisKey);
         if (data == null) {
-            return Boolean.TRUE.equals( longCacheRedisTemplate.opsForValue().setIfAbsent( redisKey, stamp, lockTimeMillis, TimeUnit.MILLISECONDS ) );
+            return Boolean.TRUE.equals(longCacheRedisTemplate.opsForValue().setIfAbsent(redisKey, stamp, lockTimeMillis, TimeUnit.MILLISECONDS));
         } else {
             if (data != stamp) {
                 return false;
             } else {
-                return Boolean.TRUE.equals( longCacheRedisTemplate.expire( redisKey, lockTimeMillis, TimeUnit.MILLISECONDS ) );
+                return Boolean.TRUE.equals(longCacheRedisTemplate.expire(redisKey, lockTimeMillis, TimeUnit.MILLISECONDS));
             }
         }
     }
@@ -115,7 +115,7 @@ public class GlobalLocker {
      * @return 是否解锁成功
      */
     public static boolean unlock(Class<?> entityType, Object lockerId, long stamp) {
-        return unlock( entityType.getSimpleName(), lockerId, stamp, false );
+        return unlock(entityType.getSimpleName(), lockerId, stamp, false);
     }
 
     /**
@@ -127,7 +127,7 @@ public class GlobalLocker {
      * @return 是否解锁成功
      */
     public static boolean unlock(Class<?> entityType, Object lockerId, long stamp, boolean force) {
-        return unlock( entityType.getSimpleName(), lockerId, stamp, force );
+        return unlock(entityType.getSimpleName(), lockerId, stamp, force);
     }
 
     /**
@@ -139,7 +139,7 @@ public class GlobalLocker {
      * @return 是否解锁成功
      */
     public static boolean unlock(String lockerType, Object lockerId, long stamp) {
-        return unlock( lockerType, lockerId, stamp, false );
+        return unlock(lockerType, lockerId, stamp, false);
     }
 
     /**
@@ -155,21 +155,22 @@ public class GlobalLocker {
         if (lockerType == null || lockerId == null || (stamp < 1 && !force)) {
             return false;
         }
-        String redisKey = RedisKeyUtils.buildTypeId( REDIS_PREFIX, lockerType, lockerId );
+        String redisKey = RedisKeyUtils.buildTypeId(REDIS_PREFIX, lockerType, lockerId);
         if (!force) {
-            Long data = longCacheRedisTemplate.opsForValue().get( redisKey );
+            Long data = longCacheRedisTemplate.opsForValue().get(redisKey);
             if (data == null || data != stamp) {
                 return false;
             }
         }
-        return Boolean.TRUE.equals( longCacheRedisTemplate.delete( redisKey ) );
+        return Boolean.TRUE.equals(longCacheRedisTemplate.delete(redisKey));
     }
 
 
     /**
      * 获取缓存中的所有key。
+     *
      * @param entityType 缓存对象类(主要用于构造cacheName)
-     * @param keyPrefix key前缀，请注意key最后不用加"*"
+     * @param keyPrefix  key前缀，请注意key最后不用加"*"
      * @return
      */
     public static Set<String> keys(Class<?> entityType, String keyPrefix) {
@@ -180,7 +181,7 @@ public class GlobalLocker {
      * 获取缓存中的所有key。
      *
      * @param lockerType 缓存名
-     * @param keyPrefix key前缀，请注意key最后不用加"*",全部清除用*即可。
+     * @param keyPrefix  key前缀，请注意key最后不用加"*",全部清除用*即可。
      * @return
      */
     public static Set<String> keys(String lockerType, String keyPrefix) {

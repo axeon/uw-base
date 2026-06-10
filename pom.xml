@@ -12,35 +12,36 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.11</version>
+        <version>3.5.14</version>
     </parent>
 
     <properties>
-        <revision>2026.0301.0005</revision>
+        <revision>2026.0501.0003</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
-        <spring-cloud.version>2025.0.0</spring-cloud.version>
+        <spring-cloud.version>2025.0.2</spring-cloud.version>
         <spring-cloud.alibaba.version>2023.0.1.2</spring-cloud.alibaba.version>
-        <uw-ai.version>1.0.26</uw-ai.version>
-        <uw-auth-client.version>6.1.19</uw-auth-client.version>
-        <uw-auth-service.version>6.1.58</uw-auth-service.version>
-        <uw-cache.version>1.1.93</uw-cache.version>
-        <uw-common.version>1.0.93</uw-common.version>
-        <uw-common-app.version>1.0.100</uw-common-app.version>
-        <uw-dao.version>5.2.31</uw-dao.version>
-        <uw-gateway-client.version>1.0.5</uw-gateway-client.version>
-        <uw-httpclient.version>2.1.130</uw-httpclient.version>
-        <uw-log-es.version>3.0.95</uw-log-es.version>
-        <uw-logback-es.version>3.0.91</uw-logback-es.version>
-        <uw-mfa.version>1.0.61</uw-mfa.version>
-        <uw-mydb-client.version>1.0.26</uw-mydb-client.version>
-        <uw-notify-client.version>1.0.25</uw-notify-client.version>
-        <uw-task.version>5.0.123</uw-task.version>
-        <uw-tinyurl-client.version>1.0.25</uw-tinyurl-client.version>
-        <uw-webot.version>1.0.3</uw-webot.version>
+        <uw-ai.version>1.1.26</uw-ai.version>
+        <uw-auth-client.version>6.2.20</uw-auth-client.version>
+        <uw-auth-service.version>6.2.58</uw-auth-service.version>
+        <uw-cache.version>1.2.95</uw-cache.version>
+        <uw-common.version>1.1.96</uw-common.version>
+        <uw-common-app.version>1.1.101</uw-common-app.version>
+        <uw-dao.version>5.3.31</uw-dao.version>
+        <uw-gateway-client.version>1.1.5</uw-gateway-client.version>
+        <uw-httpclient.version>2.2.131</uw-httpclient.version>
+        <uw-log-es.version>3.1.96</uw-log-es.version>
+        <uw-logback-es.version>3.1.92</uw-logback-es.version>
+        <uw-mfa.version>1.1.61</uw-mfa.version>
+        <uw-mydb-client.version>1.1.26</uw-mydb-client.version>
+        <uw-notify-client.version>1.1.25</uw-notify-client.version>
+        <uw-oauth2-client.version>1.1.15</uw-oauth2-client.version>
+        <uw-task.version>5.1.123</uw-task.version>
+        <uw-tinyurl-client.version>1.1.25</uw-tinyurl-client.version>
+        <uw-webot.version>1.0.5</uw-webot.version>
     </properties>
 
     <dependencyManagement>
@@ -128,6 +129,11 @@
                 <groupId>com.umtone</groupId>
                 <artifactId>uw-notify-client</artifactId>
                 <version>${uw-notify-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.umtone</groupId>
+                <artifactId>uw-oauth2-client</artifactId>
+                <version>${uw-oauth2-client.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.umtone</groupId>
@@ -293,6 +299,7 @@
                     <plugin>
                         <groupId>org.sonatype.central</groupId>
                         <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.7.0</version>
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
@@ -315,6 +322,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.11.2</version>
                         <configuration>
                             <additionalJOptions>
                                 <additionalJOption>-Xdoclint:none</additionalJOption>
@@ -333,6 +341,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.7</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>

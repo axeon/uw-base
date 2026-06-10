@@ -31,7 +31,7 @@ public class TaskStatsService {
      * runner数据存储map。
      */
     private static final ConcurrentHashMap<Long, TaskRunnerStats> RUNNER_STATS_MAP = new ConcurrentHashMap<>();
-    
+
 
     /**
      * 更新cronerMetrics。
@@ -46,7 +46,7 @@ public class TaskStatsService {
      * @param timeRun
      */
     public static void updateCronerStats(long taskId, int numAll, int numFailProgram, int numFailConfig, int numFailData, int numFailPartner, int timeWait, int timeRun) {
-        long stamp = CRONER_STAMPED_LOCK.readLock();
+        long stamp = CRONER_STAMPED_LOCK.writeLock();
         try {
             CRONER_STATS_MAP.compute(taskId, (k, v) -> {
                 if (v != null) {
@@ -56,7 +56,7 @@ public class TaskStatsService {
                 }
             });
         } finally {
-            CRONER_STAMPED_LOCK.unlockRead(stamp);
+            CRONER_STAMPED_LOCK.unlockWrite(stamp);
         }
     }
 
@@ -68,8 +68,8 @@ public class TaskStatsService {
     public static List<TaskCronerStats> getCronerStats() {
         long stamp = CRONER_STAMPED_LOCK.writeLock();
         try {
-            List<TaskCronerStats> list = new ArrayList<>( CRONER_STATS_MAP.size());
-            list.addAll( CRONER_STATS_MAP.values());
+            List<TaskCronerStats> list = new ArrayList<>(CRONER_STATS_MAP.size());
+            list.addAll(CRONER_STATS_MAP.values());
             CRONER_STATS_MAP.clear();
             return list;
         } finally {
@@ -92,7 +92,7 @@ public class TaskStatsService {
      * @param timeRun
      */
     public static void updateRunnerStats(long taskId, int numAll, int numFailProgram, int numFailConfig, int numFailData, int numFailPartner, int timeWaitQueue, int timeWaitDelay, int timeRun) {
-        long stamp = RUNNER_STAMPED_LOCK.readLock();
+        long stamp = RUNNER_STAMPED_LOCK.writeLock();
         try {
             RUNNER_STATS_MAP.compute(taskId, (k, v) -> {
                 if (v != null) {
@@ -102,7 +102,7 @@ public class TaskStatsService {
                 }
             });
         } finally {
-            RUNNER_STAMPED_LOCK.unlockRead(stamp);
+            RUNNER_STAMPED_LOCK.unlockWrite(stamp);
         }
     }
 
@@ -114,8 +114,8 @@ public class TaskStatsService {
     public static List<TaskRunnerStats> getRunnerStats() {
         long stamp = RUNNER_STAMPED_LOCK.writeLock();
         try {
-            List<TaskRunnerStats> list = new ArrayList<>( RUNNER_STATS_MAP.size());
-            list.addAll( RUNNER_STATS_MAP.values());
+            List<TaskRunnerStats> list = new ArrayList<>(RUNNER_STATS_MAP.size());
+            list.addAll(RUNNER_STATS_MAP.values());
             RUNNER_STATS_MAP.clear();
             return list;
         } finally {

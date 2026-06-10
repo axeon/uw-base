@@ -105,16 +105,16 @@ public class InvalidTokenData {
 
     @Override
     public String toString() {
-        return new StringJoiner( ", ", InvalidTokenData.class.getSimpleName() + "[", "]" )
-                .add( "invalidType=" + invalidType )
-                .add( "invalidDate=" + invalidDate )
-                .add( "saasId=" + saasId )
-                .add( "userType=" + userType )
-                .add( "userId=" + userId )
-                .add( "mchId=" + mchId )
-                .add( "userName='" + userName + "'" )
-                .add( "token='" + token + "'" )
-                .add( "notice='" + notice + "'" )
+        return new StringJoiner(", ", InvalidTokenData.class.getSimpleName() + "[", "]")
+                .add("invalidType=" + invalidType)
+                .add("invalidDate=" + invalidDate)
+                .add("saasId=" + saasId)
+                .add("userType=" + userType)
+                .add("userId=" + userId)
+                .add("mchId=" + mchId)
+                .add("userName='" + userName + "'")
+                .add("token='" + token + "'")
+                .add("notice='" + notice + "'")
                 .toString();
     }
 

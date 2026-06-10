@@ -24,38 +24,38 @@ public class BenchmarkTest {
 
     private ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
 
-    private LoadingCache<String, String> caffeine = Caffeine.newBuilder().maximumSize( 100 ).build( key -> "hello " + key );
+    private LoadingCache<String, String> caffeine = Caffeine.newBuilder().maximumSize(100).build(key -> "hello " + key);
 
-    private LoadingCache<String, String> caffeineWithExpire = Caffeine.newBuilder().maximumSize( 100 ).expireAfterWrite( 1, TimeUnit.HOURS ).build( key -> "hello " + key );
+    private LoadingCache<String, String> caffeineWithExpire = Caffeine.newBuilder().maximumSize(100).expireAfterWrite(1, TimeUnit.HOURS).build(key -> "hello " + key);
 
-    private LoadingCache<String, String> caffeineWithStats = Caffeine.newBuilder().maximumSize( 100 ).recordStats().build( key -> "hello " + key );
+    private LoadingCache<String, String> caffeineWithStats = Caffeine.newBuilder().maximumSize(100).recordStats().build(key -> "hello " + key);
 
 
     public BenchmarkTest() {
     }
 
     public static void main(String[] args) throws RunnerException {
-        Options opts = new OptionsBuilder().include( BenchmarkTest.class.getSimpleName() ).forks( 1 ).build();
-        new Runner( opts ).run();
+        Options opts = new OptionsBuilder().include(BenchmarkTest.class.getSimpleName()).forks(1).build();
+        new Runner(opts).run();
     }
 
     @Setup
     public void init() {
-        context = SpringApplication.run( UwCacheTest1Application.class );
-        FusionCache.Config fusionConfig = FusionCache.Config.builder().cacheName( "fusion" ).localCacheMaxNum( 1000 ).cacheExpireMillis( 1000000 ).build();
-        FusionCache.config( fusionConfig, new CacheDataLoader<String, String>() {
+        context = SpringApplication.run(UwCacheTest1Application.class);
+        FusionCache.Config fusionConfig = FusionCache.Config.builder().cacheName("fusion").localCacheMaxNum(1000).cacheExpireMillis(1000000).build();
+        FusionCache.config(fusionConfig, new CacheDataLoader<String, String>() {
             @Override
             public String load(String key) {
                 return "hello " + key;
             }
-        } );
-        FusionCache.Config caffineConfig = FusionCache.Config.builder().cacheName( "fusionLocal" ).localCacheMaxNum( 1000 ).cacheExpireMillis( -1 ).build();
-        FusionCache.config( caffineConfig, new CacheDataLoader<String, String>() {
+        });
+        FusionCache.Config caffineConfig = FusionCache.Config.builder().cacheName("fusionLocal").localCacheMaxNum(1000).cacheExpireMillis(-1).build();
+        FusionCache.config(caffineConfig, new CacheDataLoader<String, String>() {
             @Override
             public String load(String key) {
                 return "hello " + key;
             }
-        } );
+        });
     }
 
 //    /**
@@ -95,7 +95,7 @@ public class BenchmarkTest {
      */
     @Benchmark
     public void testFusionLocalCache() {
-        FusionCache.get( "fusionLocal", "123" );
+        FusionCache.get("fusionLocal", "123");
     }
 
     /**
@@ -103,7 +103,7 @@ public class BenchmarkTest {
      */
     @Benchmark
     public void testFusionCache() {
-        FusionCache.get( "fusion", "123" );
+        FusionCache.get("fusion", "123");
     }
 
 //    /**

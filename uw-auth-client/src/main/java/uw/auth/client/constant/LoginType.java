@@ -15,62 +15,62 @@ public enum LoginType {
     /**
      * 重复登录
      */
-    LOGIN_DOUBLE( -2, "重复登录" ),
+    LOGIN_DOUBLE(-2, "重复登录"),
 
     /**
      * 踢出用户
      */
-    KICK_OUT( -4, "踢出用户" ),
+    KICK_OUT(-4, "踢出用户"),
 
     /**
      * 退出登录。
      */
-    LOGOUT( -1, "退出登录" ),
+    LOGOUT(-1, "退出登录"),
 
     /**
      * TOKEN刷新。
      */
-    REFRESH_TOKEN( 0, "TOKEN刷新" ),
+    REFRESH_TOKEN(0, "TOKEN刷新"),
 
     /**
      * 用户名密码登录。
      */
-    USER_PASS( 1, "用户名密码登录" ),
+    USER_PASS(1, "用户名密码登录"),
 
     /**
      * Email密码登录。
      */
-    EMAIL_PASS( 2, "Email密码登录" ),
+    EMAIL_PASS(2, "Email密码登录"),
 
     /**
      * 手机号密码登录。
      */
-    MOBILE_PASS( 3, "手机号密码登录" ),
+    MOBILE_PASS(3, "手机号密码登录"),
 
     /**
      * TOTP恢复码登录
      */
-    TOTP_RECOVERY_CODE( 20, "TOTP恢复码登录"),
+    TOTP_RECOVERY_CODE(20, "TOTP恢复码登录"),
 
     /**
      * TOTP验证码登录
      */
-    TOTP_CODE( 21, "TOTP验证码登录" ),
+    TOTP_CODE(21, "TOTP验证码登录"),
 
     /**
      * Email验证码登录
      */
-    EMAIL_CODE( 22, "Email验证码登录" ),
+    EMAIL_CODE(22, "Email验证码登录"),
 
     /**
      * 手机验证码登录
      */
-    MOBILE_CODE( 23, "手机验证码登录" ),
+    MOBILE_CODE(23, "手机验证码登录"),
 
     /**
      * OAUTH登录。
      */
-    OAUTH_LOGIN( 30, "三方平台登录" );
+    OAUTH_LOGIN(30, "三方平台登录");
 
 
     /**
@@ -155,6 +155,7 @@ public enum LoginType {
 
     /**
      * 检查是否是开放平台登录类型。
+     *
      * @param value
      * @return
      */
@@ -191,6 +192,7 @@ public enum LoginType {
 
     /**
      * 密码登录类型。
+     *
      * @return
      */
     public static Set<LoginType> passTypes() {
@@ -213,6 +215,7 @@ public enum LoginType {
 
     /**
      * 验证码登录类型。
+     *
      * @return
      */
     public static Set<LoginType> codeTypes() {

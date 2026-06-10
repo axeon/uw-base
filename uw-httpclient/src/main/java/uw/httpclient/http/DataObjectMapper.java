@@ -9,7 +9,6 @@ import java.io.OutputStream;
 /**
  * 对象Mapper
  *
- * 
  * @since 2017/9/20
  */
 public interface DataObjectMapper {

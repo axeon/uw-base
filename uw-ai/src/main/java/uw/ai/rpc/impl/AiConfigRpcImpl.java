@@ -3,31 +3,28 @@ package uw.ai.rpc.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import uw.ai.conf.UwAiProperties;
 import uw.ai.rpc.AiConfigRpc;
 import uw.ai.vo.AiApiConfigVo;
 import uw.ai.vo.AiModelConfigVo;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
 import java.util.List;
 
 /**
- * AI配置查询RPC客户端实现。
+ * AiConfigRpcImpl — 查询AI模型配置列表。
  */
 public class AiConfigRpcImpl implements AiConfigRpc {
 
     private static final Logger logger = LoggerFactory.getLogger(AiConfigRpcImpl.class);
 
-    private final RestTemplate authRestTemplate;
-
+    private final RestClient authRestClient;
     private final UwAiProperties uwAiProperties;
 
-    public AiConfigRpcImpl(UwAiProperties uwAiProperties, RestTemplate authRestTemplate) {
+    public AiConfigRpcImpl(UwAiProperties uwAiProperties, RestClient authRestClient) {
         this.uwAiProperties = uwAiProperties;
-        this.authRestTemplate = authRestTemplate;
+        this.authRestClient = authRestClient;
     }
 
     @Override

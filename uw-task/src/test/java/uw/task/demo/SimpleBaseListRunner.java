@@ -8,7 +8,7 @@ import uw.task.entity.TaskRunnerConfig;
 import java.util.List;
 
 /**
- * 
+ *
  * @since 2018-05-30
  */
 public abstract class SimpleBaseListRunner extends TaskRunner<List<String>, List<String>> {

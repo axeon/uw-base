@@ -9,10 +9,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.client.WebClient;
 import uw.ai.AiClientHelper;
 import uw.ai.controller.AiToolExecuteController;
@@ -27,7 +26,7 @@ import uw.ai.rpc.impl.AiTranslateRpcImpl;
 import uw.ai.tool.AiTool;
 import uw.ai.util.AiToolSchemaGenerator;
 import uw.ai.vo.AiToolMeta;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -64,39 +63,48 @@ public class UwAiAutoConfiguration {
      * AiToolRpc初始化。
      *
      * @param uwAiProperties
-     * @param authRestTemplate
+     * @param authRestClient
      * @return
      */
     @Bean
     @ConditionalOnMissingBean
-    public AiToolRpc aiToolRpc(UwAiProperties uwAiProperties, RestTemplate authRestTemplate) {
-        return new AiToolRpcImpl(uwAiProperties, authRestTemplate);
+    public AiToolRpc aiToolRpc(UwAiProperties uwAiProperties, RestClient authRestClient) {
+        return new AiToolRpcImpl(uwAiProperties, authRestClient);
     }
 
     /**
      * AiChatRpc初始化。
      *
      * @param uwAiProperties
-     * @param authRestTemplate
+     * @param authRestClient
      * @return
      */
     @Bean
     @ConditionalOnMissingBean
-    public AiChatRpc aiChatRpc(UwAiProperties uwAiProperties, RestTemplate authRestTemplate, WebClient authWebClient) {
-        return new AiChatRpcImpl(uwAiProperties, authRestTemplate, authWebClient);
+    public AiChatRpc aiChatRpc(UwAiProperties uwAiProperties, RestClient authRestClient, WebClient authWebClient) {
+        return new AiChatRpcImpl(uwAiProperties, authRestClient, authWebClient);
+    }
+
+    /**
+     * AiConfigRpc初始化。
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public AiConfigRpc aiConfigRpc(UwAiProperties uwAiProperties, RestClient authRestClient) {
+        return new AiConfigRpcImpl(uwAiProperties, authRestClient);
     }
 
     /**
      * AiTranslateRpc初始化。
      *
      * @param uwAiProperties
-     * @param authRestTemplate
+     * @param authRestClient
      * @return
      */
     @Bean
     @ConditionalOnMissingBean
-    public AiTranslateRpc aiTranslateRpc(UwAiProperties uwAiProperties, RestTemplate authRestTemplate) {
-        return new AiTranslateRpcImpl(uwAiProperties, authRestTemplate);
+    public AiTranslateRpc aiTranslateRpc(UwAiProperties uwAiProperties, RestClient authRestClient) {
+        return new AiTranslateRpcImpl(uwAiProperties, authRestClient);
     }
 
     /**

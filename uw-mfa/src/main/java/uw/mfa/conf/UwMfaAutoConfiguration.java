@@ -23,7 +23,7 @@ import org.springframework.data.redis.connection.lettuce.LettucePoolingClientCon
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericToStringSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import uw.mfa.helper.MfaCaptchaHelper;
 import uw.mfa.helper.MfaDeviceCodeHelper;
 import uw.mfa.helper.MfaIPLimitHelper;
@@ -63,8 +63,8 @@ public class UwMfaAutoConfiguration {
     @DependsOn("mfaRedisTemplate")
     @ConditionalOnMissingBean
     protected MfaDeviceCodeHelper mfaDeviceCodeHelper(final UwMfaProperties uwMfaProperties, @Qualifier("mfaRedisTemplate") final RedisTemplate<String, String> mfaRedisTemplate,
-                                                      @Qualifier("authRestTemplate") final RestTemplate authRestTemplate) {
-        return new MfaDeviceCodeHelper(uwMfaProperties, mfaRedisTemplate, authRestTemplate);
+                                                      @Qualifier("authRestClient") final RestClient authRestClient) {
+        return new MfaDeviceCodeHelper(uwMfaProperties, mfaRedisTemplate, authRestClient);
     }
 
     @Bean

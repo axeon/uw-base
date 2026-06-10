@@ -81,14 +81,14 @@ public class TaskContact implements Serializable {
     }
 
     private TaskContact(Builder builder) {
-        setTaskClass( builder.taskClass );
-        setContactName( builder.contactName );
-        setMobile( builder.mobile );
-        setEmail( builder.email );
-        setWechat( builder.wechat );
-        setIm( builder.im );
-        setNotifyUrl( builder.notifyUrl );
-        setRemark( builder.remark );
+        setTaskClass(builder.taskClass);
+        setContactName(builder.contactName);
+        setMobile(builder.mobile);
+        setEmail(builder.email);
+        setWechat(builder.wechat);
+        setIm(builder.im);
+        setNotifyUrl(builder.notifyUrl);
+        setRemark(builder.remark);
     }
 
     /**
@@ -108,7 +108,7 @@ public class TaskContact implements Serializable {
      * @return
      */
     public static Builder builder(String contactName) {
-        return new Builder().contactName( contactName );
+        return new Builder().contactName(contactName);
     }
 
     public static Builder builder(TaskContact copy) {
@@ -242,7 +242,7 @@ public class TaskContact implements Serializable {
          * @return
          */
         public static Builder builder(String taskClass) {
-            return new Builder().taskClass( taskClass );
+            return new Builder().taskClass(taskClass);
         }
 
         /**
@@ -252,7 +252,7 @@ public class TaskContact implements Serializable {
          * @return
          */
         public static Builder builder(Class taskClass) {
-            return new Builder().taskClass( taskClass.getName() );
+            return new Builder().taskClass(taskClass.getName());
         }
 
         /**
@@ -349,7 +349,7 @@ public class TaskContact implements Serializable {
          * @return a {@code TaskContact} built with parameters of this {@code TaskContact.Builder}
          */
         public TaskContact build() {
-            return new TaskContact( this );
+            return new TaskContact(this);
         }
     }
 }

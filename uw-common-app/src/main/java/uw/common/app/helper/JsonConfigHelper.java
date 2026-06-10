@@ -8,7 +8,7 @@ import uw.common.app.constant.ValidateResponseCode;
 import uw.common.app.vo.JsonConfigBox;
 import uw.common.app.vo.JsonConfigParam;
 import uw.common.app.vo.ValidateResult;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.DateUtils;
 import uw.common.util.JsonUtils;
 
@@ -106,6 +106,9 @@ public class JsonConfigHelper {
      * @return
      */
     private static ValidateResult validateParam(JsonConfigParam configParam, String paramValue) {
+        if (paramValue == null) {
+            return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.NOT_NULL, null);
+        }
         // 直接比较枚举类型，无需调用getValue()
         if (configParam.getType() == JsonConfigParam.ParamType.STRING) {
             if (StringUtils.isBlank(paramValue)) {
@@ -183,7 +186,7 @@ public class JsonConfigHelper {
 
         // 正则表达式校验
         String regex = configParam.getRegex();
-        if (StringUtils.isNotBlank(regex)) {
+        if (StringUtils.isNotBlank(regex) && StringUtils.isNotBlank(paramValue)) {
             try {
                 if (!paramValue.matches(regex)) {
                     return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.REGEX_FORMAT_ERROR, null);

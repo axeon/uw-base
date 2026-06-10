@@ -64,8 +64,7 @@ public class BizAESBox {
             }
             //当前只检测key不可缺失
             if (aesKey == null) {
-                log.error("BizAES配置文件[{}]缺少密钥配置!", configPath);
-                return null;
+                throw new IllegalStateException("BizAES配置文件[" + configPath + "]缺少密钥配置!");
             }
             // 创建AES加解密盒子实例
             return new BizAESBox(aesKey, aesIv);
@@ -108,7 +107,7 @@ public class BizAESBox {
      * @return
      */
     public String encrypt(String data) {
-        if (aesIv!=null) {
+        if (aesIv != null) {
             return AESUtils.encryptString(aesKey, aesIv, data);
         } else {
             return AESUtils.encryptString(aesKey, data);
@@ -122,9 +121,9 @@ public class BizAESBox {
      * @return
      */
     public String decrypt(String encrypted) {
-        if (aesIv!=null) {
+        if (aesIv != null) {
             return AESUtils.decryptString(aesKey, aesIv, encrypted);
-        }else{
+        } else {
             return AESUtils.decryptString(aesKey, encrypted);
         }
     }

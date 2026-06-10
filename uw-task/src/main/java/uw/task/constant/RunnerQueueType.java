@@ -11,27 +11,27 @@ public enum RunnerQueueType {
     /**
      * 项目队列。
      */
-    PROJECT(0,"项目队列"),
+    PROJECT(0, "项目队列"),
 
     /**
      * 项目优先级队列。
      */
-    PROJECT_PRIORITY(1,"项目优先级队列"),
+    PROJECT_PRIORITY(1, "项目优先级队列"),
 
     /**
      * 任务组队列。
      */
-    GROUP(2,"任务组队列"),
+    GROUP(2, "任务组队列"),
 
     /**
      * 任务组优先级队列。
      */
-    GROUP_PRIORITY(3,"任务组优先级队列"),
+    GROUP_PRIORITY(3, "任务组优先级队列"),
 
     /**
      * 任务队列。
      */
-    TASK(5,"任务队列");
+    TASK(5, "任务队列");
 
     private final int value;
 

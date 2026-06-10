@@ -6,7 +6,6 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.support.atomic.RedisAtomicLong;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 基于redis实现的分布式序列。
@@ -15,7 +14,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class TaskSequenceManager {
 
-    private static final Logger log = LoggerFactory.getLogger( TaskSequenceManager.class);
+    private static final Logger log = LoggerFactory.getLogger(TaskSequenceManager.class);
 
     private static final String REDIS_TAG = "uw-task-seq:";
 
@@ -60,7 +59,7 @@ public class TaskSequenceManager {
                 tryCount++;
             }
         } while (tryCount < MAX_RETRY_TIMES);
-        return -1;
+        throw new RuntimeException("TaskSequenceManager获取序列失败: " + name);
     }
 
     /**
@@ -73,7 +72,7 @@ public class TaskSequenceManager {
         /**
          * 当前数值
          */
-        private final AtomicLong currentId;
+        private long currentId;
 
         /**
          * 当前可以获取的最大id
@@ -99,8 +98,8 @@ public class TaskSequenceManager {
         private RedisSequence(String name, int incrementNum) {
             this.incrementNum = incrementNum;
             counter = new RedisAtomicLong(REDIS_TAG + name, redisConnectionFactory);
-            currentId = new AtomicLong((counter.getAndAdd(incrementNum)));
-            maxId = currentId.get() + incrementNum;
+            currentId = counter.getAndAdd(incrementNum);
+            maxId = currentId + incrementNum;
         }
 
         /**
@@ -109,12 +108,12 @@ public class TaskSequenceManager {
          * @return 如果为超限则返回0，否则返回需要等待的秒数
          */
         synchronized long nextId() {
-            long value = currentId.incrementAndGet();
-            if (value >= maxId) {
-                currentId.set(counter.getAndAdd(incrementNum));
-                maxId = currentId.get() + incrementNum;
+            currentId++;
+            if (currentId >= maxId) {
+                currentId = counter.getAndAdd(incrementNum);
+                maxId = currentId + incrementNum;
             }
-            return value;
+            return currentId;
         }
     }
 }

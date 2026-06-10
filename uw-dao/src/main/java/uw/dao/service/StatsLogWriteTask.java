@@ -125,7 +125,7 @@ public class StatsLogWriteTask implements Runnable {
         }
         // 接着往这里写
         if (list.size() - pos >= 1) {
-            writeStatsList(list.subList(pos, list.size()));
+            writeStatsList(new ArrayList<>(list.subList(pos, list.size())));
         }
     }
 

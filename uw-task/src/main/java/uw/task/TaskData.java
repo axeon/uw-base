@@ -247,8 +247,8 @@ public class TaskData<TP, RD> implements Serializable {
      * @param taskClass
      * @return
      */
-    public static <TP,RD> Builder<TP,RD> builder(String taskClass, TP taskParam) {
-        return new Builder<TP,RD>().taskClass(taskClass).taskParam(taskParam);
+    public static <TP, RD> Builder<TP, RD> builder(String taskClass, TP taskParam) {
+        return new Builder<TP, RD>().taskClass(taskClass).taskParam(taskParam);
     }
 
 
@@ -258,13 +258,13 @@ public class TaskData<TP, RD> implements Serializable {
      * @param taskClass
      * @return
      */
-    public static <TP,RD> Builder<TP,RD> builder(Class<? extends TaskRunner<TP, RD>> taskClass, TP taskParam) {
-        return new Builder<TP,RD>().taskClass(taskClass.getName()).taskParam(taskParam);
+    public static <TP, RD> Builder<TP, RD> builder(Class<? extends TaskRunner<TP, RD>> taskClass, TP taskParam) {
+        return new Builder<TP, RD>().taskClass(taskClass.getName()).taskParam(taskParam);
     }
 
 
-    public static <TP,RD> Builder<TP,RD> builder(TaskData<TP,RD> copy) {
-        Builder<TP,RD> builder = new Builder<TP,RD>();
+    public static <TP, RD> Builder<TP, RD> builder(TaskData<TP, RD> copy) {
+        Builder<TP, RD> builder = new Builder<TP, RD>();
         builder.refTag = copy.getRefTag();
         builder.refId = copy.getRefId();
         builder.refSubId = copy.getRefSubId();

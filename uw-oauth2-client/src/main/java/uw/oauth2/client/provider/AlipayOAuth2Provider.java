@@ -1,6 +1,6 @@
 package uw.oauth2.client.provider;
 
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.JsonUtils;
 import uw.httpclient.http.HttpData;
 import uw.oauth2.client.conf.OAuth2ClientProperties;
@@ -34,8 +34,8 @@ public class AlipayOAuth2Provider extends AbstractOAuth2Provider {
     /**
      * 获取token
      *
-     * @param authCode 授权码
-     * @param authStateId  state
+     * @param authCode    授权码
+     * @param authStateId state
      * @param extParam
      * @return token
      */
@@ -248,7 +248,7 @@ public class AlipayOAuth2Provider extends AbstractOAuth2Provider {
             }
             String signContent = sb.substring(0, sb.length() - 1);
 
-            logger.info("Alipay sign content: {}", signContent);
+            logger.debug("Alipay sign content: {}", signContent);
 
             // 从extParam中获取私钥
             String privateKey = providerConfig.getExtParam().get("privateKey");

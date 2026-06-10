@@ -51,11 +51,11 @@ public class CommonAppProperties {
     }
 
     public List<Locale> getLocaleList() {
-        return localeList;
+        return localeList != null ? localeList : List.of();
     }
 
     public void setLocaleList(List<Locale> localeList) {
-        this.localeList = localeList;
+        this.localeList = localeList != null ? localeList : List.of();
     }
 
     public Duration getShutdownTimeout() {

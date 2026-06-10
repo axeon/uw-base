@@ -68,7 +68,7 @@ public class BrowserGroup {
     /**
      * 最后活跃时间。
      */
-    private long lastActiveTime;
+    private volatile long lastActiveTime;
 
     /**
      * 构造方法。
@@ -115,19 +115,16 @@ public class BrowserGroup {
         checkActive();
 
         // 使用轮询策略选择 Browser
-        BrowserInstance browserInstance = browserQueue.poll();
+        BrowserInstance browserInstance = browserQueue.peek();
         if (browserInstance != null && browserInstance.isActive()) {
-            browserQueue.add(browserInstance);
             return browserInstance;
         }
+        // 没有可用 Browser，尝试创建新的
+        if (browserQueue.size() < maxBrowsersPerGroup) {
+            browserInstance = createBrowserInstance();
+        }
         if (browserInstance == null || !browserInstance.isActive()) {
-            // 没有可用 Browser，尝试创建新的
-            if (browserQueue.size() < maxBrowsersPerGroup) {
-                browserInstance = createBrowserInstance();
-            }
-            if (browserInstance == null || !browserInstance.isActive()) {
-                throw new TimeoutException("No available browserInstance in group [" + browserGroupTag + "]");
-            }
+            throw new TimeoutException("No available browserInstance in group [" + browserGroupTag + "]");
         }
         return browserInstance;
     }
@@ -259,7 +256,7 @@ public class BrowserGroup {
          * @return 使用率
          */
         public double getUtilRate() {
-            return (double) activeTabs / maxTabs;
+            return maxTabs == 0 ? 0.0 : (double) activeTabs / maxTabs;
         }
 
     }

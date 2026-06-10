@@ -22,15 +22,15 @@ public class RedisKeyUtils {
      * @return
      */
     public static String buildKey(String keyPrefix, Object... args) {
-        StringBuilder sb = new StringBuilder( 60 );
-        if (StringUtils.isNotBlank( keyPrefix )) {
-            sb.append( keyPrefix ).append( KEY_SPLITTER );
+        StringBuilder sb = new StringBuilder(60);
+        if (StringUtils.isNotBlank(keyPrefix)) {
+            sb.append(keyPrefix).append(KEY_SPLITTER);
         }
         for (Object arg : args) {
-            sb.append( arg ).append( KEY_SPLITTER );
+            sb.append(arg).append(KEY_SPLITTER);
         }
         if (sb.length() > 0) {
-            sb.deleteCharAt( sb.length() - 1 );
+            sb.deleteCharAt(sb.length() - 1);
         }
         return sb.toString();
     }

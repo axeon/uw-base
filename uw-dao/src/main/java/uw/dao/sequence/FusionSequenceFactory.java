@@ -238,8 +238,8 @@ public class FusionSequenceFactory {
                     size = SET_OP.size(redisKey);
                     if (size <= POOL_MIN) {
                         long saasId = DaoSequenceFactory.allocateSequenceRange(seqName, POOL_SIZE);
-                        Long[] ids = new Long[1000];
-                        for (int i = 0; i < 1000; i++) {
+                        Long[] ids = new Long[(int) POOL_SIZE];
+                        for (int i = 0; i < POOL_SIZE; i++) {
                             ids[i] = saasId + i;
                         }
                         SET_OP.add(redisKey, ids);

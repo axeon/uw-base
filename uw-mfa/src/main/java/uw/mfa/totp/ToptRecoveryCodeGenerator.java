@@ -42,7 +42,7 @@ public class ToptRecoveryCodeGenerator {
         }
         // Create an array and fill with generated codes
         String[] codes = new String[amount];
-        Arrays.setAll( codes, i -> generateCode() );
+        Arrays.setAll(codes, i -> generateCode());
         return codes;
     }
 
@@ -52,13 +52,13 @@ public class ToptRecoveryCodeGenerator {
      * @return
      */
     private static String generateCode() {
-        final StringBuilder code = new StringBuilder( CODE_LENGTH + (CODE_LENGTH / GROUPS_NBR) - 1 );
+        final StringBuilder code = new StringBuilder(CODE_LENGTH + (CODE_LENGTH / GROUPS_NBR) - 1);
         for (int i = 0; i < CODE_LENGTH; i++) {
             // Append random character from authorized ones
-            code.append( CHARACTERS[random.nextInt( CHARACTERS.length )] );
+            code.append(CHARACTERS[random.nextInt(CHARACTERS.length)]);
             // Split code into groups for increased readability
             if ((i + 1) % GROUPS_NBR == 0 && (i + 1) != CODE_LENGTH) {
-                code.append( "-" );
+                code.append("-");
             }
         }
         return code.toString();

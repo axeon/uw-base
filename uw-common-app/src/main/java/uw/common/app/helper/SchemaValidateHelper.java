@@ -158,29 +158,30 @@ public final class SchemaValidateHelper {
          */
         public ValidateResult check(Object form) {
             Object value = getValue(form);
-            if (required) {
-                if (value == null) {
+            if (value == null) {
+                if (required) {
                     return new ValidateResult(name, title, ValidateResponseCode.NOT_EMPTY, null);
                 }
-                if (value instanceof Number num) {
-                    double d = num.doubleValue();
-                    if (!Double.isNaN(min) && d < min) {
-                        return new ValidateResult(name, title, ValidateResponseCode.VALUE_TOO_SMALL, String.valueOf(min));
-                    }
-                    if (!Double.isNaN(max) && d > max) {
-                        return new ValidateResult(name, title, ValidateResponseCode.VALUE_TOO_LARGE, String.valueOf(max));
-                    }
+                return null;
+            }
+            if (value instanceof Number num) {
+                double d = num.doubleValue();
+                if (!Double.isNaN(min) && d < min) {
+                    return new ValidateResult(name, title, ValidateResponseCode.VALUE_TOO_SMALL, String.valueOf(min));
                 }
-                String str = String.valueOf(value);
-                if ((minLength > 0 && str.length() < minLength)) {
-                    return new ValidateResult(name, title, ValidateResponseCode.LENGTH_TOO_SHORT, String.valueOf(minLength));
+                if (!Double.isNaN(max) && d > max) {
+                    return new ValidateResult(name, title, ValidateResponseCode.VALUE_TOO_LARGE, String.valueOf(max));
                 }
-                if (maxLength > 0 && str.length() > maxLength) {
-                    return new ValidateResult(name, title, ValidateResponseCode.LENGTH_TOO_LONG, String.valueOf(maxLength));
-                }
-                if (pattern != null && !str.matches(pattern)) {
-                    return new ValidateResult(name, title, ValidateResponseCode.DATA_FORMAT_ERROR, pattern);
-                }
+            }
+            String str = String.valueOf(value);
+            if ((minLength > 0 && str.length() < minLength)) {
+                return new ValidateResult(name, title, ValidateResponseCode.LENGTH_TOO_SHORT, String.valueOf(minLength));
+            }
+            if (maxLength > 0 && str.length() > maxLength) {
+                return new ValidateResult(name, title, ValidateResponseCode.LENGTH_TOO_LONG, String.valueOf(maxLength));
+            }
+            if (pattern != null && !str.matches(pattern)) {
+                return new ValidateResult(name, title, ValidateResponseCode.DATA_FORMAT_ERROR, pattern);
             }
             return null;
         }

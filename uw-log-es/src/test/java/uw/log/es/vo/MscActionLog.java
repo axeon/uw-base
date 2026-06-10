@@ -7,7 +7,6 @@ import java.util.Date;
 /**
  * 应用Http接口操作日志
  *
- * 
  * @since 2018-05-12
  */
 public class MscActionLog extends LogBaseVo implements Serializable {

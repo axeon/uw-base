@@ -24,7 +24,6 @@ import uw.auth.service.constant.UserType;
 import uw.auth.service.filter.AuthServiceFilter;
 import uw.auth.service.rpc.AuthAppRpc;
 import uw.auth.service.token.InvalidTokenData;
-import uw.auth.service.util.MscUtils;
 import uw.auth.service.vo.MscAppRegRequest;
 import uw.auth.service.vo.MscAppRegResponse;
 import uw.auth.service.vo.MscAppReportRequest;
@@ -71,6 +70,11 @@ public class MscAppUpdateService {
      * spring-mvc HandleMapping
      */
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
+
+    /**
+     * 最大注册重试次数。
+     */
+    private static final int MAX_REGISTRY_TIMES = 20;
 
     /**
      * 内部自持任务。
@@ -134,6 +138,8 @@ public class MscAppUpdateService {
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                    break;
                 }
             }
         }
@@ -259,7 +265,7 @@ public class MscAppUpdateService {
                             permVo.setDesc(permDesc);
                             permVo.setUser(userType);
                             //权限路径
-                            permCode = MscUtils.sanitizeUrl(pathPattern.getPatternString());
+                            permCode = sanitizeUrl(pathPattern.getPatternString());
                             //一级菜单单独处理
                             if (method.getBeanType().getSimpleName().equals("$PackageInfo$")) {
                                 permVo.setCode(permCode);
@@ -372,4 +378,24 @@ public class MscAppUpdateService {
             case OPTIONS -> "OPTIONS";
         };
     }
+
+    /**
+     * to sanitizeUrl url
+     *
+     * @param path
+     * @return
+     */
+    private String sanitizeUrl(final String path) {
+        String sanitized = path;
+        while (true) {
+            int index = sanitized.indexOf("//");
+            if (index < 0) {
+                break;
+            } else {
+                sanitized = sanitized.substring(0, index) + sanitized.substring(index + 1);
+            }
+        }
+        return sanitized;
+    }
+
 }

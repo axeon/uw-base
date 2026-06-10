@@ -413,6 +413,7 @@ public class SearchResponse<T> {
             this.sum = sum;
         }
     }
+
     /**
      * 聚合分组桶类（用于 terms 聚合）
      */

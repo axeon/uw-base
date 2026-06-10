@@ -46,8 +46,8 @@ public interface CaptchaService {
     /**
      * 解决ReCaptcha V2。
      *
-     * @param siteKey   站点密钥
-     * @param pageUrl   页面URL
+     * @param siteKey 站点密钥
+     * @param pageUrl 页面URL
      * @return 识别结果
      */
     CaptchaResult solveReCaptchaV2(String siteKey, String pageUrl);
@@ -55,10 +55,10 @@ public interface CaptchaService {
     /**
      * 解决ReCaptcha V3。
      *
-     * @param siteKey   站点密钥
-     * @param pageUrl   页面URL
-     * @param action    动作
-     * @param minScore  最小分数
+     * @param siteKey  站点密钥
+     * @param pageUrl  页面URL
+     * @param action   动作
+     * @param minScore 最小分数
      * @return 识别结果
      */
     CaptchaResult solveReCaptchaV3(String siteKey, String pageUrl, String action, float minScore);
@@ -66,8 +66,8 @@ public interface CaptchaService {
     /**
      * 解决hCaptcha。
      *
-     * @param siteKey   站点密钥
-     * @param pageUrl   页面URL
+     * @param siteKey 站点密钥
+     * @param pageUrl 页面URL
      * @return 识别结果
      */
     CaptchaResult solveHCaptcha(String siteKey, String pageUrl);

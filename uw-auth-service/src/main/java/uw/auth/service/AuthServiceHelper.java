@@ -18,7 +18,7 @@ import uw.auth.service.token.AuthTokenData;
 import uw.auth.service.token.InvalidTokenData;
 import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.vo.MscActionLog;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.SystemClock;
 import uw.log.es.LogClient;
 
@@ -36,14 +36,14 @@ public class AuthServiceHelper {
     private static final Logger logger = LoggerFactory.getLogger(AuthServiceHelper.class);
 
     /**
-     * InheritableThreadLocal 保存当前线程请求用户对象
+     * ThreadLocal 保存当前线程请求用户对象
      */
-    private static final ThreadLocal<AuthTokenData> contextTokenHolder = new InheritableThreadLocal<>();
+    private static final ThreadLocal<AuthTokenData> contextTokenHolder = new ThreadLocal<>();
 
     /**
-     * InheritableThreadLocal 保存当前线程请求日志对象
+     * ThreadLocal 保存当前线程请求日志对象
      */
-    private static final ThreadLocal<MscActionLog> contextLogHolder = new InheritableThreadLocal<>();
+    private static final ThreadLocal<MscActionLog> contextLogHolder = new ThreadLocal<>();
 
     /**
      * 针对token有效期，每个单独设定过期时间。
@@ -51,12 +51,14 @@ public class AuthServiceHelper {
     private static final Expiry<String, AuthTokenData> cacheExpiryPolicy = new Expiry<>() {
         @Override
         public long expireAfterCreate(String key, AuthTokenData authToken, long currentTime) {
-            return TimeUnit.MILLISECONDS.toNanos(authToken.getExpireAt() - SystemClock.now());
+            long ttlMillis = authToken.getExpireAt() - SystemClock.now();
+            return TimeUnit.MILLISECONDS.toNanos(Math.max(0L, ttlMillis));
         }
 
         @Override
         public long expireAfterUpdate(String key, AuthTokenData authToken, long currentTime, long currentDuration) {
-            return TimeUnit.MILLISECONDS.toNanos(authToken.getExpireAt() - SystemClock.now());
+            long ttlMillis = authToken.getExpireAt() - SystemClock.now();
+            return TimeUnit.MILLISECONDS.toNanos(Math.max(0L, ttlMillis));
         }
 
         @Override

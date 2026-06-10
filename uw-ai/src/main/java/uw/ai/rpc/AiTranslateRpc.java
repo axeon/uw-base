@@ -4,7 +4,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import uw.ai.vo.AiTranslateListParam;
 import uw.ai.vo.AiTranslateMapParam;
 import uw.ai.vo.AiTranslateResultData;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
 public interface AiTranslateRpc {
     /**

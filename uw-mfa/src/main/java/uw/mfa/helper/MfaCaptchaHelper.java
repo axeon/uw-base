@@ -8,7 +8,7 @@ import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.ValueOperations;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.mfa.captcha.CaptchaService;
 import uw.mfa.captcha.vo.CaptchaData;
 import uw.mfa.captcha.vo.CaptchaQuestion;

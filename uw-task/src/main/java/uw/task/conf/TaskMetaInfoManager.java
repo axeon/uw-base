@@ -7,7 +7,6 @@ import uw.task.TaskRunner;
 import uw.task.entity.TaskCronerConfig;
 import uw.task.entity.TaskRunnerConfig;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -21,12 +20,12 @@ public class TaskMetaInfoManager {
     /**
      * Runner任务实例缓存。
      */
-    private final Map<String, TaskRunner> runnerInstanceMap = new HashMap<>();
+    private final Map<String, TaskRunner> runnerInstanceMap = new ConcurrentHashMap<>();
 
     /**
      * Cron任务实例缓存。
      */
-    private final Map<String, TaskCroner> cronerInstanceMap = new HashMap<>();
+    private final Map<String, TaskCroner> cronerInstanceMap = new ConcurrentHashMap<>();
 
     /**
      * Runner任务配置缓存
@@ -60,7 +59,7 @@ public class TaskMetaInfoManager {
      * @param config
      */
     public void setRunnerConfig(String runnerConfigKey, TaskRunnerConfig config) {
-        runnerConfigMap.put( runnerConfigKey, config );
+        runnerConfigMap.put(runnerConfigKey, config);
     }
 
     /**
@@ -69,7 +68,7 @@ public class TaskMetaInfoManager {
      * @param runnerConfigKey
      */
     public void removeRunnerConfig(String runnerConfigKey) {
-        runnerConfigMap.remove( runnerConfigKey );
+        runnerConfigMap.remove(runnerConfigKey);
     }
 
     /**
@@ -79,7 +78,7 @@ public class TaskMetaInfoManager {
      * @param config
      */
     public void setCronerConfig(String cronerConfigKey, TaskCronerConfig config) {
-        cronerConfigMap.put( cronerConfigKey, config );
+        cronerConfigMap.put(cronerConfigKey, config);
     }
 
     /**
@@ -107,7 +106,7 @@ public class TaskMetaInfoManager {
      * @return
      */
     public TaskRunner getRunnerInstance(String runnerCls) {
-        return runnerInstanceMap.get( runnerCls );
+        return runnerInstanceMap.get(runnerCls);
     }
 
     /**
@@ -117,7 +116,7 @@ public class TaskMetaInfoManager {
      * @return
      */
     public TaskCroner getCronerInstance(String cronerCls) {
-        return cronerInstanceMap.get( cronerCls );
+        return cronerInstanceMap.get(cronerCls);
     }
 
     /**
@@ -143,20 +142,20 @@ public class TaskMetaInfoManager {
      */
     public void init() {
         // 设置当前主机上所有的TaskCroner
-        Map<String, TaskCroner> cronerMap = context.getBeansOfType( TaskCroner.class );
+        Map<String, TaskCroner> cronerMap = context.getBeansOfType(TaskCroner.class);
         for (Map.Entry<String, TaskCroner> kv : cronerMap.entrySet()) {
             // 拿到任务类名
             TaskCroner taskCroner = kv.getValue();
             String taskClass = taskCroner.getClass().getName();
-            cronerInstanceMap.put( taskClass, taskCroner );
+            cronerInstanceMap.put(taskClass, taskCroner);
         }
         // 设置当前主机上所有的TaskCroner
-        Map<String, TaskRunner> runnerMap = context.getBeansOfType( TaskRunner.class );
+        Map<String, TaskRunner> runnerMap = context.getBeansOfType(TaskRunner.class);
         for (Map.Entry<String, TaskRunner> kv : runnerMap.entrySet()) {
             // 拿到任务类名
             TaskRunner taskRunner = kv.getValue();
             String taskClass = taskRunner.getClass().getName();
-            runnerInstanceMap.put( taskClass, taskRunner );
+            runnerInstanceMap.put(taskClass, taskRunner);
         }
     }
 
@@ -167,7 +166,7 @@ public class TaskMetaInfoManager {
      * @return
      */
     public boolean checkRunnerRunLocal(TaskData<?, ?> taskData) {
-        return runnerInstanceMap.containsKey( taskData.getTaskClass() );
+        return runnerInstanceMap.containsKey(taskData.getTaskClass());
     }
 
     /**
@@ -178,31 +177,36 @@ public class TaskMetaInfoManager {
      * @return
      */
     public String getFitQueue(TaskData<?, ?> data) {
-        String fitName = getRunnerConfigKeyByData( data );
-        TaskRunnerConfig config = runnerConfigMap.get( fitName );
+        String fitName = getRunnerConfigKeyByData(data);
+        TaskRunnerConfig config = runnerConfigMap.get(fitName);
         if (config == null) {
             // 此时再检测没有taskTag匹配的情况。
-            int pos1 = fitName.indexOf( '#' );
-            int pos2 = fitName.lastIndexOf( '$' );
-            String test = fitName.substring( 0, pos1 + 1 ) + fitName.substring( pos2 );
-            config = runnerConfigMap.get( test );
-            if (config != null) {
-                fitName = test;
+            int pos1 = fitName.indexOf('#');
+            int pos2 = fitName.lastIndexOf('$');
+            if (pos1 >= 0 && pos2 > pos1) {
+                String test = fitName.substring(0, pos1 + 1) + fitName.substring(pos2);
+                config = runnerConfigMap.get(test);
+                if (config != null) {
+                    fitName = test;
+                }
             }
         }
         if (config != null) {
             String queueName = switch (config.getQueueType()) {
                 case TaskRunnerConfig.TYPE_QUEUE_TASK -> fitName;
-                case TaskRunnerConfig.TYPE_QUEUE_GROUP_PRIORITY -> getGroupQueueName( config.getTaskClass(), "priority", config.getRunTarget() );
-                case TaskRunnerConfig.TYPE_QUEUE_GROUP -> getGroupQueueName( config.getTaskClass(), "default", config.getRunTarget() );
-                case TaskRunnerConfig.TYPE_QUEUE_PROJECT_PRIORITY -> taskProperties.getTaskProject() + "@priority$" + config.getRunTarget();
+                case TaskRunnerConfig.TYPE_QUEUE_GROUP_PRIORITY ->
+                        getGroupQueueName(config.getTaskClass(), "priority", config.getRunTarget());
+                case TaskRunnerConfig.TYPE_QUEUE_GROUP ->
+                        getGroupQueueName(config.getTaskClass(), "default", config.getRunTarget());
+                case TaskRunnerConfig.TYPE_QUEUE_PROJECT_PRIORITY ->
+                        taskProperties.getTaskProject() + "@priority$" + config.getRunTarget();
                 default -> taskProperties.getTaskProject() + "$" + config.getRunTarget();
             };
             // 只有开启了延时队列并且发送队列异步进行才会返回TTL队列名称
             return config.getDelayType() == TaskRunnerConfig.TYPE_DELAY_ON && data.getRunType() == TaskData.RUN_TYPE_GLOBAL && data.getTaskDelay() > 0 ?
-                    getTTLQueueName( queueName ) : queueName;
+                    getTTLQueueName(queueName) : queueName;
         } else {
-            throw new RuntimeException( "找不到合适的任务配置: taskClass = " + data.getTaskClass() );
+            throw new RuntimeException("找不到合适的任务配置: taskClass = " + data.getTaskClass());
         }
     }
 
@@ -214,20 +218,22 @@ public class TaskMetaInfoManager {
      */
     public TaskRunnerConfig getRunnerConfigByData(TaskData<?, ?> data) {
         TaskRunnerConfig config = null;
-        String fitName = getRunnerConfigKeyByData( data );
-        config = runnerConfigMap.get( fitName );
+        String fitName = getRunnerConfigKeyByData(data);
+        config = runnerConfigMap.get(fitName);
         if (config != null) {
             return config;
         }
         // 此时再检测没有taskTag匹配的情况。
-        int pos1 = fitName.indexOf( '#' );
-        int pos2 = fitName.lastIndexOf( '$' );
-        String test = fitName.substring( 0, pos1 + 1 ) + fitName.substring( pos2 );
-        config = runnerConfigMap.get( test );
-        if (config != null) {
-            return config;
+        int pos1 = fitName.indexOf('#');
+        int pos2 = fitName.lastIndexOf('$');
+        if (pos1 >= 0 && pos2 > pos1) {
+            String test = fitName.substring(0, pos1 + 1) + fitName.substring(pos2);
+            config = runnerConfigMap.get(test);
+            if (config != null) {
+                return config;
+            }
         }
-        throw new RuntimeException( "找不到任务配置: taskClass = " + data.getTaskClass() );
+        throw new RuntimeException("找不到任务配置: taskClass = " + data.getTaskClass());
     }
 
 
@@ -237,14 +243,14 @@ public class TaskMetaInfoManager {
      * @return
      */
     public String getCronerConfigKey(TaskCronerConfig config) {
-        StringBuilder sb = new StringBuilder( 168 );
-        sb.append( config.getTaskClass() ).append( "#" );
+        StringBuilder sb = new StringBuilder(168);
+        sb.append(config.getTaskClass()).append("#");
         if (config.getTaskParam() != null && !config.getTaskParam().isEmpty()) {
-            sb.append( config.getId() );
+            sb.append(config.getId());
         }
-        sb.append( "$" );
+        sb.append("$");
         if (config.getRunTarget() != null && !config.getRunTarget().isEmpty()) {
-            sb.append( config.getRunTarget() );
+            sb.append(config.getRunTarget());
         }
         return sb.toString();
     }
@@ -255,14 +261,14 @@ public class TaskMetaInfoManager {
      * @return
      */
     public String getRunnerConfigKey(TaskRunnerConfig config) {
-        StringBuilder sb = new StringBuilder( 168 );
-        sb.append( config.getTaskClass() ).append( "#" );
+        StringBuilder sb = new StringBuilder(168);
+        sb.append(config.getTaskClass()).append("#");
         if (config.getTaskTag() != null && !config.getTaskTag().isEmpty()) {
-            sb.append( config.getTaskTag() );
+            sb.append(config.getTaskTag());
         }
-        sb.append( "$" );
+        sb.append("$");
         if (config.getRunTarget() != null && !config.getRunTarget().isEmpty()) {
-            sb.append( config.getRunTarget() );
+            sb.append(config.getRunTarget());
         }
         return sb.toString();
     }
@@ -273,14 +279,14 @@ public class TaskMetaInfoManager {
      * @return
      */
     public String getRunnerConfigKeyByData(TaskData<?, ?> data) {
-        StringBuilder sb = new StringBuilder( 168 );
-        sb.append( data.getTaskClass() ).append( "#" );
+        StringBuilder sb = new StringBuilder(168);
+        sb.append(data.getTaskClass()).append("#");
         if (data.getTaskTag() != null && !data.getTaskTag().isEmpty()) {
-            sb.append( data.getTaskTag() );
+            sb.append(data.getTaskTag());
         }
-        sb.append( "$" );
+        sb.append("$");
         if (data.getRunTarget() != null && !data.getRunTarget().isEmpty()) {
-            sb.append( data.getRunTarget() );
+            sb.append(data.getRunTarget());
         }
         return sb.toString();
     }
@@ -293,10 +299,13 @@ public class TaskMetaInfoManager {
      */
     public String getQueueNameByConfig(TaskRunnerConfig config) {
         return switch (config.getQueueType()) {
-            case TaskRunnerConfig.TYPE_QUEUE_TASK -> getRunnerConfigKey( config );
-            case TaskRunnerConfig.TYPE_QUEUE_GROUP_PRIORITY -> getGroupQueueName( config.getTaskClass(), "priority", config.getRunTarget() );
-            case TaskRunnerConfig.TYPE_QUEUE_GROUP -> getGroupQueueName( config.getTaskClass(), "default", config.getRunTarget() );
-            case TaskRunnerConfig.TYPE_QUEUE_PROJECT_PRIORITY -> taskProperties.getTaskProject() + "@priority$" + config.getRunTarget();
+            case TaskRunnerConfig.TYPE_QUEUE_TASK -> getRunnerConfigKey(config);
+            case TaskRunnerConfig.TYPE_QUEUE_GROUP_PRIORITY ->
+                    getGroupQueueName(config.getTaskClass(), "priority", config.getRunTarget());
+            case TaskRunnerConfig.TYPE_QUEUE_GROUP ->
+                    getGroupQueueName(config.getTaskClass(), "default", config.getRunTarget());
+            case TaskRunnerConfig.TYPE_QUEUE_PROJECT_PRIORITY ->
+                    taskProperties.getTaskProject() + "@priority$" + config.getRunTarget();
             default -> taskProperties.getTaskProject() + "$" + config.getRunTarget();
         };
     }
@@ -318,7 +327,7 @@ public class TaskMetaInfoManager {
      * @return ttl队列名
      */
     public boolean isTTLQueueName(String queueName) {
-        return queueName.endsWith( "*" );
+        return queueName.endsWith("*");
     }
 
 
@@ -329,9 +338,9 @@ public class TaskMetaInfoManager {
      */
     public String getGroupQueueName(String taskClass, String type, String runTarget) {
         if (taskClass != null) {
-            int pos = taskClass.lastIndexOf( '.' );
+            int pos = taskClass.lastIndexOf('.');
             if (pos > -1) {
-                return taskClass.substring( 0, pos ) + "@" + type + "$" + runTarget;
+                return taskClass.substring(0, pos) + "@" + type + "$" + runTarget;
             }
         }
         return taskClass;

@@ -10,7 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.util.UriUtils;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.mfa.constant.HmacAlgorithm;
 import uw.mfa.constant.MfaResponseCode;
 import uw.mfa.totp.vo.TotpSecretData;
@@ -94,7 +94,7 @@ public class TotpSecretDataGenerator {
      * @return
      */
     public ResponseData<TotpSecretData> issue(String label, String issuer, int qrSize) {
-        if (StringUtils.isNotBlank(issuer)) {
+        if (StringUtils.isBlank(issuer)) {
             issuer = this.issuer;
         }
         if (qrSize < 100) {

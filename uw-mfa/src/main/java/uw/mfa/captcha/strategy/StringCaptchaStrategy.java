@@ -1,12 +1,10 @@
 package uw.mfa.captcha.strategy;
 
 
-
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.mfa.captcha.CaptchaStrategy;
 import uw.mfa.captcha.util.CaptchaImageUtils;
 import uw.mfa.captcha.vo.CaptchaData;
@@ -22,12 +20,12 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class StringCaptchaStrategy implements CaptchaStrategy {
 
-    private static final Logger logger = LoggerFactory.getLogger( StringCaptchaStrategy.class );
+    private static final Logger logger = LoggerFactory.getLogger(StringCaptchaStrategy.class);
 
     /**
      * 图片背景色
      */
-    private static final Color BG_COLOR = new Color( 253, 251, 255 );
+    private static final Color BG_COLOR = new Color(253, 251, 255);
 
     /**
      * 随机生成器
@@ -57,9 +55,9 @@ public class StringCaptchaStrategy implements CaptchaStrategy {
     /**
      * 字体样式。
      */
-    private static final Font[] FONTS = new Font[]{new Font( "Times New Roman", Font.BOLD, FONT_SIZE ), new Font( "Verdana", Font.BOLD, FONT_SIZE ), new Font( "Ravie", Font.BOLD
-            , FONT_SIZE ), new Font( "arial", Font.BOLD, FONT_SIZE ), new Font( "Antique Olive Compact", Font.BOLD, FONT_SIZE ), new Font( "Fixedsys", Font.BOLD, FONT_SIZE ),
-            new Font( "Wide Latin", Font.BOLD, FONT_SIZE ), new Font( "Gill " + "Sans Ultra Bold", Font.BOLD, FONT_SIZE )};
+    private static final Font[] FONTS = new Font[]{new Font("Times New Roman", Font.BOLD, FONT_SIZE), new Font("Verdana", Font.BOLD, FONT_SIZE), new Font("Ravie", Font.BOLD
+            , FONT_SIZE), new Font("arial", Font.BOLD, FONT_SIZE), new Font("Antique Olive Compact", Font.BOLD, FONT_SIZE), new Font("Fixedsys", Font.BOLD, FONT_SIZE),
+            new Font("Wide Latin", Font.BOLD, FONT_SIZE), new Font("Gill " + "Sans Ultra Bold", Font.BOLD, FONT_SIZE)};
 
     /**
      * ASCII
@@ -76,16 +74,16 @@ public class StringCaptchaStrategy implements CaptchaStrategy {
     public ResponseData<CaptchaData> generate(String captchaId) {
         CaptchaQuestion captchaQuestion = new CaptchaQuestion();
         //初始化画布
-        BufferedImage image = new BufferedImage( WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB );
+        BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
         Graphics graphics = image.getGraphics();
-        graphics.setColor( BG_COLOR );
-        graphics.fillRect( 0, 0, WIDTH, HEIGHT );
-        mixSource( image );
-        String captchaResult = drawCode( graphics );
-        captchaQuestion.setMainImageBase64( CaptchaImageUtils.imageToBase64( image ) );
-        captchaQuestion.setCaptchaId( captchaId );
-        captchaQuestion.setCaptchaType( captchaType() );
-        return ResponseData.success( new CaptchaData( captchaQuestion, captchaResult ) );
+        graphics.setColor(BG_COLOR);
+        graphics.fillRect(0, 0, WIDTH, HEIGHT);
+        mixSource(image);
+        String captchaResult = drawCode(graphics);
+        captchaQuestion.setMainImageBase64(CaptchaImageUtils.imageToBase64(image));
+        captchaQuestion.setCaptchaId(captchaId);
+        captchaQuestion.setCaptchaType(captchaType());
+        return ResponseData.success(new CaptchaData(captchaQuestion, captchaResult));
     }
 
     /**
@@ -97,7 +95,7 @@ public class StringCaptchaStrategy implements CaptchaStrategy {
      */
     @Override
     public ResponseData verify(String answerData, String captchaResult) {
-        if (!StringUtils.equalsIgnoreCase( answerData, captchaResult )) {
+        if (!StringUtils.equalsIgnoreCase(answerData, captchaResult)) {
             return ResponseData.error();
         }
         //校验成功
@@ -123,10 +121,10 @@ public class StringCaptchaStrategy implements CaptchaStrategy {
      * @return
      */
     private static Color randColor(int fc, int bc) {
-        int r = fc + RANDOM.nextInt( bc - fc );
-        int g = fc + RANDOM.nextInt( bc - fc );
-        int b = fc + RANDOM.nextInt( bc - fc );
-        return new Color( r, g, b );
+        int r = fc + RANDOM.nextInt(bc - fc);
+        int g = fc + RANDOM.nextInt(bc - fc);
+        int b = fc + RANDOM.nextInt(bc - fc);
+        return new Color(r, g, b);
     }
 
     /**
@@ -139,19 +137,19 @@ public class StringCaptchaStrategy implements CaptchaStrategy {
         float yawpRate = 0.05f;
         int area = (int) (yawpRate * WIDTH * HEIGHT);
         for (int i = 0; i < area; i++) {
-            int x = RANDOM.nextInt( WIDTH );
-            int y = RANDOM.nextInt( HEIGHT );
-            image.setRGB( x, y, RANDOM.nextInt( 255 ) );
+            int x = RANDOM.nextInt(WIDTH);
+            int y = RANDOM.nextInt(HEIGHT);
+            image.setRGB(x, y, RANDOM.nextInt(255));
         }
         // 添加混杂线条。
         Graphics graphics = image.getGraphics();
         for (int i = 0; i < LINE_NUM; i++) {
-            int xs = RANDOM.nextInt( WIDTH );
-            int ys = RANDOM.nextInt( HEIGHT );
-            int xe = xs + RANDOM.nextInt( WIDTH );
-            int ye = ys + RANDOM.nextInt( HEIGHT );
-            graphics.setColor( randColor( 1, 255 ) );
-            graphics.drawLine( xs, ys, xe, ye );
+            int xs = RANDOM.nextInt(WIDTH);
+            int ys = RANDOM.nextInt(HEIGHT);
+            int xe = xs + RANDOM.nextInt(WIDTH);
+            int ye = ys + RANDOM.nextInt(HEIGHT);
+            graphics.setColor(randColor(1, 255));
+            graphics.drawLine(xs, ys, xe, ye);
         }
     }
 
@@ -163,19 +161,19 @@ public class StringCaptchaStrategy implements CaptchaStrategy {
      */
     private String drawCode(Graphics graphics) {
         String captcha = generateCode();
-        graphics.setFont( FONTS[RANDOM.nextInt( FONTS.length )] );
+        graphics.setFont(FONTS[RANDOM.nextInt(FONTS.length)]);
         char[] question = captcha.toCharArray();
         for (int i = 0; i < question.length; i++) {
-            String code = String.valueOf( question[i] );
+            String code = String.valueOf(question[i]);
             // 渐变
             AffineTransform fontAT = new AffineTransform();
-            int rotate = RANDOM.nextInt( 30 );
-            fontAT.rotate( RANDOM.nextBoolean() ? Math.toRadians( rotate ) : -Math.toRadians( (double) rotate / 2 ) );
-            Font fx = new Font( FONTS[RANDOM.nextInt( FONTS.length )].getFontName(), RANDOM.nextInt( 5 ), 45 + RANDOM.nextInt( 8 ) ).deriveFont( fontAT );
-            graphics.setFont( fx );
+            int rotate = RANDOM.nextInt(30);
+            fontAT.rotate(RANDOM.nextBoolean() ? Math.toRadians(rotate) : -Math.toRadians((double) rotate / 2));
+            Font fx = new Font(FONTS[RANDOM.nextInt(FONTS.length)].getFontName(), RANDOM.nextInt(5), 45 + RANDOM.nextInt(8)).deriveFont(fontAT);
+            graphics.setFont(fx);
 
-            graphics.setColor( randColor( 1, 255 ) );
-            graphics.drawString( code, (i * WIDTH / question.length) + 3, HEIGHT / 2 + RANDOM.nextInt( 20 ) );
+            graphics.setColor(randColor(1, 255));
+            graphics.drawString(code, (i * WIDTH / question.length) + 3, HEIGHT / 2 + RANDOM.nextInt(20));
 
         }
         return captcha;
@@ -191,9 +189,9 @@ public class StringCaptchaStrategy implements CaptchaStrategy {
         // 字符长度
         int CODE_LEN = 4;
         for (int i = 0; i < CODE_LEN; i++) {
-            char c = CHAR_ARRAY[RANDOM.nextInt( CHAR_ARRAY.length )];
-            String ch = String.valueOf( c );
-            builder.append( ch );
+            char c = CHAR_ARRAY[RANDOM.nextInt(CHAR_ARRAY.length)];
+            String ch = String.valueOf(c);
+            builder.append(ch);
         }
         return builder.toString();
     }

@@ -1,4 +1,4 @@
-package uw.common.dto;
+package uw.common.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -611,7 +611,7 @@ public class ResponseData<T> {
      * @return
      */
     public static <T> ResponseData<T> fatal(T t, ResponseData<?> responseData) {
-        return new ResponseData<>(t, STATE_ERROR, responseData.getCode(), responseData.getMsg());
+        return new ResponseData<>(t, STATE_FATAL, responseData.getCode(), responseData.getMsg());
     }
 
     /**

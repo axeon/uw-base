@@ -137,23 +137,23 @@ public class TaskCronerConfig implements Serializable {
     }
 
     private TaskCronerConfig(Builder builder) {
-        setId( builder.id );
-        setTaskClass( builder.taskClass );
-        setTaskParam( builder.taskParam );
-        setTaskName( builder.taskName );
-        setTaskDesc( builder.taskDesc );
-        setTaskCron( builder.taskCron );
-        setRunType( builder.runType );
-        setRunTarget( builder.runTarget );
-        setAlertFailRate( builder.alertFailRate );
-        setAlertFailPartnerRate( builder.alertFailPartnerRate );
-        setAlertFailProgramRate( builder.alertFailProgramRate );
-        setAlertFailDataRate( builder.alertFailDataRate );
-        setAlertWaitTimeout( builder.alertWaitTimeout );
-        setAlertRunTimeout( builder.alertRunTimeout );
-        setState( builder.state );
-        setLogLevel( builder.logLevel );
-        setLogLimitSize( builder.logLimitSize );
+        setId(builder.id);
+        setTaskClass(builder.taskClass);
+        setTaskParam(builder.taskParam);
+        setTaskName(builder.taskName);
+        setTaskDesc(builder.taskDesc);
+        setTaskCron(builder.taskCron);
+        setRunType(builder.runType);
+        setRunTarget(builder.runTarget);
+        setAlertFailRate(builder.alertFailRate);
+        setAlertFailPartnerRate(builder.alertFailPartnerRate);
+        setAlertFailProgramRate(builder.alertFailProgramRate);
+        setAlertFailDataRate(builder.alertFailDataRate);
+        setAlertWaitTimeout(builder.alertWaitTimeout);
+        setAlertRunTimeout(builder.alertRunTimeout);
+        setState(builder.state);
+        setLogLevel(builder.logLevel);
+        setLogLimitSize(builder.logLimitSize);
     }
 
 
@@ -164,7 +164,7 @@ public class TaskCronerConfig implements Serializable {
      * @return
      */
     public static Builder builder(String taskName) {
-        return new Builder().taskName( taskName );
+        return new Builder().taskName(taskName);
     }
 
     /**
@@ -174,7 +174,7 @@ public class TaskCronerConfig implements Serializable {
      * @return
      */
     public static Builder builder(String taskName, String taskCron) {
-        return new Builder().taskName( taskName ).taskCron( taskCron );
+        return new Builder().taskName(taskName).taskCron(taskCron);
     }
 
     public static Builder builder() {
@@ -437,7 +437,7 @@ public class TaskCronerConfig implements Serializable {
          * @return
          */
         public static Builder builder(String taskClass) {
-            return new Builder().taskClass( taskClass );
+            return new Builder().taskClass(taskClass);
         }
 
         /**
@@ -447,7 +447,7 @@ public class TaskCronerConfig implements Serializable {
          * @return
          */
         public static Builder builder(Class taskClass) {
-            return new Builder().taskClass( taskClass.getName() );
+            return new Builder().taskClass(taskClass.getName());
         }
 
         /**
@@ -632,7 +632,7 @@ public class TaskCronerConfig implements Serializable {
          * @return a {@code TaskCronerConfig} built with parameters of this {@code TaskCronerConfig.Builder}
          */
         public TaskCronerConfig build() {
-            return new TaskCronerConfig( this );
+            return new TaskCronerConfig(this);
         }
     }
 }

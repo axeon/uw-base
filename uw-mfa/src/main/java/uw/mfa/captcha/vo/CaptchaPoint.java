@@ -36,12 +36,12 @@ public class CaptchaPoint {
     }
 
     public String toJsonString() {
-        return String.format( "{\"x\":%d,\"y\":%d}", x, y );
+        return String.format("{\"x\":%d,\"y\":%d}", x, y);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash( x, y );
+        return Objects.hash(x, y);
     }
 
     @Override

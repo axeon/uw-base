@@ -1,7 +1,7 @@
 package uw.oauth2.client.provider;
 
 import org.springframework.web.util.UriUtils;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.JsonUtils;
 import uw.oauth2.client.conf.OAuth2ClientProperties;
 import uw.oauth2.client.vo.OAuth2Token;
@@ -26,7 +26,7 @@ class WechatOAuth2ProviderTest {
         config.setTokenUri("https://api.weixin.qq.com/sns/oauth2/access_token");
         config.setUserInfoUri("https://api.weixin.qq.com/sns/userinfo");
         config.setAuthScope("snsapi_login");
-        provider = new WechatOAuth2Provider("wechat", config, "https://xili.pub/oauth2/redirect","https://xili.pub/oauth2/qrcode/");
+        provider = new WechatOAuth2Provider("wechat", config, "https://xili.pub/oauth2/redirect", "https://xili.pub/oauth2/qrcode/");
     }
 
     public static void main(String[] args) {

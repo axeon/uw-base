@@ -10,7 +10,6 @@ import java.util.List;
 /**
  * Lvmama的库存和价格信息Vo[不带错误节点]
  *
- * 
  * @since 2017/7/31
  */
 @JacksonXmlRootElement(localName = "response")

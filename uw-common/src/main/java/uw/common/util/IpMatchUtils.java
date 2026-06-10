@@ -258,6 +258,10 @@ public class IpMatchUtils {
         /**
          * 判断两个IP范围是否重叠或相邻。
          */
+        /**
+         * 判断两个IP范围是否重叠或相邻。
+         * 前提条件：ipRange 和 lastRange 已按起始地址排序（ipRange.start >= lastRange.start）。
+         */
         private static boolean isOverlappingOrAdjacent(IpRange ipRange, IpRange lastRange) {
             return compareIp(ipRange.getStart(), lastRange.getEnd()) <= 0;
         }

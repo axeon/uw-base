@@ -4,7 +4,7 @@ package uw.mfa.captcha;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.JsonUtils;
 import uw.mfa.captcha.util.CaptchaAESUtils;
 import uw.mfa.captcha.util.CaptchaRandomUtils;
@@ -20,7 +20,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class CaptchaService {
 
-    private static final Logger logger = LoggerFactory.getLogger( CaptchaService.class );
+    private static final Logger logger = LoggerFactory.getLogger(CaptchaService.class);
 
     private CaptchaStrategy[] captchaStrategies = CaptchaStrategy.ALL_STRATEGIES;
 
@@ -37,15 +37,15 @@ public class CaptchaService {
      */
     public CaptchaService(String captchaStrategies) {
         ArrayList<CaptchaStrategy> strategyList = new ArrayList<>();
-        for (String strategyName : captchaStrategies.split( "," )) {
+        for (String strategyName : captchaStrategies.split(",")) {
             for (CaptchaStrategy captchaStrategy : CaptchaStrategy.ALL_STRATEGIES) {
-                if (captchaStrategy.captchaType().equals( strategyName.trim() )) {
-                    strategyList.add( captchaStrategy );
+                if (captchaStrategy.captchaType().equals(strategyName.trim())) {
+                    strategyList.add(captchaStrategy);
                     break;
                 }
             }
         }
-        this.captchaStrategies = strategyList.toArray( new CaptchaStrategy[strategyList.size()] );
+        this.captchaStrategies = strategyList.toArray(new CaptchaStrategy[strategyList.size()]);
     }
 
     /**
@@ -69,20 +69,20 @@ public class CaptchaService {
      */
     public ResponseData<CaptchaData> generateCaptcha(String captchaId) {
         // 获取验证码方式
-        CaptchaStrategy captchaStrategy = captchaStrategies[ThreadLocalRandom.current().nextInt( captchaStrategies.length )];
+        CaptchaStrategy captchaStrategy = captchaStrategies[ThreadLocalRandom.current().nextInt(captchaStrategies.length)];
         // 设置captchaId
-        if (StringUtils.isBlank( captchaId ) || captchaId.length() != 32) {
+        if (StringUtils.isBlank(captchaId) || captchaId.length() != 32) {
             captchaId = CaptchaRandomUtils.getUUID();
         }
         // 获取captchaData，并对subData进行加密处理。
-        ResponseData<CaptchaData> captchaDataResponseData = captchaStrategy.generate( captchaId );
+        ResponseData<CaptchaData> captchaDataResponseData = captchaStrategy.generate(captchaId);
         if (captchaDataResponseData.isSuccess()) {
             CaptchaData captchaData = captchaDataResponseData.getData();
             if (captchaData != null) {
                 CaptchaQuestion captchaQuestion = captchaData.getCaptchaQuestion();
                 if (captchaQuestion != null) {
-                    if (StringUtils.isNotBlank( captchaQuestion.getSubData() )) {
-                        captchaQuestion.setSubData( CaptchaAESUtils.aesEncrypt( captchaQuestion.getSubData(), captchaQuestion.getCaptchaId() ) );
+                    if (StringUtils.isNotBlank(captchaQuestion.getSubData())) {
+                        captchaQuestion.setSubData(CaptchaAESUtils.aesEncrypt(captchaQuestion.getSubData(), captchaQuestion.getCaptchaId()));
                     }
                 }
             }
@@ -99,36 +99,36 @@ public class CaptchaService {
      * @return
      */
     public ResponseData verifyCaptcha(String captchaId, String captchaSign, String captchaResult) {
-        if (StringUtils.isBlank( captchaId )) {
-            return ResponseData.errorMsg( "captchaId is empty!" );
+        if (StringUtils.isBlank(captchaId)) {
+            return ResponseData.errorMsg("captchaId is empty!");
         }
         if (captchaId.length() != 32) {
-            return ResponseData.errorMsg( "captchaId format invalid!" );
+            return ResponseData.errorMsg("captchaId format invalid!");
         }
-        if (StringUtils.isBlank( captchaSign )) {
-            return ResponseData.errorMsg( "captchaSign is empty!" );
+        if (StringUtils.isBlank(captchaSign)) {
+            return ResponseData.errorMsg("captchaSign is empty!");
         }
-        if (StringUtils.isEmpty( captchaResult )) {
-            return ResponseData.errorMsg( "captchaResult is empty!" );
+        if (StringUtils.isEmpty(captchaResult)) {
+            return ResponseData.errorMsg("captchaResult is empty!");
         }
 
-        String captchaAnswerStr = CaptchaAESUtils.aesDecrypt( captchaSign, captchaId );
+        String captchaAnswerStr = CaptchaAESUtils.aesDecrypt(captchaSign, captchaId);
         // 前端回答的答案
-        CaptchaAnswer captchaAnswer = JsonUtils.parse( captchaAnswerStr, CaptchaAnswer.class );
+        CaptchaAnswer captchaAnswer = JsonUtils.parse(captchaAnswerStr, CaptchaAnswer.class);
         // 校验Captcha类型是否正确
         String captchaType = captchaAnswer.getCaptchaType();
-        CaptchaStrategy captchaStrategy = getCaptchaStrategy( captchaType );
+        CaptchaStrategy captchaStrategy = getCaptchaStrategy(captchaType);
         if (captchaStrategy == null) {
-            ResponseData.errorMsg( "captchaType[" + captchaType + "] invalid!" );
+            return ResponseData.errorMsg("captchaType[" + captchaType + "] invalid!");
         }
         // 校验操作时间 (太快可能就是机器识别)
-        boolean humanCheck = humanDetect( captchaStrategy, captchaAnswer );
+        boolean humanCheck = humanDetect(captchaStrategy, captchaAnswer);
         if (!humanCheck) {
-            return ResponseData.errorMsg( "verifyCaptcha failed!" );
+            return ResponseData.errorMsg("verifyCaptcha failed!");
         }
 
         // 解析后选择对应的验证
-        return captchaStrategy.verify( captchaAnswer.getAnswerData(), captchaResult );
+        return captchaStrategy.verify(captchaAnswer.getAnswerData(), captchaResult);
     }
 
     /**
@@ -142,7 +142,7 @@ public class CaptchaService {
         // 如果识别时间达不到要求使用的时间
         if (captchaStrategy.humanOpTime() > opTime) {
             // 随机一半的概率放行
-            return opTime % 2 == 0 ? true : false;
+            return opTime % 2 == 0;
         }
         return true;
     }
@@ -155,7 +155,7 @@ public class CaptchaService {
      */
     private CaptchaStrategy getCaptchaStrategy(String captchaType) {
         for (CaptchaStrategy captchaStrategy : captchaStrategies) {
-            if (captchaStrategy.captchaType().equals( captchaType )) {
+            if (captchaStrategy.captchaType().equals(captchaType)) {
                 return captchaStrategy;
             }
         }

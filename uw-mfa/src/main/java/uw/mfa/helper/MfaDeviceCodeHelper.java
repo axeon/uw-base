@@ -9,14 +9,14 @@ import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.ValueOperations;
-import org.springframework.web.client.RestTemplate;
-import uw.common.dto.ResponseData;
-import uw.common.util.SystemClock;
+import org.springframework.web.client.RestClient;
+import uw.common.response.ResponseData;
 import uw.mfa.conf.UwMfaProperties;
 import uw.mfa.constant.MfaDeviceType;
 import uw.mfa.constant.MfaResponseCode;
 import uw.mfa.util.RedisKeyUtils;
 
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -39,9 +39,9 @@ public class MfaDeviceCodeHelper {
      */
     private static final String REDIS_DEVICE_CODE_VERIFY_PREFIX = "deviceVerify";
     /**
-     * 随机生成器
+     * 安全随机生成器
      */
-    private static final Random RANDOM = new Random(SystemClock.now());
+    private static final SecureRandom RANDOM = new SecureRandom();
     /**
      * ASCII
      */
@@ -60,7 +60,7 @@ public class MfaDeviceCodeHelper {
     /**
      * RPC Client
      */
-    private static RestTemplate authRestTemplate;
+    private static RestClient authRestClient;
 
     /**
      * 配置文件。
@@ -77,11 +77,11 @@ public class MfaDeviceCodeHelper {
      */
     private static ValueOperations<String, String> mfaRedisOp;
 
-    public MfaDeviceCodeHelper(UwMfaProperties uwMfaProperties, @Qualifier("mfaRedisTemplate") final RedisTemplate<String, String> mfaRedisTemplate, @Qualifier("authRestTemplate") final RestTemplate authRestTemplate) {
+    public MfaDeviceCodeHelper(UwMfaProperties uwMfaProperties, @Qualifier("mfaRedisTemplate") final RedisTemplate<String, String> mfaRedisTemplate, @Qualifier("authRestClient") final RestClient authRestClient) {
         MfaDeviceCodeHelper.uwMfaProperties = uwMfaProperties;
         MfaDeviceCodeHelper.mfaRedisTemplate = mfaRedisTemplate;
         MfaDeviceCodeHelper.mfaRedisOp = mfaRedisTemplate.opsForValue();
-        MfaDeviceCodeHelper.authRestTemplate = authRestTemplate;
+        MfaDeviceCodeHelper.authRestClient = authRestClient;
     }
 
     /**
@@ -282,7 +282,11 @@ public class MfaDeviceCodeHelper {
         data.put("mobile", mobile);
         data.put("content", content);
         data.put("paramMap", paramMap);
-        return authRestTemplate.postForObject(uwMfaProperties.getDeviceNotifyMobileApi(), data, ResponseData.class);
+        return authRestClient.post()
+                .uri(uwMfaProperties.getDeviceNotifyMobileApi())
+                .body(data)
+                .retrieve()
+                .body(ResponseData.class);
     }
 
     /**
@@ -306,7 +310,11 @@ public class MfaDeviceCodeHelper {
         data.put("paramMap", paramMap);
         //默认邮件为html格式
         data.put("isHtml", 1);
-        return authRestTemplate.postForObject(uwMfaProperties.getDeviceNotifyEmailApi(), data, ResponseData.class);
+        return authRestClient.post()
+                .uri(uwMfaProperties.getDeviceNotifyEmailApi())
+                .body(data)
+                .retrieve()
+                .body(ResponseData.class);
     }
 
     /**
@@ -333,8 +341,10 @@ public class MfaDeviceCodeHelper {
      * @return
      */
     private static String replaceTemplate(String data, Map<String, String> paramMap) {
-        data = data.replace(TEMPLATE_DEVICE_CODE, paramMap.get(TEMPLATE_DEVICE_CODE));
-        data = data.replace(TEMPLATE_EXPIRE_MINUTES, paramMap.get(TEMPLATE_EXPIRE_MINUTES));
+        String code = paramMap.getOrDefault(TEMPLATE_DEVICE_CODE, "");
+        String minutes = paramMap.getOrDefault(TEMPLATE_EXPIRE_MINUTES, "");
+        data = data.replace(TEMPLATE_DEVICE_CODE, code);
+        data = data.replace(TEMPLATE_EXPIRE_MINUTES, minutes);
         return data;
     }
 

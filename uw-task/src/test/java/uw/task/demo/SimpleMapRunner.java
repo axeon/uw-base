@@ -9,7 +9,7 @@ import uw.task.converter.TaskMessageConverter;
 import java.util.Map;
 
 /**
- * 
+ *
  * @since 2018-05-30
  */
 public class SimpleMapRunner extends SimpleBaseMapRunner {

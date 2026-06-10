@@ -58,7 +58,7 @@ public abstract class AiTranslateBaseParam {
     /**
      * 绑定授权信息。
      */
-    public void bindAuthInfo(){
+    public void bindAuthInfo() {
         this.saasId = AuthServiceHelper.getSaasId();
         this.userId = AuthServiceHelper.getUserId();
         this.userType = AuthServiceHelper.getUserType();

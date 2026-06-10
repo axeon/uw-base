@@ -17,14 +17,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Hybrid 模式集成测试。
  * 验证 WebotManager 与 BrowserInstancePool 的集成。
  */
 @SpringBootTest(classes = {WebotAutoConfiguration.class})
-@TestPropertySource(properties = {"logging.level.uw.webot=DEBUG","uw.webot.enabled=true", "uw.webot.botPool.max-browsers-per-group=1", "uw.webot.botPool.max-tabs-per-browser=5",})
+@TestPropertySource(properties = {"logging.level.uw.webot=DEBUG", "uw.webot.enabled=true", "uw.webot.botPool.max-browsers-per-group=1", "uw.webot.botPool.max-tabs-per-browser=5",})
 class WebotIntegrationTest {
 
     @Autowired
@@ -37,7 +38,7 @@ class WebotIntegrationTest {
         assertNotNull(session);
 
         // 获取Context
-        try(BrowserTab browserTab = webotManager.openBrowserTab(session)) {
+        try (BrowserTab browserTab = webotManager.openBrowserTab(session)) {
             browserTab.navigate("https://www.baidu.com");
             browserTab.waitForLoadState(LoadState.NETWORKIDLE);
             System.out.println(browserTab.title());

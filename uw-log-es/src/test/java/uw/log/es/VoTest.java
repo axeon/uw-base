@@ -6,7 +6,7 @@ import uw.log.es.vo.ScrollResponse;
 import uw.log.es.vo.TaskRunnerLog;
 
 /**
- * 
+ *
  * @since 2019-12-16
  **/
 public class VoTest {

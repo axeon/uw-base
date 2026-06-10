@@ -5,19 +5,19 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Date;
 
 /**
- * AI模型配置VO。
+ * AI模型配置VO — 供外部调用方查询可用模型列表。
  */
 @Schema(title = "AI模型配置VO", description = "AI模型配置信息，供外部服务查询")
 public class AiModelConfigVo {
 
     /**
-     * 主键ID
+     * 模型配置ID
      */
     @Schema(title = "主键ID", description = "模型配置ID")
     private long id;
 
     /**
-     * 模型类型
+     * 模型类型: CHAT/EMBEDDING/RERANK/TTS/OCR
      */
     @Schema(title = "模型类型", description = "CHAT/EMBEDDING/RERANK/TTS/OCR")
     private String modelType;

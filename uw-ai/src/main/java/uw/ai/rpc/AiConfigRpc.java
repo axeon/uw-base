@@ -2,7 +2,7 @@ package uw.ai.rpc;
 
 import uw.ai.vo.AiApiConfigVo;
 import uw.ai.vo.AiModelConfigVo;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 
 import java.util.List;
 
@@ -14,7 +14,7 @@ public interface AiConfigRpc {
     /**
      * 获取所有可用的模型配置列表。
      *
-     * @return ResponseData
+     * @return 模型配置列表
      */
     ResponseData<List<AiModelConfigVo>> listModelConfig();
 

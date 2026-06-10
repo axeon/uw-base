@@ -12,27 +12,27 @@ public enum TaskLogRecordType {
     /**
      * 什么都不记录
      */
-    NONE(-1,"不记录日志"),
+    NONE(-1, "不记录日志"),
 
     /**
      * 记录日志
      */
-    RECORD(0,"记录日志"),
+    RECORD(0, "记录日志"),
 
     /**
      * 记录日志,含请求参数
      */
-    RECORD_TASK_PARAM(1,"记录日志,含请求参数"),
+    RECORD_TASK_PARAM(1, "记录日志,含请求参数"),
 
     /**
      * 记录日志,含返回参数
      */
-    RECORD_RESULT_DATA(2,"记录日志,含返回参数"),
+    RECORD_RESULT_DATA(2, "记录日志,含返回参数"),
 
     /**
      * 记录全部日志
      */
-    RECORD_ALL(3,"记录全部日志");
+    RECORD_ALL(3, "记录全部日志");
 
     private final int value;
 

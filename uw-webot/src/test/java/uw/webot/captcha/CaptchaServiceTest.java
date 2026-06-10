@@ -14,7 +14,7 @@ public class CaptchaServiceTest {
     @Test
     public void testCaptchaResultSuccess() {
         CaptchaResult result = CaptchaResult.success("ABC123", 1500, 0.002);
-        
+
         assertTrue(result.success());
         assertEquals("ABC123", result.code());
         assertEquals(1500, result.solveTimeMillis());
@@ -25,7 +25,7 @@ public class CaptchaServiceTest {
     @Test
     public void testCaptchaResultFailure() {
         CaptchaResult result = CaptchaResult.failure("Recognition failed");
-        
+
         assertFalse(result.success());
         assertEquals("", result.code());
         assertEquals(0, result.solveTimeMillis());
@@ -43,7 +43,7 @@ public class CaptchaServiceTest {
                 .withCaseSensitive(false)
                 .withLanguage("zh")
                 .withExtraParam("custom", "value");
-        
+
         assertEquals("image", options.getCaptchaType());
         assertEquals(4, options.getMinLength());
         assertEquals(6, options.getMaxLength());
@@ -56,7 +56,7 @@ public class CaptchaServiceTest {
     @Test
     public void testCaptchaOptionsDefaults() {
         CaptchaOptions options = new CaptchaOptions();
-        
+
         assertEquals("image", options.getCaptchaType());
         assertNull(options.getMinLength());
         assertNull(options.getMaxLength());

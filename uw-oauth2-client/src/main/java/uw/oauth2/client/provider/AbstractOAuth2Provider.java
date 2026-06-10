@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.util.UriUtils;
 import uw.cache.GlobalCache;
 import uw.cache.vo.CacheValueWrapper;
-import uw.common.dto.ResponseData;
+import uw.common.response.ResponseData;
 import uw.common.util.SnowflakeIdGenerator;
 import uw.httpclient.http.HttpConfig;
 import uw.httpclient.http.HttpData;

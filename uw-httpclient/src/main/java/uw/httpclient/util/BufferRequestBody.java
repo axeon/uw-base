@@ -10,7 +10,6 @@ import java.io.IOException;
 /**
  * 以一个流作为源写入Socket。
  *
- * 
  * @since 2018-04-27
  */
 public final class BufferRequestBody {

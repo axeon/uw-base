@@ -1,8 +1,9 @@
 package uw.dao.impl;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import uw.dao.PageQueryParam;
 import uw.dao.annotation.QueryMeta;
+import uw.common.dto.QueryParam;
+import uw.common.dto.PageQueryParam;
 
 import java.util.Date;
 import java.util.List;

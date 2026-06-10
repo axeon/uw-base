@@ -15,7 +15,6 @@ import uw.auth.client.vo.TokenResponse;
 import uw.common.response.ResponseData;
 import uw.common.util.SystemClock;
 
-import java.net.URI;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -204,7 +203,7 @@ public class AuthClientTokenService {
             loginRequest.setLoginSecret(authClientProperties.getLoginSecret());
             loginRequest.setForceLogin(true);
             ResponseData<List<TokenResponse>> loginResponse = restClient.post()
-                    .uri(URI.create(loginUrl))
+                    .uri(loginUrl)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(loginRequest)
                     .retrieve()

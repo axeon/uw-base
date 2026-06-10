@@ -25,6 +25,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.Cache;
+import org.springframework.cache.support.NoOpCache;
 import org.springframework.cloud.loadbalancer.cache.LoadBalancerCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -51,6 +52,7 @@ import uw.common.util.DateUtils;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -224,25 +226,24 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     }
 
     /**
-     * crack！
-     * 解决spring loadbalancer双重缓存问题。
-     * 直接禁用spring loadbalancer缓存。
-     * 此配置会引发一条warn日志，无大碍。
-     *
-     * @return
+     * 禁用Spring LoadBalancer缓存层，直连Nacos服务发现，实现秒级响应服务上下线。
+     * <p>
+     * Spring LoadBalancer默认使用Caffeine缓存（TTL 35秒），导致服务下线后延迟感知。
+     * 返回NoOpCache，每次请求都cache miss，直接走delegate从Nacos获取实例列表。
      */
     @Bean
     @Primary
     LoadBalancerCacheManager loadBalancerCacheManager() {
+        Cache noop = new NoOpCache("noop");
         return new LoadBalancerCacheManager() {
             @Override
             public Cache getCache(String name) {
-                return null;
+                return noop;
             }
 
             @Override
             public Collection<String> getCacheNames() {
-                return List.of();
+                return Collections.emptyList();
             }
         };
     }

@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import uw.ai.rpc.AiChatRpc;
+import uw.ai.rpc.AiConfigRpc;
 import uw.ai.rpc.AiToolRpc;
 import uw.ai.rpc.AiTranslateRpc;
 import uw.ai.util.BeanOutputConverter;
@@ -35,10 +36,16 @@ public class AiClientHelper {
      */
     private static AiTranslateRpc translateRpc;
 
-    public AiClientHelper(AiToolRpc toolRpc, AiChatRpc chatRpc, AiTranslateRpc translateRpc) {
+    /**
+     * configRpc
+     */
+    private static AiConfigRpc configRpc;
+
+    public AiClientHelper(AiToolRpc toolRpc, AiChatRpc chatRpc, AiTranslateRpc translateRpc, AiConfigRpc configRpc) {
         AiClientHelper.toolRpc = toolRpc;
         AiClientHelper.chatRpc = chatRpc;
         AiClientHelper.translateRpc = translateRpc;
+        AiClientHelper.configRpc = configRpc;
     }
 
     /**
@@ -125,5 +132,23 @@ public class AiClientHelper {
      */
     public static ResponseData<AiTranslateResultData[]> translateMap(AiTranslateMapParam param) {
         return translateRpc.translateMap(param);
+    }
+
+    /**
+     * 获取所有可用的模型配置列表。
+     *
+     * @return ResponseData
+     */
+    public static ResponseData<List<AiModelConfigVo>> listModelConfig() {
+        return configRpc.listModelConfig();
+    }
+
+    /**
+     * 获取所有可用的API连接配置列表。
+     *
+     * @return ResponseData
+     */
+    public static ResponseData<List<AiApiConfigVo>> listApiConfig() {
+        return configRpc.listApiConfig();
     }
 }

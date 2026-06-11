@@ -1,5 +1,6 @@
 package uw.common.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -87,8 +88,8 @@ public class PageList<T> implements Iterable<T>, Serializable {
      * @param resultNum  每页大小
      * @param sizeAll    总数据量
      */
-    public PageList(List<T> list, int startIndex, int resultNum, int sizeAll) {
-        this.list = toArrayList(list);
+    public PageList(ArrayList<T> list, int startIndex, int resultNum, int sizeAll) {
+        this.list = list;
         this.startIndex = startIndex;
         this.resultNum = resultNum;
         this.size = this.list.size();
@@ -101,6 +102,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      * @param <T> 数据类型
      * @return 空的PageList
      */
+    @JsonIgnore
     public static <T> PageList<T> empty() {
         return (PageList<T>) EMPTY;
     }
@@ -110,6 +112,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      *
      * @param sizeAll 总数据量
      */
+    @JsonIgnore
     public void calcPages(int sizeAll) {
         this.sizeAll = sizeAll;
         if (this.sizeAll > 0 && this.resultNum > 0) {
@@ -126,6 +129,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      * @param index 位置
      * @return 指定位置的对象，如果list为null则返回null
      */
+    @JsonIgnore
     public T get(int index) {
         if (list == null) {
             return null;
@@ -138,6 +142,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      *
      * @return 第一个元素
      */
+    @JsonIgnore
     public T getFirst() {
         return get(0);
     }
@@ -147,6 +152,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      *
      * @return 最后一个元素
      */
+    @JsonIgnore
     public T getLast() {
         return get(this.size - 1);
     }
@@ -158,6 +164,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      *
      * @return 当前List大小
      */
+    @JsonIgnore
     public int size() {
         return this.size;
     }
@@ -167,6 +174,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      *
      * @return 总数据量
      */
+    @JsonIgnore
     public int sizeAll() {
         return this.sizeAll;
     }
@@ -176,6 +184,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      *
      * @return 总页数
      */
+    @JsonIgnore
     public int pageCount() {
         return this.pageCount;
     }
@@ -185,6 +194,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      *
      * @return 当前页
      */
+    @JsonIgnore
     public int page() {
         return this.page;
     }
@@ -194,6 +204,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      *
      * @return 起始索引
      */
+    @JsonIgnore
     public int startIndex() {
         return this.startIndex;
     }
@@ -203,6 +214,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      *
      * @return 每页大小
      */
+    @JsonIgnore
     public int resultNum() {
         return this.resultNum;
     }
@@ -214,6 +226,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      *
      * @return 是否为空
      */
+    @JsonIgnore
     public boolean isEmpty() {
         return this.size == 0;
     }
@@ -223,6 +236,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      *
      * @return 是否非空
      */
+    @JsonIgnore
     public boolean isNotEmpty() {
         return this.size > 0;
     }
@@ -235,6 +249,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      * @param o 元素
      * @return 是否包含
      */
+    @JsonIgnore
     public boolean contains(Object o) {
         if (this.list == null) {
             return false;
@@ -248,6 +263,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      * @param o 元素
      * @return 索引，如果不存在返回-1
      */
+    @JsonIgnore
     public int indexOf(Object o) {
         if (this.list == null) {
             return -1;
@@ -262,6 +278,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      *
      * @return 数据列表
      */
+    @JsonIgnore
     public List<T> list() {
         if (this.list == null) {
             return java.util.Collections.emptyList();
@@ -274,8 +291,9 @@ public class PageList<T> implements Iterable<T>, Serializable {
      *
      * @param list 数据列表
      */
-    public void reset(List<T> list) {
-        this.list = toArrayList(list);
+    @JsonIgnore
+    public void reset(ArrayList<T> list) {
+        this.list = list;
         this.size = this.list.size();
     }
 
@@ -287,6 +305,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      * @return Iterator
      */
     @Override
+    @JsonIgnore
     public Iterator<T> iterator() {
         if (this.list == null) {
             return java.util.Collections.emptyIterator();
@@ -299,22 +318,12 @@ public class PageList<T> implements Iterable<T>, Serializable {
      *
      * @return Stream
      */
+    @JsonIgnore
     public Stream<T> stream() {
         if (this.list == null) {
             return Stream.empty();
         }
         return this.list.stream();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> ArrayList<T> toArrayList(List<T> list) {
-        if (list == null) {
-            return new ArrayList<>();
-        }
-        if (list instanceof ArrayList<T> al) {
-            return al;
-        }
-        return new ArrayList<>(list);
     }
 
 }

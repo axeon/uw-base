@@ -54,23 +54,23 @@ public class LogClient {
      * @return
      */
     public static <T> PageList<T> mapQueryResponseToPageList(SearchResponse<T> response, int startIndex, int pageSize) {
-        ArrayList<T> dataList = new ArrayList<>();
+        ArrayList<T> list = new ArrayList<>();
         if (response != null) {
             SearchResponse.HitResponse<T> hitsResponse = response.getHitResponse();
             List<SearchResponse.Hit<T>> hitsList = hitsResponse.getHits();
             if (!hitsList.isEmpty()) {
                 for (SearchResponse.Hit<T> hit : hitsList) {
-                    dataList.add(hit.getSource());
+                    list.add(hit.getSource());
                 }
 
                 if (Objects.nonNull(hitsResponse.getTotal())) {
-                    return new PageList<>(dataList, startIndex, pageSize, hitsResponse.getTotal().getValue());
+                    return new PageList<>(list, startIndex, pageSize, hitsResponse.getTotal().getValue());
                 } else {
-                    return new PageList<>(dataList, startIndex, pageSize, hitsResponse.getHits().size());
+                    return new PageList<>(list, startIndex, pageSize, hitsResponse.getHits().size());
                 }
             }
         }
-        return new PageList<>(dataList, startIndex, pageSize, 0);
+        return new PageList<>(list, startIndex, pageSize, 0);
     }
 
     /**

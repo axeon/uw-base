@@ -141,8 +141,19 @@ public class AiClientHelper {
 
     /**
      * 获取所有可用的模型配置列表。
+     *
+     * @return ResponseData
      */
     public static ResponseData<List<AiModelConfigVo>> listModelConfig() {
         return configRpc.listModelConfig();
+    }
+
+    /**
+     * 获取所有可用的API连接配置列表。
+     *
+     * @return ResponseData
+     */
+    public static ResponseData<List<AiApiConfigVo>> listApiConfig() {
+        return configRpc.listApiConfig();
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.client.RestClient;
 import uw.ai.conf.UwAiProperties;
 import uw.ai.rpc.AiConfigRpc;
+import uw.ai.vo.AiApiConfigVo;
 import uw.ai.vo.AiModelConfigVo;
 import uw.common.response.ResponseData;
 
@@ -34,6 +35,18 @@ public class AiConfigRpcImpl implements AiConfigRpc {
                 .body(new ParameterizedTypeReference<ResponseData<List<AiModelConfigVo>>>() {});
         if (result == null) {
             return ResponseData.errorMsg("AiConfigRpcImpl.listModelConfig() returned null body");
+        }
+        return result;
+    }
+
+    @Override
+    public ResponseData<List<AiApiConfigVo>> listApiConfig() {
+        ResponseData<List<AiApiConfigVo>> result = authRestClient.get()
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/listApiConfig")
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<List<AiApiConfigVo>>>() {});
+        if (result == null) {
+            return ResponseData.errorMsg("AiConfigRpcImpl.listApiConfig() returned null body");
         }
         return result;
     }

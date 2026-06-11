@@ -171,7 +171,7 @@ public class LogClientDSLTest {
 es本身对分页查询支持良好,使用简单查询和DSL查询默认是取10条
 
 项目中常见的分页查询是前端的列表查询,可以使用带SearchResponse后缀的方法将数据查出来,然后使用[uw-dao](http://192.168.88.88:10080/uw/uw-dao "数据库操作的类库")
-提供的DataList工具类进行包装即可,比如
+提供的PageList工具类进行包装即可,比如
 
 ```java
 public class DemoPaginationQuery {
@@ -179,7 +179,7 @@ public class DemoPaginationQuery {
     /**
      * SQL分页查询示例
      */
-    public DataList<MscLoginLog> list(@RequestParam(name = "page", defaultValue = "1") int page,
+    public PageList<MscLoginLog> list(@RequestParam(name = "page", defaultValue = "1") int page,
                                       @RequestParam(name = "resultNum", defaultValue = "10") int resultNum) {
         String dsl = logClient.translateSqlToDsl(
                 "select * from " + logClient.getLogObjectIndex(MscLoginLog.class) + " where loginDate > 1524666600000 ", (page - 1) * resultNum, resultNum);
@@ -193,7 +193,7 @@ public class DemoPaginationQuery {
                 for (SearchResponse.Hits<TaskRunnerLog> hits : hitsList) {
                     dataList.add(hits.getSource());
                 }
-                return new DataList<TaskRunnerLog>(dataList, startIndex, resultNum, total);
+                return new PageList<TaskRunnerLog>(dataList, startIndex, resultNum, total);
             }
         }
     }

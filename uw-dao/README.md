@@ -28,9 +28,9 @@
     - [6.3 @QueryMeta 注解表达式](#63-querymeta-注解表达式)
     - [6.4 排序支持](#64-排序支持)
 - [7. 原生 SQL 操作](#7-原生-sql-操作)
-    - [7.1 DataSet 结果集](#71-dataset-结果集)
-    - [7.2 executeCommand 执行更新](#72-executecommand-执行更新)
-    - [7.3 queryForSingleValue / queryForSingleList](#73-queryforsinglevalue--queryforsinglelist)
+    - [7.1 PageRowSet 结果集](#71-dataset-结果集)
+    - [7.2 execute 执行更新](#72-execute-执行更新)
+    - [7.3 queryForValue / queryForValueList](#73-queryforvalue--queryforvaluelist)
 - [8. 事务管理](#8-事务管理)
 - [9. 批量更新（BatchUpdateManager）](#9-批量更新batchupdatemanager)
 - [10. 分布式序列（SequenceFactory）](#10-分布式序列sequencefactory)
@@ -433,15 +433,15 @@ UserQueryParam param = new UserQueryParam();
 param.setUsername("alice");   // 对应 @QueryMeta(expr="username like ?") 字段
 param.PAGE(1).RESULT_NUM(20);
 
-ResponseData<DataList<User>> resp = dao.list(User.class, param);
-DataList<User> list = resp.getData();
+ResponseData<PageList<User>> resp = dao.list(User.class, param);
+PageList<User> list = resp.getData();
 // list.size()      -- 当前页记录数
 // list.sizeAll()   -- 总记录数（REQUEST_TYPE=2 时有值）
 // list.pageCount() -- 总页数
 // list.results()   -- 记录列表
 
 // 使用原生 SQL 列表查询
-ResponseData<DataList<User>> resp2 = dao.list(
+ResponseData<PageList<User>> resp2 = dao.list(
     User.class,
     "select * from sys_user where state = ?",
     new Object[]{1},
@@ -548,7 +548,7 @@ param.ADD_EXT_COND_SQL("create_date is not null");
 param.ADD_EXT_COND("create_date>=?", startDate);
 param.ADD_EXT_COND_PARAM("state", 1);  // 等价 state=?
 
-ResponseData<DataList<User>> resp = dao.list(User.class, param);
+ResponseData<PageList<User>> resp = dao.list(User.class, param);
 ```
 
 ### 6.3 @QueryMeta 注解表达式
@@ -594,14 +594,14 @@ param.ADD_SORT("createDate", QueryParam.SORT_DESC)
 
 ## 7. 原生 SQL 操作
 
-### 7.1 DataSet 结果集
+### 7.1 PageRowSet 结果集
 
-`DataSet` 是游标式结果集，所有行以 `List<Object[]>` 形式存储在内存中：
+`PageRowSet` 是游标式结果集，所有行以 `List<Object[]>` 形式存储在内存中：
 
 ```java
 DaoFactory dao = DaoFactory.getInstance();
 
-DataSet ds = dao.queryForDataSet(
+PageRowSet ds = dao.queryForPageRowSet(
     "select id, username, state from sys_user where state=?",
     new Object[]{1},
     0, 100, true   // startIndex, resultNum, autoCount
@@ -615,7 +615,7 @@ while (ds.next()) {
 }
 
 // 转换为强类型列表
-DataList<UserVO> list = ds.map(row -> {
+PageList<UserVO> list = ds.map(row -> {
     UserVO vo = new UserVO();
     vo.setId(row.getLong("id"));
     vo.setUsername(row.getString("username"));
@@ -626,7 +626,7 @@ DataList<UserVO> list = ds.map(row -> {
 String[] cols = ds.getColumnNames();
 ```
 
-**DataSet 支持的类型转换方法**：`getBoolean`, `getInt`, `getLong`, `getDouble`, `getFloat`, `getString`, `getBigInteger`,
+**PageRowSet 支持的类型转换方法**：`getBoolean`, `getInt`, `getLong`, `getDouble`, `getFloat`, `getString`, `getBigInteger`,
 `getDecimal`, `getBytes`, `getDate`，均支持按列名或按列索引（0-based）访问。
 
 ### 7.2 executeCommand 执行更新
@@ -638,17 +638,17 @@ int rows = dao.execute(
 );
 ```
 
-### 7.3 queryForSingleValue / queryForSingleList
+### 7.3 queryForValue / queryForValueList
 
 ```java
 // 查询单个值
-Long count = dao.queryForSingleValue(Long.class,
+Long count = dao.queryForValue(Long.class,
     "select count(*) from sys_user where state=?",
     new Object[]{1}
 );
 
 // 查询单列列表
-List<Long> ids = dao.queryForSingleList(Long.class,
+List<Long> ids = dao.queryForValueList(Long.class,
     "select id from sys_user where state=?",
     new Object[]{1}
 );
@@ -1015,7 +1015,7 @@ List<LogRecord> all = new ArrayList<>();
 
 for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
     String table = ShardingTableUtils.getTableNameByDate("log_access", d);
-    ResponseData<DataList<LogRecord>> resp = dao.list(LogRecord.class, table, param);
+    ResponseData<PageList<LogRecord>> resp = dao.list(LogRecord.class, table, param);
     if (resp.isSuccess()) {
         all.addAll(resp.getData().results());
     }

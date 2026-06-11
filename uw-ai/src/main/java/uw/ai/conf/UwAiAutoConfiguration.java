@@ -107,19 +107,6 @@ public class UwAiAutoConfiguration {
         return new AiTranslateRpcImpl(uwAiProperties, authRestClient);
     }
 
-    /**
-     * AiConfigRpc初始化。
-     *
-     * @param uwAiProperties
-     * @param authRestTemplate
-     * @return
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public AiConfigRpc aiConfigRpc(UwAiProperties uwAiProperties, RestTemplate authRestTemplate) {
-        return new AiConfigRpcImpl(uwAiProperties, authRestTemplate);
-    }
-
 
     /**
      * AiClientHelper初始化。

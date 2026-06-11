@@ -29,21 +29,25 @@ public class AiConfigRpcImpl implements AiConfigRpc {
 
     @Override
     public ResponseData<List<AiModelConfigVo>> listModelConfig() {
-        return authRestTemplate.exchange(
-                uwAiProperties.getAiCenterHost() + "/rpc/config/listModelConfig",
-                HttpMethod.GET,
-                HttpEntity.EMPTY,
-                new ParameterizedTypeReference<ResponseData<List<AiModelConfigVo>>>() {}
-        ).getBody();
+        ResponseData<List<AiModelConfigVo>> result = authRestClient.get()
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/listModelConfig")
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<List<AiModelConfigVo>>>() {});
+        if (result == null) {
+            return ResponseData.errorMsg("AiConfigRpcImpl.listModelConfig() returned null body");
+        }
+        return result;
     }
 
     @Override
     public ResponseData<List<AiApiConfigVo>> listApiConfig() {
-        return authRestTemplate.exchange(
-                uwAiProperties.getAiCenterHost() + "/rpc/config/listApiConfig",
-                HttpMethod.GET,
-                HttpEntity.EMPTY,
-                new ParameterizedTypeReference<ResponseData<List<AiApiConfigVo>>>() {}
-        ).getBody();
+        ResponseData<List<AiApiConfigVo>> result = authRestClient.get()
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/listApiConfig")
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<List<AiApiConfigVo>>>() {});
+        if (result == null) {
+            return ResponseData.errorMsg("AiConfigRpcImpl.listApiConfig() returned null body");
+        }
+        return result;
     }
 }

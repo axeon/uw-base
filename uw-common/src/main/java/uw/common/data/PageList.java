@@ -88,8 +88,8 @@ public class PageList<T> implements Iterable<T>, Serializable {
      * @param resultNum  每页大小
      * @param sizeAll    总数据量
      */
-    public PageList(ArrayList<T> list, int startIndex, int resultNum, int sizeAll) {
-        this.list = list;
+    public PageList(List<T> list, int startIndex, int resultNum, int sizeAll) {
+        this.list = toArrayList(list);
         this.startIndex = startIndex;
         this.resultNum = resultNum;
         this.size = this.list.size();
@@ -293,7 +293,7 @@ public class PageList<T> implements Iterable<T>, Serializable {
      */
     @JsonIgnore
     public void reset(ArrayList<T> list) {
-        this.list = list;
+        this.list = toArrayList(list);
         this.size = this.list.size();
     }
 
@@ -324,6 +324,24 @@ public class PageList<T> implements Iterable<T>, Serializable {
             return Stream.empty();
         }
         return this.list.stream();
+    }
+
+
+    /**
+     * 将list转为ArrayList.
+     *
+     * @param list list
+     * @param <T>  数据类型
+     * @return ArrayList
+     */
+    private static <T> ArrayList<T> toArrayList(List<T> list) {
+        if (list == null) {
+            return new ArrayList<>();
+        }
+        if (list instanceof ArrayList<T> al) {
+            return al;
+        }
+        return new ArrayList<>(list);
     }
 
 }

@@ -106,9 +106,9 @@ public class PageRowSet implements Serializable {
      * @param resultNum   每页大小
      * @param sizeAll     总数据量
      */
-    public PageRowSet(String[] columnNames, ArrayList<Object[]> list, int startIndex, int resultNum, int sizeAll) {
+    public PageRowSet(String[] columnNames, List<Object[]> list, int startIndex, int resultNum, int sizeAll) {
         this.columnNames = columnNames;
-        this.list = list;
+        this.list = toArrayList(list);
         this.startIndex = startIndex;
         this.resultNum = resultNum;
         this.size = this.list.size();
@@ -557,5 +557,22 @@ public class PageRowSet implements Serializable {
         }
         return new PageList<>(resultList, startIndex, resultNum, sizeAll);
     }
+
+    /**
+     * 将List转换为ArrayList.
+     *
+     * @param list 源List
+     * @return ArrayList
+     */
+    private static ArrayList<Object[]> toArrayList(List<Object[]> list) {
+        if (list == null) {
+            return new ArrayList<>();
+        }
+        if (list instanceof ArrayList<Object[]> al) {
+            return al;
+        }
+        return new ArrayList<>(list);
+    }
+
 
 }

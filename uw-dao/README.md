@@ -28,9 +28,9 @@
     - [6.3 @QueryMeta 注解表达式](#63-querymeta-注解表达式)
     - [6.4 排序支持](#64-排序支持)
 - [7. 原生 SQL 操作](#7-原生-sql-操作)
-    - [7.1 DataSet 结果集](#71-dataset-结果集)
-    - [7.2 executeCommand 执行更新](#72-executecommand-执行更新)
-    - [7.3 queryForSingleValue / queryForSingleList](#73-queryforsinglevalue--queryforsinglelist)
+    - [7.1 PageRowSet 结果集](#71-dataset-结果集)
+    - [7.2 execute 执行更新](#72-execute-执行更新)
+    - [7.3 queryForValue / queryForValueList](#73-queryforvalue--queryforvaluelist)
 - [8. 事务管理](#8-事务管理)
 - [9. 批量更新（BatchUpdateManager）](#9-批量更新batchupdatemanager)
 - [10. 分布式序列（SequenceFactory）](#10-分布式序列sequencefactory)
@@ -594,14 +594,14 @@ param.ADD_SORT("createDate", QueryParam.SORT_DESC)
 
 ## 7. 原生 SQL 操作
 
-### 7.1 DataSet 结果集
+### 7.1 PageRowSet 结果集
 
-`DataSet` 是游标式结果集，所有行以 `List<Object[]>` 形式存储在内存中：
+`PageRowSet` 是游标式结果集，所有行以 `List<Object[]>` 形式存储在内存中：
 
 ```java
 DaoFactory dao = DaoFactory.getInstance();
 
-DataSet ds = dao.queryForDataSet(
+PageRowSet ds = dao.queryForPageRowSet(
     "select id, username, state from sys_user where state=?",
     new Object[]{1},
     0, 100, true   // startIndex, resultNum, autoCount
@@ -626,7 +626,7 @@ PageList<UserVO> list = ds.map(row -> {
 String[] cols = ds.getColumnNames();
 ```
 
-**DataSet 支持的类型转换方法**：`getBoolean`, `getInt`, `getLong`, `getDouble`, `getFloat`, `getString`, `getBigInteger`,
+**PageRowSet 支持的类型转换方法**：`getBoolean`, `getInt`, `getLong`, `getDouble`, `getFloat`, `getString`, `getBigInteger`,
 `getDecimal`, `getBytes`, `getDate`，均支持按列名或按列索引（0-based）访问。
 
 ### 7.2 executeCommand 执行更新
@@ -638,17 +638,17 @@ int rows = dao.execute(
 );
 ```
 
-### 7.3 queryForSingleValue / queryForSingleList
+### 7.3 queryForValue / queryForValueList
 
 ```java
 // 查询单个值
-Long count = dao.queryForSingleValue(Long.class,
+Long count = dao.queryForValue(Long.class,
     "select count(*) from sys_user where state=?",
     new Object[]{1}
 );
 
 // 查询单列列表
-List<Long> ids = dao.queryForSingleList(Long.class,
+List<Long> ids = dao.queryForValueList(Long.class,
     "select id from sys_user where state=?",
     new Object[]{1}
 );

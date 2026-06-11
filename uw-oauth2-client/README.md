@@ -629,7 +629,7 @@ public class MscAuthHelper {
             return ResponseData.warnCode(AuthCenterResponseCode.OAUTH_ACCOUNT_ID_ERROR);
         }
         // 查询oauth绑定信息
-        ResponseData<MscOauthInfo> oauthInfoResponseData = dao.queryForSingleObject(MscOauthInfo.class, "select * from msc_oauth_info where saas_id=? and provider_code=? and open_id=? and state=1", new Object[]{mscLoginLog.getSaasId(), providerCode, openId});
+        ResponseData<MscOauthInfo> oauthInfoResponseData = dao.queryForObject(MscOauthInfo.class, "select * from msc_oauth_info where saas_id=? and provider_code=? and open_id=? and state=1", new Object[]{mscLoginLog.getSaasId(), providerCode, openId});
         if (oauthInfoResponseData.isNotSuccess()) {
             return oauthInfoResponseData.raw();
         }

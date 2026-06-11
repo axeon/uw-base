@@ -236,7 +236,7 @@ public class UserAdminController {
     // 管理员和SAAS用户可访问，记录全部日志
     @MscPermDeclare(user = {UserType.ADMIN, UserType.SAAS}, log = ActionLog.ALL)
     @GetMapping("/list")
-    public ResponseData<DataList<User>> listUsers(PageQueryParam param) {
+    public ResponseData<PageList<User>> listUsers(PageQueryParam param) {
         return userService.list(param);
     }
     

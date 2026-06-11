@@ -528,7 +528,7 @@ public class MscUserController {
     @GetMapping("/listOAuthInfo")
     @Operation(summary = "OAuth绑定列表", description = "OAuth绑定列表")
     @MscPermDeclare(auth = AuthType.USER, log = ActionLog.NONE)
-    public ResponseData<DataList<MscOauthInfo>> listOAuthInfo() {
+    public ResponseData<PageList<MscOauthInfo>> listOAuthInfo() {
         //rpc以下用户，无权限。
         if (AuthServiceHelper.getUserType() <= UserType.RPC.getValue()) {
             return null;
@@ -563,11 +563,11 @@ public class MscAuthHelper {
      */
     public static ResponseData<MscOauthInfo> oauthBind(long saasId, long userId, String providerCode, String openId) {
         // 检查是否已经绑定？
-        ResponseData<DataList<MscOauthInfo>> checkResponse = dao.list(MscOauthInfo.class, "select * from msc_oauth_info where saas_id=? and provider_code=? and state=1", new Object[]{saasId, providerCode}, 0, 0, false);
+        ResponseData<PageList<MscOauthInfo>> checkResponse = dao.list(MscOauthInfo.class, "select * from msc_oauth_info where saas_id=? and provider_code=? and state=1", new Object[]{saasId, providerCode}, 0, 0, false);
         if (checkResponse.isNotSuccess()) {
             return checkResponse.raw();
         }
-        DataList<MscOauthInfo> oauthInfoList = checkResponse.getData();
+        PageList<MscOauthInfo> oauthInfoList = checkResponse.getData();
         if (oauthInfoList.stream().anyMatch(x -> x.getUserId() == userId)) {
             return ResponseData.errorCode(AuthCenterResponseCode.OAUTH_ACCOUNT_HAS_BIND_ERROR);
         }

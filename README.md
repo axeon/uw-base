@@ -447,7 +447,7 @@ public class UserService {
             .orElse(ResponseData.errorCode(UserResponseCode.USER_NOT_FOUND));
     }
     
-    public ResponseData<DataList<User>> listUsers(UserQueryParam param) {
+    public ResponseData<PageList<User>> listUsers(UserQueryParam param) {
         return dao.list(User.class, param);
     }
 }

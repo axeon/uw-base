@@ -433,15 +433,15 @@ UserQueryParam param = new UserQueryParam();
 param.setUsername("alice");   // 对应 @QueryMeta(expr="username like ?") 字段
 param.PAGE(1).RESULT_NUM(20);
 
-ResponseData<DataList<User>> resp = dao.list(User.class, param);
-DataList<User> list = resp.getData();
+ResponseData<PageList<User>> resp = dao.list(User.class, param);
+PageList<User> list = resp.getData();
 // list.size()      -- 当前页记录数
 // list.sizeAll()   -- 总记录数（REQUEST_TYPE=2 时有值）
 // list.pageCount() -- 总页数
 // list.results()   -- 记录列表
 
 // 使用原生 SQL 列表查询
-ResponseData<DataList<User>> resp2 = dao.list(
+ResponseData<PageList<User>> resp2 = dao.list(
     User.class,
     "select * from sys_user where state = ?",
     new Object[]{1},
@@ -548,7 +548,7 @@ param.ADD_EXT_COND_SQL("create_date is not null");
 param.ADD_EXT_COND("create_date>=?", startDate);
 param.ADD_EXT_COND_PARAM("state", 1);  // 等价 state=?
 
-ResponseData<DataList<User>> resp = dao.list(User.class, param);
+ResponseData<PageList<User>> resp = dao.list(User.class, param);
 ```
 
 ### 6.3 @QueryMeta 注解表达式
@@ -615,7 +615,7 @@ while (ds.next()) {
 }
 
 // 转换为强类型列表
-DataList<UserVO> list = ds.map(row -> {
+PageList<UserVO> list = ds.map(row -> {
     UserVO vo = new UserVO();
     vo.setId(row.getLong("id"));
     vo.setUsername(row.getString("username"));
@@ -1015,7 +1015,7 @@ List<LogRecord> all = new ArrayList<>();
 
 for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
     String table = ShardingTableUtils.getTableNameByDate("log_access", d);
-    ResponseData<DataList<LogRecord>> resp = dao.list(LogRecord.class, table, param);
+    ResponseData<PageList<LogRecord>> resp = dao.list(LogRecord.class, table, param);
     if (resp.isSuccess()) {
         all.addAll(resp.getData().results());
     }

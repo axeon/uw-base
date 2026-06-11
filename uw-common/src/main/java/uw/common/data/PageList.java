@@ -134,6 +134,9 @@ public class PageList<T> implements Iterable<T>, Serializable {
         if (list == null) {
             return null;
         }
+        if (index < 0 || index >= this.size) {
+            return null;
+        }
         return list.get(index);
     }
 

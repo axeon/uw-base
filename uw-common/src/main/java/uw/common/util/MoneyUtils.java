@@ -28,6 +28,9 @@ import java.math.RoundingMode;
  * String display = MoneyUtils.of(19900)
  *         .multiplyBps(850)             // 85折
  *         .yuan();                      // "169.15"
+ *
+ * String cn = MoneyUtils.of(214748364700L)
+ *         .chinese();                   // "贰拾壹亿肆仟柒佰肆拾捌万叁仟陆佰肆拾柒元整"
  * </pre>
  */
 public final class MoneyUtils {
@@ -339,6 +342,98 @@ public final class MoneyUtils {
         return negative ? -result : result;
     }
 
+    // ==================== 中文大写 ====================
+
+    private static final char[] CN_DIGITS = {'零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖'};
+    private static final String[] CN_INT_UNITS = {"", "万", "亿", "万亿"};
+    private static final String[] CN_SEC_UNITS = {"", "拾", "佰", "仟"};
+
+    /**
+     * 分 → 中文大写金额。
+     * <p>
+     * 标准格式：整数部分按"亿/万/元"分组，角分位分别为"角/分"，无角分时以"整"结尾。
+     * 例：toChinese(2147483647) = "贰仟壹佰肆拾柒万肆仟捌佰叁拾陆元肆角柒分"
+     *
+     * @param cents 金额（分），支持负数
+     * @return 中文大写字符串，负数以"负"开头
+     */
+    public static String toChinese(long cents) {
+        if (cents == 0) {
+            return "零元整";
+        }
+        StringBuilder sb = new StringBuilder();
+        if (cents < 0) {
+            sb.append("负");
+            cents = -cents;
+        }
+        long yuan = cents / 100;
+        int fen = (int) (cents % 100);
+        int jiao = fen / 10;
+        int fenBit = fen % 10;
+
+        if (yuan > 0) {
+            sb.append(integerToChinese(yuan)).append("元");
+        }
+        boolean hasJiao = jiao > 0;
+        boolean hasFen = fenBit > 0;
+        if (hasJiao) {
+            sb.append(CN_DIGITS[jiao]).append("角");
+        }
+        if (hasFen) {
+            sb.append(CN_DIGITS[fenBit]).append("分");
+        }
+        if (!hasJiao && !hasFen) {
+            sb.append("整");
+        } else if (!hasFen) {
+            // 仅角无分：标准写法仍以"整"收尾
+            sb.append("整");
+        }
+        return sb.toString();
+    }
+
+    private static String integerToChinese(long n) {
+        String s = Long.toString(n);
+        int len = s.length();
+        StringBuilder result = new StringBuilder();
+        int sectionCount = (len + 3) / 4;
+        boolean lastSectionZero = true;
+        boolean needZeroBetweenSections = false;
+
+        for (int si = 0; si < sectionCount; si++) {
+            int end = len - si * 4;
+            int start = Math.max(0, end - 4);
+            String section = s.substring(start, end);
+            int sectionVal = Integer.parseInt(section);
+            if (sectionVal == 0) {
+                needZeroBetweenSections = true;
+                continue;
+            }
+            StringBuilder secSb = new StringBuilder();
+            boolean prevZero = false;
+            for (int i = 0; i < section.length(); i++) {
+                int d = section.charAt(i) - '0';
+                int pos = section.length() - 1 - i;
+                if (d == 0) {
+                    prevZero = true;
+                } else {
+                    if (prevZero) {
+                        secSb.append('零');
+                    }
+                    secSb.append(CN_DIGITS[d]).append(CN_SEC_UNITS[pos]);
+                    prevZero = false;
+                }
+            }
+            if (needZeroBetweenSections && !lastSectionZero) {
+                result.insert(0, '零');
+            }
+            secSb.append(CN_INT_UNITS[si]);
+            result.insert(0, secSb);
+            lastSectionZero = false;
+            needZeroBetweenSections = false;
+        }
+        return result.toString();
+    }
+
     // ==================== 链式计算器 ====================
 
     /**
@@ -545,6 +640,15 @@ public final class MoneyUtils {
          */
         public String yuan() {
             return MoneyUtils.toYuan(value);
+        }
+
+        /**
+         * 结算为中文大写金额，如 "贰拾壹亿肆仟柒佰肆拾捌万叁仟陆佰肆拾柒元整"。
+         *
+         * @return 中文大写字符串
+         */
+        public String chinese() {
+            return MoneyUtils.toChinese(value);
         }
 
         // ---------- 判断 ----------

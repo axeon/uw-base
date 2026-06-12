@@ -1077,7 +1077,7 @@ public class DaoManager {
      *
      * @param valueCls 要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param sql      查询的SQL
-     * @return PageTable对象
+     * @return PageRowSet对象
      */
     public <T> ResponseData<List<T>> queryForValueList(Class<T> valueCls, String sql) {
         try {
@@ -1108,7 +1108,7 @@ public class DaoManager {
      *
      * @param valueCls   要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param queryParam 查询参数
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      */
     public <T> ResponseData<List<T>> queryForValueList(Class<T> valueCls, QueryParam queryParam) {
         try {
@@ -1124,7 +1124,7 @@ public class DaoManager {
      * @param connName
      * @param valueCls   要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param queryParam 查询参数
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     public <T> ResponseData<List<T>> queryForValueList(String connName, Class<T> valueCls, QueryParam queryParam) {
@@ -1298,10 +1298,10 @@ public class DaoManager {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql 查询的SQL
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      */
     public ResponseData<PageRowSet> queryForRowSet(String selectSql) {
         try {
@@ -1312,11 +1312,11 @@ public class DaoManager {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName  连接名，当设置为null时候，根据sql语句或表名确定
      * @param selectSql 查询的SQL
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      */
     public ResponseData<PageRowSet> queryForRowSet(String connName, String selectSql) {
         try {
@@ -1327,12 +1327,12 @@ public class DaoManager {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      */
     public ResponseData<PageRowSet> queryForRowSet(String selectSql, int startIndex, int resultNum) {
         try {
@@ -1343,11 +1343,11 @@ public class DaoManager {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      */
     public ResponseData<PageRowSet> queryForRowSet(String selectSql, Object[] paramList) {
         try {
@@ -1358,13 +1358,13 @@ public class DaoManager {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      */
     public ResponseData<PageRowSet> queryForRowSet(String connName, String selectSql, int startIndex, int resultNum) {
         try {
@@ -1375,14 +1375,14 @@ public class DaoManager {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     public ResponseData<PageRowSet> queryForRowSet(String connName, String selectSql, int startIndex, int resultNum, boolean autoCount) {
@@ -1394,12 +1394,12 @@ public class DaoManager {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      */
     public ResponseData<PageRowSet> queryForRowSet(String connName, String selectSql, Object[] paramList) {
         try {
@@ -1410,14 +1410,14 @@ public class DaoManager {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     public ResponseData<PageRowSet> queryForRowSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum) {
@@ -1429,13 +1429,13 @@ public class DaoManager {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      */
     public ResponseData<PageRowSet> queryForRowSet(String selectSql, Object[] paramList, int startIndex, int resultNum) {
         try {
@@ -1446,14 +1446,14 @@ public class DaoManager {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     public ResponseData<PageRowSet> queryForRowSet(String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
@@ -1465,13 +1465,13 @@ public class DaoManager {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      */
     public ResponseData<PageRowSet> queryForRowSet(String selectSql, int startIndex, int resultNum, boolean autoCount) {
         try {
@@ -1482,7 +1482,7 @@ public class DaoManager {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
@@ -1490,7 +1490,7 @@ public class DaoManager {
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      */
     public ResponseData<PageRowSet> queryForRowSet(String connName, String selectSql, Object[] paramList, int startIndex, int resultNum, boolean autoCount) {
         try {
@@ -1501,11 +1501,11 @@ public class DaoManager {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param queryParam 查询参数
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      */
     public ResponseData<PageRowSet> queryForRowSet(String connName, QueryParam queryParam) {
         try {
@@ -1516,10 +1516,10 @@ public class DaoManager {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param queryParam 查询参数
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      */
     public ResponseData<PageRowSet> queryForRowSet(QueryParam queryParam) {
         try {

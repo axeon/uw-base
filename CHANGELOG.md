@@ -4,7 +4,7 @@
 ## 重大升级
 
 1. DataList / ESDataList → PageList（移至 uw.common.data 包）
-2. DataSet → PageTable（移至 uw.common.data 包）
+2. DataSet → PageRowSet（移至 uw.common.data 包）
 3. QueryParam / PageQueryParam 移至 uw.common.dto 包
 4. ResponseData / ResponseCode 移至 uw.common.response 包
 

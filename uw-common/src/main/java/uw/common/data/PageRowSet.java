@@ -80,7 +80,7 @@ public class PageRowSet implements Serializable {
      */
     @JsonProperty
     @Schema(title = "列名数组", description = "列名数组")
-    private String[] columns;
+    private String[] columnNames;
 
     /**
      * 数据存放数组.
@@ -100,14 +100,14 @@ public class PageRowSet implements Serializable {
     /**
      * 构造器.
      *
-     * @param columns    列名数组
-     * @param list       数据列表
-     * @param startIndex 开始位置
-     * @param resultNum  每页大小
-     * @param sizeAll    总数据量
+     * @param columnNames 列名数组
+     * @param list        数据列表
+     * @param startIndex  开始位置
+     * @param resultNum   每页大小
+     * @param sizeAll     总数据量
      */
-    public PageRowSet(String[] columns, List<Object[]> list, int startIndex, int resultNum, int sizeAll) {
-        this.columns = columns;
+    public PageRowSet(String[] columnNames, List<Object[]> list, int startIndex, int resultNum, int sizeAll) {
+        this.columnNames = columnNames;
         this.list = toArrayList(list);
         this.startIndex = startIndex;
         this.resultNum = resultNum;
@@ -122,6 +122,7 @@ public class PageRowSet implements Serializable {
      *
      * @return 空的PageRowSet
      */
+    @JsonIgnore
     public static PageRowSet empty() {
         return EMPTY;
     }
@@ -133,8 +134,9 @@ public class PageRowSet implements Serializable {
      *
      * @return 列名数组
      */
+    @JsonIgnore
     public String[] getColumnNames() {
-        return columns;
+        return columnNames;
     }
 
     // ===== 分页计算 =====
@@ -144,6 +146,7 @@ public class PageRowSet implements Serializable {
      *
      * @param sizeAll 总数据量
      */
+    @JsonIgnore
     public void calcPages(int sizeAll) {
         this.sizeAll = sizeAll;
         if (this.sizeAll > 0 && this.resultNum > 0) {
@@ -159,6 +162,7 @@ public class PageRowSet implements Serializable {
      *
      * @return 是否有下一行
      */
+    @JsonIgnore
     public boolean next() {
         if (list == null) {
             return false;
@@ -175,6 +179,7 @@ public class PageRowSet implements Serializable {
      *
      * @return 是否有上一行
      */
+    @JsonIgnore
     public boolean previous() {
         boolean flag = currentIndex > -1;
         if (flag) {
@@ -186,6 +191,7 @@ public class PageRowSet implements Serializable {
     /**
      * remove当前行.
      */
+    @JsonIgnore
     public void remove() {
         if (list == null) {
             return;
@@ -201,6 +207,7 @@ public class PageRowSet implements Serializable {
      *
      * @param index 位置
      */
+    @JsonIgnore
     public void absolute(int index) {
         this.currentIndex = index - 1;
     }
@@ -212,6 +219,7 @@ public class PageRowSet implements Serializable {
      *
      * @return 当前List大小
      */
+    @JsonIgnore
     public int size() {
         return this.size;
     }
@@ -221,6 +229,7 @@ public class PageRowSet implements Serializable {
      *
      * @return 总数据量
      */
+    @JsonIgnore
     public int sizeAll() {
         return this.sizeAll;
     }
@@ -230,6 +239,7 @@ public class PageRowSet implements Serializable {
      *
      * @return 总页数
      */
+    @JsonIgnore
     public int pageCount() {
         return this.pageCount;
     }
@@ -239,6 +249,7 @@ public class PageRowSet implements Serializable {
      *
      * @return 当前页
      */
+    @JsonIgnore
     public int page() {
         return this.page;
     }
@@ -248,6 +259,7 @@ public class PageRowSet implements Serializable {
      *
      * @return 起始索引
      */
+    @JsonIgnore
     public int startIndex() {
         return this.startIndex;
     }
@@ -257,6 +269,7 @@ public class PageRowSet implements Serializable {
      *
      * @return 每页大小
      */
+    @JsonIgnore
     public int resultNum() {
         return this.resultNum;
     }
@@ -268,6 +281,7 @@ public class PageRowSet implements Serializable {
      *
      * @return 是否为空
      */
+    @JsonIgnore
     public boolean isEmpty() {
         return this.size == 0;
     }
@@ -277,6 +291,7 @@ public class PageRowSet implements Serializable {
      *
      * @return 是否非空
      */
+    @JsonIgnore
     public boolean isNotEmpty() {
         return this.size > 0;
     }
@@ -288,6 +303,7 @@ public class PageRowSet implements Serializable {
      *
      * @return 数据列表
      */
+    @JsonIgnore
     public List<Object[]> list() {
         if (this.list == null) {
             return Collections.emptyList();
@@ -303,6 +319,7 @@ public class PageRowSet implements Serializable {
      * @param colName 列名
      * @return 数据值
      */
+    @JsonIgnore
     public Object get(String colName) {
         if (list == null || currentIndex < 0 || currentIndex >= list.size()) {
             return null;
@@ -310,42 +327,53 @@ public class PageRowSet implements Serializable {
         return list.get(currentIndex)[getColumnPos(colName)];
     }
 
+
+    @JsonIgnore
     public boolean getBoolean(String colName) {
         return getBoolean(getColumnPos(colName));
     }
 
+    @JsonIgnore
     public int getInt(String colName) {
         return getInt(getColumnPos(colName));
     }
 
+    @JsonIgnore
     public long getLong(String colName) {
         return getLong(getColumnPos(colName));
     }
 
+    @JsonIgnore
     public double getDouble(String colName) {
         return getDouble(getColumnPos(colName));
     }
 
+    @JsonIgnore
     public float getFloat(String colName) {
         return getFloat(getColumnPos(colName));
     }
 
+    @JsonIgnore
     public String getString(String colName) {
         return getString(getColumnPos(colName));
     }
 
+    @JsonIgnore
     public BigInteger getBigInteger(String colName) {
         return getBigInteger(getColumnPos(colName));
     }
 
-    public BigDecimal getDecimal(String colName) {
-        return getDecimal(getColumnPos(colName));
+    @JsonIgnore
+    public BigDecimal getBigDecimal(String colName) {
+        return getBigDecimal(getColumnPos(colName));
     }
 
+    @JsonIgnore
     public byte[] getBytes(String colName) {
         return getBytes(getColumnPos(colName));
     }
 
+    @JsonIgnore
     public java.util.Date getDate(String colName) {
         return getDate(getColumnPos(colName));
     }
@@ -358,6 +386,7 @@ public class PageRowSet implements Serializable {
      * @param colIndex 列索引
      * @return 数据值
      */
+    @JsonIgnore
     public Object get(int colIndex) {
         if (list == null) {
             return null;
@@ -365,6 +394,7 @@ public class PageRowSet implements Serializable {
         return list.get(currentIndex)[colIndex];
     }
 
+    @JsonIgnore
     public boolean getBoolean(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -377,6 +407,7 @@ public class PageRowSet implements Serializable {
         }
     }
 
+    @JsonIgnore
     public int getInt(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -389,6 +420,7 @@ public class PageRowSet implements Serializable {
         }
     }
 
+    @JsonIgnore
     public long getLong(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -401,6 +433,7 @@ public class PageRowSet implements Serializable {
         }
     }
 
+    @JsonIgnore
     public double getDouble(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -415,6 +448,7 @@ public class PageRowSet implements Serializable {
         }
     }
 
+    @JsonIgnore
     public float getFloat(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -427,6 +461,7 @@ public class PageRowSet implements Serializable {
         }
     }
 
+    @JsonIgnore
     public String getString(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -439,6 +474,7 @@ public class PageRowSet implements Serializable {
         }
     }
 
+    @JsonIgnore
     public BigInteger getBigInteger(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -451,7 +487,8 @@ public class PageRowSet implements Serializable {
         }
     }
 
-    public BigDecimal getDecimal(int colIndex) {
+    @JsonIgnore
+    public BigDecimal getBigDecimal(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
             return BigDecimal.ZERO;
@@ -463,6 +500,7 @@ public class PageRowSet implements Serializable {
         }
     }
 
+    @JsonIgnore
     public byte[] getBytes(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -471,6 +509,7 @@ public class PageRowSet implements Serializable {
         return (byte[]) data;
     }
 
+    @JsonIgnore
     public java.util.Date getDate(int colIndex) {
         Object data = get(colIndex);
         if (data == null) {
@@ -487,11 +526,12 @@ public class PageRowSet implements Serializable {
      * @param colName 列名
      * @return 列名位置
      */
+    @JsonIgnore
     public int getColumnPos(String colName) {
         int index = -1;
-        if (columns != null) {
-            for (int i = 0; i < columns.length; i++) {
-                if (colName.equalsIgnoreCase(columns[i])) {
+        if (columnNames != null) {
+            for (int i = 0; i < columnNames.length; i++) {
+                if (colName.equalsIgnoreCase(columnNames[i])) {
                     index = i;
                     break;
                 }
@@ -518,6 +558,12 @@ public class PageRowSet implements Serializable {
         return new PageList<>(resultList, startIndex, resultNum, sizeAll);
     }
 
+    /**
+     * 将List转换为ArrayList.
+     *
+     * @param list 源List
+     * @return ArrayList
+     */
     private static ArrayList<Object[]> toArrayList(List<Object[]> list) {
         if (list == null) {
             return new ArrayList<>();
@@ -527,5 +573,6 @@ public class PageRowSet implements Serializable {
         }
         return new ArrayList<>(list);
     }
+
 
 }

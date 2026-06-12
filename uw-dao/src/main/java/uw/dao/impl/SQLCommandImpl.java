@@ -296,7 +296,7 @@ public class SQLCommandImpl {
             for (int i = 0; i < colsCount; i++) {
                 columns[i] = rsm.getColumnLabel(i + 1).toLowerCase();
             }
-            List<Object[]> dataList = resultNum > 0 ? new ArrayList<>(resultNum) : new ArrayList<>();
+            ArrayList<Object[]> dataList = resultNum > 0 ? new ArrayList<>(resultNum) : new ArrayList<>();
             while (rs.next()) {
                 Object[] row = new Object[colsCount];
                 for (int i = 0; i < colsCount; i++) {

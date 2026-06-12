@@ -345,7 +345,7 @@ MyDB服务客户端，用于访问MyDB数据服务。
 <parent>
   <groupId>com.umtone</groupId>
   <artifactId>uw-base</artifactId>
-  <version>2026.0501.0003</version>
+  <version>2026.0501.0008</version>
   <relativePath/>
 </parent>
 

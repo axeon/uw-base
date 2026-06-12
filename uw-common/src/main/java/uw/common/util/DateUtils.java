@@ -267,7 +267,7 @@ public class DateUtils {
 
 
     /**
-     * 恢复简化日期字符串。
+     * 恢复简化日期字符串(加上横杠)。
      *
      * @param simpleDate 2017-06-06
      * @return 2017-06-06
@@ -463,9 +463,8 @@ public class DateUtils {
         long endTime = endDate.getTime();
 
         // 计算毫秒差，然后转换为分钟
-        long diffInMinutes = (endTime - startTime) / (60 * 1000);
 
-        return diffInMinutes;
+        return (endTime - startTime) / (60 * 1000);
     }
 
     /**
@@ -482,9 +481,8 @@ public class DateUtils {
         long endTime = endDate.getTime();
 
         // 计算毫秒差，然后转换为小时
-        long diffInHours = (endTime - startTime) / (60 * 60 * 1000);
 
-        return diffInHours;
+        return (endTime - startTime) / (60 * 60 * 1000);
     }
 
     /**
@@ -515,9 +513,8 @@ public class DateUtils {
         long diffInMillis = calEnd.getTimeInMillis() - calStart.getTimeInMillis();
 
         // 将毫秒差转换为天数
-        long diffInDays = diffInMillis / (24 * 60 * 60 * 1000);
 
-        return diffInDays;
+        return diffInMillis / (24 * 60 * 60 * 1000);
     }
 
     /**
@@ -602,18 +599,41 @@ public class DateUtils {
      * @param endDate
      * @return
      */
-    public static List<LocalDate> getDatesBetween(Date startDate, Date endDate) {
-        List<LocalDate> dates = new ArrayList<>();
+    public static List<Date> getDateList(Date startDate, Date endDate) {
+        List<Date> list = new ArrayList<>();
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(startDate);
 
-        LocalDate startLocalDate = dateToLocalDate(startDate);
-        LocalDate endLocalDate = dateToLocalDate(endDate);
-        LocalDate currentDate = startLocalDate;
+        Calendar end = Calendar.getInstance();
+        end.setTime(endDate);
 
-        while (!currentDate.isAfter(endLocalDate)) {
-            dates.add(currentDate);
-            currentDate = currentDate.plusDays(1);
+        while (!cal.after(end)) {
+            list.add(cal.getTime());
+            cal.add(Calendar.DAY_OF_MONTH, 1);
         }
-        return dates;
+        return list;
+    }
+
+    /**
+     * 获取两个日期之间的所有日期字符串
+     *
+     * @param startDate
+     * @param endDate
+     * @return
+     */
+    public static List<String> getDateStringList(Date startDate, Date endDate, String dateFormat) {
+        List<String> list = new ArrayList<>();
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(startDate);
+
+        Calendar end = Calendar.getInstance();
+        end.setTime(endDate);
+
+        while (!cal.after(end)) {
+            list.add(dateToString(cal.getTime(), dateFormat));
+            cal.add(Calendar.DAY_OF_MONTH, 1);
+        }
+        return list;
     }
 
 
@@ -671,7 +691,6 @@ public class DateUtils {
     public static Date beginOfYear(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
         cal.set(Calendar.MONTH, 0);
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -730,8 +749,6 @@ public class DateUtils {
     public static Date beginOfMonth(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
-        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
@@ -749,7 +766,6 @@ public class DateUtils {
     public static Date beginOfLastMonth(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
         cal.set(Calendar.MONTH, cal.get(Calendar.MONTH) - 1);
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -769,7 +785,6 @@ public class DateUtils {
     public static Date beginOfNextMonth(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
         cal.set(Calendar.MONTH, cal.get(Calendar.MONTH) + 1);
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -788,9 +803,6 @@ public class DateUtils {
     public static Date beginOfToday(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
-        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
-        cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH));
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
@@ -807,8 +819,6 @@ public class DateUtils {
     public static Date beginOfYesterday(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
-        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
         cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH) - 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
@@ -827,8 +837,6 @@ public class DateUtils {
     public static Date beginOfTomorrow(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
-        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
         cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH) + 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
@@ -858,7 +866,7 @@ public class DateUtils {
     }
 
     /**
-     * 给出一个日期的去年开年第一天时间。
+     * 给出一个日期的去年最后一天结束时间。
      *
      * @param date
      * @return
@@ -866,7 +874,6 @@ public class DateUtils {
     public static Date endOfLastYear(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
         cal.set(Calendar.MONTH, 0);
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -878,7 +885,7 @@ public class DateUtils {
 
 
     /**
-     * 给出一个日期的去年开年第一天时间。
+     * 给出一个日期的明年最后一天结束时间。
      *
      * @param date
      * @return
@@ -898,7 +905,7 @@ public class DateUtils {
 
 
     /**
-     * 给出一个日期的当月第一天时间。
+     * 给出一个日期的当月最后一天结束时间。
      *
      * @param date
      * @return
@@ -906,7 +913,6 @@ public class DateUtils {
     public static Date endOfMonth(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
         cal.set(Calendar.MONTH, cal.get(Calendar.MONTH) + 1);
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -917,7 +923,7 @@ public class DateUtils {
     }
 
     /**
-     * 给出一个日期的上月第一天时间。
+     * 给出一个日期的上月最后一天结束时间。
      *
      * @param date
      * @return
@@ -925,8 +931,6 @@ public class DateUtils {
     public static Date endOfLastMonth(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
-        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
@@ -937,7 +941,7 @@ public class DateUtils {
 
 
     /**
-     * 给出一个日期的下月第一天时间。
+     * 给出一个日期的下月最后一天结束时间。
      *
      * @param date
      * @return
@@ -945,7 +949,6 @@ public class DateUtils {
     public static Date endOfNextMonth(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
         cal.set(Calendar.MONTH, cal.get(Calendar.MONTH) + 2);
         cal.set(Calendar.DATE, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -964,8 +967,6 @@ public class DateUtils {
     public static Date endOfToday(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
-        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
         cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH) + 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
@@ -983,9 +984,6 @@ public class DateUtils {
     public static Date endOfYesterday(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
-        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
-        cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH));
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
@@ -1003,8 +1001,6 @@ public class DateUtils {
     public static Date endOfTomorrow(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        cal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
-        cal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
         cal.set(Calendar.DATE, cal.get(Calendar.DAY_OF_MONTH) + 2);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
@@ -1070,7 +1066,7 @@ public class DateUtils {
                 // TIME_MINUTE(HH:mm)
                     stringToDate(dateString, TIME_MINUTE);
             case 6 ->
-                // TIME_SIMPLE(HHmmss)
+                // MONTH_SIMPLE(yyyyMM)
                     stringToDate(dateString, MONTH_SIMPLE);
             case 7 ->
                 // MONTH(yyyy-MM) MONTH_SLASH(yyyy/MM)
@@ -1083,6 +1079,7 @@ public class DateUtils {
                     stringToDate(dateString, TIME_MILLIS_SIMPLE);
             case 10 -> {
                 // DATE(yyyy-MM-dd) DATE_SLASH(yyyy/MM/dd)
+                // 纯数字10位视为秒级Unix时间戳（如 1748406880 -> 2025-05-28）
                 if (dateString.contains("-")) {
                     yield stringToDate(dateString, DATE);
                 } else if (dateString.contains("/")) {
@@ -1105,7 +1102,7 @@ public class DateUtils {
                 // TIME_MILLIS(HH:mm:ss.SSS) DATE_MINUTE_SIMPLE(yyyyMMddHHmm)
                     dateString.contains(":") ? stringToDate(dateString, TIME_MILLIS) : stringToDate(dateString, DATE_MINUTE_SIMPLE);
             case 13 -> {
-                //timestamp millis
+                // 纯数字13位视为毫秒级Unix时间戳（如 1748406880150 -> 2025-05-28）
                 long timestamp = 0;
                 try {
                     timestamp = Long.parseLong(dateString);

@@ -22,7 +22,6 @@ public class PageList<T> implements Iterable<T>, Serializable {
     /**
      * 空的PageList.
      */
-    @SuppressWarnings("unchecked")
     public static final PageList<?> EMPTY = new PageList<>(java.util.Collections.emptyList(), 0, 0, 0);
 
     /**
@@ -309,7 +308,6 @@ public class PageList<T> implements Iterable<T>, Serializable {
      * @return Iterator
      */
     @Override
-    @JsonIgnore
     public Iterator<T> iterator() {
         if (this.list == null) {
             return java.util.Collections.emptyIterator();

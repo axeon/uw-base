@@ -2,6 +2,7 @@ package uw.dao.util;
 
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import uw.common.dto.QueryParam;
 import uw.dao.annotation.QueryMeta;
 import uw.dao.vo.QueryMetaInfo;
@@ -130,7 +131,7 @@ public class QueryParamUtils {
                         }
 
                         //处理like查询问题。
-                        if (StringUtils.containsIgnoreCase(paramCond, " like ")) {
+                        if (Strings.CI.contains(paramCond, " like ")) {
                             boolean enableLikeQuery = queryParam.LIKE_QUERY_ENABLE();
                             //检查参数长度是否适配
                             if (enableLikeQuery) {
@@ -147,7 +148,7 @@ public class QueryParamUtils {
                             //如果不启用like查询，则自动转成=匹配。
                             if (!enableLikeQuery) {
                                 //like转成=匹配。
-                                paramCond = StringUtils.replaceIgnoreCase(paramCond, " like ", "=");
+                                paramCond = Strings.CI.replace(paramCond, " like ", "=");
                                 //移除通配符，防止无法查询出数据。
                                 for (int i = paramValueList.size() - paramValueSize; i < paramValueList.size(); i++) {
                                     if (paramValueList.get(i) instanceof String value) {

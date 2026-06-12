@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <revision>2026.0601.0000</revision>
+        <revision>2026.0601.0001</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>25</java.version>
@@ -29,7 +29,7 @@
         <uw-auth-client.version>6.2.21</uw-auth-client.version>
         <uw-auth-service.version>6.2.59</uw-auth-service.version>
         <uw-cache.version>1.2.96</uw-cache.version>
-        <uw-common.version>1.1.100</uw-common.version>
+        <uw-common.version>1.1.101</uw-common.version>
         <uw-common-app.version>1.1.103</uw-common-app.version>
         <uw-dao.version>5.3.35</uw-dao.version>
         <uw-gateway-client.version>1.1.6</uw-gateway-client.version>

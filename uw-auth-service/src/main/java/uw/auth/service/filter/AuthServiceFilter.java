@@ -5,6 +5,7 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.method.HandlerMethod;
@@ -145,7 +146,7 @@ public class AuthServiceFilter implements Filter {
         String userIp = IpWebUtils.getRealIp(httpServletRequest);
         //执行IP保护。
         if (ipProtectedPaths != null && ipWhiteList != null) {
-            if (StringUtils.startsWithAny(uri, ipProtectedPaths) && !IpMatchUtils.matches(ipWhiteList, userIp)) {
+            if (Strings.CS.startsWithAny(uri, ipProtectedPaths) && !IpMatchUtils.matches(ipWhiteList, userIp)) {
                 throwException(httpServletRequest, httpServletResponse, ResponseData.errorCode(AuthServiceConstants.HTTP_FORBIDDEN_CODE, "IP protected."));
                 return;
             }

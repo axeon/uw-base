@@ -73,7 +73,7 @@ public class SnowflakeIdGenerator {
         }
 
         // 优先级3：降级到随机（单实例开发/测试场景）
-        long id = (System.currentTimeMillis() ^ Thread.currentThread().getId()) & MAX_MACHINE_ID;
+        long id = (System.currentTimeMillis() ^ Thread.currentThread().threadId()) & MAX_MACHINE_ID;
         log.info("Snowflake machineId from fallback: {}", id);
         return id;
     }

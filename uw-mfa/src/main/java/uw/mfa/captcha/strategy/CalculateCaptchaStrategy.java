@@ -2,6 +2,7 @@ package uw.mfa.captcha.strategy;
 
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import uw.common.response.ResponseData;
 import uw.mfa.captcha.CaptchaStrategy;
 import uw.mfa.captcha.util.CaptchaImageUtils;
@@ -91,7 +92,7 @@ public class CalculateCaptchaStrategy implements CaptchaStrategy {
     @Override
     public ResponseData verify(String answerData, String captchaResult) {
         // 两个数字比较 可以直接使用字符串比较
-        if (!StringUtils.equalsIgnoreCase(answerData, captchaResult)) {
+        if (!Strings.CI.equals(answerData, captchaResult)) {
             return ResponseData.error();
         }
         //校验成功

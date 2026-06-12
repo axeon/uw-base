@@ -31,11 +31,11 @@ public class LogClientWriteModeMain {
         for (int i = 0; i < 1000000000; i++) {
             LogInterface logInterface = new LogInterface();
             logInterface.setInterfaceType(1);
-            logInterface.setInterfaceConfigId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
-            logInterface.setSaasId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
+            logInterface.setInterfaceConfigId(Long.parseLong(RandomStringUtils.secure().nextNumeric(6)));
+            logInterface.setSaasId(Long.parseLong(RandomStringUtils.secure().nextNumeric(6)));
             logInterface.setProductType(10);
-            logInterface.setProductId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
-            logInterface.setInterfaceProductId(RandomStringUtils.randomNumeric(11));
+            logInterface.setProductId(Long.parseLong(RandomStringUtils.secure().nextNumeric(6)));
+            logInterface.setInterfaceProductId(RandomStringUtils.secure().nextNumeric(11));
             logInterface.setInterfaceFunction("zwy.common.log.client.logInterface");
             logInterface.setRequestDate(SystemClock.nowDate());
             logInterface.setRequestBody("你吃饭了吗?");

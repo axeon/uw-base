@@ -2,6 +2,7 @@ package uw.mfa.helper;
 
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -176,7 +177,7 @@ public class MfaDeviceCodeHelper {
             return checkData;
         }
         String redisCode = mfaRedisOp.getAndDelete(RedisKeyUtils.buildKey(MfaDeviceCodeHelper.REDIS_DEVICE_CODE_PREFIX, deviceType, deviceId));
-        if (StringUtils.equals(redisCode, deviceCode)) {
+        if (Strings.CI.equals(redisCode, deviceCode)) {
             return ResponseData.success();
         } else {
             incrementVerifyErrorTimes(deviceId);

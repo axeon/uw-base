@@ -42,11 +42,11 @@ public class LogClientReadModeTest {
         while (count < 10000) {
             LogInterface logInterface = new LogInterface();
             logInterface.setInterfaceType(1);
-            logInterface.setInterfaceConfigId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
-            logInterface.setSaasId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
+            logInterface.setInterfaceConfigId(Long.parseLong(RandomStringUtils.secure().nextNumeric(6)));
+            logInterface.setSaasId(Long.parseLong(RandomStringUtils.secure().nextNumeric(6)));
             logInterface.setProductType(10);
-            logInterface.setProductId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
-            logInterface.setInterfaceProductId(RandomStringUtils.randomNumeric(11));
+            logInterface.setProductId(Long.parseLong(RandomStringUtils.secure().nextNumeric(6)));
+            logInterface.setInterfaceProductId(RandomStringUtils.secure().nextNumeric(11));
             logInterface.setInterfaceFunction("zwy.common.log.client.logInterface");
             logInterface.setRequestDate(SystemClock.nowDate());
             logInterface.setRequestBody("你吃饭了吗?");
@@ -67,11 +67,11 @@ public class LogClientReadModeTest {
     public void testLog() {
         LogInterface logInterface = new LogInterface();
         logInterface.setInterfaceType(1);
-        logInterface.setInterfaceConfigId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
-        logInterface.setSaasId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
+        logInterface.setInterfaceConfigId(Long.parseLong(RandomStringUtils.secure().nextNumeric(6)));
+        logInterface.setSaasId(Long.parseLong(RandomStringUtils.secure().nextNumeric(6)));
         logInterface.setProductType(10);
-        logInterface.setProductId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
-        logInterface.setInterfaceProductId(RandomStringUtils.randomNumeric(11));
+        logInterface.setProductId(Long.parseLong(RandomStringUtils.secure().nextNumeric(6)));
+        logInterface.setInterfaceProductId(RandomStringUtils.secure().nextNumeric(11));
         logInterface.setInterfaceFunction("zwy.common.log.client.logInterface");
         logInterface.setRequestDate(SystemClock.nowDate());
         logInterface.setRequestBody("你吃饭了吗?");
@@ -86,11 +86,11 @@ public class LogClientReadModeTest {
         List<LogInterface> dataList = Lists.newArrayList();
         LogInterface logInterface1 = new LogInterface();
         logInterface1.setInterfaceType(1);
-        logInterface1.setInterfaceConfigId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
-        logInterface1.setSaasId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
+        logInterface1.setInterfaceConfigId(Long.parseLong(RandomStringUtils.secure().nextNumeric(6)));
+        logInterface1.setSaasId(Long.parseLong(RandomStringUtils.secure().nextNumeric(6)));
         logInterface1.setProductType(10);
-        logInterface1.setProductId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
-        logInterface1.setInterfaceProductId(RandomStringUtils.randomNumeric(11));
+        logInterface1.setProductId(Long.parseLong(RandomStringUtils.secure().nextNumeric(6)));
+        logInterface1.setInterfaceProductId(RandomStringUtils.secure().nextNumeric(11));
         logInterface1.setInterfaceFunction("common.log.client.logInterface");
         logInterface1.setRequestDate(SystemClock.nowDate());
         logInterface1.setRequestBody("你吃饭了吗?");
@@ -100,11 +100,11 @@ public class LogClientReadModeTest {
 
         LogInterface logInterface2 = new LogInterface();
         logInterface2.setInterfaceType(1);
-        logInterface2.setInterfaceConfigId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
-        logInterface2.setSaasId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
+        logInterface2.setInterfaceConfigId(Long.parseLong(RandomStringUtils.secure().nextNumeric(6)));
+        logInterface2.setSaasId(Long.parseLong(RandomStringUtils.secure().nextNumeric(6)));
         logInterface2.setProductType(10);
-        logInterface2.setProductId(Long.parseLong(RandomStringUtils.randomNumeric(6)));
-        logInterface2.setInterfaceProductId(RandomStringUtils.randomNumeric(11));
+        logInterface2.setProductId(Long.parseLong(RandomStringUtils.secure().nextNumeric(6)));
+        logInterface2.setInterfaceProductId(RandomStringUtils.secure().nextNumeric(11));
         logInterface2.setInterfaceFunction("common.log.client.logInterface");
         logInterface2.setRequestDate(SystemClock.nowDate());
         logInterface2.setRequestBody("你吃饭了吗?");

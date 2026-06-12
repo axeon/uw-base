@@ -2,6 +2,7 @@ package uw.mfa.captcha.strategy;
 
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.response.ResponseData;
@@ -95,7 +96,7 @@ public class StringCaptchaStrategy implements CaptchaStrategy {
      */
     @Override
     public ResponseData verify(String answerData, String captchaResult) {
-        if (!StringUtils.equalsIgnoreCase(answerData, captchaResult)) {
+        if (!Strings.CI.equals(answerData, captchaResult)) {
             return ResponseData.error();
         }
         //校验成功

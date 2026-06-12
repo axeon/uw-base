@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.PreDestroy;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -287,7 +288,7 @@ public class MscAppUpdateService {
             //过滤menu,保留perm的menu。
             for (MscAppRegRequest.PermVo menuVo : menuVoList) {
                 for (MscAppRegRequest.PermVo permVo : permVoList) {
-                    if (StringUtils.startsWith(permVo.getCode(), menuVo.getCode())) {
+                    if (Strings.CS.startsWith(permVo.getCode(), menuVo.getCode())) {
                         allVoList.add(menuVo);
                         break;
                     }

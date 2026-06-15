@@ -17,10 +17,12 @@ import uw.ai.AiClientHelper;
 import uw.ai.controller.AiToolExecuteController;
 import uw.ai.rpc.AiChatRpc;
 import uw.ai.rpc.AiConfigRpc;
+import uw.ai.rpc.AiImageRpc;
 import uw.ai.rpc.AiToolRpc;
 import uw.ai.rpc.AiTranslateRpc;
 import uw.ai.rpc.impl.AiChatRpcImpl;
 import uw.ai.rpc.impl.AiConfigRpcImpl;
+import uw.ai.rpc.impl.AiImageRpcImpl;
 import uw.ai.rpc.impl.AiToolRpcImpl;
 import uw.ai.rpc.impl.AiTranslateRpcImpl;
 import uw.ai.tool.AiTool;
@@ -107,6 +109,19 @@ public class UwAiAutoConfiguration {
         return new AiTranslateRpcImpl(uwAiProperties, authRestClient);
     }
 
+    /**
+     * AiImageRpc初始化。
+     *
+     * @param uwAiProperties
+     * @param authRestClient
+     * @return
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public AiImageRpc aiImageRpc(UwAiProperties uwAiProperties, RestClient authRestClient) {
+        return new AiImageRpcImpl(uwAiProperties, authRestClient);
+    }
+
 
     /**
      * AiClientHelper初始化。
@@ -116,8 +131,8 @@ public class UwAiAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public AiClientHelper aiClientHelper(AiToolRpc toolRpc, AiChatRpc chatRpc, AiTranslateRpc translateRpc, AiConfigRpc configRpc) {
-        return new AiClientHelper(toolRpc, chatRpc, translateRpc, configRpc);
+    public AiClientHelper aiClientHelper(AiToolRpc toolRpc, AiChatRpc chatRpc, AiTranslateRpc translateRpc, AiConfigRpc configRpc, AiImageRpc imageRpc) {
+        return new AiClientHelper(toolRpc, chatRpc, translateRpc, configRpc, imageRpc);
     }
 
     /**

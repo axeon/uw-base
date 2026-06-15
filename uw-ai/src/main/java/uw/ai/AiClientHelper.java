@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import uw.ai.rpc.AiChatRpc;
 import uw.ai.rpc.AiConfigRpc;
+import uw.ai.rpc.AiImageRpc;
 import uw.ai.rpc.AiToolRpc;
 import uw.ai.rpc.AiTranslateRpc;
 import uw.ai.util.BeanOutputConverter;
@@ -41,11 +42,17 @@ public class AiClientHelper {
      */
     private static volatile AiConfigRpc configRpc;
 
-    public AiClientHelper(AiToolRpc toolRpc, AiChatRpc chatRpc, AiTranslateRpc translateRpc, AiConfigRpc configRpc) {
+    /**
+     * imageRpc
+     */
+    private static volatile AiImageRpc imageRpc;
+
+    public AiClientHelper(AiToolRpc toolRpc, AiChatRpc chatRpc, AiTranslateRpc translateRpc, AiConfigRpc configRpc, AiImageRpc imageRpc) {
         AiClientHelper.toolRpc = toolRpc;
         AiClientHelper.chatRpc = chatRpc;
         AiClientHelper.translateRpc = translateRpc;
         AiClientHelper.configRpc = configRpc;
+        AiClientHelper.imageRpc = imageRpc;
     }
 
     /**
@@ -155,5 +162,15 @@ public class AiClientHelper {
      */
     public static ResponseData<List<AiApiConfigVo>> listApiConfig() {
         return configRpc.listApiConfig();
+    }
+
+    /**
+     * 生成图片。
+     *
+     * @param param 图片生成参数
+     * @return 图片生成结果
+     */
+    public static ResponseData<AiImageResultData> generateImage(AiImageGenerateParam param) {
+        return imageRpc.generate(param);
     }
 }

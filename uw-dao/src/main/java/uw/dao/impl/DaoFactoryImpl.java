@@ -969,7 +969,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param valueCls 要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param <T>      映射的类型
      * @param sql      查询的SQL
-     * @return PageTable对象
+     * @return PageRowSet对象
      * @throws TransactionException 事务异常
      */
     @Override
@@ -997,7 +997,7 @@ public class DaoFactoryImpl extends DaoFactory {
      *
      * @param valueCls   要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param queryParam 查询参数
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
@@ -1011,7 +1011,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param valueCls   要映射的基础类型，如int.class,long.class,String.class,Date.class
      * @param queryParam 查询参数
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
@@ -1168,10 +1168,10 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql 查询的SQL
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
@@ -1180,12 +1180,12 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
@@ -1194,13 +1194,13 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
@@ -1209,11 +1209,11 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
@@ -1222,13 +1222,13 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
@@ -1237,14 +1237,14 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
@@ -1253,11 +1253,11 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName  连接名，当设置为null时候，根据sql语句或表名确定
      * @param selectSql 查询的SQL
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
@@ -1266,13 +1266,13 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
@@ -1282,14 +1282,14 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
@@ -1298,12 +1298,12 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName  连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql 查询的SQL
      * @param paramList 查询SQL的绑定参数
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
@@ -1312,14 +1312,14 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
      * @param paramList  查询SQL的绑定参数
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
@@ -1329,7 +1329,7 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param selectSql  查询的SQL
@@ -1337,7 +1337,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @param startIndex 开始位置，默认为0
      * @param resultNum  结果集大小，默认为0，获取全部数据
      * @param autoCount  是否统计全部数据（用于分页算法），默认为false。
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
@@ -1346,10 +1346,10 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param queryParam 查询参数
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override
@@ -1358,11 +1358,11 @@ public class DaoFactoryImpl extends DaoFactory {
     }
 
     /**
-     * 返回一个PageTable数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
+     * 返回一个PageRowSet数据列表。 相比较PageList列表，这不是一个强类型列表，但是更加灵活.
      *
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
      * @param queryParam 查询参数
-     * @return PageTable数据列表
+     * @return PageRowSet数据列表
      * @throws TransactionException 事务异常
      */
     @Override

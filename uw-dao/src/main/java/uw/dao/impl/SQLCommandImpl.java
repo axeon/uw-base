@@ -231,7 +231,7 @@ public class SQLCommandImpl {
     }
 
     /**
-     * 获取以PageTable为结果的数据集合.
+     * 获取以PageRowSet为结果的数据集合.
      *
      * @param dao        DAOFactoryImpl对象
      * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定

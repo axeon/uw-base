@@ -49,7 +49,7 @@ public class AiImageGenerateParam {
      * 图片提示词
      */
     @Schema(title = "图片提示词", description = "图片提示词", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String prompt;
+    private String userPrompt;
 
     public AiImageGenerateParam() {
     }
@@ -61,7 +61,7 @@ public class AiImageGenerateParam {
         setUserInfo(builder.userInfo);
         setConfigId(builder.configId);
         setSessionId(builder.sessionId);
-        setPrompt(builder.prompt);
+        setUserPrompt(builder.prompt);
     }
 
     public static Builder builder() {
@@ -76,7 +76,7 @@ public class AiImageGenerateParam {
         builder.userInfo = copy.getUserInfo();
         builder.configId = copy.getConfigId();
         builder.sessionId = copy.getSessionId();
-        builder.prompt = copy.getPrompt();
+        builder.prompt = copy.getUserPrompt();
         return builder;
     }
 
@@ -138,12 +138,12 @@ public class AiImageGenerateParam {
         this.sessionId = sessionId;
     }
 
-    public String getPrompt() {
-        return prompt;
+    public String getUserPrompt() {
+        return userPrompt;
     }
 
-    public void setPrompt(String prompt) {
-        this.prompt = prompt;
+    public void setUserPrompt(String userPrompt) {
+        this.userPrompt = userPrompt;
     }
 
     public static final class Builder {

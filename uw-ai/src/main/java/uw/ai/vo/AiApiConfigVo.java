@@ -1,7 +1,9 @@
 package uw.ai.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 /**
@@ -50,7 +52,8 @@ public class AiApiConfigVo {
      * 创建时间
      */
     @Schema(title = "创建时间", description = "创建时间")
-    private Date createDate;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss:fff")
+    private LocalDate createDate;
 
     public AiApiConfigVo() {
     }
@@ -103,11 +106,11 @@ public class AiApiConfigVo {
         this.state = state;
     }
 
-    public Date getCreateDate() {
+    public LocalDate getCreateDate() {
         return createDate;
     }
 
-    public void setCreateDate(Date createDate) {
+    public void setCreateDate(LocalDate createDate) {
         this.createDate = createDate;
     }
 }

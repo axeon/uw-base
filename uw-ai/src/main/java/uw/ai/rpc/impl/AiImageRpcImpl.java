@@ -36,13 +36,13 @@ public class AiImageRpcImpl implements AiImageRpc {
         if (param.getSessionId() > 0) {
             body.add("sessionId", param.getSessionId());
         }
-        if (param.getPrompt() != null) {
-            body.add("prompt", param.getPrompt());
+        if (param.getUserPrompt() != null) {
+            body.add("prompt", param.getUserPrompt());
         }
 
         ResponseData<AiImageResultData> result = authRestClient.post()
                 .uri(uwAiProperties.getAiCenterHost() + "/rpc/image/generate")
-                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
                 .retrieve()
                 .body(new ParameterizedTypeReference<ResponseData<AiImageResultData>>() {});

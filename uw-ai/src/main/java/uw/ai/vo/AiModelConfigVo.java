@@ -88,8 +88,7 @@ public class AiModelConfigVo {
      * 创建时间
      */
     @Schema(title = "创建时间", description = "创建时间")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss:fff")
-    private LocalDate createDate;
+    private Date createDate;
 
     public AiModelConfigVo() {
     }
@@ -190,11 +189,11 @@ public class AiModelConfigVo {
         this.state = state;
     }
 
-    public LocalDate getCreateDate() {
+    public Date getCreateDate() {
         return createDate;
     }
 
-    public void setCreateDate(LocalDate createDate) {
+    public void setCreateDate(Date createDate) {
         this.createDate = createDate;
     }
 }

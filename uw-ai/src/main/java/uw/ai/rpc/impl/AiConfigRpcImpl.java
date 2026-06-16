@@ -28,25 +28,97 @@ public class AiConfigRpcImpl implements AiConfigRpc {
     }
 
     @Override
-    public ResponseData<List<AiModelInfoVo>> listModelConfig() {
+    public ResponseData<List<AiModelInfoVo>> listModelConfigBySaas(Long saasId, Long mchId) {
         ResponseData<List<AiModelInfoVo>> result = authRestClient.get()
-                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/listModelConfig")
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/listModelConfigBySaas?saasId={saasId}&mchId={mchId}", saasId, mchId)
                 .retrieve()
                 .body(new ParameterizedTypeReference<ResponseData<List<AiModelInfoVo>>>() {});
         if (result == null) {
-            return ResponseData.errorMsg("AiConfigRpcImpl.listModelConfig() returned null body");
+            return ResponseData.errorMsg("AiConfigRpcImpl.listModelConfigBySaas() returned null body");
         }
         return result;
     }
 
     @Override
-    public ResponseData<List<AiModelApiVo>> listApiConfig() {
+    public ResponseData<List<AiModelInfoVo>> listModelConfigByApi(Long apiId) {
+        ResponseData<List<AiModelInfoVo>> result = authRestClient.get()
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/listModelConfigByApi?apiId={apiId}", apiId)
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<List<AiModelInfoVo>>>() {});
+        if (result == null) {
+            return ResponseData.errorMsg("AiConfigRpcImpl.listModelConfigByApi() returned null body");
+        }
+        return result;
+    }
+
+    @Override
+    public ResponseData<AiModelInfoVo> getModelConfigById(Long id) {
+        ResponseData<AiModelInfoVo> result = authRestClient.get()
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/getModelConfigById?id={id}", id)
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<AiModelInfoVo>>() {});
+        if (result == null) {
+            return ResponseData.errorMsg("AiConfigRpcImpl.getModelConfigById() returned null body");
+        }
+        return result;
+    }
+
+    @Override
+    public ResponseData<AiModelInfoVo> getModelConfigByCode(String configCode) {
+        ResponseData<AiModelInfoVo> result = authRestClient.get()
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/getModelConfigByCode?configCode={configCode}", configCode)
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<AiModelInfoVo>>() {});
+        if (result == null) {
+            return ResponseData.errorMsg("AiConfigRpcImpl.getModelConfigByCode() returned null body");
+        }
+        return result;
+    }
+
+    @Override
+    public ResponseData<List<AiModelInfoVo>> listModelConfigByType(String modelType, String modelTag) {
+        ResponseData<List<AiModelInfoVo>> result = authRestClient.get()
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/listModelConfigByType?modelType={modelType}&modelTag={modelTag}", modelType, modelTag)
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<List<AiModelInfoVo>>>() {});
+        if (result == null) {
+            return ResponseData.errorMsg("AiConfigRpcImpl.listModelConfigByType() returned null body");
+        }
+        return result;
+    }
+
+    @Override
+    public ResponseData<List<AiModelApiVo>> listApiConfigBySaas(Long saasId, Long mchId) {
         ResponseData<List<AiModelApiVo>> result = authRestClient.get()
-                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/listApiConfig")
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/listApiConfigBySaas?saasId={saasId}&mchId={mchId}", saasId, mchId)
                 .retrieve()
                 .body(new ParameterizedTypeReference<ResponseData<List<AiModelApiVo>>>() {});
         if (result == null) {
-            return ResponseData.errorMsg("AiConfigRpcImpl.listApiConfig() returned null body");
+            return ResponseData.errorMsg("AiConfigRpcImpl.listApiConfigBySaas() returned null body");
+        }
+        return result;
+    }
+
+    @Override
+    public ResponseData<AiModelApiVo> getApiConfigById(Long id) {
+        ResponseData<AiModelApiVo> result = authRestClient.get()
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/getApiConfigById?id={id}", id)
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<AiModelApiVo>>() {});
+        if (result == null) {
+            return ResponseData.errorMsg("AiConfigRpcImpl.getApiConfigById() returned null body");
+        }
+        return result;
+    }
+
+    @Override
+    public ResponseData<AiModelApiVo> getApiConfigByCode(String apiCode) {
+        ResponseData<AiModelApiVo> result = authRestClient.get()
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/getApiConfigByCode?apiCode={apiCode}", apiCode)
+                .retrieve()
+                .body(new ParameterizedTypeReference<ResponseData<AiModelApiVo>>() {});
+        if (result == null) {
+            return ResponseData.errorMsg("AiConfigRpcImpl.getApiConfigByCode() returned null body");
         }
         return result;
     }

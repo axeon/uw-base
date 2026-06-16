@@ -81,13 +81,13 @@ public class AiModelInfoVo {
      * 创建时间
      */
     @Schema(title = "创建时间", description = "创建时间", maxLength=23, nullable=true )
-    private java.util.Date createDate;
+    private Date createDate;
 
     /**
      * 修改时间
      */
     @Schema(title = "修改时间", description = "修改时间", maxLength=23, nullable=true )
-    private java.util.Date modifyDate;
+    private Date modifyDate;
 
     public long getId() {
         return id;

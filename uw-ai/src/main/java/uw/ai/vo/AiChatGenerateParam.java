@@ -41,8 +41,14 @@ public class AiChatGenerateParam {
     /**
      * 配置Id
      */
-    @Schema(title = "配置Id", description = "配置Id", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(title = "配置Id", description = "配置Id", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private long configId;
+
+    /**
+     * 配置代码
+     */
+    @Schema(title = "配置代码", description = "配置代码", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private String configCode;
 
     /**
      * 用户输入
@@ -89,6 +95,7 @@ public class AiChatGenerateParam {
         setUserType(builder.userType);
         setUserInfo(builder.userInfo);
         setConfigId(builder.configId);
+        setConfigCode(builder.configCode);
         setUserPrompt(builder.userPrompt);
         setSystemPrompt(builder.systemPrompt);
         setToolList(builder.toolList);
@@ -108,6 +115,7 @@ public class AiChatGenerateParam {
         builder.userType = copy.getUserType();
         builder.userInfo = copy.getUserInfo();
         builder.configId = copy.getConfigId();
+        builder.configCode = copy.getConfigCode();
         builder.userPrompt = copy.getUserPrompt();
         builder.systemPrompt = copy.getSystemPrompt();
         builder.toolList = copy.getToolList();
@@ -167,6 +175,14 @@ public class AiChatGenerateParam {
         this.configId = configId;
     }
 
+    public String getConfigCode() {
+        return configCode;
+    }
+
+    public void setConfigCode(String configCode) {
+        this.configCode = configCode;
+    }
+
     public String getUserPrompt() {
         return userPrompt;
     }
@@ -221,6 +237,7 @@ public class AiChatGenerateParam {
         private int userType;
         private String userInfo;
         private long configId;
+        private String configCode;
         private String userPrompt;
         private String systemPrompt;
         private List<AiToolCallInfo> toolList;
@@ -264,6 +281,11 @@ public class AiChatGenerateParam {
 
         public Builder configId(long configId) {
             this.configId = configId;
+            return this;
+        }
+
+        public Builder configCode(String configCode) {
+            this.configCode = configCode;
             return this;
         }
 

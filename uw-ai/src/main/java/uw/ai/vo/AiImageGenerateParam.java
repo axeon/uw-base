@@ -36,8 +36,14 @@ public class AiImageGenerateParam {
     /**
      * 配置Id
      */
-    @Schema(title = "配置Id", description = "配置Id", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(title = "配置Id", description = "配置Id", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private long configId;
+
+    /**
+     * 配置代码
+     */
+    @Schema(title = "配置代码", description = "配置代码", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private String configCode;
 
     /**
      * 会话ID，若大于0则保存到指定会话，否则自动创建新会话
@@ -60,6 +66,7 @@ public class AiImageGenerateParam {
         setUserType(builder.userType);
         setUserInfo(builder.userInfo);
         setConfigId(builder.configId);
+        setConfigCode(builder.configCode);
         setSessionId(builder.sessionId);
         setUserPrompt(builder.prompt);
     }
@@ -75,6 +82,7 @@ public class AiImageGenerateParam {
         builder.userType = copy.getUserType();
         builder.userInfo = copy.getUserInfo();
         builder.configId = copy.getConfigId();
+        builder.configCode = copy.getConfigCode();
         builder.sessionId = copy.getSessionId();
         builder.prompt = copy.getUserPrompt();
         return builder;
@@ -130,6 +138,14 @@ public class AiImageGenerateParam {
         this.configId = configId;
     }
 
+    public String getConfigCode() {
+        return configCode;
+    }
+
+    public void setConfigCode(String configCode) {
+        this.configCode = configCode;
+    }
+
     public long getSessionId() {
         return sessionId;
     }
@@ -152,6 +168,7 @@ public class AiImageGenerateParam {
         private int userType;
         private String userInfo;
         private long configId;
+        private String configCode;
         private long sessionId;
         private String prompt;
 
@@ -191,6 +208,11 @@ public class AiImageGenerateParam {
 
         public Builder configId(long configId) {
             this.configId = configId;
+            return this;
+        }
+
+        public Builder configCode(String configCode) {
+            this.configCode = configCode;
             return this;
         }
 

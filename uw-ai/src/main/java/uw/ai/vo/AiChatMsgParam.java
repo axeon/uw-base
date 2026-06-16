@@ -40,8 +40,14 @@ public class AiChatMsgParam {
     /**
      * 配置Id
      */
-    @Schema(title = "配置Id", description = "配置Id", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(title = "配置Id", description = "配置Id", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private long configId;
+
+    /**
+     * 配置代码
+     */
+    @Schema(title = "配置代码", description = "配置代码", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private String configCode;
 
     /**
      * sessionId
@@ -94,6 +100,7 @@ public class AiChatMsgParam {
         setUserType(builder.userType);
         setUserInfo(builder.userInfo);
         setConfigId(builder.configId);
+        setConfigCode(builder.configCode);
         setSessionId(builder.sessionId);
         setUserPrompt(builder.userPrompt);
         setSystemPrompt(builder.systemPrompt);
@@ -114,6 +121,7 @@ public class AiChatMsgParam {
         builder.userType = copy.getUserType();
         builder.userInfo = copy.getUserInfo();
         builder.configId = copy.getConfigId();
+        builder.configCode = copy.getConfigCode();
         builder.sessionId = copy.getSessionId();
         builder.userPrompt = copy.getUserPrompt();
         builder.systemPrompt = copy.getSystemPrompt();
@@ -144,6 +152,14 @@ public class AiChatMsgParam {
 
     public void setConfigId(long configId) {
         this.configId = configId;
+    }
+
+    public String getConfigCode() {
+        return configCode;
+    }
+
+    public void setConfigCode(String configCode) {
+        this.configCode = configCode;
     }
 
     public void setSaasId(long saasId) {
@@ -236,6 +252,7 @@ public class AiChatMsgParam {
         private int userType;
         private String userInfo;
         private long configId;
+        private String configCode;
         private long sessionId;
         private String userPrompt;
         private String systemPrompt;
@@ -280,6 +297,11 @@ public class AiChatMsgParam {
 
         public Builder configId(long configId) {
             this.configId = configId;
+            return this;
+        }
+
+        public Builder configCode(String configCode) {
+            this.configCode = configCode;
             return this;
         }
 

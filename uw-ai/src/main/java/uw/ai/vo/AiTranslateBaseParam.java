@@ -35,10 +35,16 @@ public abstract class AiTranslateBaseParam {
     @Schema(title = "userInfo", description = "userInfo")
     private String userInfo;
     /**
-     * 配置ID。
+     * 配置ID
      */
     @Schema(title = "配置ID", description = "配置ID")
     private long configId;
+
+    /**
+     * 配置代码
+     */
+    @Schema(title = "配置代码", description = "配置代码")
+    private String configCode;
 
     /**
      * 系统提示。
@@ -103,6 +109,14 @@ public abstract class AiTranslateBaseParam {
 
     public void setConfigId(long configId) {
         this.configId = configId;
+    }
+
+    public String getConfigCode() {
+        return configCode;
+    }
+
+    public void setConfigCode(String configCode) {
+        this.configCode = configCode;
     }
 
     public String getSystemPrompt() {

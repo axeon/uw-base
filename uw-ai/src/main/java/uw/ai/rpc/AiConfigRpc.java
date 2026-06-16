@@ -21,34 +21,28 @@ public interface AiConfigRpc {
     ResponseData<List<AiModelInfoVo>> listModelConfigBySaas(Long saasId, Long mchId);
 
     /**
-     * 根据API配置ID获取模型配置列表。
+     * 根据API配置获取模型配置列表。
      *
-     * @param apiId API配置ID
+     * @param apiId   API配置ID
+     * @param apiCode API配置代码
      * @return 模型配置列表
      */
-    ResponseData<List<AiModelInfoVo>> listModelConfigByApi(Long apiId);
+    ResponseData<List<AiModelInfoVo>> listModelConfigByApi(Long apiId, String apiCode);
 
     /**
-     * 根据ID获取模型配置。
+     * 根据ID或配置代码获取模型配置
      *
-     * @param id 模型配置ID
+     * @param id         模型配置ID
+     * @param configCode 配置代码（id 为空时使用）
      * @return 模型配置
      */
-    ResponseData<AiModelInfoVo> getModelConfigById(Long id);
-
-    /**
-     * 根据配置代码获取模型配置。
-     *
-     * @param configCode 配置代码
-     * @return 模型配置
-     */
-    ResponseData<AiModelInfoVo> getModelConfigByCode(String configCode);
+    ResponseData<AiModelInfoVo> getModelConfig(Long id, String configCode);
 
     /**
      * 根据模型类型和标签获取模型配置列表。
      *
      * @param modelType 模型类型
-     * @param modelTag  模型能力标签（可为null或空，表示不限标签）
+     * @param modelTag  模型能力标签
      * @return 模型配置列表
      */
     ResponseData<List<AiModelInfoVo>> listModelConfigByType(String modelType, String modelTag);
@@ -63,18 +57,11 @@ public interface AiConfigRpc {
     ResponseData<List<AiModelApiVo>> listApiConfigBySaas(Long saasId, Long mchId);
 
     /**
-     * 根据ID获取API连接配置。
+     * 根据ID或配置代码获取API连接配置。
      *
-     * @param id API配置ID
-     * @return API连接配置
-     */
-    ResponseData<AiModelApiVo> getApiConfigById(Long id);
-
-    /**
-     * 根据配置代码获取API连接配置。
-     *
+     * @param id      API配置ID
      * @param apiCode 配置代码
      * @return API连接配置
      */
-    ResponseData<AiModelApiVo> getApiConfigByCode(String apiCode);
+    ResponseData<AiModelApiVo> getApiConfig(Long id, String apiCode);
 }

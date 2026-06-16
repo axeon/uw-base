@@ -165,7 +165,7 @@ public class AiClientHelper {
      * @return 模型配置列表
      */
     public static ResponseData<List<AiModelInfoVo>> listModelInfoByApi(Long apiId) {
-        return configRpc.listModelConfigByApi(apiId);
+        return configRpc.listModelConfigByApi(apiId, null);
     }
 
     /**
@@ -175,7 +175,7 @@ public class AiClientHelper {
      * @return 模型配置
      */
     public static ResponseData<AiModelInfoVo> listModelInfoById(Long id) {
-        return configRpc.getModelConfigById(id);
+        return configRpc.getModelConfig(id, null);
     }
 
     /**
@@ -185,7 +185,7 @@ public class AiClientHelper {
      * @return 模型配置
      */
     public static ResponseData<AiModelInfoVo> listModelInfoByCode(String configCode) {
-        return configRpc.getModelConfigByCode(configCode);
+        return configRpc.getModelConfig(null, configCode);
     }
 
     /**
@@ -217,7 +217,7 @@ public class AiClientHelper {
      * @return API连接配置
      */
     public static ResponseData<AiModelApiVo> getModelApiById(Long id) {
-        return configRpc.getApiConfigById(id);
+        return configRpc.getApiConfig(id, null);
     }
 
     /**
@@ -227,7 +227,7 @@ public class AiClientHelper {
      * @return API连接配置
      */
     public static ResponseData<AiModelApiVo> getModelApiByCode(String apiCode) {
-        return configRpc.getApiConfigByCode(apiCode);
+        return configRpc.getApiConfig(null, apiCode);
     }
 
     /**

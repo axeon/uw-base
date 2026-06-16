@@ -147,11 +147,28 @@ public class AiClientHelper {
     }
 
     /**
-     * 获取所有可用的模型配置列表。
-     *
-     * @return ResponseData
+     * 根据saas信息获取模型列表。
+     * @param saasId
+     * @param mchId
+     * @return
      */
-    public static ResponseData<List<AiModelConfigVo>> listModelConfig() {
+    public static ResponseData<List<AiModelInfoVo>> listModelInfoBySaas(Long saasId,Long mchId) {
+        return configRpc.listModelConfig();
+    }
+
+    public static ResponseData<List<AiModelInfoVo>> listModelInfoByApi(Long apiId) {
+        return configRpc.listModelConfig();
+    }
+
+    public static ResponseData<AiModelInfoVo> listModelInfoById(Long id) {
+        return null;
+    }
+
+    public static ResponseData<AiModelInfoVo> listModelInfoByCode(String configCode) {
+        return null;
+    }
+
+    public static ResponseData<List<AiModelInfoVo>> listModelInfoByType(String modelType,String modelTag) {
         return configRpc.listModelConfig();
     }
 
@@ -160,7 +177,7 @@ public class AiClientHelper {
      *
      * @return ResponseData
      */
-    public static ResponseData<List<AiApiConfigVo>> listApiConfig() {
+    public static ResponseData<List<AiModelApiVo>> listModelApi() {
         return configRpc.listApiConfig();
     }
 

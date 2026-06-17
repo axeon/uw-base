@@ -26,23 +26,23 @@
         <spring-cloud.version>2025.0.3</spring-cloud.version>
         <spring-cloud.alibaba.version>2023.0.1.2</spring-cloud.alibaba.version>
         <uw-ai.version>1.1.28</uw-ai.version>
-        <uw-auth-client.version>6.2.21</uw-auth-client.version>
-        <uw-auth-service.version>6.2.59</uw-auth-service.version>
-        <uw-cache.version>1.2.96</uw-cache.version>
-        <uw-common.version>1.1.101</uw-common.version>
-        <uw-common-app.version>1.1.103</uw-common-app.version>
-        <uw-dao.version>5.3.35</uw-dao.version>
-        <uw-gateway-client.version>1.1.6</uw-gateway-client.version>
-        <uw-httpclient.version>2.2.132</uw-httpclient.version>
-        <uw-log-es.version>3.1.98</uw-log-es.version>
-        <uw-logback-es.version>3.1.93</uw-logback-es.version>
-        <uw-mfa.version>1.1.62</uw-mfa.version>
-        <uw-mydb-client.version>1.1.27</uw-mydb-client.version>
-        <uw-notify-client.version>1.1.26</uw-notify-client.version>
-        <uw-oauth2-client.version>1.1.16</uw-oauth2-client.version>
-        <uw-task.version>5.1.125</uw-task.version>
-        <uw-tinyurl-client.version>1.1.26</uw-tinyurl-client.version>
-        <uw-webot.version>1.0.6</uw-webot.version>
+        <uw-auth-client.version>6.2.22</uw-auth-client.version>
+        <uw-auth-service.version>6.2.60</uw-auth-service.version>
+        <uw-cache.version>1.2.97</uw-cache.version>
+        <uw-common.version>1.1.102</uw-common.version>
+        <uw-common-app.version>1.1.105</uw-common-app.version>
+        <uw-dao.version>5.3.36</uw-dao.version>
+        <uw-gateway-client.version>1.1.7</uw-gateway-client.version>
+        <uw-httpclient.version>2.2.133</uw-httpclient.version>
+        <uw-log-es.version>3.1.99</uw-log-es.version>
+        <uw-logback-es.version>3.1.95</uw-logback-es.version>
+        <uw-mfa.version>1.1.63</uw-mfa.version>
+        <uw-mydb-client.version>1.1.28</uw-mydb-client.version>
+        <uw-notify-client.version>1.1.27</uw-notify-client.version>
+        <uw-oauth2-client.version>1.1.17</uw-oauth2-client.version>
+        <uw-task.version>5.1.126</uw-task.version>
+        <uw-tinyurl-client.version>1.1.27</uw-tinyurl-client.version>
+        <uw-webot.version>1.0.7</uw-webot.version>
     </properties>
 
     <dependencyManagement>

@@ -36,7 +36,6 @@ import java.util.function.Function;
  * <strong>线程安全说明：</strong>
  * 所有 Playwright 相关操作都通过 {@link BrowserInstance#submitAndWait(java.util.concurrent.Callable)}
  * 提交到 BrowserInstance 的专属线程中执行，确保线程安全。
- * 如果需要直接操作 Page 对象，请使用 {@link #execute(Consumer)} 或 {@link #execute(Function)} 方法。
  * </p>
  * <p>使用示例：</p>
  * <pre>

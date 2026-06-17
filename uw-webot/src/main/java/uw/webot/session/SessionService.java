@@ -18,7 +18,6 @@ public interface SessionService {
      *
      * @param sessionId 会话ID
      * @param session   会话对象
-     * @return 是否成功
      */
     void setSession(String sessionId, WebotSession session, Duration ttl);
 

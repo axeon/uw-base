@@ -249,7 +249,6 @@ public class WebotManager {
      * 更新会话。
      *
      * @param webotSession 会话
-     * @return 是否成功更新
      */
     public void updateSession(WebotSession webotSession, Duration ttl) {
         sessionService.setSession(webotSession.getSessionId(), webotSession, ttl);

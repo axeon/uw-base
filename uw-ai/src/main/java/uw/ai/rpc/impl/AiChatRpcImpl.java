@@ -57,6 +57,9 @@ public class AiChatRpcImpl implements AiChatRpc {
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
 
         body.add("configId", param.getConfigId());
+        if (param.getConfigCode() != null) {
+            body.add("configCode", param.getConfigCode());
+        }
         if (param.getUserPrompt() != null) {
             body.add("userPrompt", param.getUserPrompt());
         }
@@ -117,6 +120,9 @@ public class AiChatRpcImpl implements AiChatRpc {
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
 
         body.add("configId", param.getConfigId());
+        if (param.getConfigCode() != null) {
+            body.add("configCode", param.getConfigCode());
+        }
         if (StringUtils.isNotBlank(param.getUserPrompt())) {
             body.add("userPrompt", param.getUserPrompt());
         }

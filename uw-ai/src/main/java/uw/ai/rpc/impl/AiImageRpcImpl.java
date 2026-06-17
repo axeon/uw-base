@@ -33,6 +33,9 @@ public class AiImageRpcImpl implements AiImageRpc {
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
 
         body.add("configId", param.getConfigId());
+        if (param.getConfigCode() != null) {
+            body.add("configCode", param.getConfigCode());
+        }
         if (param.getSessionId() > 0) {
             body.add("sessionId", param.getSessionId());
         }

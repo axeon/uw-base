@@ -1,4 +1,4 @@
-package uw.common.kryo;
+package uw.common.util;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;

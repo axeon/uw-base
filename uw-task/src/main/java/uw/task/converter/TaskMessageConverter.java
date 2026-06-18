@@ -3,6 +3,7 @@ package uw.task.converter;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.util.Pool;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -30,11 +31,15 @@ public class TaskMessageConverter implements MessageConverter {
     private static final String CONTENT_TYPE_TASK_DATA = "UT_DATA";
 
     /**
-     * kryo缓存。
+     * 默认池子容量32。
      */
-    private static final ThreadLocal<Kryo> kryoLocal = new ThreadLocal<Kryo>() {
-        @Override
-        protected Kryo initialValue() {
+    private static final int CAPACITY = 32;
+
+    /**
+     * kryo池。
+     */
+    private static final Pool<Kryo> kryoPool = new Pool<Kryo>(true, true, CAPACITY) {
+        protected Kryo create() {
             Kryo kryo = new Kryo();
             kryo.setClassLoader(Thread.currentThread().getContextClassLoader());
             kryo.setRegistrationRequired(false);
@@ -55,10 +60,14 @@ public class TaskMessageConverter implements MessageConverter {
     };
 
     /**
-     * output缓存对象。限定缓存8k，最大8M。
-     * 线程内使用，因为uw-task执行的特殊机制，可以减少内存复制。
+     * 输出池。没有搞input pull的原因是已经拿到了完整数组，没有重用价值。
      */
-    private static final ThreadLocal<Output> outputLocal = ThreadLocal.withInitial(() -> new Output(8 * 1024, -1));
+    private static final Pool<Output> outputPool = new Pool<Output>(true, true, CAPACITY) {
+        protected Output create() {
+            return new Output(2560, -1);
+        }
+    };
+
 
     /**
      * Construct with an internal {@link ObjectMapper} instance. The
@@ -76,20 +85,20 @@ public class TaskMessageConverter implements MessageConverter {
         if (objectToConvert instanceof TaskData) {
             messageProperties.setContentType(CONTENT_TYPE_TASK_DATA);
             //序列化操作
-            Kryo kryo = kryoLocal.get();
-            Output output = outputLocal.get();
+            final Kryo kryo = kryoPool.obtain();
+            final Output output = outputPool.obtain();
             try {
                 kryo.writeClassAndObject(output, objectToConvert);
                 output.flush();
                 //此时复制出数据
                 bytes = output.toBytes();
-                //重置output
-                output.reset();
             } catch (Exception e) {
                 throw new MessageConversionException("Failed to convert Message content. " + e.getMessage(), e);
             } finally {
                 //重置output
                 output.reset();
+                outputPool.free(output);
+                kryoPool.free(kryo);
             }
         }
         messageProperties.setContentLength(bytes.length);
@@ -105,13 +114,13 @@ public class TaskMessageConverter implements MessageConverter {
         MessageProperties properties = message.getMessageProperties();
         String contentType = properties.getContentType();
         if (CONTENT_TYPE_TASK_DATA.equals(contentType)) {
-            try {
-                Kryo kryo = kryoLocal.get();
-                Input input = new Input(message.getBody());
+            final Kryo kryo = kryoPool.obtain();
+            try (Input input = new Input(message.getBody())) {
                 content = kryo.readClassAndObject(input);
-                input.close();
             } catch (Exception e) {
                 throw new MessageConversionException("Failed to convert Message content. " + e.getMessage(), e);
+            } finally {
+                kryoPool.free(kryo);
             }
         } else {
             if (log.isWarnEnabled()) {

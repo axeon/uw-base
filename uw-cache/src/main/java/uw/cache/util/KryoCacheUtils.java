@@ -17,10 +17,11 @@ import java.util.*;
 public class KryoCacheUtils {
 
     private static final Logger log = LoggerFactory.getLogger(KryoCacheUtils.class);
+
     /**
-     * 默认池子容量16。
+     * 默认池子容量32。
      */
-    private static final int CAPACITY = 16;
+    private static final int CAPACITY = 32;
 
     /**
      * kryo池。

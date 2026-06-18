@@ -11,26 +11,27 @@ import java.util.List;
 public class AiImageResultData {
 
     /**
-     * 图片URL列表
-     */
-    @Schema(title = "图片URL列表", description = "图片URL列表")
-    private List<String> imageUrls;
-
-    /**
      * 会话ID
      */
     @Schema(title = "会话ID", description = "会话ID")
     private long sessionId;
 
+    /**
+     * 图片URL列表
+     */
+    @Schema(title = "图片URL列表", description = "图片URL列表")
+    private List<String> imageUrlList;
+
+
     public AiImageResultData() {
     }
 
-    public List<String> getImageUrls() {
-        return imageUrls;
+    public List<String> getImageUrlList() {
+        return imageUrlList;
     }
 
-    public void setImageUrls(List<String> imageUrls) {
-        this.imageUrls = imageUrls;
+    public void setImageUrlList(List<String> imageUrlList) {
+        this.imageUrlList = imageUrlList;
     }
 
     public long getSessionId() {

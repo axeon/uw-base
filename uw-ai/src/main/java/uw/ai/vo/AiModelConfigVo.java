@@ -8,7 +8,7 @@ import java.util.Date;
  * AI模型配置VO — 供外部调用方查询可用模型列表。
  */
 @Schema(title = "AI模型配置VO", description = "AI模型配置信息，供外部服务查询")
-public class AiModelInfoVo {
+public class AiModelConfigVo {
 
 
     /**
@@ -34,6 +34,12 @@ public class AiModelInfoVo {
      */
     @Schema(title = "API配置ID", description = "API配置ID", maxLength=19, nullable=false )
     private long apiId;
+
+    /**
+     * 供应商类
+     */
+    @Schema(title = "供应商类", description = "供应商类", maxLength=200, nullable=false )
+    private String vendorClass;
 
     /**
      * 模型类型: CHAT/EMBEDDING/RERANK/TTS/OCR
@@ -119,6 +125,14 @@ public class AiModelInfoVo {
 
     public void setApiId(long apiId) {
         this.apiId = apiId;
+    }
+
+    public String getVendorClass() {
+        return vendorClass;
+    }
+
+    public void setVendorClass(String vendorClass) {
+        this.vendorClass = vendorClass;
     }
 
     public String getModelType() {

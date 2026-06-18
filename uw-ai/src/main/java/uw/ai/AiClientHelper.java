@@ -75,6 +75,89 @@ public class AiClientHelper {
     }
 
     /**
+     * 根据saas信息获取模型配置列表。
+     *
+     * @param saasId 租户ID
+     * @param mchId  商户ID（可为null或0，表示不限商户）
+     * @return 模型配置列表
+     */
+    public static ResponseData<List<AiModelConfigVo>> listModelInfoBySaas(Long saasId, Long mchId) {
+        return configRpc.listModelConfigBySaas(saasId, mchId);
+    }
+
+    /**
+     * 根据API配置ID获取模型配置列表。
+     *
+     * @param apiId API配置ID
+     * @return 模型配置列表
+     */
+    public static ResponseData<List<AiModelConfigVo>> listModelInfoByApi(Long apiId) {
+        return configRpc.listModelConfigByApi(apiId, null);
+    }
+
+    /**
+     * 根据ID获取模型配置。
+     *
+     * @param id 模型配置ID
+     * @return 模型配置
+     */
+    public static ResponseData<AiModelConfigVo> listModelInfoById(Long id) {
+        return configRpc.getModelConfig(id, null);
+    }
+
+    /**
+     * 根据配置代码获取模型配置。
+     *
+     * @param configCode 配置代码
+     * @return 模型配置
+     */
+    public static ResponseData<AiModelConfigVo> listModelInfoByCode(String configCode) {
+        return configRpc.getModelConfig(null, configCode);
+    }
+
+    /**
+     * 根据模型类型和标签获取模型配置列表。
+     *
+     * @param modelType 模型类型
+     * @param modelTag  模型能力标签（可为null或空，表示不限标签）
+     * @return 模型配置列表
+     */
+    public static ResponseData<List<AiModelConfigVo>> listModelInfoByType(String modelType, String modelTag) {
+        return configRpc.listModelConfigByType(modelType, modelTag);
+    }
+
+    /**
+     * 根据saas信息获取API连接配置列表。
+     *
+     * @param saasId 租户ID
+     * @param mchId  商户ID（可为null或0，表示不限商户）
+     * @return API连接配置列表
+     */
+    public static ResponseData<List<AiModelApiVo>> listModelApiBySaas(Long saasId, Long mchId) {
+        return configRpc.listApiConfigBySaas(saasId, mchId);
+    }
+
+    /**
+     * 根据ID获取API连接配置。
+     *
+     * @param id API配置ID
+     * @return API连接配置
+     */
+    public static ResponseData<AiModelApiVo> getModelApiById(Long id) {
+        return configRpc.getApiConfig(id, null);
+    }
+
+    /**
+     * 根据配置代码获取API连接配置。
+     *
+     * @param apiCode 配置代码
+     * @return API连接配置
+     */
+    public static ResponseData<AiModelApiVo> getModelApiByCode(String apiCode) {
+        return configRpc.getApiConfig(null, apiCode);
+    }
+
+    /**
      * 聊天生成。
      *
      * @param param
@@ -144,90 +227,6 @@ public class AiClientHelper {
      */
     public static ResponseData<AiTranslateResultData[]> translateMap(AiTranslateMapParam param) {
         return translateRpc.translateMap(param);
-    }
-
-
-    /**
-     * 根据saas信息获取模型配置列表。
-     *
-     * @param saasId 租户ID
-     * @param mchId  商户ID（可为null或0，表示不限商户）
-     * @return 模型配置列表
-     */
-    public static ResponseData<List<AiModelInfoVo>> listModelInfoBySaas(Long saasId, Long mchId) {
-        return configRpc.listModelConfigBySaas(saasId, mchId);
-    }
-
-    /**
-     * 根据API配置ID获取模型配置列表。
-     *
-     * @param apiId API配置ID
-     * @return 模型配置列表
-     */
-    public static ResponseData<List<AiModelInfoVo>> listModelInfoByApi(Long apiId) {
-        return configRpc.listModelConfigByApi(apiId, null);
-    }
-
-    /**
-     * 根据ID获取模型配置。
-     *
-     * @param id 模型配置ID
-     * @return 模型配置
-     */
-    public static ResponseData<AiModelInfoVo> listModelInfoById(Long id) {
-        return configRpc.getModelConfig(id, null);
-    }
-
-    /**
-     * 根据配置代码获取模型配置。
-     *
-     * @param configCode 配置代码
-     * @return 模型配置
-     */
-    public static ResponseData<AiModelInfoVo> listModelInfoByCode(String configCode) {
-        return configRpc.getModelConfig(null, configCode);
-    }
-
-    /**
-     * 根据模型类型和标签获取模型配置列表。
-     *
-     * @param modelType 模型类型
-     * @param modelTag  模型能力标签（可为null或空，表示不限标签）
-     * @return 模型配置列表
-     */
-    public static ResponseData<List<AiModelInfoVo>> listModelInfoByType(String modelType, String modelTag) {
-        return configRpc.listModelConfigByType(modelType, modelTag);
-    }
-
-    /**
-     * 根据saas信息获取API连接配置列表。
-     *
-     * @param saasId 租户ID
-     * @param mchId  商户ID（可为null或0，表示不限商户）
-     * @return API连接配置列表
-     */
-    public static ResponseData<List<AiModelApiVo>> listModelApiBySaas(Long saasId, Long mchId) {
-        return configRpc.listApiConfigBySaas(saasId, mchId);
-    }
-
-    /**
-     * 根据ID获取API连接配置。
-     *
-     * @param id API配置ID
-     * @return API连接配置
-     */
-    public static ResponseData<AiModelApiVo> getModelApiById(Long id) {
-        return configRpc.getApiConfig(id, null);
-    }
-
-    /**
-     * 根据配置代码获取API连接配置。
-     *
-     * @param apiCode 配置代码
-     * @return API连接配置
-     */
-    public static ResponseData<AiModelApiVo> getModelApiByCode(String apiCode) {
-        return configRpc.getApiConfig(null, apiCode);
     }
 
     /**

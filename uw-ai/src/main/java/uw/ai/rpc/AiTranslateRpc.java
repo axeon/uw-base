@@ -6,6 +6,9 @@ import uw.ai.vo.AiTranslateMapParam;
 import uw.ai.vo.AiTranslateResultData;
 import uw.common.response.ResponseData;
 
+/**
+ * AI翻译RPC接口。
+ */
 public interface AiTranslateRpc {
     /**
      * 翻译列表。

@@ -1,7 +1,7 @@
 package uw.ai.rpc;
 
 import uw.ai.vo.AiModelApiVo;
-import uw.ai.vo.AiModelInfoVo;
+import uw.ai.vo.AiModelConfigVo;
 import uw.common.response.ResponseData;
 
 import java.util.List;
@@ -18,7 +18,7 @@ public interface AiConfigRpc {
      * @param mchId  商户ID（可为null或0，表示不限商户）
      * @return 模型配置列表
      */
-    ResponseData<List<AiModelInfoVo>> listModelConfigBySaas(Long saasId, Long mchId);
+    ResponseData<List<AiModelConfigVo>> listModelConfigBySaas(Long saasId, Long mchId);
 
     /**
      * 根据API配置获取模型配置列表。
@@ -27,7 +27,7 @@ public interface AiConfigRpc {
      * @param apiCode API配置代码
      * @return 模型配置列表
      */
-    ResponseData<List<AiModelInfoVo>> listModelConfigByApi(Long apiId, String apiCode);
+    ResponseData<List<AiModelConfigVo>> listModelConfigByApi(Long apiId, String apiCode);
 
     /**
      * 根据ID或配置代码获取模型配置
@@ -36,7 +36,7 @@ public interface AiConfigRpc {
      * @param configCode 配置代码（id 为空时使用）
      * @return 模型配置
      */
-    ResponseData<AiModelInfoVo> getModelConfig(Long id, String configCode);
+    ResponseData<AiModelConfigVo> getModelConfig(Long id, String configCode);
 
     /**
      * 根据模型类型和标签获取模型配置列表。
@@ -45,7 +45,7 @@ public interface AiConfigRpc {
      * @param modelTag  模型能力标签
      * @return 模型配置列表
      */
-    ResponseData<List<AiModelInfoVo>> listModelConfigByType(String modelType, String modelTag);
+    ResponseData<List<AiModelConfigVo>> listModelConfigByType(String modelType, String modelTag);
 
     /**
      * 根据saas信息获取API连接配置列表。

@@ -75,4 +75,9 @@ echo "1/2: Cleaning project..."
 eval "$CMD_CLEAN" || exit 1
 
 echo "2/2: Deploying..."
-eval "$CMD_DEPLOY" || exit 1
+if ! eval "$CMD_DEPLOY"; then
+    # deploy失败时清理flatten插件残留的.flattened-pom.xml（clean生命周期未触发flatten:clean）
+    find "$BASE_DIR" -name ".flattened-pom.xml" -type f -delete
+    echo "ERROR: Deploy failed, cleaned up leftover .flattened-pom.xml files"
+    exit 1
+fi

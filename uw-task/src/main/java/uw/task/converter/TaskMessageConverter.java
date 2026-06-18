@@ -14,6 +14,7 @@ import org.springframework.amqp.support.converter.MessageConversionException;
 import org.springframework.amqp.support.converter.MessageConverter;
 import uw.task.TaskData;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -89,14 +90,10 @@ public class TaskMessageConverter implements MessageConverter {
             final Output output = outputPool.obtain();
             try {
                 kryo.writeClassAndObject(output, objectToConvert);
-                output.flush();
-                //此时复制出数据
                 bytes = output.toBytes();
             } catch (Exception e) {
                 throw new MessageConversionException("Failed to convert Message content. " + e.getMessage(), e);
             } finally {
-                //重置output
-                output.reset();
                 outputPool.free(output);
                 kryoPool.free(kryo);
             }
@@ -115,7 +112,8 @@ public class TaskMessageConverter implements MessageConverter {
         String contentType = properties.getContentType();
         if (CONTENT_TYPE_TASK_DATA.equals(contentType)) {
             final Kryo kryo = kryoPool.obtain();
-            try (Input input = new Input(message.getBody())) {
+            final Input input = new Input(message.getBody());
+            try {
                 content = kryo.readClassAndObject(input);
             } catch (Exception e) {
                 throw new MessageConversionException("Failed to convert Message content. " + e.getMessage(), e);
@@ -125,8 +123,8 @@ public class TaskMessageConverter implements MessageConverter {
         } else {
             if (log.isWarnEnabled()) {
                 try {
-                    log.warn("Could not convert incoming message with content-type [{}],message: {} ",
-                            contentType, new String(message.getBody(), "UTF-8"));
+                    log.warn("Could not convert incoming message with content-type [{}], message: {} ",
+                            contentType, new String(message.getBody(), StandardCharsets.UTF_8));
                 } catch (Exception e) {
                     log.warn("Could not convert incoming message with content-type [{}],message cannot be decode. {}", contentType, e.getMessage());
                 }

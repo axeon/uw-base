@@ -1,4 +1,4 @@
-package uw.cache.util;
+package uw.common.kryo;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -6,20 +6,19 @@ import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.util.Pool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.cache.vo.CacheValueWrapper;
 
+import java.io.OutputStream;
 import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * kryo序列化工具类。
+ * kryo基础工具类。
  */
-public class KryoCacheUtils {
+public class KryoUtils {
 
-    private static final Logger log = LoggerFactory.getLogger(KryoCacheUtils.class);
-
+    private static final Logger log = LoggerFactory.getLogger(KryoUtils.class);
     /**
-     * 默认池子容量32。
+     * 默认池子容量16。
      */
     private static final int CAPACITY = 32;
 
@@ -70,12 +69,36 @@ public class KryoCacheUtils {
         final Output output = outputPool.obtain();
         try {
             kryo.writeObject(output, value);
+            //此时复制出数据
             data = output.toBytes();
         } finally {
             outputPool.free(output);
             kryoPool.free(kryo);
         }
         return data;
+    }
+
+    /**
+     * 序列化到输出流。
+     *
+     * @param value
+     * @return
+     */
+    public static void serialize(Object value, OutputStream out) {
+        if (value == null) {
+            return;
+        }
+        final Kryo kryo = kryoPool.obtain();
+        final Output output = outputPool.obtain();
+        try {
+            output.setOutputStream(out);// 绑定流
+            kryo.writeObject(output, value);
+            output.flush();
+        } finally {
+            output.setOutputStream(null);// ← 解绑！
+            outputPool.free(output);
+            kryoPool.free(kryo);
+        }
     }
 
     /**
@@ -97,59 +120,6 @@ public class KryoCacheUtils {
             kryoPool.free(kryo);
         }
         return value;
-    }
-
-    /**
-     * 序列化Wrapped。
-     *
-     * @param valueWrapper
-     * @return
-     */
-    public static byte[] serializeValueWrapper(CacheValueWrapper<?> valueWrapper) {
-        if (valueWrapper == null) {
-            return null;
-        }
-        byte[] data ;
-        final Kryo kryo = kryoPool.obtain();
-        final Output output = outputPool.obtain();
-        try {
-            output.writeLong(valueWrapper.getExpiredAt());
-            if (valueWrapper.getValue() != null) {
-                kryo.writeObject(output, valueWrapper.getValue());
-            }
-            //此时复制出数据
-            data = output.toBytes();
-        } finally {
-            outputPool.free(output);
-            kryoPool.free(kryo);
-        }
-        return data;
-    }
-
-    /**
-     * 反序列化Wrapped。
-     *
-     * @param data
-     * @return
-     */
-    public static <T> CacheValueWrapper<T> deserializeValueWrapper(byte[] data, Class<T> cls) {
-        if (data == null || data.length == 0) {
-            return null;
-        }
-        CacheValueWrapper<T> valueWrapper = new CacheValueWrapper<>();
-        final Kryo kryo = kryoPool.obtain();
-        final Input input = new Input(data);
-        try {
-            long expiredAt = input.readLong();
-            valueWrapper.setExpiredAt(expiredAt);
-            if (!input.end()) {
-                T value = kryo.readObject(input, cls);
-                valueWrapper.setValue(value);
-            }
-        } finally {
-            kryoPool.free(kryo);
-        }
-        return valueWrapper;
     }
 
     /**

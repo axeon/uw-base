@@ -1,112 +1,123 @@
 package uw.logback.es.appender;
 
 /**
- * ElasticSearchAppender JMX Bean
+ * {@link ElasticSearchAppender} 的 JMX 暴露接口。
+ * <p>
+ * 当 {@link ElasticSearchAppender#isJmxMonitoring()} 为 true 时，appender 会把自身注册到平台
+ * MBean Server，运维可通过 JMX 客户端实时读取/调整关键参数，并强制触发 flush。
+ * <p>
+ * 暴露内容包含：ES 地址与索引配置、批量与 flush 参数、应用标识、堆栈压缩配置。
+ *
+ * @see ElasticSearchAppender
  */
 public interface ElasticSearchAppenderMBean {
     /**
-     * 强制日志提交
+     * 强制把当前 buffer 中的日志同步提交一次（阻塞当前调用线程）。
      */
     void forceProcessLogBucket();
 
     /**
-     * 获取刷新Bucket时间秒数
+     * 获取定时 flush 间隔。
+     *
+     * @return 间隔秒数
      */
     long getMaxFlushInSeconds();
 
     /**
-     * 设置刷新Bucket时间秒数
+     * 设置定时 flush 间隔。
      *
-     * @param maxFlushInSeconds
+     * @param maxFlushInSeconds 间隔秒数
      */
     void setMaxFlushInSeconds(long maxFlushInSeconds);
 
     /**
-     * 获取允许最大Bucket字节数。
+     * 获取批量提交触发阈值。
+     *
+     * @return 阈值（单位：KB）
      */
     long getMaxKiloBytesOfBatch();
 
     /**
-     * 设置允许最大Bucket字节数。
+     * 设置批量提交触发阈值。
      *
-     * @param maxKiloBytesOfBatch
+     * @param maxKiloBytesOfBatch 阈值（单位：KB）
      */
     void setMaxKiloBytesOfBatch(long maxKiloBytesOfBatch);
 
     /**
-     * 获取Elasticsearch Web API endpoint
+     * 获取 ES 服务地址。
      *
-     * @return
+     * @return ES 基础地址
      */
     String getEsServer();
 
     /**
-     * 获取Elasticsearch bulk api endpoint
+     * 获取 ES bulk 接口路径。
      *
-     * @return
+     * @return bulk 路径
      */
     String getEsBulk();
 
     /**
-     * 获取es用户名
+     * 获取 ES 认证用户名。
      *
-     * @return
+     * @return 用户名
      */
     String getEsUsername();
 
     /**
-     * 获取ES索引
+     * 获取索引名。
      *
-     * @return
+     * @return 索引名
      */
     String getEsIndex();
 
     /**
-     * 获取ES索引后缀
+     * 获取索引时间后缀格式。
      *
-     * @return
+     * @return 后缀格式串
      */
     String getEsIndexSuffix();
 
     /**
-     * 获取批量线程数
+     * 获取批量 flush 线程池最大线程数。
      *
-     * @return
+     * @return 线程数
      */
     int getMaxBatchThreads();
 
     /**
-     * 获取批量线程队列数
+     * 获取批量 flush 线程池队列容量。
      *
-     * @return
+     * @return 队列容量
      */
     int getMaxBatchQueueSize();
 
     /**
-     * 获取应用主机名
+     * 获取应用主机标识。
      *
-     * @return
+     * @return 主机标识
      */
     String getAppHost();
 
     /**
-     * 获取应用信息
+     * 获取应用名称。
      *
-     * @return
+     * @return 应用名称
      */
     String getAppInfo();
 
     /**
-     * 获取Throwable最大堆栈深度
+     * 获取异常堆栈输出最大深度。
      *
-     * @return
+     * @return 深度行数
      */
     int getMaxDepthPerThrowable();
 
     /**
-     * 获取Throwable排除的key
+     * 获取被折叠的堆栈类名前缀列表（逗号分隔字符串）。
      *
-     * @return
+     * @return 前缀串
      */
     String getExcludeThrowableKeys();
 

@@ -5,32 +5,53 @@ import ch.qos.logback.classic.spi.StackTraceElementProxy;
 import ch.qos.logback.classic.spi.ThrowableProxyUtil;
 
 /**
- * 打印logback的异常输出。
+ * 将 Logback 的异常代理（{@link IThrowableProxy}）格式化为压缩后的堆栈文本，写入 okio buffer。
+ * <p>
+ * 与默认堆栈输出的差异：
+ * <ul>
+ *   <li>受 {@link #MaxDepthPerThrowable} 限制单帧数量；</li>
+ *   <li>匹配 {@link #ExcludeThrowableKeys} 前缀的堆栈帧会被折叠为 "[N skipped]"；</li>
+ *   <li>换行/缩进采用字面 {@code \n}/{@code \t} 文本，以便嵌入 JSON 字符串值。</li>
+ * </ul>
+ * <p>
+ * 注意：{@code MaxDepthPerThrowable} 与 {@code ExcludeThrowableKeys} 为静态共享变量，
+ * 多个 appender 实例配置时会互相覆盖，最后一个启动的实例生效。
  */
 public class ThrowableProxyUtils {
 
+    /**
+     * JSON 文本中的换行占位（字面两个字符 {@code \} {@code n}），ES 解析后还原为换行。
+     */
     private static final String JSON_LINE_SEPARATOR = "\\n";
 
     /**
-     * 堆栈输出长度限制。
+     * 堆栈输出长度限制（帧数）。由 appender 在启动时设置。
      */
     public static volatile int MaxDepthPerThrowable = 30;
 
     /**
-     * 需要忽略的堆栈输出。
+     * 需要折叠的堆栈类名前缀数组。由 appender 在启动时设置。
      */
     public static volatile String[] ExcludeThrowableKeys = new String[]{"java.base", "org.spring", "org.apache", "jakarta", "com.mysql", "okhttp", "com.fasterxml", "uw.auth.service.filter"};
 
     /**
-     * 输出异常到buffer。
+     * 把异常代理格式化后写入 buffer，包含 cause 链与 suppressed 异常。
      *
-     * @param buf
-     * @param tp
+     * @param buf 目标 buffer
+     * @param tp  异常代理，可为 null（将无输出）
      */
     public static void writeThrowable(okio.Buffer buf, IThrowableProxy tp) {
         recursiveAppend(buf, null, 0, tp);
     }
 
+    /**
+     * 递归追加：首行 + 堆栈帧 + suppressed + cause。
+     *
+     * @param buf    目标 buffer
+     * @param prefix 行前缀（如 "Caused by: "、"Suppressed: "），顶层为 null
+     * @param indent 缩进层级
+     * @param tp     异常代理
+     */
     private static void recursiveAppend(okio.Buffer buf, String prefix, int indent, IThrowableProxy tp) {
         if (tp == null) return;
         subjoinFirstLine(buf, prefix, indent, tp);
@@ -46,12 +67,12 @@ public class ThrowableProxyUtils {
     }
 
     /**
-     * 打印首行。
+     * 写入异常首行：缩进 + 可选前缀 + 类名 + message。
      *
-     * @param buf
-     * @param prefix
-     * @param indent
-     * @param tp
+     * @param buf    目标 buffer
+     * @param prefix 行前缀，为 null 则无
+     * @param indent 缩进层级
+     * @param tp     异常代理
      */
     private static void subjoinFirstLine(okio.Buffer buf, String prefix, int indent, IThrowableProxy tp) {
         buf.writeUtf8(indentJsonTab(indent));
@@ -66,11 +87,13 @@ public class ThrowableProxyUtils {
     }
 
     /**
-     * 打印堆栈输出。
+     * 写入堆栈帧数组，匹配 {@link #ExcludeThrowableKeys} 的帧被折叠为 "[N skipped]"。
+     * <p>
+     * 为保证折叠帧不挤占有效深度，忽略帧出现时会尝试扩展 maxIndex（受限于 2 倍最大深度）。
      *
-     * @param buf
-     * @param indent
-     * @param tp
+     * @param buf    目标 buffer
+     * @param indent 缩进层级
+     * @param tp     异常代理
      */
     private static void subjoinSTEPArray(okio.Buffer buf, int indent, IThrowableProxy tp) {
         StackTraceElementProxy[] stepArray = tp.getStackTraceElementProxyArray();
@@ -114,10 +137,10 @@ public class ThrowableProxyUtils {
     }
 
     /**
-     * 打印指定长度的缩紧。
+     * 根据缩进层级返回对应的字面制表符占位串（{@code \t}），超过 9 层不缩进。
      *
-     * @param indent
-     * @return
+     * @param indent 缩进层级
+     * @return 制表符占位串
      */
     private static String indentJsonTab(int indent) {
         return switch (indent) {
@@ -136,20 +159,20 @@ public class ThrowableProxyUtils {
 
 
     /**
-     * 打印出已忽略输出的行数。
+     * 写入折叠计数标记，如 " [3 skipped]"。
      *
-     * @param buf
-     * @param ignoredCount
+     * @param buf          目标 buffer
+     * @param ignoredCount 被跳过的帧数
      */
     private static void printIgnoredCount(okio.Buffer buf, int ignoredCount) {
         buf.writeUtf8(" [").writeUtf8(String.valueOf(ignoredCount)).writeUtf8(" skipped]");
     }
 
     /**
-     * 是否是需要忽略的堆栈输出。
+     * 判断堆栈帧文本是否命中 {@link #ExcludeThrowableKeys} 任一前缀。
      *
-     * @param line
-     * @return
+     * @param line 堆栈帧文本
+     * @return true 表示该帧应被折叠跳过
      */
     private static boolean isIgnoredStackTraceLine(String line) {
         if (ExcludeThrowableKeys != null) {

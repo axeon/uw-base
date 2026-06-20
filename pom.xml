@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <revision>2026.0601.0003</revision>
+        <revision>2026.0601.0005</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>25</java.version>
@@ -25,24 +25,24 @@
         <maven.compiler.release>25</maven.compiler.release>
         <spring-cloud.version>2025.0.3</spring-cloud.version>
         <spring-cloud.alibaba.version>2023.0.1.2</spring-cloud.alibaba.version>
-        <uw-ai.version>1.1.29</uw-ai.version>
-        <uw-auth-client.version>6.2.22</uw-auth-client.version>
-        <uw-auth-service.version>6.2.60</uw-auth-service.version>
-        <uw-cache.version>1.2.97</uw-cache.version>
-        <uw-common.version>1.1.102</uw-common.version>
-        <uw-common-app.version>1.1.105</uw-common-app.version>
-        <uw-dao.version>5.3.36</uw-dao.version>
-        <uw-gateway-client.version>1.1.7</uw-gateway-client.version>
-        <uw-httpclient.version>2.2.133</uw-httpclient.version>
-        <uw-log-es.version>3.1.99</uw-log-es.version>
-        <uw-logback-es.version>3.1.95</uw-logback-es.version>
-        <uw-mfa.version>1.1.63</uw-mfa.version>
-        <uw-mydb-client.version>1.1.28</uw-mydb-client.version>
-        <uw-notify-client.version>1.1.27</uw-notify-client.version>
-        <uw-oauth2-client.version>1.1.17</uw-oauth2-client.version>
-        <uw-task.version>5.1.126</uw-task.version>
-        <uw-tinyurl-client.version>1.1.27</uw-tinyurl-client.version>
-        <uw-webot.version>1.0.7</uw-webot.version>
+        <uw-ai.version>1.1.30</uw-ai.version>
+        <uw-auth-client.version>6.2.23</uw-auth-client.version>
+        <uw-auth-service.version>6.2.61</uw-auth-service.version>
+        <uw-cache.version>1.2.98</uw-cache.version>
+        <uw-common.version>1.1.103</uw-common.version>
+        <uw-common-app.version>1.1.106</uw-common-app.version>
+        <uw-dao.version>5.3.37</uw-dao.version>
+        <uw-gateway-client.version>1.1.8</uw-gateway-client.version>
+        <uw-httpclient.version>2.2.135</uw-httpclient.version>
+        <uw-log-es.version>3.1.100</uw-log-es.version>
+        <uw-logback-es.version>3.1.96</uw-logback-es.version>
+        <uw-mfa.version>1.1.65</uw-mfa.version>
+        <uw-mydb-client.version>1.1.29</uw-mydb-client.version>
+        <uw-notify-client.version>1.1.28</uw-notify-client.version>
+        <uw-oauth2-client.version>1.1.18</uw-oauth2-client.version>
+        <uw-task.version>5.1.127</uw-task.version>
+        <uw-tinyurl-client.version>1.1.28</uw-tinyurl-client.version>
+        <uw-webot.version>1.0.8</uw-webot.version>
     </properties>
 
     <dependencyManagement>
@@ -150,11 +150,6 @@
                 <groupId>com.umtone</groupId>
                 <artifactId>uw-webot</artifactId>
                 <version>${uw-webot.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.msgpack</groupId>
-                <artifactId>msgpack-core</artifactId>
-                <version>0.9.12</version>
             </dependency>
             <dependency>
                 <groupId>org.openjdk.jmh</groupId>

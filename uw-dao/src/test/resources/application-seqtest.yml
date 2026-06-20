@@ -1,0 +1,30 @@
+uw:
+  dao:
+    conn-pool:
+      root:
+        driver: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://192.168.88.21:3308/uw_auth
+        username: uw
+        password: GGmvbPEzWdETXSKeXDAOocXAjyQtGLR9
+        min-conn: 3
+        max-conn: 100
+        conn-idle-timeout: 180
+        conn-busy-timeout: 180
+        conn-max-age: 600
+    redis:
+      database: 5
+      host: 192.168.88.21
+      port: 6380
+      password: Ah8mm6tgE0vSv2aadIELqdHAAohgbFYl
+      lettuce:
+        pool:
+          max-active: 200
+          max-idle: 8
+          max-wait: 10s
+          min-idle: 1
+      timeout: 30s
+      ssl:
+        enabled: false
+logging:
+  level:
+    uw.dao: warn

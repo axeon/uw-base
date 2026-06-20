@@ -4,42 +4,49 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * REST认证相关配置
+ * uw-auth-client 配置项，前缀 {@code uw.auth.client}。
+ * <p>
+ * 注意：{@code appName}/{@code appVersion}/{@code appHost}/{@code appPort} 不属于本前缀，
+ * 仅用于构造 {@code loginAgent} 字段，通过 {@code @Value} 注入并带有默认值，缺失时不会导致启动失败。
  */
 @ConfigurationProperties(prefix = "uw.auth.client")
 public class AuthClientProperties {
 
     /**
-     * 是否开启Spring Cloud Load Balance支持
+     * 是否开启Spring Cloud Load Balance支持。
+     * <p>
+     * true（默认）：{@code authRestClient} / {@code baseAuthClientRestClient} 的 Builder 标注 {@code @LoadBalanced}，
+     * 支持以服务名（如 {@code http://uw-auth-center}）作为目标地址。
+     * false：不加 {@code @LoadBalanced}，需配置完整 host（{@link #authCenterHost}）直连。
      */
     private boolean enableSpringCloud = true;
 
     /**
-     * 应用名称
+     * 应用名称，来自 ${project.name}。
      */
-    @Value("${project.name}")
+    @Value("${project.name:unknown}")
     private String appName;
 
     /**
-     * 应用版本
+     * 应用版本，来自 ${project.version}。
      */
-    @Value("${project.version}")
+    @Value("${project.version:unknown}")
     private String appVersion;
 
     /**
-     * app主机地址。
+     * app主机地址，来自 Nacos discovery ip。
      */
     @Value("${spring.cloud.nacos.discovery.ip:}")
     private String appHost;
 
     /**
-     * app端口号。
+     * app端口号，来自 ${server.port}。
      */
     @Value("${server.port:8080}")
     private int appPort;
 
     /**
-     * 认证服务器地址
+     * 认证服务器地址，默认为 Spring Cloud 服务名。
      */
     private String authCenterHost = "http://uw-auth-center";
 
@@ -64,7 +71,7 @@ public class AuthClientProperties {
     private String loginPass;
 
     /**
-     * 密码
+     * 加密密码，优先于 loginPass。
      */
     private String loginSecret;
 
@@ -88,6 +95,15 @@ public class AuthClientProperties {
      */
     private HttpPool httpPool = new HttpPool();
 
+
+    /**
+     * 构造 loginAgent 字段，格式：{appName}:{appVersion}/{appHost}:{appPort}
+     *
+     * @return loginAgent
+     */
+    public String getLoginAgent() {
+        return appName + ":" + appVersion + "/" + appHost + ":" + appPort;
+    }
 
     /**
      * HTTP连接池配置，时间单位为毫秒

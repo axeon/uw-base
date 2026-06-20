@@ -42,7 +42,11 @@ public class AuthTokenHeaderFilter implements ExchangeFilterFunction {
     }
 
     /**
-     * 拦截器
+     * 拦截器。
+     * <p>
+     * 使用 {@link Mono#defer(java.util.function.Supplier)} 延迟到订阅时才获取 token，
+     * 避免在组装阶段（可能处于响应式调度线程）同步阻塞地访问 token 服务。
+     * 收到 401/498 时作废 token 并重试一次。
      *
      * @param request
      * @param next
@@ -50,7 +54,7 @@ public class AuthTokenHeaderFilter implements ExchangeFilterFunction {
      */
     @Override
     public Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next) {
-        return exchange(request, next, authClientTokenService.getToken())
+        return Mono.defer(() -> exchange(request, next, authClientTokenService.getToken()))
                 .flatMap(resp -> {
                     int code = resp.statusCode().value();
                     if (code == AuthClientConstants.HTTP_UNAUTHORIZED_CODE || code == AuthClientConstants.HTTP_TOKEN_EXPIRED_CODE) {
@@ -63,7 +67,7 @@ public class AuthTokenHeaderFilter implements ExchangeFilterFunction {
     }
 
     /**
-     * 尝试刷新token
+     * 用指定 token 构造带 Authorization 头的请求并发起交换。
      *
      * @param req
      * @param next

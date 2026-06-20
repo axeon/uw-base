@@ -1,6 +1,6 @@
 package uw.auth.client.service;
 
-import io.micrometer.common.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
@@ -27,7 +27,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * 并发模型：
  * <ul>
  *   <li>使用{@link ReentrantReadWriteLock}，token有效时多线程并发读（读锁），零阻塞</li>
- *   <li>token失效/过期时升级为写锁，仅一个线程执行网络刷新，其余线程等待后直接拿到新token</li>
+ *   <li>token失效/过期时升级为写锁：多个线程发现失效后会排队抢写锁，但只有第一个线程执行网络刷新，
+ *       其余线程拿到写锁后通过 double-check 直接复用新 token，不会重复登录</li>
  *   <li>字段均使用{@code volatile}修饰，保证写锁释放后读锁线程立即可见</li>
  * </ul>
  *
@@ -39,6 +40,11 @@ public class AuthClientTokenService {
      * 获取token的最大重试次数。
      */
     private static final int MAX_RETRY_TIMES = 10;
+
+    /**
+     * 单次重试间隔（毫秒）。
+     */
+    private static final long RETRY_INTERVAL_MILLIS = 1000L;
 
     private static final Logger log = LoggerFactory.getLogger(AuthClientTokenService.class);
 
@@ -142,7 +148,7 @@ public class AuthClientTokenService {
      * 写锁路径：获取token失败或过期时，在写锁保护下执行刷新。
      * <p>
      * 进入写锁后先double-check（可能其他线程已刷新成功），然后最多重试{@value #MAX_RETRY_TIMES}次。
-     * 重试间隔1秒，避免认证中心不可用时密集请求。
+     * 重试间隔{@value #RETRY_INTERVAL_MILLIS}毫秒，避免认证中心不可用时密集请求。
      */
     private String getTokenWithWrite() {
         writeLock.lock();
@@ -166,7 +172,7 @@ public class AuthClientTokenService {
                     return token;
                 }
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(RETRY_INTERVAL_MILLIS);
                 } catch (InterruptedException ignored) {
                     Thread.currentThread().interrupt();
                     return null;
@@ -181,22 +187,17 @@ public class AuthClientTokenService {
     /**
      * 账号密码登录，获取新的Access Token和Refresh Token。
      * <p>
-     * 内含守卫检查：若token已有效则跳过。失败时清空refreshToken和expiresAt。
+     * 失败时清空refreshToken和expiresAt。
      */
     private void login() {
-        if (retryTimes > 1 && retryTimes % 10 == 0) {
-            log.error("!!!AuthClient获取token出错已超过{}次，请检查配置！", retryTimes);
-        }
-        if (StringUtils.isNotBlank(token)) {
-            return;
-        }
+        logRetryTimesIfNeeded();
         retryTimes++;
         try {
             String loginUrl = authClientProperties.getAuthCenterHost() + authClientProperties.getLoginEntryPoint();
             LoginRequest loginRequest = new LoginRequest();
             loginRequest.setLoginType(LoginType.USER_PASS.getValue());
             loginRequest.setSaasId(authClientProperties.getSaasId());
-            loginRequest.setLoginAgent(authClientProperties.getAppName() + ":" + authClientProperties.getAppVersion() + "/" + authClientProperties.getAppHost() + ":" + authClientProperties.getAppPort());
+            loginRequest.setLoginAgent(authClientProperties.getLoginAgent());
             loginRequest.setUserType(authClientProperties.getUserType());
             loginRequest.setLoginId(authClientProperties.getLoginId());
             loginRequest.setLoginPass(authClientProperties.getLoginPass());
@@ -219,7 +220,9 @@ public class AuthClientTokenService {
                 }
             }
             if (StringUtils.isBlank(token)) {
-                log.error("!!!AuthClient登录出错! response: {}", loginResponse);
+                log.error("!!!AuthClient登录出错! response code/msg: {}/{}",
+                        loginResponse == null ? null : loginResponse.getCode(),
+                        loginResponse == null ? null : loginResponse.getMsg());
             }
         } catch (Error e) {
             log.error("!!!AuthClient登录出错! {}", e.getMessage(), e);
@@ -236,23 +239,16 @@ public class AuthClientTokenService {
     /**
      * 使用Refresh Token刷新Access Token。
      * <p>
-     * 内含守卫检查：若token已有效则跳过。服务端可能同时轮换Refresh Token。
-     * 失败时清空refreshToken和expiresAt，下次将触发全量login。
+     * 服务端可能同时轮换Refresh Token。失败时清空refreshToken和expiresAt，下次将触发全量login。
      */
     private void refresh() {
-        if (retryTimes > 1 && retryTimes % 10 == 0) {
-            log.error("!!!AuthClient获取token出错已超过{}次，请检查配置！", retryTimes);
-        }
-        if (StringUtils.isNotBlank(token)) {
-            return;
-        }
+        logRetryTimesIfNeeded();
         retryTimes++;
         try {
             String refreshTokenUrl = authClientProperties.getAuthCenterHost() + authClientProperties.getRefreshEntryPoint();
             MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
             map.add("refreshToken", refreshToken);
-            map.add("loginAgent",
-                    authClientProperties.getAppName() + ":" + authClientProperties.getAppVersion() + "/" + authClientProperties.getAppHost() + ":" + authClientProperties.getAppPort());
+            map.add("loginAgent", authClientProperties.getLoginAgent());
             ResponseData<TokenResponse> responseBody = restClient.post()
                     .uri(refreshTokenUrl)
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED)
@@ -267,7 +263,9 @@ public class AuthClientTokenService {
                 }
             }
             if (StringUtils.isBlank(token)) {
-                log.error("!!!AuthClient刷新token出错! response: {}", responseBody);
+                log.error("!!!AuthClient刷新token出错! response code/msg: {}/{}",
+                        responseBody == null ? null : responseBody.getCode(),
+                        responseBody == null ? null : responseBody.getMsg());
             }
         } catch (Error e) {
             log.error("!!!AuthClient刷新token出错! {}", e.getMessage(), e);
@@ -282,16 +280,29 @@ public class AuthClientTokenService {
     }
 
     /**
+     * 每累计 10 次失败输出一次告警日志，提示检查配置。
+     */
+    private void logRetryTimesIfNeeded() {
+        if (retryTimes > 0 && retryTimes % 10 == 0) {
+            log.error("!!!AuthClient获取token出错已超过{}次，请检查配置！", retryTimes);
+        }
+    }
+
+    /**
      * 应用服务端返回的token信息，更新本地缓存。
      * <p>
      * 过期时间 = createAt + expiresIn - refreshAdvanceMillis（提前刷新缓冲）。
+     * <p>
+     * 写入顺序：先写 expiresAt、refreshToken，最后写 token。这样读锁路径在看到非空 token 的瞬间，
+     * expiresAt 一定已是新值，避免短暂可见的"token非空但过期"脏状态。
      * 成功时重置retryTimes。
      */
     private void applyToken(String newToken, String newRefreshToken, long createAt, long expiresIn) {
-        this.token = newToken;
+        long newExpiresAt = createAt - authClientProperties.getRefreshAdvanceMillis() + expiresIn;
+        this.expiresAt = newExpiresAt;
         this.refreshToken = newRefreshToken;
-        this.expiresAt = createAt - authClientProperties.getRefreshAdvanceMillis() + expiresIn;
-        if (StringUtils.isNotBlank(token) && StringUtils.isNotBlank(refreshToken) && expiresAt > SystemClock.now()) {
+        this.token = newToken;
+        if (StringUtils.isNotBlank(token) && StringUtils.isNotBlank(refreshToken) && newExpiresAt > SystemClock.now()) {
             retryTimes = 0;
         }
     }

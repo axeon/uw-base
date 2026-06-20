@@ -11,6 +11,8 @@ import org.apache.hc.core5.http.message.BasicHeaderElementIterator;
 import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
@@ -48,59 +50,19 @@ import java.util.List;
  * 关键点：{@code @LoadBalanced}必须标注在{@link RestClient.Builder}类型的Bean上，
  * 因为{@code LoadBalancerRestClientBuilderBeanPostProcessor.isSupported()}只识别{@code RestClient.Builder}，
  * 标注在{@code RestClient}上无效，服务名无法解析为实际实例。
+ * <p>
+ * Spring Cloud 开关：{@link AuthClientProperties#isEnableSpringCloud()}（默认 true）控制是否标注
+ * {@code @LoadBalanced}。由于 {@code @LoadBalanced} 是声明式注解、无法在运行时按条件去除，
+ * 这里通过内嵌静态配置类 {@link CloudLoadBalancedConfig}（带 {@code @ConditionalOnProperty}）
+ * 提供 LoadBalanced 的 Builder，{@link PlainBuilderConfig} 提供不带 LB 的 Builder。
  *
  * @see AuthClientProperties
  * @see AuthClientTokenService
  * @see AuthTokenHeaderInterceptor
  */
-@Configuration
+@AutoConfiguration
 @EnableConfigurationProperties({AuthClientProperties.class})
 public class AuthClientAutoConfiguration {
-
-    /**
-     * 公共消息转换器列表，供所有RestClient共享。
-     * 移除默认转换器，统一配置以避免重复序列化/反序列化行为不一致。
-     */
-    private final List<HttpMessageConverter<?>> messageConverters = new ArrayList<HttpMessageConverter<?>>();
-
-    public AuthClientAutoConfiguration() {
-        messageConverters.add(new ByteArrayHttpMessageConverter());
-        messageConverters.add(new StringHttpMessageConverter());
-        messageConverters.add(new ResourceHttpMessageConverter());
-        messageConverters.add(new SourceHttpMessageConverter<>());
-        messageConverters.add(new AllEncompassingFormHttpMessageConverter());
-        messageConverters.add(new MappingJackson2HttpMessageConverter());
-    }
-
-    /**
-     * 认证中心内部调用的RestClient.Builder。
-     * <p>
-     * 仅携带LoadBalancer拦截器（由BeanPostProcessor注入），不携带{@link AuthTokenHeaderInterceptor}。
-     * 这是因为登录/刷新请求本身就是为了获取Token，不能走认证拦截器，否则会无限递归。
-     *
-     * @return 带{@code @LoadBalanced}的Builder，支持服务名（如{@code http://uw-auth-center}）解析
-     */
-    @Bean
-    @LoadBalanced
-    public RestClient.Builder baseAuthClientRestClientBuilder() {
-        return RestClient.builder().messageConverters(messageConverters);
-    }
-
-    /**
-     * 认证中心内部调用的RestClient。
-     * <p>
-     * 由{@link AuthClientTokenService}持有，用于调用认证中心的登录和Token刷新接口。
-     * 不带认证拦截器，避免 login→getToken→login 死循环。
-     *
-     * @param authClientHttpRequestFactory HTTP连接池工厂
-     * @param restClientBuilder            已被LoadBalancer增强的Builder
-     * @return 不带认证拦截器的RestClient
-     */
-    @Bean("baseAuthClientRestClient")
-    public RestClient baseAuthClientRestClient(final ClientHttpRequestFactory authClientHttpRequestFactory,
-                                               @Qualifier("baseAuthClientRestClientBuilder") final RestClient.Builder restClientBuilder) {
-        return restClientBuilder.requestFactory(authClientHttpRequestFactory).build();
-    }
 
     /**
      * 认证Token管理服务，负责向认证中心登录、刷新Token，并为外部请求提供有效Token。
@@ -110,23 +72,25 @@ public class AuthClientAutoConfiguration {
      * @return Token管理服务实例
      */
     @Bean
-    public AuthClientTokenService authClientTokenHelper(final AuthClientProperties authClientProperties,
-                                                        @Qualifier("baseAuthClientRestClient") final RestClient restClient) {
+    public AuthClientTokenService authClientTokenService(final AuthClientProperties authClientProperties,
+                                                         @Qualifier("baseAuthClientRestClient") final RestClient restClient) {
         return new AuthClientTokenService(authClientProperties, restClient);
     }
 
     /**
-     * 对外暴露的RestClient.Builder。
+     * 认证中心内部调用的RestClient。
      * <p>
-     * 携带LoadBalancer拦截器（由BeanPostProcessor注入），后续{@link #authRestClient}会在其基础上
-     * 追加{@link AuthTokenHeaderInterceptor}，实现服务名解析 + 自动附加Bearer Token。
+     * 由{@link AuthClientTokenService}持有，用于调用认证中心的登录和Token刷新接口。
+     * 不带认证拦截器，避免 login→getToken→login 死循环。
      *
-     * @return 带{@code @LoadBalanced}的Builder
+     * @param authClientHttpRequestFactory HTTP连接池工厂
+     * @param restClientBuilder            已被LoadBalancer增强（或直连）的Builder
+     * @return 不带认证拦截器的RestClient
      */
-    @Bean
-    @LoadBalanced
-    public RestClient.Builder authRestClientBuilder() {
-        return RestClient.builder().messageConverters(messageConverters);
+    @Bean("baseAuthClientRestClient")
+    public RestClient baseAuthClientRestClient(final ClientHttpRequestFactory authClientHttpRequestFactory,
+                                               @Qualifier("baseAuthClientRestClientBuilder") final RestClient.Builder restClientBuilder) {
+        return restClientBuilder.requestFactory(authClientHttpRequestFactory).build();
     }
 
     /**
@@ -134,15 +98,15 @@ public class AuthClientAutoConfiguration {
      * <p>
      * 同时具备：
      * <ul>
-     *   <li>LoadBalancer拦截器 — 将服务名解析为实际实例IP</li>
+     *   <li>LoadBalancer拦截器（若启用 Spring Cloud）— 将服务名解析为实际实例IP</li>
      *   <li>{@link AuthTokenHeaderInterceptor} — 自动附加{@code Authorization: Bearer &lt;token&gt;}，
      *       收到401/498时自动刷新Token并重试</li>
      * </ul>
-     * 标记为{@code @Primary}，其他模块通过{@code @Qualifier("authRestClient")}或按类型注入均可获取。
+     * 标记为{@code @Primary}。
      *
      * @param authClientHttpRequestFactory HTTP连接池工厂
      * @param authClientTokenService       Token管理服务
-     * @param restClientBuilder            已被LoadBalancer增强的Builder
+     * @param restClientBuilder            已被LoadBalancer增强（或直连）的Builder
      * @return 带负载均衡和认证拦截器的RestClient
      */
     @Bean("authRestClient")
@@ -157,27 +121,23 @@ public class AuthClientAutoConfiguration {
     }
 
     /**
-     * 负载均衡的WebClient.Builder，用于响应式场景。
-     */
-    @Bean
-    @LoadBalanced
-    public WebClient.Builder webClientloadBalancedBuilder() {
-        return WebClient.builder();
-    }
-
-    /**
      * 带认证过滤器的WebClient，供响应式场景的服务间调用使用。
+     * <p>
+     * 注意：WebClient 底层使用 Reactor Netty 的响应式连接器，与 RestClient 使用的阻塞式 Apache HttpClient5
+     * 连接池相互独立（Apache HttpClient5 的同步 {@code CloseableHttpClient} 与异步
+     * {@code CloseableHttpAsyncClient} 不共享连接池），无法复用 {@link #authClientHttpRequestFactory}。
+     * 如需调整响应式连接行为，请在宿主工程自定义 {@code WebClient.Builder} 或
+     * {@code ClientHttpConnector} Bean。
      *
-     * @param webClientloadBalancedBuilder 已被LoadBalancer增强的WebClient.Builder
-     * @param authClientTokenService       Token管理服务
+     * @param webClientBuilder       已被LoadBalancer增强（或直连）的WebClient.Builder
+     * @param authClientTokenService Token管理服务
      * @return 带负载均衡和认证过滤器的WebClient
      */
     @Bean("authWebClient")
     @Primary
-    public WebClient authWebClient(WebClient.Builder webClientloadBalancedBuilder, final AuthClientTokenService authClientTokenService) {
-        return webClientloadBalancedBuilder
-                .filter(new AuthTokenHeaderFilter(authClientTokenService))
-                .build();
+    public WebClient authWebClient(@Qualifier("authWebClientBuilder") WebClient.Builder webClientBuilder,
+                                   final AuthClientTokenService authClientTokenService) {
+        return webClientBuilder.filter(new AuthTokenHeaderFilter(authClientTokenService)).build();
     }
 
     /**
@@ -231,5 +191,72 @@ public class AuthClientAutoConfiguration {
                 .build();
 
         return new HttpComponentsClientHttpRequestFactory(httpClient);
+    }
+
+    /**
+     * 构造统一的消息转换器列表。每次调用返回独立 List，避免多个 Builder 共享同一可变集合。
+     */
+    private static List<HttpMessageConverter<?>> buildMessageConverters() {
+        List<HttpMessageConverter<?>> converters = new ArrayList<>();
+        converters.add(new ByteArrayHttpMessageConverter());
+        converters.add(new StringHttpMessageConverter());
+        converters.add(new ResourceHttpMessageConverter());
+        converters.add(new SourceHttpMessageConverter<>());
+        converters.add(new AllEncompassingFormHttpMessageConverter());
+        converters.add(new MappingJackson2HttpMessageConverter());
+        return converters;
+    }
+
+    /**
+     * Spring Cloud（LoadBalanced）模式：Builder 标注 {@code @LoadBalanced}。
+     * 仅当 {@code uw.auth.client.enable-spring-cloud} 为 true（默认）时生效。
+     */
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnProperty(
+            prefix = "uw.auth.client", name = "enable-spring-cloud", havingValue = "true", matchIfMissing = true)
+    static class CloudLoadBalancedConfig {
+
+        @Bean("baseAuthClientRestClientBuilder")
+        @LoadBalanced
+        public RestClient.Builder baseAuthClientRestClientBuilder() {
+            return RestClient.builder().messageConverters(buildMessageConverters());
+        }
+
+        @Bean("authRestClientBuilder")
+        @LoadBalanced
+        public RestClient.Builder authRestClientBuilder() {
+            return RestClient.builder().messageConverters(buildMessageConverters());
+        }
+
+        @Bean("authWebClientBuilder")
+        @LoadBalanced
+        public WebClient.Builder authWebClientBuilder() {
+            return WebClient.builder();
+        }
+    }
+
+    /**
+     * 非 Spring Cloud 模式：Builder 不标注 {@code @LoadBalanced}，使用直连 URL。
+     * 仅当 {@code uw.auth.client.enable-spring-cloud} 为 false 时生效。
+     */
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnProperty(
+            prefix = "uw.auth.client", name = "enable-spring-cloud", havingValue = "false")
+    static class PlainBuilderConfig {
+
+        @Bean("baseAuthClientRestClientBuilder")
+        public RestClient.Builder baseAuthClientRestClientBuilder() {
+            return RestClient.builder().messageConverters(buildMessageConverters());
+        }
+
+        @Bean("authRestClientBuilder")
+        public RestClient.Builder authRestClientBuilder() {
+            return RestClient.builder().messageConverters(buildMessageConverters());
+        }
+
+        @Bean("authWebClientBuilder")
+        public WebClient.Builder authWebClientBuilder() {
+            return WebClient.builder();
+        }
     }
 }

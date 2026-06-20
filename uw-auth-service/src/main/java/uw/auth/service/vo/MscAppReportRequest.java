@@ -5,8 +5,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 
 /**
- * MscApp报告。
- * MSC应用主机
+ * 应用状态上报请求 VO。
+ * <p>
+ * 由 {@code MscAppUpdateService.reportStatus} 周期性构造，通过 {@code AuthAppRpc.reportStatus}
+ * 上报 auth-center，包含应用运行态信息（JVM、线程、各类型活跃用户数、访问计数等）。
  *
  * @author axeon
  */

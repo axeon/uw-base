@@ -3,7 +3,12 @@ package uw.auth.service.vo;
 import java.util.Map;
 
 /**
- * App注册响应
+ * 应用注册响应 VO。
+ * <p>
+ * auth-center 对 {@code regApp} 的响应，返回应用 ID、注册状态与该应用的权限 ID 映射表，
+ * 用于初始化 {@code MscAuthPermService.appPermMap}。
+ *
+ * @author axeon
  */
 public class MscAppRegResponse {
 

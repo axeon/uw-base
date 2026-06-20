@@ -36,9 +36,16 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * App更新服务,启动时发布自身
+ * 应用注册与状态上报服务。
+ * <p>
+ * 应用启动时（{@code ApplicationReadyEvent}）异步向 auth-center 注册自身：
+ * 扫描 {@code @MscPermDeclare} 注解组装权限列表，获取 appId 并初始化 {@code MscAuthPermService.appPermMap}；
+ * 之后周期性（每分钟）上报主机运行状态，并处理 auth-center 下发的非法 Token 踢人指令。
+ * 注册失败时进入降级模式（不退出 JVM），通过状态上报持续重试。
  *
  * @author axeon
  * @since 2017/11/29
@@ -78,9 +85,24 @@ public class MscAppUpdateService {
     private static final int MAX_REGISTRY_TIMES = 20;
 
     /**
+     * 注册重试间隔（秒）。
+     */
+    private static final long REGISTRY_RETRY_INTERVAL_SECONDS = 5;
+
+    /**
      * 内部自持任务。
      */
     private ScheduledExecutorService scheduledExecutorService;
+
+    /**
+     * 当前注册重试次数。
+     */
+    private final AtomicInteger registryRetryCount = new AtomicInteger(0);
+
+    /**
+     * registry是否正在执行，避免 registryWithRetry 与 reportStatus 补注册并发调用 registry()。
+     */
+    private final AtomicBoolean registryInProgress = new AtomicBoolean(false);
     /**
      * app主机ID。
      * 由center返回。
@@ -104,52 +126,48 @@ public class MscAppUpdateService {
     }
 
     /**
-     * 匹配 / 在API URI出现的次数。
-     *
-     * @param apiUri
-     * @return
-     */
-    private static int countLevel(String apiUri) {
-        int count = 0;
-        int index = 1;
-        while ((index = apiUri.indexOf('/', index)) > -1) {
-            index = index + 1;
-            count++;
-        }
-        return count;
-    }
-
-    /**
      * 初始化服务。
+     * <p>
+     * 注册过程异步执行，避免阻塞应用启动；注册失败时不强制退出JVM（SDK不应决定宿主进程生死），
+     * 而是记录ERROR并以降级模式继续运行——后续定时上报会持续尝试注册。
      */
     public void init() {
         logger.info("uw-auth-service registry started!");
-        boolean regSuccess = false;
-        for (int i = 0; i < 20; i++) {
-            if (regSuccess) {
-                break;
-            }
-            try {
-                registry();
-                logger.info("uw-auth-service registry success!");
-                regSuccess = true;
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-                logger.warn("uw-auth-service registry failed {} times! will retry after 5 seconds.", i);
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException ignored) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
+        //使用2个线程：registry与reportStatus互相独立，避免单线程下注册重试阻塞状态上报（踢人指令下发）。
+        scheduledExecutorService = Executors.newScheduledThreadPool(2, new ThreadFactoryBuilder().setDaemon(true).setNameFormat("uw-auth-registry-%d").build());
+        // 异步执行注册，避免阻塞ApplicationReadyEvent主线程。
+        scheduledExecutorService.schedule(this::registryWithRetry, 0, TimeUnit.SECONDS);
+        // 定时上报状态，同时会顺带补发注册与处理踢人指令。
+        scheduledExecutorService.scheduleAtFixedRate(this::reportStatus, 1, 1, TimeUnit.MINUTES);
+    }
+
+    /**
+     * 带重试的注册逻辑。
+     * <p>
+     * 失败后通过延迟 schedule 再次重试，不使用 Thread.sleep 占用线程，避免与其他调度任务争用线程。
+     */
+    private void registryWithRetry() {
+        if (!registryInProgress.compareAndSet(false, true)) {
+            //已有注册在进行中（可能是reportStatus触发的），跳过本次。
+            return;
         }
-        if (!regSuccess) {
-            logger.error("uw-auth-service will shutdown application!");
-            System.exit(-1);
+        try {
+            registry();
+            logger.info("uw-auth-service registry success!");
+            registryRetryCount.set(0);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            int attempt = registryRetryCount.incrementAndGet();
+            if (attempt >= MAX_REGISTRY_TIMES) {
+                logger.error("uw-auth-service registry failed after {} attempts! Running in degraded mode, will keep retrying via status report.", attempt);
+                registryRetryCount.set(0);
+                return;
+            }
+            logger.warn("uw-auth-service registry failed {} times! will retry after {} seconds.", attempt, REGISTRY_RETRY_INTERVAL_SECONDS);
+            scheduledExecutorService.schedule(this::registryWithRetry, REGISTRY_RETRY_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        } finally {
+            registryInProgress.set(false);
         }
-        scheduledExecutorService = Executors.newScheduledThreadPool(1, new ThreadFactoryBuilder().setDaemon(true).build());
-        scheduledExecutorService.scheduleAtFixedRate(() -> reportStatus(), 0, 1, TimeUnit.MINUTES);
     }
 
     /**
@@ -321,6 +339,23 @@ public class MscAppUpdateService {
      */
     private void reportStatus() {
         try {
+            //降级模式补注册：若启动时未注册成功（appId为0），在上报前再尝试一次注册。
+            if (authServiceProperties.getAppId() <= 0) {
+                if (registryInProgress.compareAndSet(false, true)) {
+                    try {
+                        registry();
+                        logger.info("uw-auth-service registry recovered during status report.");
+                    } catch (Exception e) {
+                        logger.warn("uw-auth-service registry retry during status report failed: {}", e.getMessage());
+                        return;
+                    } finally {
+                        registryInProgress.set(false);
+                    }
+                } else {
+                    //registryWithRetry 正在注册，本轮跳过补注册。
+                    return;
+                }
+            }
             MscAppReportRequest request = new MscAppReportRequest();
             request.setId(appHostId);
             request.setAppId(authServiceProperties.getAppId());
@@ -362,22 +397,13 @@ public class MscAppUpdateService {
     }
 
     /**
-     * RequestMethod enum toString
+     * RequestMethod enum -> 大写字符串。
      *
      * @param requestMethod
      * @return
      */
     private String requestMethodToString(RequestMethod requestMethod) {
-        return switch (requestMethod) {
-            case GET -> "GET";
-            case PUT -> "PUT";
-            case HEAD -> "HEAD";
-            case POST -> "POST";
-            case PATCH -> "PATCH";
-            case TRACE -> "TRACE";
-            case DELETE -> "DELETE";
-            case OPTIONS -> "OPTIONS";
-        };
+        return requestMethod.name();
     }
 
     /**

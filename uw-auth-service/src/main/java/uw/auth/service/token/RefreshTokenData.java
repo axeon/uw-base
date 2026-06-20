@@ -3,7 +3,9 @@ package uw.auth.service.token;
 import uw.common.util.SystemClock;
 
 /**
- * 用户刷新令牌数据。
+ * 用户刷新令牌（Refresh Token）数据。
+ * <p>
+ * 用于在 Access Token 过期前换取新的 Access Token，携带客户端密文与过期信息。
  *
  * @author axeon
  */

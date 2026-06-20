@@ -41,7 +41,15 @@ import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
- * AuthServiceFilter组件。
+ * 认证授权过滤器。
+ * <p>
+ * 请求入口处的核心组件，依次完成：
+ * <ol>
+ *   <li>IP 白名单保护（对 {@code /rpc/*}、{@code /agent/*} 等受保护路径校验来源 IP）</li>
+ *   <li>解析 {@code @MscPermDeclare} 注解，校验 Token、判定用户类型与权限</li>
+ *   <li>按注解的 {@link ActionLog} 级别创建并填充操作日志，请求结束后发送到 ES / 数据库</li>
+ * </ol>
+ * 鉴权基于「精确请求 URI + 请求方法」，不支持路径变量的权限匹配。
  *
  * @author axeon
  * @since 2018/2/6
@@ -98,16 +106,18 @@ public class AuthServiceFilter implements Filter {
         this.authPermService = authPermService;
         this.logClient = logClient;
         this.authCriticalLogStorage = authCriticalLogStorage;
-        // 初始化白名单列表
-        if (StringUtils.isNotBlank(authServiceProperties.getIpWhiteList())) {
-            ipWhiteList = IpMatchUtils.sortList(authServiceProperties.getIpWhiteList().split(","));
-        }
         // 初始化IP受保护路径
         if (StringUtils.isNotBlank(authServiceProperties.getIpProtectedPaths())) {
             ipProtectedPaths = authServiceProperties.getIpProtectedPaths().split(",");
             for (int i = 0; i < ipProtectedPaths.length; i++) {
                 // 去除末尾的*，直接使用startWith判断降低损耗。
                 ipProtectedPaths[i] = StringUtils.stripEnd(ipProtectedPaths[i].trim(), "*");
+            }
+            if (StringUtils.isNotBlank(authServiceProperties.getIpWhiteList())) {
+                ipWhiteList = IpMatchUtils.sortList(authServiceProperties.getIpWhiteList().split(","));
+            } else {
+                // 配置了受保护路径但白名单为空，将导致内部高危路径（/rpc/*,/agent/*）无任何限制。
+                logger.warn("ip-protected-paths 已配置但 ip-white-list 为空，将导致受保护路径无任何限制！请配置 ip-white-list。");
             }
         }
 
@@ -125,13 +135,13 @@ public class AuthServiceFilter implements Filter {
     }
 
     /**
-     * 过滤器。
+     * 过滤器主逻辑：执行 IP 保护、Token 校验、权限判定与操作日志记录。
      *
-     * @param request
-     * @param response
-     * @param chain
-     * @throws IOException
-     * @throws ServletException
+     * @param request  Servlet 请求
+     * @param response Servlet 响应
+     * @param chain    过滤器链
+     * @throws IOException      IO 异常
+     * @throws ServletException Servlet 异常
      */
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -189,7 +199,9 @@ public class AuthServiceFilter implements Filter {
                 }
                 // 取出tokenData
                 AuthTokenData authTokenData = authTokenDataResponse.getData();
-                // 鉴权开始
+                // 鉴权开始。
+                // 注意：权限控制基于精确请求URI + 请求方法，不支持路径变量（如 /user/{id}）的权限匹配。
+                // 带路径变量的接口请勿使用 auth=PERM/SUDO，否则权限无法命中。
                 String permCode = uri + ":" + method;
                 // 权限鉴权
                 ResponseData<?> authPermResponse = authPermService.hasPerm(authTokenData, mscPermDeclare, permCode);
@@ -228,7 +240,7 @@ public class AuthServiceFilter implements Filter {
                     mscActionLog.setUserIp(userIp);
                     mscActionLog.setRequestDate(SystemClock.nowDate());
                     if (permLogType == ActionLog.REQUEST || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT || permAuthType == AuthType.SUDO) {
-                        request = new LoggingHttpServletRequestWrapper(httpServletRequest);
+                        request = new LoggingHttpServletRequestWrapper(httpServletRequest, authServiceProperties.getLogBodyCacheLimit());
                     }
                     if (permLogType == ActionLog.RESPONSE || permLogType == ActionLog.ALL || permLogType == ActionLog.CRIT || permAuthType == AuthType.SUDO) {
                         response = new LoggingHttpServletResponseWrapper((HttpServletResponse) response);
@@ -239,9 +251,8 @@ public class AuthServiceFilter implements Filter {
             // 执行后续Filter
             chain.doFilter(request, response);
         } finally {
-            if (mscPermDeclare != null) {
-                AuthServiceHelper.destroyContextToken();
-                if (mscActionLog != null) {
+            try {
+                if (mscPermDeclare != null && mscActionLog != null) {
                     // 因为性能问题,返回大数据量时不建议记录RESPONSE
                     mscActionLog.setResponseMillis(SystemClock.now() - mscActionLog.getRequestDate().getTime());
                     mscActionLog.setStatusCode(((HttpServletResponse) response).getStatus());
@@ -280,8 +291,11 @@ public class AuthServiceFilter implements Filter {
                     } catch (Exception e) {
                         logger.error(e.getMessage(), e);
                     }
-                    AuthServiceHelper.destroyContextLog();
                 }
+            } finally {
+                // 无条件清理ThreadLocal，防止线程复用导致跨请求用户身份/日志泄漏。
+                AuthServiceHelper.destroyContextToken();
+                AuthServiceHelper.destroyContextLog();
             }
         }
     }
@@ -292,11 +306,11 @@ public class AuthServiceFilter implements Filter {
     }
 
     /**
-     * 抛出转换异常。
+     * 将鉴权产生的 {@link ResponseData} 转换为异常并交由 {@link HandlerExceptionResolver} 处理。
      *
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param responseData
+     * @param httpServletRequest  HTTP 请求
+     * @param httpServletResponse HTTP 响应
+     * @param responseData        鉴权响应数据
      */
     private void throwException(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, ResponseData<?> responseData) {
         RuntimeException ex = AuthExceptionHelper.convertException(responseData);

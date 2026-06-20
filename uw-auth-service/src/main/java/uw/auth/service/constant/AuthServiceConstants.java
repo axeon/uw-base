@@ -3,7 +3,12 @@ package uw.auth.service.constant;
 import org.springframework.http.HttpStatus;
 
 /**
- * 常量表。
+ * 认证服务常量表。
+ * <p>
+ * 定义 Token 解析分隔符、HTTP 头名称、自定义/标准 HTTP 状态码等，
+ * 供 {@code AuthServiceFilter}、{@code AuthServiceHelper}、{@code AuthExceptionHelper} 等共享。
+ *
+ * @author axeon
  */
 public class AuthServiceConstants {
 
@@ -73,10 +78,12 @@ public class AuthServiceConstants {
     public static final String HTTP_SERVICE_UNAVAILABLE_CODE = String.valueOf(HttpStatus.SERVICE_UNAVAILABLE.value());
 
     /**
-     * 获取用户名和SaasId
+     * 从 loginId 中解析出用户名与 SaasId。
+     * <p>
+     * loginId 形如 {@code userName@saasId}，解析失败时 saasId 返回 -1。
      *
-     * @param loginId
-     * @return
+     * @param loginId 登录标识
+     * @return {@code Object[]{user, saasId}}，其中 user 为 String、saasId 为 Long
      */
     public static Object[] parseUserAndSaasId(String loginId) {
         String user;

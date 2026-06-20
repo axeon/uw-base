@@ -6,8 +6,9 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * MscUserGroup实体类
- * MSC用户组
+ * MSC 用户组信息 VO。
+ * <p>
+ * 由 {@code AuthServiceRpc.listUserGroup} 返回，封装用户组的名称、描述、默认权限与配置等。
  *
  * @author axeon
  */

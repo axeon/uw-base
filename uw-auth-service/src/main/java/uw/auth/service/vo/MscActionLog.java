@@ -7,7 +7,14 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 接口操作日志
+ * 接口操作日志 VO。
+ * <p>
+ * 由 {@code AuthServiceFilter} 根据 {@code @MscPermDeclare(log=...)} 自动创建并填充
+ * 用户/API/请求响应信息，开发者通过 {@code AuthServiceHelper.logRef()/logInfo()} 追加
+ * 业务引用，请求结束后由框架统一发送到 ES（{@code uw.auth.action.log}），
+ * {@link uw.auth.service.constant.ActionLog#CRIT} 级别同时写入 {@code AuthCriticalLogStorage}。
+ *
+ * @author axeon
  */
 public class MscActionLog extends LogBaseVo implements Serializable {
 

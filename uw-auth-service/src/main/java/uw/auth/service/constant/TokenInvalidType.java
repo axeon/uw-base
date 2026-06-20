@@ -4,7 +4,13 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * 非法token类型。
+ * 非法 Token 类型枚举。
+ * <p>
+ * 标识 Token 失效的成因，由 auth-center 下发，{@code AuthServiceHelper.invalidToken}
+ * 会据此将 Token 从本地缓存清除并加入黑名单。
+ *
+ * @author axeon
+ * @see uw.auth.service.AuthServiceHelper#invalidToken
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 @Schema(title = "非法token类型", description = "非法token类型")
@@ -54,8 +60,8 @@ public enum TokenInvalidType {
     /**
      * 根据value获取enum。
      *
-     * @param value
-     * @return
+     * @param value 非法类型数值
+     * @return 匹配的 TokenInvalidType，未匹配时返回 {@link #INVALID}
      */
     public static TokenInvalidType findByValue(int value) {
         for (TokenInvalidType type : TokenInvalidType.values()) {
@@ -66,14 +72,16 @@ public enum TokenInvalidType {
         return INVALID;
     }
 
-    public static void main(String[] args) {
-        System.out.println(TokenInvalidType.findByValue(1));
-    }
-
+    /**
+     * @return 非法类型数值
+     */
     public int getValue() {
         return value;
     }
 
+    /**
+     * @return 非法类型显示名称
+     */
     public String getLabel() {
         return label;
     }

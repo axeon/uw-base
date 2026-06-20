@@ -5,14 +5,22 @@ import uw.auth.service.constant.AuthServiceConstants;
 import uw.common.response.ResponseData;
 
 /**
- * 认证异常处理.
+ * 认证异常转换辅助类。
+ * <p>
+ * 将 {@code ResponseData} 携带的业务错误码转换为对应的运行时异常，
+ * 供 {@code AuthServiceFilter} 调用 {@code HandlerExceptionResolver} 统一处理，
+ * 再由 {@code GlobalExceptionAdvice} 映射为 HTTP 状态码。
+ *
+ * @author axeon
+ * @see uw.auth.service.advice.GlobalExceptionAdvice
  */
 public class AuthExceptionHelper {
 
     /**
-     * 转换异常.
+     * 将 ResponseData 的 code 转换为对应的认证运行时异常。
      *
-     * @param responseData
+     * @param responseData 鉴权流程产生的响应数据
+     * @return 对应的 RuntimeException；code 无法识别时返回 {@code null}
      */
     public static RuntimeException convertException(ResponseData<?> responseData) throws RuntimeException {
         String code = responseData.getCode();

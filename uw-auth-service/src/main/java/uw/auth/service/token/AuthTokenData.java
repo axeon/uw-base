@@ -7,7 +7,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 用户令牌数据。
+ * 用户访问令牌数据。
+ * <p>
+ * Token 解析/校验后的核心载体，包含用户身份、所属租户、权限集合、过期时间等。
+ * {@code AuthServiceHelper} 通过 ThreadLocal 将其绑定到当前请求线程，
+ * 供业务侧通过 {@code AuthServiceHelper.getUserId()/getSaasId()} 等获取当前用户信息。
  *
  * @author axeon
  */
@@ -147,7 +151,7 @@ public class AuthTokenData {
     /**
      * 判断Token是否过期。
      *
-     * @return
+     * @return true 表示当前时间已达到或超过 expireAt
      */
     public boolean isExpired() {
         return SystemClock.now() >= expireAt;

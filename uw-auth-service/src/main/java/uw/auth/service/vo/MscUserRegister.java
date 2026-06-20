@@ -4,7 +4,12 @@ package uw.auth.service.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * 用户信息和权限信息vo。
+ * 用户注册请求 VO。
+ * <p>
+ * 用于 {@code AuthServiceRpc.createUser} 向 auth-center 创建用户，同时携带用户基本信息、
+ * 凭证、权限 ID 列表与资源配置等。
+ *
+ * @author axeon
  */
 public class MscUserRegister {
 

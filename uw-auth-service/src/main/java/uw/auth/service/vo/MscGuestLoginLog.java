@@ -7,7 +7,12 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 游客登陆日志。
+ * C 端访客（Guest）登录日志 VO。
+ * <p>
+ * 由 auth-center 写入并注册到 ES 索引 {@code uw.auth.guest.login.log}，记录访客登录来源、
+ * 设备、结果与耗时等信息。
+ *
+ * @author axeon
  */
 public class MscGuestLoginLog extends LogBaseVo implements Serializable {
 

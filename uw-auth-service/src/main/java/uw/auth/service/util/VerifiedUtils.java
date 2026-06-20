@@ -3,9 +3,12 @@ package uw.auth.service.util;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * 认证字段的小工具类。
- * 为了方便确认电话，email，身份证号类信息是否被认证过。
- * 认证过的信息，会增加一个"!"的标头。
+ * 认证字段小工具类。
+ * <p>
+ * 用于标识电话、邮箱、身份证等信息是否已通过认证：已认证信息会在头部追加 {@code !} 标记，
+ * 业务侧据此区分「已认证」与「未认证但填写」的数据。
+ *
+ * @author axeon
  */
 public class VerifiedUtils {
 
@@ -15,10 +18,10 @@ public class VerifiedUtils {
     private static final char VERIFIED_TAG = '!';
 
     /**
-     * 判断信息是否是已认证过。
+     * 判断信息是否已打上认证标记。
      *
-     * @param data
-     * @return
+     * @param data 待检测的字符串
+     * @return true 表示已认证（以 {@code !} 开头）
      */
     public static boolean isTagged(String data) {
         if (StringUtils.isBlank(data)) {
@@ -32,10 +35,10 @@ public class VerifiedUtils {
     }
 
     /**
-     * 给数据打上认证标记。
+     * 给数据打上认证标记（若已标记则原样返回）。
      *
-     * @param data
-     * @return
+     * @param data 原始字符串
+     * @return 带 {@code !} 前缀的字符串
      */
     public static String tag(String data) {
         if (StringUtils.isBlank(data)) {
@@ -50,10 +53,10 @@ public class VerifiedUtils {
     }
 
     /**
-     * 给数据去除认证标记。
+     * 去除数据上的所有认证标记。
      *
-     * @param data
-     * @return
+     * @param data 带标记的字符串
+     * @return 去除 {@code !} 前缀后的原始字符串
      */
     public static String untag(String data) {
         if (StringUtils.isBlank(data)) {

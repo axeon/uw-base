@@ -91,14 +91,20 @@ uw:
       # IP保护路径（需要IP白名单）
       ip-protected-paths: /rpc/*,/agent/*
       
-      # IP白名单列表
+      # IP白名单列表（配置了ip-protected-paths时必须配置，否则受保护路径将无任何限制，仅输出warn）
       ip-white-list: 127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fe80::/10,FC00::/7
+      
+      # 可信代理IP列表（仅当来源IP在列表内时才信任X-Forwarded-For/X-Real-IP，防伪造）
+      trusted-proxies: 127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fe80::/10,FC00::/7
       
       # 应用ID（由auth-center分配）
       app-id: 0
       
       # 应用显示名称
       app-label: 我的应用
+      
+      # 请求日志body缓存上限（字节，默认8MB），超出部分不缓存，避免大文件上传导致OOM
+      log-body-cache-limit: 8388608
       
       # 用户Token缓存大小配置
       token-cache:
@@ -213,7 +219,7 @@ public @interface MscPermDeclare {
 | TokenPermException    | 403     | 权限不足     |
 | TokenPayException     | 402     | 需要支付     |
 | TokenServiceException | 503     | 服务不可用    |
-| TokenSudoException    | 423     | 需要SUDO权限 |
+| TokenSudoException    | 426     | 需要SUDO权限 |
 
 ---
 
@@ -233,8 +239,8 @@ public class UserAdminController {
         return userService.create(user);
     }
     
-    // 管理员和SAAS用户可访问，记录全部日志
-    @MscPermDeclare(user = {UserType.ADMIN, UserType.SAAS}, log = ActionLog.ALL)
+    // SAAS用户可访问，记录全部日志
+    @MscPermDeclare(user = UserType.SAAS, log = ActionLog.ALL)
     @GetMapping("/list")
     public ResponseData<PageList<User>> listUsers(PageQueryParam param) {
         return userService.list(param);
@@ -262,6 +268,13 @@ public class UserAdminController {
     }
 }
 ```
+
+> ⚠️ **权限匹配约束**
+> - 权限控制基于「精确请求 URI + 请求方法」，**不支持路径变量**（如 `/user/{id}`）。
+>   带 `{id}` 等路径变量的接口请使用 `auth = AuthType.NONE/USER`，或拆分为固定路径，
+>   否则 `auth = AuthType.PERM/SUDO` 的权限校验将无法命中。
+> - `user()` 为**单值**，必须精确匹配一种用户类型，不支持数组形式（如 `user = {A, B}` 无法编译）。
+> - 不同用户类型的访问需求请通过拆分接口实现。
 
 ### 5.2 获取当前用户信息
 
@@ -427,6 +440,19 @@ public class MyCriticalLogStorage implements AuthCriticalLogStorage {
     }
 }
 ```
+
+### Q6: 应用启动时如何注册到 auth-center？注册失败会怎样？
+
+应用在 `ApplicationReadyEvent` 时**异步**向 auth-center 注册自身（扫描 `@MscPermDeclare` 组装权限列表、获取 appId），
+不阻塞主线程。注册失败会以 5 秒间隔重试（最多 20 次），全部失败后进入**降级模式**：
+- **不会**退出 JVM（SDK 不应决定宿主进程生死）；
+- 周期状态上报（每分钟）会持续尝试补注册；
+- 在权限表初始化完成前，`auth = AuthType.PERM/SUDO` 接口会返回 503，`NONE/USER` 接口不受影响。
+
+### Q7: auth-center 短暂不可用时，合法 Token 会被误判失效吗？
+
+不会。仅当 auth-center 明确判定 Token 无效（返回 401/403/498）时才将其加入非法黑名单缓存（默认 20 分钟）；
+服务异常（503 等）不会写入黑名单，避免短暂故障误伤合法用户。
 
 ---
 

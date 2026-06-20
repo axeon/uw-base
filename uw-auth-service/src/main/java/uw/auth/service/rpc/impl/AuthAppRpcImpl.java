@@ -7,7 +7,10 @@ import uw.auth.service.vo.*;
 import uw.common.response.ResponseData;
 
 /**
- * auth-server向auth-center RPC实现
+ * {@link AuthAppRpc} 的默认实现。
+ * <p>
+ * 基于 {@code RestClient} 调用 auth-center 的 {@code /rpc/app/*} 接口，
+ * 完成应用注册、状态上报与权限 License 更新。
  *
  * @author axeon
  */

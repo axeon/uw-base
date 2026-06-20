@@ -17,7 +17,12 @@ import uw.common.util.ExceptionUtils;
 import java.io.IOException;
 
 /**
- * 全局异常处理，通过此类捕获全局异常。
+ * 全局异常处理器。
+ * <p>
+ * 捕获所有未处理的异常，按异常类型映射为对应的 HTTP 状态码，并统一返回 {@code ResponseData} 错误响应。
+ * 认证类异常（TokenInvalid/Expired/Perm 等）映射为各自的业务状态码，其它异常统一为 500。
+ *
+ * @author axeon
  */
 @RestControllerAdvice
 public class GlobalExceptionAdvice {
@@ -27,6 +32,14 @@ public class GlobalExceptionAdvice {
         log.info("Init GlobalExceptionAdvice.");
     }
 
+    /**
+     * 处理所有未捕获的异常，按类型映射 HTTP 状态码并返回统一错误响应。
+     *
+     * @param ex       抛出的异常
+     * @param request  HTTP 请求
+     * @param response HTTP 响应
+     * @return 统一的 {@code ResponseData} 错误响应；IO 异常（客户端断开）返回 null
+     */
     @ExceptionHandler({Throwable.class})
     public ResponseData<String> exceptionHandle(Throwable ex, HttpServletRequest request, HttpServletResponse response) {
         //针对不同类型异常，设置不同的详细消息。

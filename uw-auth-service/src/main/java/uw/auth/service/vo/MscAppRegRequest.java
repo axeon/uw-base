@@ -6,7 +6,12 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * app注册请求信息。
+ * 应用注册请求 VO。
+ * <p>
+ * 由 {@code MscAppUpdateService.registry} 构造后通过 {@code AuthAppRpc.regApp} 上报
+ * auth-center，包含应用名称、版本与扫描出的权限声明列表。
+ *
+ * @author axeon
  */
 public class MscAppRegRequest implements Serializable {
 
@@ -63,7 +68,10 @@ public class MscAppRegRequest implements Serializable {
     }
 
     /**
-     * PermsVo
+     * 权限项 VO。
+     * <p>
+     * 单条权限声明，对应一个 {@code @MscPermDeclare}，上报 auth-center 后获得 permId，
+     * 作为 {@link MscAppRegResponse#getAppPerm()} 中的 value。
      */
     public static class PermVo {
         /**

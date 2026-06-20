@@ -5,7 +5,12 @@ import uw.auth.service.token.InvalidTokenData;
 import java.util.List;
 
 /**
- * App注册响应
+ * 应用状态上报响应 VO。
+ * <p>
+ * auth-center 对 {@code reportStatus} 的响应，返回应用主机 ID 及需要本地失效的 Token 列表，
+ * {@code MscAppUpdateService} 据此下发踢人指令。
+ *
+ * @author axeon
  */
 public class MscAppReportResponse {
 

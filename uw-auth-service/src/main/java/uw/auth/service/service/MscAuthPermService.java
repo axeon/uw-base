@@ -15,7 +15,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 用户信息服务接口
+ * 权限校验服务。
+ * <p>
+ * 持有应用注册后由 auth-center 下发的权限 ID 映射表（{@code appPermMap}），
+ * {@code AuthServiceFilter} 调用 {@link #hasPerm} 完成用户类型匹配、Token 类型校验与
+ * 权限集合判定。{@code appPermMap} 通过 {@link #initAppPerm} 在应用注册成功后初始化。
+ *
+ * @author axeon
  */
 public class MscAuthPermService {
 
@@ -95,12 +101,12 @@ public class MscAuthPermService {
     }
 
     /**
-     * 检查权限。
+     * 检查当前 Token 是否具备访问目标接口的权限。
      *
-     * @param authTokenData
-     * @param mscPermDeclare
-     * @param uri
-     * @return
+     * @param authTokenData   当前请求的 Token 数据，null 时直接拒绝
+     * @param mscPermDeclare  接口上的权限声明注解
+     * @param uri             权限 code（请求 URI + ":" + 请求方法）
+     * @return 校验通过返回成功，否则返回对应的错误响应（403/503/426 等）
      */
     public ResponseData<?> hasPerm(AuthTokenData authTokenData, MscPermDeclare mscPermDeclare, String uri) {
         //没有加注解或者uri为空的，直接返回true。从调用关系看，貌似不会为null。
@@ -121,11 +127,6 @@ public class MscAuthPermService {
         //token用户类型和权限用户类型不匹配，直接返回false。
         if (permUserType.getValue() > UserType.ANY.getValue() && permUserType.getValue() != tokenUserType) {
             return RESPONSE_FORBIDDEN;
-        }
-        //检测应用权限表。
-        if (appPermMap == null) {
-            logger.warn("应用权限数据尚未初始化完成，请稍后重试!");
-            return RESPONSE_SERVICE_UNAVAILABLE;
         }
         //根据用户类型进行权限验证。
         switch (permAuthType) {
@@ -148,18 +149,27 @@ public class MscAuthPermService {
                 }
             case PERM:
                 //权限验证需要确认标准Token类型和权限集合。
+                //依赖权限表的分支，必须确保权限数据已初始化。
+                if (appPermMap == null) {
+                    logger.warn("应用权限数据尚未初始化完成，请稍后重试!");
+                    return RESPONSE_SERVICE_UNAVAILABLE;
+                }
                 if (authTokenData.getTokenType() >= TokenType.COMMON.getValue() && checkTokenPermSet(authTokenData.getPermSet(), uri)) {
                     return RESPONSE_SUCCESS;
                 } else {
                     return RESPONSE_FORBIDDEN;
                 }
             case SUDO:
-                //超级用户权限需要确认超级Token类型和权限集合。
-                if (!checkTokenPermSet(authTokenData.getPermSet(), uri)) {
-                    return RESPONSE_FORBIDDEN;
-                }
+                //超级用户权限：先校验Token类型（缺超级Token给出升级提示），再校验权限集合。
                 if (authTokenData.getTokenType() < TokenType.SUDO.getValue()) {
                     return RESPONSE_UPGRADE_REQUIRED;
+                }
+                if (appPermMap == null) {
+                    logger.warn("应用权限数据尚未初始化完成，请稍后重试!");
+                    return RESPONSE_SERVICE_UNAVAILABLE;
+                }
+                if (!checkTokenPermSet(authTokenData.getPermSet(), uri)) {
+                    return RESPONSE_FORBIDDEN;
                 } else {
                     return RESPONSE_SUCCESS;
                 }
@@ -169,26 +179,30 @@ public class MscAuthPermService {
     }
 
     /**
-     * 初始化应用权限数据
+     * 初始化应用权限数据。
+     * <p>
+     * 由 {@code MscAppUpdateService} 在应用注册成功后调用，将 auth-center 下发的权限 ID 映射表
+     * 深拷贝为不可变 Map 后持有。
      *
-     * @param appId
-     * @param appPermMap
-     * @param regState
+     * @param appId      应用 ID
+     * @param appPermMap 权限 code → 权限 ID 映射，null 时视为空表
+     * @param regState   注册状态
      */
     protected void initAppPerm(long appId, Map<String, Integer> appPermMap, int regState) {
         this.appId = appId;
         this.regState = regState;
+        //深拷贝为不可变Map，避免调用方修改原Map导致并发问题与不可预期变更。
         this.appPermMap = appPermMap != null
-                ? Collections.unmodifiableMap(appPermMap)
+                ? Map.copyOf(appPermMap)
                 : Collections.emptyMap();
     }
 
     /**
-     * 检查Token权限集合中是否有URI权限。
+     * 检查 Token 权限集合中是否包含目标 URI 对应的权限。
      *
-     * @param permSet
-     * @param uri
-     * @return
+     * @param permSet Token 携带的权限 ID 集合
+     * @param uri     权限 code
+     * @return true 表示权限命中
      */
     private boolean checkTokenPermSet(Set<Integer> permSet, String uri) {
         Integer permId = appPermMap.get(uri);

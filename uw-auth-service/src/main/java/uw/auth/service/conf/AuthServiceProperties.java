@@ -7,7 +7,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * auth-server配置。
+ * 认证服务配置属性。
+ * <p>
+ * 配置前缀 {@code uw.auth.service}，包含 auth-center 地址、保护路径、IP 白名单、可信代理、
+ * 应用信息、CORS、Token 分层缓存大小、请求日志 body 缓存上限等。
  *
  * @author axeon
  */
@@ -91,6 +94,11 @@ public class AuthServiceProperties {
      * 用户缓存大小配置
      */
     private Map<Integer, Long> tokenCache = new HashMap<>();
+
+    /**
+     * 请求日志记录时缓存body的最大字节数（默认8MB），超出部分不缓存，避免大文件上传导致OOM。
+     */
+    private int logBodyCacheLimit = 8 * 1024 * 1024;
 
     public boolean isEnableGateway() {
         return enableGateway;
@@ -202,6 +210,14 @@ public class AuthServiceProperties {
 
     public void setTokenCache(Map<Integer, Long> tokenCache) {
         this.tokenCache = tokenCache;
+    }
+
+    public int getLogBodyCacheLimit() {
+        return logBodyCacheLimit;
+    }
+
+    public void setLogBodyCacheLimit(int logBodyCacheLimit) {
+        this.logBodyCacheLimit = logBodyCacheLimit;
     }
 
     public static class CORSProperties {

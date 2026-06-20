@@ -45,7 +45,13 @@ import uw.log.es.LogClient;
 import java.util.Arrays;
 
 /**
- * 配置自动装配类
+ * 自动装配配置类。
+ * <p>
+ * 装配 {@link AuthServiceFilter}、{@link AuthServiceHelper}、{@code MscAuthPermService}、
+ * {@code MscAppUpdateService}、RPC 实现、全局 Advice、CORS 过滤器等核心 Bean，
+ * 并在 {@code ApplicationReadyEvent} 时触发可信代理初始化与应用注册。
+ *
+ * @author axeon
  */
 @Configuration
 @Import({GlobalResponseAdvice.class, GlobalExceptionAdvice.class})

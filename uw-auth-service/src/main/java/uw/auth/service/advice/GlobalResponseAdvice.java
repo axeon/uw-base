@@ -19,12 +19,16 @@ import uw.auth.service.vo.MscActionLog;
 import uw.common.response.ResponseData;
 import uw.common.util.JsonUtils;
 
-import java.util.LinkedHashMap;
-
+import java.util.Map;
 
 /**
- * 全局数据包裹处理。
- * 对于返回的数据，全部使用ResponseData来进行包裹。
+ * 全局响应包裹处理器。
+ * <p>
+ * 将所有 Controller 返回值统一包裹为 {@code ResponseData}，开发者无需手动包装。
+ * 同时将响应状态写入当前请求的 {@code MscActionLog}，配合 {@code AuthServiceFilter} 完成操作日志记录。
+ * 可通过 {@link ResponseAdviceIgnore} 跳过包裹。
+ *
+ * @author axeon
  */
 @RestControllerAdvice
 public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
@@ -35,11 +39,13 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
     }
 
     /**
-     * 对于使用了ResponseAdviceIgnore注解的类和方法进行过滤。
+     * 决定是否对当前返回值进行包裹。
+     * <p>
+     * 标注 {@link ResponseAdviceIgnore} 的类/方法、以及 springdoc 接口文档返回值不包裹。
      *
-     * @param methodParameter
-     * @param aClass
-     * @return
+     * @param methodParameter 返回类型描述
+     * @param aClass          选中的消息转换器
+     * @return true 表示需要包裹
      */
     @Override
     @SuppressWarnings("all")
@@ -61,15 +67,18 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
     }
 
     /**
-     * 在结果输出前用ResponseData包裹。
+     * 在响应输出前用 {@code ResponseData} 包裹。
+     * <p>
+     * null → {@code warn()}；已是 ResponseData → 透传；ResponseEntity 错误体 → 转为 errorCode；
+     * 其它对象 → {@code success(body)}。String 返回值会序列化为 JSON 字符串以兼容 Spring MVC。
      *
-     * @param body
-     * @param returnType
-     * @param selectedContentType
-     * @param selectedConverterType
-     * @param request
-     * @param response
-     * @return
+     * @param body               原始响应体
+     * @param returnType         返回类型
+     * @param selectedContentType 选中的内容类型
+     * @param selectedConverterType 选中的转换器
+     * @param request            服务端请求
+     * @param response           服务端响应
+     * @return 包裹后的响应体
      */
     @Nullable
     @Override
@@ -87,16 +96,30 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
         }
         //需要处理额外未拦截到的系统报错信息。
         if (returnType.getParameterType().equals(ResponseEntity.class)) {
-            if (body instanceof LinkedHashMap data) {
-                String status = String.valueOf(data.get("status"));
+            if (body instanceof Map<?, ?> data) {
+                Object statusObj = data.get("status");
                 int statusCode = 500;
-                try {
-                    statusCode = Integer.parseInt(status);
-                } catch (NumberFormatException ignored) {
+                if (statusObj instanceof Number num) {
+                    statusCode = num.intValue();
+                } else if (statusObj != null) {
+                    try {
+                        statusCode = Integer.parseInt(String.valueOf(statusObj));
+                    } catch (NumberFormatException ignored) {
+                    }
                 }
-                response.setStatusCode(HttpStatusCode.valueOf(statusCode));
+                try {
+                    response.setStatusCode(HttpStatusCode.valueOf(statusCode));
+                } catch (IllegalArgumentException ex) {
+                    //非法状态码回退为500，避免覆盖原始异常。
+                    response.setStatusCode(HttpStatusCode.valueOf(500));
+                    statusCode = 500;
+                }
                 String code = "http.status." + statusCode;
-                String msg = "RequestPath: [" + HtmlUtils.htmlEscape(String.valueOf(data.get("path"))) + "], Msg: " + HtmlUtils.htmlEscape(String.valueOf(data.get("message")));
+                Object pathObj = data.get("path");
+                Object msgObj = data.get("message");
+                String path = pathObj == null ? "" : HtmlUtils.htmlEscape(String.valueOf(pathObj));
+                String message = msgObj == null ? "" : HtmlUtils.htmlEscape(String.valueOf(msgObj));
+                String msg = "RequestPath: [" + path + "], Msg: " + message;
                 return logResponseData(returnType, ResponseData.errorCode(code, msg));
             }
         }
@@ -105,10 +128,11 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
     }
 
     /**
-     * 封装记录操作日志。
+     * 将响应状态写入当前请求操作日志，并按返回类型决定输出形式。
      *
-     * @param responseData
-     * @return
+     * @param returnType    返回类型
+     * @param responseData  已包裹的响应数据
+     * @return String 类型返回 JSON 字符串，否则返回 responseData
      */
     private Object logResponseData(MethodParameter returnType, ResponseData<?> responseData) {
         MscActionLog mscActionLog = AuthServiceHelper.getContextLog();

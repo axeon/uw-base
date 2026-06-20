@@ -5,7 +5,10 @@ import uw.common.util.SystemClock;
 import java.util.StringJoiner;
 
 /**
- * 非法tokenData。
+ * 非法 Token 数据。
+ * <p>
+ * 由 auth-center 在 {@code reportStatus} 响应中下发，{@code AuthServiceHelper.invalidToken}
+ * 据此从本地缓存清除对应 Token 并加入非法黑名单，实现登出/踢人/重复登录等失效场景。
  *
  * @author axeon
  */

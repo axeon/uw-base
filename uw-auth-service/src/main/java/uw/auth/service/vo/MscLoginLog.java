@@ -7,7 +7,12 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 登陆日志。
+ * 管理端用户登录日志 VO。
+ * <p>
+ * 由 auth-center 写入并注册到 ES 索引 {@code uw.auth.login.log}，记录登录来源、
+ * 设备、结果与耗时等信息。
+ *
+ * @author axeon
  */
 public class MscLoginLog extends LogBaseVo implements Serializable {
 

@@ -27,7 +27,16 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 登录工具类.
+ * 认证服务核心辅助类。
+ * <p>
+ * 提供：
+ * <ul>
+ *   <li>当前请求用户信息访问（基于 ThreadLocal 绑定的 {@link AuthTokenData}）</li>
+ *   <li>Token 解析、本地 Caffeine 缓存（按 UserType 分层、按 expireAt 独立过期）与非法 Token 黑名单</li>
+ *   <li>操作日志上下文管理（{@code logRef/logInfo/logSysInfo}）</li>
+ *   <li>应用信息与 {@link AuthServiceRpc} 实例访问</li>
+ * </ul>
+ * 全静态方法设计，由 {@code AuthServiceAutoConfiguration} 在启动时完成依赖注入与缓存初始化。
  *
  * @author axeon
  */
@@ -204,7 +213,7 @@ public class AuthServiceHelper {
     }
 
     /**
-     * 处理非法token。¬
+     * 处理非法token。
      *
      * @param invalidToken
      */
@@ -827,9 +836,11 @@ public class AuthServiceHelper {
                 authTokenData = verifyResponse.getData();
                 putContextToken(ip, userType, token, authTokenData);
             } else {
-                //失败的token要缓存一下，防止有人乱试
-                invalidTokenCache.put(token, verifyResponse.getMsg());
-                //找不到的抛Token过期异常。
+                //仅当认证中心明确判定token失效（401/498等）时才入负缓存，防止有人乱试。
+                //若为503等服务异常，不缓存，避免auth-center短暂故障把合法token误判为非法长达20分钟。
+                if (shouldCacheInvalid(verifyResponse.getCode())) {
+                    invalidTokenCache.put(token, verifyResponse.getMsg());
+                }
                 return verifyResponse;
             }
         }
@@ -841,6 +852,22 @@ public class AuthServiceHelper {
         // 设定当前线程tokenData
         AuthServiceHelper.setContextToken(authTokenData);
         return ResponseData.success(authTokenData);
+    }
+
+    /**
+     * 判断认证中心返回的失败码是否代表"token已被明确判定失效"。
+     * 仅这类业务失败才应入负缓存；服务异常（503）不应缓存，避免误伤合法token。
+     *
+     * @param code 认证中心返回码
+     * @return true 表示可缓存为非法token
+     */
+    private static boolean shouldCacheInvalid(String code) {
+        if (StringUtils.isBlank(code)) {
+            return false;
+        }
+        return code.equals(AuthServiceConstants.HTTP_UNAUTHORIZED_CODE)
+                || code.equals(AuthServiceConstants.HTTP_TOKEN_EXPIRED_CODE)
+                || code.equals(AuthServiceConstants.HTTP_FORBIDDEN_CODE);
     }
 
     /**

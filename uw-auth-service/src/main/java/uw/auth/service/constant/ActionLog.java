@@ -4,7 +4,14 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * 应用Http接口操作日志记录类型
+ * 操作日志记录级别枚举。
+ * <p>
+ * 配合 {@code @MscPermDeclare.log()} 使用，决定 {@code AuthServiceFilter} 对当前请求
+ * 记录哪些信息：从 {@link #NONE} 不记录，到 {@link #ALL} 记录请求+响应，
+ * 再到 {@link #CRIT} 同时写入 ES 与数据库（{@code AuthCriticalLogStorage}）。
+ *
+ * @author axeon
+ * @see uw.auth.service.filter.AuthServiceFilter
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 @Schema(title = "操作日志类型", description = "操作日志类型")
@@ -54,10 +61,16 @@ public enum ActionLog {
         this.label = label;
     }
 
+    /**
+     * @return 日志级别数值
+     */
     public int getValue() {
         return value;
     }
 
+    /**
+     * @return 日志级别显示名称
+     */
     public String getLabel() {
         return label;
     }

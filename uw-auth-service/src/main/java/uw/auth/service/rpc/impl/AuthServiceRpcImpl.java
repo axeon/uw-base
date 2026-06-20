@@ -17,7 +17,9 @@ import uw.common.response.ResponseData;
 import java.util.List;
 
 /**
- * auth-server向auth-center RPC实现
+ * {@link AuthServiceRpc} 的默认实现。
+ * <p>
+ * 基于 {@code RestClient} 以 form / query / json 形式调用 auth-center 的 {@code /rpc/service/*} 接口。
  *
  * @author axeon
  */
@@ -184,8 +186,15 @@ public class AuthServiceRpcImpl implements AuthServiceRpc {
     @Override
     public ResponseData<String> getAppSaasPerm(String[] appNames) {
         String baseUrl = authServiceProperties.getAuthCenterHost();
+        //使用UriComponentsBuilder正确编码数组参数，避免数组toString成内存地址。
+        org.springframework.web.util.UriComponentsBuilder builder = org.springframework.web.util.UriComponentsBuilder.fromUriString(baseUrl + "/rpc/service/getAppSaasPerm");
+        if (appNames != null) {
+            for (String name : appNames) {
+                builder.queryParam("appNames", name);
+            }
+        }
         return authRestClient.get()
-                .uri(baseUrl + "/rpc/service/getAppSaasPerm?appNames={appNames}", (Object) appNames)
+                .uri(builder.build().encode().toUri())
                 .retrieve()
                 .body(new ParameterizedTypeReference<ResponseData<String>>() {});
     }

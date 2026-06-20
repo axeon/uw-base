@@ -6,8 +6,10 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * MscUser实体类
- * MSC用户
+ * MSC 用户信息 VO。
+ * <p>
+ * 由 {@code AuthServiceRpc.loadUser/listUser} 从 auth-center 返回，封装用户的基本信息、
+ * 登录/认证信息、状态等，供业务侧查询展示。
  *
  * @author axeon
  */

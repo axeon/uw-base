@@ -15,14 +15,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 整个Dao模块的入口，所有数据库操作都从这个类开始.
+ * 整个 Dao 模块的传统入口，所有数据库操作的底层抽象基类。
+ * <p><b>新代码推荐使用 {@link DaoManager}</b>（ResponseData 包装风格，异常不外抛）。
+ * 本类供历史代码兼容与需要细粒度异常控制的场景使用：方法直接返回值或抛出
+ * {@link TransactionException}，异常信息含完整 SQL 与参数。</p>
+ * <p>事务（{@link #beginTransaction()}）与批量更新（{@link #beginBatchUpdate()}）等 API
+ * 定义在本类上；DaoManager 用户通过 {@code DaoManager.getDaoFactory()} 获取。</p>
+ * <p>{@link #getInstance()} 每次返回新实例，持有独立的事务/批量状态，请勿作为共享单例跨线程使用。</p>
  *
  * @author axeon
  */
 public abstract class DaoFactory {
 
     /**
-     * 获取一个DaoFactory实例, 此实例是线程安全的.
+     * 获取一个DaoFactory实例。
+     * <p>每次调用都返回新实例，持有独立的事务与批量更新状态，请勿作为共享单例跨线程使用。</p>
      *
      * @return DaoFactoryImpl对象
      */

@@ -34,6 +34,12 @@ public class DaoReflectUtils {
         Field fd = fmi.getField();
         Class<?> cls = fd.getType();
         Object value = fd.get(entity);
+        // 包装类型为 null 时，setInt/setLong 等会因自动拆箱抛 NPE。
+        // 统一用 setObject，JDBC 驱动会将 null 映射为对应列的 NULL；基本类型永不为 null，正常走对应 setter。
+        if (value == null) {
+            pstmt.setObject(sequence, null);
+            return value;
+        }
         switch (cls.getSimpleName()) {
             case "int", "Integer" -> pstmt.setInt(sequence, (Integer) value);
             case "String" -> pstmt.setString(sequence, (String) value);
@@ -79,15 +85,43 @@ public class DaoReflectUtils {
         Class<?> cls = fd.getType();
         String columnName = fmi.getColumnName();
         switch (cls.getSimpleName()) {
-            case "int", "Integer" -> fd.setInt(entity, rs.getInt(columnName));
-            case "long", "Long" -> fd.setLong(entity, rs.getLong(columnName));
+            case "int" -> fd.setInt(entity, rs.getInt(columnName));
+            case "Integer" -> {
+                int v = rs.getInt(columnName);
+                fd.set(entity, rs.wasNull() ? null : v);
+            }
+            case "long" -> fd.setLong(entity, rs.getLong(columnName));
+            case "Long" -> {
+                long v = rs.getLong(columnName);
+                fd.set(entity, rs.wasNull() ? null : v);
+            }
             case "String" -> fd.set(entity, DaoValueUtils.nullToStr(rs.getString(columnName)));
             case "Date" -> fd.set(entity, rs.getTimestamp(columnName));
-            case "double", "Double" -> fd.setDouble(entity, rs.getDouble(columnName));
-            case "float", "Float" -> fd.setFloat(entity, rs.getFloat(columnName));
-            case "short", "Short" -> fd.setShort(entity, rs.getShort(columnName));
-            case "byte", "Byte" -> fd.setByte(entity, rs.getByte(columnName));
-            case "boolean", "Boolean" -> fd.setBoolean(entity, rs.getBoolean(columnName));
+            case "double" -> fd.setDouble(entity, rs.getDouble(columnName));
+            case "Double" -> {
+                double v = rs.getDouble(columnName);
+                fd.set(entity, rs.wasNull() ? null : v);
+            }
+            case "float" -> fd.setFloat(entity, rs.getFloat(columnName));
+            case "Float" -> {
+                float v = rs.getFloat(columnName);
+                fd.set(entity, rs.wasNull() ? null : v);
+            }
+            case "short" -> fd.setShort(entity, rs.getShort(columnName));
+            case "Short" -> {
+                short v = rs.getShort(columnName);
+                fd.set(entity, rs.wasNull() ? null : v);
+            }
+            case "byte" -> fd.setByte(entity, rs.getByte(columnName));
+            case "Byte" -> {
+                byte v = rs.getByte(columnName);
+                fd.set(entity, rs.wasNull() ? null : v);
+            }
+            case "boolean" -> fd.setBoolean(entity, rs.getBoolean(columnName));
+            case "Boolean" -> {
+                boolean v = rs.getBoolean(columnName);
+                fd.set(entity, rs.wasNull() ? null : v);
+            }
             default -> fd.set(entity, rs.getObject(columnName));
         }
     }

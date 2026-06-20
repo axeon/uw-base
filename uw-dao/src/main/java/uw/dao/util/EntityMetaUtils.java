@@ -61,7 +61,10 @@ public class EntityMetaUtils {
                             emi.addPkList(fieldInfo);
                         }
                         emi.addFieldInfo(fieldInfo.getFieldName(), fieldInfo);
-                        emi.addColumnInfo(fieldInfo.getColumnName(), fieldInfo);
+                        // 列名统一以小写作为 columnInfoMap 的 key，与 load/list 查询侧
+                        // (rsm.getColumnLabel(k+1).toLowerCase()) 保持一致，避免大写列名注解导致字段映射失败。
+                        // SQL 生成侧仍使用 FieldMetaInfo.getColumnName() 原值，不受影响。
+                        emi.addColumnInfo(fieldInfo.getColumnName().toLowerCase(), fieldInfo);
                     }
                 }
             }

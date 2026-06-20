@@ -338,17 +338,27 @@ public class DaoConfig {
 
         /**
          * 获取合适的写入连接池。
+         * 未配置 writePools 时返回 null，由上层路由逻辑决定是否回退到其他池。
          *
-         * @return
+         * @return 连接池名称；未配置时返回 null
          */
         public String getFitWritePool() {
+            if (writePools == null || writePools.length == 0) {
+                return null;
+            }
             return writePools[Math.abs(writePos.getAndIncrement()) % writePools.length];
         }
 
         /**
-         * @return
+         * 获取合适的读取连接池。
+         * 未配置 readPools 时返回 null，由上层路由逻辑决定是否回退到写池。
+         *
+         * @return 连接池名称；未配置时返回 null
          */
         public String getFitReadPool() {
+            if (readPools == null || readPools.length == 0) {
+                return null;
+            }
             return readPools[Math.abs(readPos.getAndIncrement()) % readPools.length];
         }
 

@@ -1149,7 +1149,7 @@ public class DaoFactoryImpl extends DaoFactory {
      */
     @Override
     public <T> T queryForObject(String connName, Class<T> entityCls, QueryParam queryParam) throws TransactionException {
-        return queryForObject(null, entityCls, null, queryParam);
+        return queryForObject(connName, entityCls, null, queryParam);
     }
 
     /**

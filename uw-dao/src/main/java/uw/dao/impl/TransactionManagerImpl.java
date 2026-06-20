@@ -27,9 +27,16 @@ public class TransactionManagerImpl implements TransactionManager {
     private boolean autoCommit = true;
 
     /**
-     * Isolation.
+     * 用户设置的事务隔离级别（仅当 isolationSet=true 时生效）。
+     * 默认沿用驱动/数据库默认隔离级别，避免强制覆盖（如 MySQL 默认 REPEATABLE_READ）。
      */
     private int isolation = TransactionManager.TRANSACTION_READ_COMMITTED;
+
+    /**
+     * 标记用户是否显式调用过 setTransactionIsolation。
+     * 未显式设置时，连接保持驱动默认隔离级别。
+     */
+    private boolean isolationSet = false;
 
     /**
      * 数据库连接的map表.key:connName,value:Connection
@@ -96,6 +103,10 @@ public class TransactionManagerImpl implements TransactionManager {
                 try {
                     Connection con = ConnectionManager.getConnection(key);
                     con.setAutoCommit(false);
+                    // 仅在用户显式设置过隔离级别时才应用，否则保持驱动/数据库默认隔离级别
+                    if (isolationSet) {
+                        con.setTransactionIsolation(isolation);
+                    }
                     return con;
                 } catch (SQLException e) {
                     logger.error(e.getMessage(), e);
@@ -148,6 +159,7 @@ public class TransactionManagerImpl implements TransactionManager {
     @Override
     public void setTransactionIsolation(int level) {
         this.isolation = level;
+        this.isolationSet = true;
     }
 
     /**

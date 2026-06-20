@@ -556,7 +556,8 @@ public class EntityCommandImpl {
         }
 
         if (StringUtils.isBlank(connName)) {
-            connName = DaoConfigManager.getRouteMapping(tableName, "write");
+            // load 本质为读操作，路由到读库；未配置读库时 getRouteMapping 会自动回退到写库
+            connName = DaoConfigManager.getRouteMapping(tableName, "read");
         }
 
         StringBuilder sb = new StringBuilder();

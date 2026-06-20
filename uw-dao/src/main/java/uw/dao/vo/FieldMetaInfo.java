@@ -107,14 +107,18 @@ public class FieldMetaInfo {
     }
 
     /**
-     * @return the autoIncrement
+     * 是否是自动递增字段。
+     *
+     * @return true 表示自增主键
      */
     public boolean isAutoIncrement() {
         return autoIncrement;
     }
 
     /**
-     * @param autoIncrement the autoIncrement to set
+     * 设置是否是自动递增字段。
+     *
+     * @param autoIncrement 是否自增
      */
     public void setAutoIncrement(boolean autoIncrement) {
         this.autoIncrement = autoIncrement;

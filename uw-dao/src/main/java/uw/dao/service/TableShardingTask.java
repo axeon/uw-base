@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 按日期分表的工具.
@@ -48,9 +50,13 @@ public class TableShardingTask implements Runnable {
 
     /**
      * 自动建表工具。 每小时检查当天表和第二天的表。 设定一个3秒的延时，是担心同步问题.
+     * <p>每轮执行前清空表列表缓存，使得上一轮（或其他途径）新建的分表能被正确识别为已存在，
+     * 避免重复尝试 CREATE（无 IF NOT EXISTS）产生错误日志。</p>
      */
     @Override
     public void run() {
+        // 清空上一轮的表列表缓存，确保本轮能看到期间新建的表
+        tableListMap.clear();
         LocalDateTime now = LocalDateTime.now();
         Map<String, TableShardConfig> map = daoConfig.getTableShard();
         for (Map.Entry<String, TableShardConfig> kv : map.entrySet()) {
@@ -84,12 +90,20 @@ public class TableShardingTask implements Runnable {
                     currentTable = baseTableName + "_" + current;
                     nextTable = baseTableName + "_" + (current + 1);
                 }
-                //开始创建表
-                if (!checkTableExist(currentTable)) {
-                    exeCreateTable(currentTable, createScript.replace(baseTableName, currentTable));
-                }
-                if (!checkTableExist(nextTable)) {
-                    exeCreateTable(nextTable, createScript.replace(baseTableName, nextTable));
+                //开始创建表（仅当基表存在、且能解析出建表脚本时）
+                if (createScript != null) {
+                    if (!checkTableExist(currentTable)) {
+                        String currentDdl = rewriteCreateScript(createScript, baseTableName, currentTable);
+                        if (currentDdl != null) {
+                            exeCreateTable(currentTable, currentDdl);
+                        }
+                    }
+                    if (!checkTableExist(nextTable)) {
+                        String nextDdl = rewriteCreateScript(createScript, baseTableName, nextTable);
+                        if (nextDdl != null) {
+                            exeCreateTable(nextTable, nextDdl);
+                        }
+                    }
                 }
             }
         }
@@ -184,6 +198,32 @@ public class TableShardingTask implements Runnable {
 
     private boolean isValidTableName(String tableName) {
         return tableName != null && tableName.matches("[a-zA-Z_][a-zA-Z0-9_]*");
+    }
+
+    /**
+     * 将基表的 CREATE 脚本改写为分表脚本。
+     * <p>仅替换 DDL 开头 {@code CREATE TABLE `baseTable`} 处的表名，避免全文 replace
+     * 误伤索引名、约束名中与基表名同名的片段（如 {@code KEY `idx_baseTable_col`}）。</p>
+     *
+     * @param createScript 基表的 SHOW CREATE TABLE 输出
+     * @param baseTable    基表名
+     * @param targetTable  目标分表名
+     * @return 改写后的建表脚本；若未匹配到表名定义则返回 null
+     */
+    private String rewriteCreateScript(String createScript, String baseTable, String targetTable) {
+        if (createScript == null) {
+            return null;
+        }
+        // 匹配 DDL 首部的表名定义，支持 `baseTable` / "baseTable" / baseTable 三种引号形式
+        Pattern p = Pattern.compile("(CREATE\\s+(?:TEMPORARY\\s+)?TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?)(`?)(\\Q" + baseTable + "\\E)\\2",
+                Pattern.CASE_INSENSITIVE);
+        Matcher m = p.matcher(createScript);
+        if (!m.find()) {
+            return null;
+        }
+        // quoteReplacement 防御：targetTable 虽经 isValidTableName 校验只含字母数字下划线，
+        // 但 replaceFirst 的 replacement 参数会把 $/\ 当特殊字符，显式转义避免未来校验放宽时埋雷。
+        return m.replaceFirst("$1$2" + Matcher.quoteReplacement(targetTable) + "$2");
     }
 
 }

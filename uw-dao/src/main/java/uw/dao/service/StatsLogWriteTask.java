@@ -56,6 +56,9 @@ public class StatsLogWriteTask implements Runnable {
                 + "(conn_name,conn_id,sql_info,sql_param,row_num,conn_millis,db_millis,all_millis,exception,exe_date) values "
                 + "(?,?,?,?,?,?,?,?,?,?) ";
         int pos = 0;
+        // 标记当前 pstmt 是否有尚未 executeBatch 的数据，避免用 pos%100 判断时
+        // 因 pos 恰为 100 的倍数（跨分片 break 或列表恰好整批）导致最后一批 addBatch 数据丢失。
+        boolean hasPendingBatch = false;
         try {
             conn = dao.getConnection(tableName, "write");
             conn.setAutoCommit(false);
@@ -91,13 +94,15 @@ public class StatsLogWriteTask implements Runnable {
                 pstmt.setString(9, ss.getException());
                 pstmt.setTimestamp(10, DaoValueUtils.dateToTimestamp(ss.getActionDate()));
                 pstmt.addBatch();
+                hasPendingBatch = true;
+                // 每满100条提交一次，避免单次 batch 过大
                 if ((pos + 1) % 100 == 0) {
-                    // 每隔100次自动提交
                     pstmt.executeBatch();
+                    hasPendingBatch = false;
                 }
             }
-            // 剩余部分也要执行提交。
-            if (pos % 100 > 0) {
+            // 提交剩余未满批次的数据（基于标志判断，而非 pos 取模）
+            if (hasPendingBatch) {
                 pstmt.executeBatch();
             }
         } catch (Exception e) {

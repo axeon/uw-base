@@ -6,8 +6,8 @@ import uw.dao.DaoFactory;
 import uw.dao.TransactionException;
 import uw.dao.conf.DaoConfigManager;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 
@@ -27,6 +27,12 @@ public class StatsCleanDataTask implements Runnable {
      * DAOFactory对象.
      */
     private final DaoFactory dao = DaoFactory.getInstance();
+
+    /**
+     * 统计分表后缀日期格式（yyyyMMdd），与分表命名规则一致。
+     * yyyyMMdd 为定长8位数字串，字典序与时间顺序一致，可直接用 String.compareTo 比较早晚。
+     */
+    private static final DateTimeFormatter SUFFIX_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     /**
      * 获取当前的表Set.
@@ -53,27 +59,32 @@ public class StatsCleanDataTask implements Runnable {
     }
 
     /**
-     * 每天凌晨3点半清理一下数据表.
+     * 定时清理过期统计分表。
+     * <p>判定方式：解析表名后缀 yyyyMMdd 为日期，与 {@code 今天 - dataKeepDays} 比较，
+     * 早于该截止日的分表才删除。避免按"表数量偏移"判定时，因某些天无数据未建表
+     * 导致保留天数不足、误删仍需保留的表。</p>
      */
     @Override
     public void run() {
         logger.info("StatsInfo Clean Task is run start!");
         HashSet<String> tableSet = getCurrentTableSet();
-        ArrayList<String> list = new ArrayList<>(tableSet);
-        // 自然顺序排序
-        Collections.sort(list);
-        // 保留100天数据，假设
-        int start = 100;
+        // 默认保留100天数据
+        int keepDays = 100;
         try {
-            start = DaoConfigManager.getConfig().getSqlStats().getDataKeepDays();
+            keepDays = DaoConfigManager.getConfig().getSqlStats().getDataKeepDays();
         } catch (Throwable ignored) {
         }
-        // 循环删除过期数据
-        for (int i = start; i < list.size(); i++) {
-            String tableName = list.get(i);
-            // 安全校验：只允许删除以 STATS_BASE_TABLE 开头的表
+        LocalDate cutoffDate = LocalDate.now().minusDays(keepDays);
+        String cutoffSuffix = cutoffDate.format(SUFFIX_FORMATTER);
+        for (String tableName : tableSet) {
+            // 安全校验：只允许处理以 STATS_BASE_TABLE 开头且后缀为合法日期的分表
             if (!isValidStatsTable(tableName)) {
                 logger.warn("Skipping unexpected table name: [{}]", tableName);
+                continue;
+            }
+            String suffix = tableName.substring(DaoService.STATS_BASE_TABLE.length() + 1);
+            // 后缀日期 < 截止日期（字典序与 yyyyMMdd 顺序一致）才删除
+            if (suffix.compareTo(cutoffSuffix) >= 0) {
                 continue;
             }
             try {

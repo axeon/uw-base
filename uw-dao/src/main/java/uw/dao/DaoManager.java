@@ -19,9 +19,16 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * DaoManager是DAO的入口类，提供了一系列的DAO操作方法.
- * DaoManager是DaoFactory的代理，和DaoFactory区别在于使用ResponseData返回信息。
- * 这大大简化了代码调用。
+ * DaoManager 是 DAO 的推荐入口类，提供了一系列 DAO 操作方法，统一以 {@link ResponseData} 返回结果。
+ * <p>DaoManager 是 DaoFactory 的代理，相比直接使用 DaoFactory：
+ * <ul>
+ *   <li>用 {@link ResponseData} 包装返回值，调用方无需 try/catch {@link TransactionException}；</li>
+ *   <li>生产环境异常只返回错误码，不向调用方泄漏 SQL 与参数；</li>
+ *   <li>支持 {@code ResponseData} 的链式后处理（onSuccess/onError 等）。</li>
+ * </ul>
+ * <b>新代码统一使用 DaoManager</b>；事务与批量更新等定义在 DaoFactory 上的 API，可通过
+ * {@link #getDaoFactory()} 获取。</p>
+ * <p>注意：{@link #getInstance()} 每次返回新实例，持有独立的事务/批量状态，勿作为共享单例跨线程使用。</p>
  *
  * @author axeon
  */
@@ -47,7 +54,9 @@ public class DaoManager {
     }
 
     /**
-     * 获取一个DaoManager实例, 此实例是线程安全的.
+     * 获取一个DaoManager实例。
+     * <p>每次调用都返回新实例（内部包装一个新的 DaoFactory），持有独立的事务与批量更新状态，
+     * 请勿作为共享单例跨线程使用。</p>
      *
      * @return DaoManager
      */
@@ -57,11 +66,39 @@ public class DaoManager {
 
     /**
      * 获取一个DaoFactory实例.
+     * <p>事务与批量更新 API 定义在 DaoFactory 上；DaoManager 已通过
+     * {@link #beginTransaction()} / {@link #beginBatchUpdate()} 直接委派，通常无需手动调用本方法。</p>
      *
-     * @return
+     * @return DaoFactory 实例
      */
     public DaoFactory getDaoFactory() {
         return daoFactory;
+    }
+
+    /**
+     * 开启一个数据库事务，委派到内部 DaoFactory。
+     * <p>事务状态绑定在当前 DaoManager 持有的 DaoFactory 实例上，本实例内所有 CRUD 操作
+     * 自动纳入该事务；事务必须用同一个 DaoManager 实例操作，勿跨实例混用。</p>
+     * <p>注意：{@link TransactionManager#commit()} / {@link TransactionManager#rollback()}
+     * 仍可能抛出 {@link TransactionException}，调用方需 try/catch 处理（与 ResponseData 风格不同）。</p>
+     *
+     * @return TransactionManager 对象
+     */
+    public TransactionManager beginTransaction() {
+        return daoFactory.beginTransaction();
+    }
+
+    /**
+     * 开启批量更新，委派到内部 DaoFactory。
+     * <p>批量更新<b>必须在事务中运行</b>：请先 {@link #beginTransaction()} 再 {@link #beginBatchUpdate()}，
+     * 否则 PreparedStatement 处于 autoCommit，addBatch 的数据会被立即提交。</p>
+     * <p>批量状态绑定在当前 DaoManager 持有的 DaoFactory 实例上，本实例内的 save/update/delete
+     * 会自动走 addBatch；满 batchSize 自动 executeBatch，剩余批次由 {@code submit()} 提交。</p>
+     *
+     * @return BatchUpdateManager 对象
+     */
+    public BatchUpdateManager beginBatchUpdate() {
+        return daoFactory.beginBatchUpdate();
     }
 
     /**
@@ -358,9 +395,9 @@ public class DaoManager {
     /**
      * 根据QueryParam更新一个Entity实例，等效于update.
      *
-     * @param entity
-     * @param queryParam
-     * @return
+     * @param entity     要更新的对象
+     * @param queryParam 查询条件
+     * @return 影响行数（0 行时返回 DATA_NOT_FOUND_WARN）
      */
     public <T extends DataEntity> ResponseData<Integer> update(T entity, QueryParam queryParam) {
         try {
@@ -398,11 +435,11 @@ public class DaoManager {
     /**
      * 根据QueryParam更新一个Entity实例，等效于update.
      *
-     * @param connName
-     * @param entity
-     * @param tableName
-     * @param queryParam
-     * @return
+     * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
+     * @param entity     要更新的对象
+     * @param tableName  指定表名
+     * @param queryParam 查询条件
+     * @return 影响行数（0 行时返回 DATA_NOT_FOUND_WARN）
      */
     public <T extends DataEntity> ResponseData<Integer> update(String connName, T entity, String tableName, QueryParam queryParam) {
         try {
@@ -502,9 +539,9 @@ public class DaoManager {
     /**
      * 根据QueryParam删除信息，等效于delete.
      *
-     * @param entityCls
-     * @param queryParam
-     * @return
+     * @param entityCls  实体类类型
+     * @param queryParam 查询条件
+     * @return 影响行数（0 行时返回 DATA_NOT_FOUND_WARN）
      */
     public <T extends DataEntity> ResponseData<Integer> delete(Class<T> entityCls, QueryParam queryParam) {
         try {
@@ -522,10 +559,10 @@ public class DaoManager {
     /**
      * 根据QueryParam删除信息，等效于delete.
      *
-     * @param connName
-     * @param entityCls
-     * @param queryParam
-     * @return
+     * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
+     * @param entityCls  实体类类型
+     * @param queryParam 查询条件
+     * @return 影响行数（0 行时返回 DATA_NOT_FOUND_WARN）
      */
     public <T extends DataEntity> ResponseData<Integer> delete(String connName, Class<T> entityCls, QueryParam queryParam) {
         try {
@@ -543,11 +580,11 @@ public class DaoManager {
     /**
      * 根据QueryParam删除信息，等效于delete.
      *
-     * @param connName
-     * @param entityCls
-     * @param tableName
-     * @param queryParam
-     * @return
+     * @param connName   连接名，如设置为null，则根据sql语句或表名动态路由确定
+     * @param entityCls  实体类类型
+     * @param tableName  指定表名
+     * @param queryParam 查询条件
+     * @return 影响行数（0 行时返回 DATA_NOT_FOUND_WARN）
      */
     public <T extends DataEntity> ResponseData<Integer> delete(String connName, Class<T> entityCls, String tableName, QueryParam queryParam) {
         try {

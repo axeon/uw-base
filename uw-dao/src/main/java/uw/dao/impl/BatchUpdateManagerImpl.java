@@ -39,9 +39,14 @@ public class BatchUpdateManagerImpl implements BatchUpdateManager {
     private boolean isBatch = false;
 
     /**
+     * 默认批量更新大小.
+     */
+    private static final int DEFAULT_BATCH_SIZE = 100;
+
+    /**
      * 批量更新大小.
      */
-    private int batchSize = 100;
+    private int batchSize = DEFAULT_BATCH_SIZE;
 
     /**
      * 批量更新的sizeMap.key:sql
@@ -80,14 +85,15 @@ public class BatchUpdateManagerImpl implements BatchUpdateManager {
         if (!this.isBatch) { // 非batchUpdate
             pstmt = conn.prepareStatement(sql);
         } else { // 进入update状态
+            // 批量模式必须在事务中运行（autoCommit=false），否则 addBatch 的数据在每条 SQL 后即被自动提交，
+            // executeBatch 无法生效，submit() 也无法统一控制事务边界。
+            if (conn.isClosed() || conn.getAutoCommit()) {
+                throw new TransactionException("BatchUpdate 必须在事务中运行，请先调用 dao.beginTransaction()！连接 [" + connName + "] 处于 autoCommit 状态。");
+            }
             int bsize = 0; // 该pstmt已经addBatch的次数
             PreparedStatementWrapper wrapper = pstmtMap.get(sql);
             if (wrapper != null) {
                 pstmt = wrapper.pstmt;
-                // 判断连接是否有效，是否打开事务处理
-                if (pstmt.getConnection().isClosed() || pstmt.getConnection().getAutoCommit()) {
-                    throw new TransactionException("TransactionException in BatchUpdateManagerImpl.java:prepareStatement is closed or auto commit!");
-                }
                 int currentBatchSize = sizeMap.get(sql);
                 //检查是否需要提交批量。
                 if (currentBatchSize >= batchSize) {
@@ -231,7 +237,8 @@ public class BatchUpdateManagerImpl implements BatchUpdateManager {
         pstmtMap = null;
         sizeMap = null;
         resultMap = null;
-        batchSize = 50;
+        // 重置为构造默认值，保持与初始状态一致（原为 50 与默认 100 不符）
+        batchSize = DEFAULT_BATCH_SIZE;
         return returnMap;
     }
 

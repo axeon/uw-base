@@ -71,24 +71,49 @@ public class SQLCommandImpl {
             rs = pstmt.executeQuery();
             dbMillis = SystemClock.now() - dbStartMillis;
             if (rs.next()) {
-                if (cls == int.class || cls == Integer.class) {
+                if (cls == int.class) {
                     value = rs.getInt(1);
+                } else if (cls == long.class) {
+                    value = rs.getLong(1);
+                } else if (cls == double.class) {
+                    value = rs.getDouble(1);
+                } else if (cls == float.class) {
+                    value = rs.getFloat(1);
+                } else if (cls == short.class) {
+                    value = rs.getShort(1);
+                } else if (cls == byte.class) {
+                    value = rs.getByte(1);
+                } else if (cls == boolean.class) {
+                    value = rs.getBoolean(1);
+                } else if (cls == Integer.class || cls == Long.class || cls == Double.class
+                        || cls == Float.class || cls == Short.class || cls == Byte.class) {
+                    // 数值包装类型：先判空，数据库 NULL 时返回 null，避免基本类型默认值（如 0）掩盖 null 语义。
+                    // 经 Number 中转，兼容 MySQL 驱动对 BIGINT 返回 BigInteger、INT 返回 Integer 等差异。
+                    Object raw = rs.getObject(1);
+                    if (raw == null) {
+                        value = null;
+                    } else if (cls == Integer.class) {
+                        value = ((Number) raw).intValue();
+                    } else if (cls == Long.class) {
+                        value = ((Number) raw).longValue();
+                    } else if (cls == Double.class) {
+                        value = ((Number) raw).doubleValue();
+                    } else if (cls == Float.class) {
+                        value = ((Number) raw).floatValue();
+                    } else if (cls == Short.class) {
+                        value = ((Number) raw).shortValue();
+                    } else {
+                        value = ((Number) raw).byteValue();
+                    }
+                } else if (cls == Boolean.class) {
+                    // Boolean 单独处理：BIT(1)/TINYINT(1) 列getObject 可能返回 Boolean 或 Integer，
+                    // 统一用 getBoolean，再按 wasNull 判定是否置 null。
+                    boolean b = rs.getBoolean(1);
+                    value = rs.wasNull() ? null : b;
                 } else if (cls == String.class) {
                     value = rs.getString(1);
-                } else if (cls == long.class || cls == Long.class) {
-                    value = rs.getLong(1);
                 } else if (cls == Date.class) {
                     value = rs.getTimestamp(1);
-                } else if (cls == double.class || cls == Double.class) {
-                    value = rs.getDouble(1);
-                } else if (cls == float.class || cls == Float.class) {
-                    value = rs.getFloat(1);
-                } else if (cls == short.class || cls == Short.class) {
-                    value = rs.getShort(1);
-                } else if (cls == byte.class || cls == Byte.class) {
-                    value = rs.getByte(1);
-                } else if (cls == boolean.class || cls == Boolean.class) {
-                    value = rs.getBoolean(1);
                 } else {
                     value = rs.getObject(1);
                 }
@@ -164,41 +189,70 @@ public class SQLCommandImpl {
             ResultSet rs = pstmt.executeQuery();
             dbMillis = SystemClock.now() - dbStartMillis;
 
-            if (cls == int.class || cls == Integer.class) {
+            if (cls == int.class) {
                 while (rs.next()) {
                     list.add(rs.getInt(1));
+                }
+            } else if (cls == long.class) {
+                while (rs.next()) {
+                    list.add(rs.getLong(1));
+                }
+            } else if (cls == double.class) {
+                while (rs.next()) {
+                    list.add(rs.getDouble(1));
+                }
+            } else if (cls == float.class) {
+                while (rs.next()) {
+                    list.add(rs.getFloat(1));
+                }
+            } else if (cls == short.class) {
+                while (rs.next()) {
+                    list.add(rs.getShort(1));
+                }
+            } else if (cls == byte.class) {
+                while (rs.next()) {
+                    list.add(rs.getByte(1));
+                }
+            } else if (cls == boolean.class) {
+                while (rs.next()) {
+                    list.add(rs.getBoolean(1));
+                }
+            } else if (cls == Integer.class || cls == Long.class || cls == Double.class
+                    || cls == Float.class || cls == Short.class || cls == Byte.class) {
+                // 数值包装类型：先判空，数据库 NULL 时加入 null，避免基本类型默认值（如 0）掩盖 null 语义。
+                // 经 Number 中转，兼容 MySQL 驱动对 BIGINT 返回 BigInteger、INT 返回 Integer 等差异。
+                while (rs.next()) {
+                    Object raw = rs.getObject(1);
+                    if (raw == null) {
+                        list.add(null);
+                    } else if (cls == Integer.class) {
+                        list.add(((Number) raw).intValue());
+                    } else if (cls == Long.class) {
+                        list.add(((Number) raw).longValue());
+                    } else if (cls == Double.class) {
+                        list.add(((Number) raw).doubleValue());
+                    } else if (cls == Float.class) {
+                        list.add(((Number) raw).floatValue());
+                    } else if (cls == Short.class) {
+                        list.add(((Number) raw).shortValue());
+                    } else {
+                        list.add(((Number) raw).byteValue());
+                    }
+                }
+            } else if (cls == Boolean.class) {
+                // Boolean 单独处理：BIT(1)/TINYINT(1) 列getObject 可能返回 Boolean 或 Integer，
+                // 统一用 getBoolean，再按 wasNull 判定是否加入 null。
+                while (rs.next()) {
+                    boolean b = rs.getBoolean(1);
+                    list.add(rs.wasNull() ? null : b);
                 }
             } else if (cls == String.class) {
                 while (rs.next()) {
                     list.add(rs.getString(1));
                 }
-            } else if (cls == long.class || cls == Long.class) {
-                while (rs.next()) {
-                    list.add(rs.getLong(1));
-                }
             } else if (cls == Date.class) {
                 while (rs.next()) {
                     list.add(rs.getTimestamp(1));
-                }
-            } else if (cls == double.class || cls == Double.class) {
-                while (rs.next()) {
-                    list.add(rs.getDouble(1));
-                }
-            } else if (cls == float.class || cls == Float.class) {
-                while (rs.next()) {
-                    list.add(rs.getFloat(1));
-                }
-            } else if (cls == short.class || cls == Short.class) {
-                while (rs.next()) {
-                    list.add(rs.getShort(1));
-                }
-            } else if (cls == byte.class || cls == Byte.class) {
-                while (rs.next()) {
-                    list.add(rs.getByte(1));
-                }
-            } else if (cls == boolean.class || cls == Boolean.class) {
-                while (rs.next()) {
-                    list.add(rs.getBoolean(1));
                 }
             } else {
                 while (rs.next()) {

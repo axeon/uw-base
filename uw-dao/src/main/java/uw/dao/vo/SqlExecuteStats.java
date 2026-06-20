@@ -63,9 +63,10 @@ public class SqlExecuteStats {
     private Date actionDate;
 
     /**
-     * SqlExecuteStats对象.
+     * 构造 SQL 执行统计对象。
      *
      * @param connName   连接名
+     * @param connId     连接 ID（Connection.hashCode）
      * @param sql        SQL语句
      * @param paramList  参数
      * @param rowNum     返回/影响的行数
@@ -97,9 +98,9 @@ public class SqlExecuteStats {
     }
 
     /**
-     * 输出完整sql信息。
+     * 输出完整 SQL 信息（参数已内联，用于日志展示）。
      *
-     * @return
+     * @return 连接、耗时、参数化 SQL、异常信息的可读字符串
      */
     public String genFullSqlInfo() {
         StringBuilder sb = new StringBuilder(512);
@@ -113,9 +114,9 @@ public class SqlExecuteStats {
     }
 
     /**
-     * 输出参数化sql信息。
+     * 输出参数化 SQL 信息（SQL 与参数分开，用于日志展示）。
      *
-     * @return
+     * @return 连接、耗时、占位符 SQL、参数 JSON、异常信息的可读字符串
      */
     public String genParamSqlInfo() {
         StringBuilder sb = new StringBuilder(512);
@@ -143,123 +144,181 @@ public class SqlExecuteStats {
     }
 
     /**
-     * @return the connName
+     * 获取连接名。
+     *
+     * @return 连接名
      */
     public String getConnName() {
         return connName;
     }
 
     /**
-     * @param connName the connName to set
+     * 设置连接名。
+     *
+     * @param connName 连接名
      */
     public void setConnName(String connName) {
         this.connName = connName;
     }
 
     /**
-     * @return the sql
+     * 获取执行的 SQL（含 ? 占位符）。
+     *
+     * @return SQL
      */
     public String getSql() {
         return sql;
     }
 
     /**
-     * @param sql the sql to set
+     * 设置执行的 SQL。
+     *
+     * @param sql SQL
      */
     public void setSql(String sql) {
         this.sql = sql;
     }
 
+    /**
+     * 获取绑定参数数组。
+     *
+     * @return 参数数组
+     */
     public Object[] getParamList() {
         return paramList;
     }
 
+    /**
+     * 设置绑定参数数组。
+     *
+     * @param paramList 参数数组
+     */
     public void setParamList(Object[] paramList) {
         this.paramList = paramList;
     }
 
     /**
-     * @return the rowNum
+     * 获取返回/影响行数。
+     *
+     * @return 行数
      */
     public int getRowNum() {
         return rowNum;
     }
 
     /**
-     * @param rowNum the rowNum to set
+     * 设置返回/影响行数。
+     *
+     * @param rowNum 行数
      */
     public void setRowNum(int rowNum) {
         this.rowNum = rowNum;
     }
 
     /**
-     * @return the dbTime
+     * 获取数据库执行耗时（毫秒）。
+     *
+     * @return 数据库执行毫秒数
      */
     public long getDbMillis() {
         return dbMillis;
     }
 
     /**
-     * @param dbMillis the dbTime to set
+     * 设置数据库执行耗时（毫秒）。
+     *
+     * @param dbMillis 数据库执行毫秒数
      */
     public void setDbMillis(long dbMillis) {
         this.dbMillis = dbMillis;
     }
 
     /**
-     * @return the allTime
+     * 获取总耗时（毫秒）。
+     *
+     * @return 总毫秒数
      */
     public long getAllMillis() {
         return allMillis;
     }
 
     /**
-     * @param allMillis the allTime to set
+     * 设置总耗时（毫秒）。
+     *
+     * @param allMillis 总毫秒数
      */
     public void setAllMillis(long allMillis) {
         this.allMillis = allMillis;
     }
 
     /**
-     * @return the exception
+     * 获取异常信息（无异常为 null）。
+     *
+     * @return 异常信息
      */
     public String getException() {
         return exception;
     }
 
     /**
-     * @param exception the exception to set
+     * 设置异常信息。
+     *
+     * @param exception 异常信息
      */
     public void setException(String exception) {
         this.exception = exception;
     }
 
     /**
-     * @return the actionDate
+     * 获取执行时间。
+     *
+     * @return 执行时间
      */
     public Date getActionDate() {
         return actionDate;
     }
 
     /**
-     * @param actionDate the actionDate to set
+     * 设置执行时间。
+     *
+     * @param actionDate 执行时间
      */
     public void setActionDate(Date actionDate) {
         this.actionDate = actionDate;
     }
 
+    /**
+     * 获取连接 ID（Connection.hashCode，用于关联同一连接的多次操作）。
+     *
+     * @return 连接 ID
+     */
     public int getConnId() {
         return connId;
     }
 
+    /**
+     * 设置连接 ID。
+     *
+     * @param connId 连接 ID
+     */
     public void setConnId(int connId) {
         this.connId = connId;
     }
 
+    /**
+     * 获取获取连接耗时（毫秒）。
+     *
+     * @return 获取连接毫秒数
+     */
     public long getConnMillis() {
         return connMillis;
     }
 
+    /**
+     * 设置获取连接耗时（毫秒）。
+     *
+     * @param connMillis 获取连接毫秒数
+     */
     public void setConnMillis(long connMillis) {
         this.connMillis = connMillis;
     }

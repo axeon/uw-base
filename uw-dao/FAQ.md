@@ -1,173 +1,233 @@
-#### 1.概括一下uw-dao的主要功能和特性。
+# uw-dao 常见问题（FAQ）
 
-uw-dao包是一个封装数据库操作的类库，比hibernate效率高，比mybatis更简单，并一致化管理数据库连接池。
+> 本文档与 `uw-dao` 源码对齐，反映最新行为。
 
-1. 支持多数据库连接，支持mysql/oracle/sqlserver，支持基于表名的访问规则配置，便于分库分表。
-2. 为了适配多数据库连接而改进的连接池，线程数少且节省资源，同时支持对于异常SQL的监控，便于整体控制数据库连接数。
-3. 非常类似hibernate的jpa的CRUD操作，以及非常类似mybatis的SQL映射实现，调用更加简单和直接。以上基于反射实现，已经使用缓存来保证效率了，木有泄漏。
-4. 更直接和爽快的事务支持和批量更新支持，但是用起来要小心点，必须要用try.catch.finally规范处理异常。
-5. 运维特性支持，可以监控每一条sql的执行情况，各种报表都可以做，比如slow-query，bad-query等等。
-6. 内部有一个CodeGen用于直接从数据库生成entity类，方便。
+#### 1. 概括一下 uw-dao 的主要功能和特性。
 
-#### 2.uw-dao的自动分表是根据什么进行分表？该如何配置？
+uw-dao 是一个基于原生 JDBC 封装的数据访问层类库，比 Hibernate 更高效，比 MyBatis 更简单，并统一管理数据库连接池。
 
-根据日期分表。
+1. **注解驱动 ORM**：`@TableMeta` / `@ColumnMeta` 定义实体映射，反射元数据全局缓存，JPA 风格的 CRUD。
+2. **差量更新**：实体字段级变更追踪（`DataUpdateInfo` + `_IS_LOADED` 标志），UPDATE 时只更新已修改字段。
+3. **多数据源路由**：按表名前缀路由到不同连接池，支持读写分离（SELECT→读池，写操作→写池），轮询负载均衡。
+4. **HikariCP 连接池**：每数据源独立池，连接超时/空闲/寿命有安全上下限，避免数据库宕机卡死。
+5. **多方言支持**：内置 MySQL / Oracle / SQL Server / PostgreSQL 分页方言，按驱动类名自动识别。
+6. **自动分表**：按日期（天/月/年）或 ID 范围自动创建分片表，后台定时预创建。
+7. **分布式序列**：DB 乐观锁序列（`DaoSequenceFactory`）+ Redis 段缓存高速序列（`FusionSequenceFactory`），Redis 故障自动降级。
+8. **事务与批量更新**：轻量 `TransactionManager`（可设隔离级别）；`BatchUpdateManager` 复用 PreparedStatement。
+9. **SQL 执行监控**：慢 SQL 按天分表写入 `dao_sql_stats_YYYYMMDD`，自动清理过期数据。
+10. **双入口**：`DaoManager`（推荐，ResponseData 包装）+ `DaoFactory`（传统，抛异常风格，不推荐新代码）。
 
-```yml
-# 自动分表设置。
-table-sharding:
-  # 表名，可以配置多个
-  task_runner_log:
-    # 分片类型。 当前仅支持date类型.
-    sharding-type: date
-    # 分片规则。当前仅支持day,month,year类型.
-    sharding-rule: day
-    # 是否自动建表
-    auto-gen: true
+#### 2. uw-dao 的自动分表是根据什么进行分表？该如何配置？
+
+支持按**日期**或 **ID 范围**分表，后台每小时预建当天与次日的分片表。
+
+```yaml
+uw:
+  dao:
+    table-shard:
+      # key 为基表名（基表须手动建好，框架只克隆结构创建分片表）
+      task_runner_log:
+        shard-type: date       # date | id
+        shard-rule: day        # date: day/month/year；id: 每片ID数量（整数）
+        auto-gen: true         # 是否自动建表，默认 true
+      order_item:
+        shard-type: id
+        shard-rule: 1000000    # 每 100 万 ID 一张表
 ```
 
-#### 3.uw-dao的所有数据库访问功能入口是什么？获取到的dao实例是否线程安全，是否可以共用？什么场景下是不可共用的？
+代码中用 `ShardingTableUtils.getTableNameByDate(baseName, date)` 或 `getTableNameById(baseName, id)` 生成目标表名。
+
+#### 3. uw-dao 的数据库访问入口是什么？获取到的实例是否线程安全、能否共用？
 
 ```java
- DAOFactory dao = DAOFactory.getInstance();
+DaoManager dao = DaoManager.getInstance();          // 推荐，返回 ResponseData
+DaoFactory dao2 = DaoFactory.getInstance();         // 传统入口，不推荐新代码使用，抛 TransactionException
 ```
 
-dao实例是线程安全的。
+> 新代码统一用 `DaoManager`。事务/批量更新已由 DaoManager 直接委派
+> （`dao.beginTransaction()` / `dao.beginBatchUpdate()`），无需经 DaoFactory。
 
-在不使用事务的情况下，dao是可以共用的。
+`getInstance()` **每次返回新实例**，每个实例持有独立的事务状态和批量更新状态。
 
-#### 4.如果配置多个数据库连接的情况下，在不指定的连接名的情况下，如何配置访问特定表的时候使用哪个连接？
+- **不使用事务/批量时**：实例可方法内创建即用即弃，逻辑上无状态冲突。
+- **不可共用场景**：实例**不要**存为 Spring Bean 的成员变量跨线程共享，尤其涉及 `beginTransaction()` / `beginBatchUpdate()` 时——事务连接绑定在实例内部，跨线程会串用。
 
-在不指定的连接名的情况下，根据conn-route配置的表名前缀，根据表名或者分析sql语句确定使用哪个连接。
+#### 4. 配置多个数据库连接时，不指定连接名的情况下，框架如何决定用哪个连接？
 
-```yml
-conn-route:
-  # 用表名前缀来指定数据库连接池
-  test_:
-    # 全权限连接
-    all: test
-    # 写入连接
-    write: test
-    # 读连接
-    read: test
+两种方式自动路由：
+
+1. **按表名前缀**（`conn-route.list` 的 key 作为表名前缀匹配）。
+2. **按 SQL 语句探测**（从 `FROM` / `INTO` / `UPDATE` 提取表名再走前缀匹配）。
+
+```yaml
+uw:
+  dao:
+    conn-route:
+      root:
+        write-pools: [root]
+        read-pools: [root]
+      list:
+        order_:
+          write-pools: [order-write]
+          read-pools: [order-read]
 ```
 
-#### 5.SequenceFactory的参数incrementNum有什么作用？incrementNum越大越好吗？
+读写规则：`SELECT`→读池；`INSERT/UPDATE/DELETE/REPLACE/MERGE/CREATE`→写池。未配 read-pools 时读操作自动回退 write-pools。未命中任何前缀用 root 路由。手动指定可传 connName 首参：`dao.load("order-write", Order.class, id)`。
 
-incrementNum是序列增量数，从数据库获取序列的时候会先占用该数量的序列，减少操作数据库的数量。incrementNum越大，数据库操作开销越小，对于插入频繁的表，使increment的数值>
-=100，可以显著提高sequence性能。但如果incrementNum较大，服务刚占用了较多序列就宕机或者重启，就会导致序列之间出现较大空档。increment数值的调整通过管理后台或数据库操作。
+#### 5. SequenceFactory 的 incrementNum 有什么作用？越大越好吗？
 
-incrementNum和tps的关系公式为 tps = incrementNum*(30~50)。
+`incrementNum` 是序列预取步长：每次从 DB 申请一个步长段的号缓存到本地，减少 DB 访问次数。
 
-#### 6.uw-dao中PageList和PageRowSet类的使用场景差别？
+- `incrementNum` 越大，DB 操作开销越小，发号吞吐越高（`tps ≈ incrementNum × 100`）。
+- 插入频繁的表，`increment_num >= 100` 可显著提升性能。
+- **代价**：步长越大，服务刚占用序列就宕机/重启，会留下更大空档（号段丢失，非重复）。
 
-PageRowSet数据列表。相比较PageList列表，这不是一个强类型列表，但是更加灵活。
+`increment_num` 通过 `sys_seq` 表调整，或管理后台。FusionSequenceFactory（Redis）使用固定的 POOL_SIZE=10000 段缓存，吞吐约为 DB 实现的百倍以上。
 
-PageList性能上优于PageRowSet，优先使用。
+#### 6. PageList 和 PageRowSet 的使用场景差别？
 
-PageRowSet用于兼容代码，类似mybatis的ResultSet，性能略低于PageList。
+| 对比项 | `PageList<T>` | `PageRowSet` |
+|--------|---------------|--------------|
+| 类型 | 强类型实体列表 | 弱类型行列集合（`List<Object[]>`） |
+| 映射 | 自动反射映射到实体 | 手动 `row.getLong("col")` 取值 |
+| 性能 | 更优（直接映射） | 略低（多一次 Object[] 中转） |
+| 适用 | 查询映射到实体类 | 联表/动态列/无需实体的灵活查询 |
 
-#### 7.PageQueryParam类有什么作用？和QueryParam有什么区别？
+优先用 `PageList`（`dao.list` / `dao.queryForList`），仅当结果无法映射到单一实体时用 `PageRowSet`（`dao.queryForRowSet`）。
 
-PageQueryParam定义了分页查询参数，实现了父类QueryParam，用于前端传递参数进行分页查询；dao框架会根据entityCls中TableMeta注解的sql属性和QueryPageParam中属性的QueryMeta信息来自动生成sql和分页参数。
-其中属性page为查询的页码，resultNum为每页条数，startIndex为起始位置，sortName为排序字段，sortType为排序类型（0:不排序, 1:顺序,
-2:倒序），requestType为请求类型，决定了返回内容（0:仅分页信息, 1:仅数据, 2:全部）
+#### 7. PageQueryParam 和 QueryParam 有什么区别？
 
-QueryParam查询参数的接口类，主要用于标识子类为查询参数，不具备PageQueryParam的分页功能。
+- **`QueryParam<P>`**：查询参数基类，支持 `@QueryMeta` 条件、排序、附加 where。无分页。
+- **`PageQueryParam`**：继承 `QueryParam`，增加分页控制。
 
-#### 8.假如有一个user表，如何编写一个可以根据userName模糊查询和根据age范围查询的分页查询参数类？
+PageQueryParam 分页字段（HTTP 参数别名）：
+
+| 字段 | 别名 | 默认 | 说明 |
+|------|------|------|------|
+| `PAGE` | `$pg` | 1 | 页码（从1起） |
+| `RESULT_NUM` | `$rn` | 10 | 每页条数 |
+| `START_INDEX` | `$si` | 0 | 起始偏移（优先于 PAGE） |
+| `REQUEST_TYPE` | `$rt` | 1 | 0=仅计数, 1=仅数据, 2=数据+计数 |
+
+排序常量 `SORT_NONE=0 / SORT_ASC=1 / SORT_DESC=2`，通过 `ADD_SORT(name, type)` 或 HTTP `$sn/$st` 设置。
+
+#### 8. 假设有一个 user 表，如何编写按 userName 模糊查询 + age 范围查询的分页参数类？
 
 ```java
-public class userNameAgeQueryParam implements PageQueryParam {
+public class UserAgeQueryParam extends PageQueryParam<UserAgeQueryParam> {
 
-        @QueryMeta(expr = "userName like ?")
-        private String name;
+    @QueryMeta(expr = "user_name like ?")
+    private String userName;
 
-        @QueryMeta(expr = "age between ? and ?")
-        private Integer[] age;
+    // between 需长度2数组，两个占位符分别绑定 begin/end
+    @QueryMeta(expr = "age between ? and ?")
+    private Integer[] age;
 
-        //getter,setter
-
+    @Override
+    public Map<String, String> ALLOWED_SORT_PROPERTY() {
+        Map<String, String> map = new LinkedHashMap<>();
+        map.put("id", "id");
+        return map;
     }
-```
-
-#### 9.在集合类型的字段上使用@QueryMeta注解，如果sql中要使用in的时候该如何写占位符？
-
-```java
-@QueryMeta(expr = "name in (?)")
-List<String> name;
-```
-
-#### 10.如何正确的使用批量写入？如何优化写入速度？
-
-- mysql连接必须设置rewriteBatchedStatements=true，否则无法生效。
-- 必须开启一个新的DaoFactory实例，不可公用其他DaoFactory实例。
-- 使用dao的beginTransaction()方法获取TransactionManager实例，开启事务；
-- 使用dao的beginBatchUpdate()方法开启批量更新，获取BatchUpdateManager实例；
-- 此时执行save/update.delete方法，相当于addBatch操作；
-- 使用BatchUpdateManager的submit()方法关闭批量更新。
-- 使用TransactionManager的commit()方法来提交事务。
-- 异常中调用TransactionManager的rollback()方法来回退事务。
-
-优化
-
-- 通过BatchUpdateManager的setBatchsize接口设置合理的批量更新数量，控制数据库操作次数以优化性能。
-- 在uw-mydb-proxy下，批量写入功能是无法启用的。
-
-**代码示例如下：**
-
-```java
-//获取dao实例
-DaoFactory batchDao = DaoFactory.getInstance();
-//开启事务
-TransactionManager transactionManager = batchDao.beginTransaction();
-//开启批量写入
-BatchUpdateManager batchUpdateManager = batchDao.beginBatchUpdate();
-try{
-    //执行save方法
-    for (EntityA entityA : entityList) {
-        batchDao.save(entityA);
-    }
-    batchUpdateManager.submit();
-    transactionManager.commit();
-}catch (Exception e){
-    transactionManager.rollback();
-    e.printStackTrace();
+    // getter/setter ...
 }
 ```
 
-#### 11.如何开启使用sql调试和在线sql统计分析功能？如何在日志中输出当前执行的sql?
+`@ColumnMeta.columnName` 大小写不敏感，框架内部统一小写匹配。
 
-```yml
-#统计sql执行信息，包括参数，返回信息，执行时间等,表名为dao_sql_stats开头，此表被自动配置为按日分表
-#开启sql统计
-sql-stats:
-  #是否统计，默认是false.
-  enable: true
-  #sql执行最小毫秒数
-  sql_cost_min: 100
-  #保存时间，默认是100天.
-  data-keep-days: 100
+#### 9. 集合字段用 @QueryMeta 做 IN 查询时占位符怎么写？
+
+```java
+@QueryMeta(expr = "name in (?)")
+private List<String> name;   // 或 String[] / Integer[]
 ```
 
-#### 12.dao中queryForObject和queryForValue方法有什么区别？什么时候使用queryForValue更好？
+框架会按集合大小自动展开占位符（`?` → `?,?,?`）并绑定每个元素。`between ? and ?` 用长度2数组，同一值绑多占位符也支持。
 
-queryForObject查询单个对象（单行数据）。
+#### 10. 如何正确使用批量写入？如何优化速度？
 
-queryForValue查询单个基本数值（单个字段），要映射的基础类型，如int.class,long.class,String.class,Date.class。
+⚠️ **批量更新必须在事务中运行**。完整步骤：
 
-在程序内部调用查询某个字段用于计算的时候，使用queryForValue直接获取基本类型进行计算，减少包装类开销。
+1. MySQL 连接 URL 必须加 `rewriteBatchedStatements=true`。
+2. `DaoManager.getInstance()` 获取实例（事务/批量状态绑定在实例上，勿跨线程共用）。
+3. `dao.beginTransaction()` 开启事务（DaoManager 已委派 DaoFactory 的事务 API）。
+4. `dao.beginBatchUpdate()` 开启批量更新，`setBatchSize(N)` 设定每批大小（默认 100）。
+5. 循环调用 `dao.save/update/delete`，框架自动判批量模式走 `addBatch`，满 batchSize 自动 `executeBatch`。
+6. `batch.submit()` 提交剩余批次，返回 `Map<SQL, List<行数>>`。
+7. `tx.commit()` 提交事务；异常走 `tx.rollback()`。
 
-#### 13.关于使用原生类型和包装类型的区别？为什么在entityBean和dtoBean中分别使用了原生类型和包装类型？
+```java
+DaoManager dao = DaoManager.getInstance();
+TransactionManager tx = dao.beginTransaction();
+BatchUpdateManager batch = dao.beginBatchUpdate();
+batch.setBatchSize(500);
+try {
+    for (User u : userList) {
+        dao.save(u);
+    }
+    batch.submit();
+    tx.commit();
+} catch (Exception e) {
+    tx.rollback();
+    throw e;
+}
+```
 
-- 原生类型比包装类型占用的内存更小。
+**优化**：合理 `setBatchSize`（500~1000）减少 executeBatch 次数；`rewriteBatchedStatements=true` 让驱动合并语句。`submit()` 后 batchSize 重置为默认 100，连续批量需重新设置。
 
-- 原生类型的运算比包装类型更高效。
+#### 11. 如何开启 SQL 统计与慢查询分析？如何在日志输出执行 SQL？
 
-- 原生类值相等一定相等，包装类值相等不一定相等。
+```yaml
+uw:
+  dao:
+    sql-stats:
+      enable: true          # 默认 false
+      sql-cost-min: 100     # 仅记录执行 >=100ms 的 SQL
+      data-keep-days: 100   # 按天分表，自动清理超期表
+```
 
-- 包装类可以为null，原生类型不能为null。
+启用后每条慢 SQL 写入 `dao_sql_stats_YYYYMMDD`，后台每30s批量写、每天清理超期分表。
 
-- 包装类可以用于泛型，原生类型不能。
+代码内临时调试（不影响统计表）：
 
-- 在entityBean中使用原生类型是为了减小内存占用，避免包装类计算时候的装箱拆箱等性能损耗，提高计算速度。dtoBean中使用包装类型，是因为包装类可以为null，可以用于判空，传递空值。 
+```java
+DaoManager dao = DaoManager.getInstance();
+dao.enableSqlExecuteStats();
+// ... 执行 DAO 操作 ...
+dao.getSqlExecuteStatsList().forEach(s -> System.out.println(s.genFullSqlInfo()));
+dao.disableSqlExecuteStats();
+```
+
+#### 12. queryForObject 和 queryForValue 有什么区别？
+
+- **`queryForObject(Class<T>, sql, params)`**：查询单个**对象**（单行映射到实体类）。
+- **`queryForValue(Class<T>, sql, params)`**：查询单个**标量值**（单行单字段，T 为 `int/long/String/Date` 等基本或包装类型）。
+
+查某个字段用于计算时用 `queryForValue`，减少实体映射开销。注意：包装类型（`Integer/Long`）在数据库列为 NULL 时返回 `null`；基本类型（`int.class`）返回 0（无法区分"真0"与"NULL"），查可空列建议用包装类型。
+
+#### 13. 原生类型与包装类型在 entity 和 dto 中的选择？
+
+- 原生类型（`long/int`）：内存更小，无装箱开销，运算更快，但**不能为 null**。
+- 包装类型（`Long/Integer`）：可为 null（用于判空、可空列），支持泛型，但有装箱开销。
+
+**实体字段（entity）**：主键、状态码等必有值的字段用原生类型减小内存；允许为空的字段（如 `finishDate`）用包装类型，框架会正确处理 null 读写（save 时 setObject null，load 时按 wasNull 置 null）。
+
+**DTO 字段**：通常用包装类型，便于区分"未传值(null)"与"默认值(0)"。
+
+#### 14. FusionSequenceFactory 在 Redis 故障时会怎样？
+
+框架按"是否配置 Redis 且 Redis 可用"自动选择发号实现：
+
+- Redis 可用 → `FusionSequenceFactory`（Redis 段缓存，高吞吐）。
+- 未配置 Redis / Redis 初始化失败 / 句柄未就绪 → 自动降级到 `DaoSequenceFactory`（DB 乐观锁）。
+
+降级保证全局发号不因 Redis 故障中断。运行期 Redis 瞬时抖动由 Fusion 内部重试（指数退避，最多50次）兜底；持续不可达建议配置 Redis Sentinel/Cluster 保障高可用。
+
+#### 15. 为什么 load() 后再 update() 只更新了部分字段？
+
+这是差量更新的设计：`load()` 后框架将实体 `_IS_LOADED` 置 true，此后只有被 setter 调用过的字段进入 UPDATE 的 SET 子句，未改字段不入 SQL。
+
+- 通过 `load` 获取的实体：只更新 setter 触发过的字段。
+- 直接 `new` 出的实体（`_IS_LOADED=false`）：update 会写入全部非主键字段。
+
+若需强制更新某字段为 null，确保该字段 setter 被调用过即可（差量记录 oldValue≠newValue）。

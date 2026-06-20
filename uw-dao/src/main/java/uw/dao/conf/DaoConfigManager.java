@@ -45,6 +45,8 @@ public final class DaoConfigManager {
      */
     public static void setConfig(DaoConfig config) {
         DaoConfigManager.config = config;
+        // 清空路由缓存，使新配置（连接池/路由变更）立即生效，支持配置热更新。
+        routeMap.clear();
     }
 
     /**

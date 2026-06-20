@@ -160,16 +160,19 @@ public class DaoAutoConfiguration {
      * @return
      */
     private RedisConnectionFactory redisConnectionFactory(RedisProperties redisProperties, ClientResources clientResources) {
-        //设置连接池。
+        LettucePoolingClientConfiguration.LettucePoolingClientConfigurationBuilder builder = LettucePoolingClientConfiguration.builder();
+        //设置连接池（仅在用户配置了 lettuce.pool 时启用，否则使用 Lettuce 默认的非池化连接）。
         RedisProperties.Pool poolProperties = redisProperties.getLettuce().getPool();
-        GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
-        poolConfig.setMaxTotal(poolProperties.getMaxActive());
-        poolConfig.setMaxIdle(poolProperties.getMaxIdle());
-        poolConfig.setMinIdle(poolProperties.getMinIdle());
-        if (poolProperties.getMaxWait() != null) {
-            poolConfig.setMaxWait(poolProperties.getMaxWait());
+        if (poolProperties != null) {
+            GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
+            poolConfig.setMaxTotal(poolProperties.getMaxActive());
+            poolConfig.setMaxIdle(poolProperties.getMaxIdle());
+            poolConfig.setMinIdle(poolProperties.getMinIdle());
+            if (poolProperties.getMaxWait() != null) {
+                poolConfig.setMaxWait(poolProperties.getMaxWait());
+            }
+            builder.poolConfig(poolConfig);
         }
-        LettucePoolingClientConfiguration.LettucePoolingClientConfigurationBuilder builder = LettucePoolingClientConfiguration.builder().poolConfig(poolConfig);
         if (redisProperties.getTimeout() != null) {
             builder.commandTimeout(redisProperties.getTimeout());
         }

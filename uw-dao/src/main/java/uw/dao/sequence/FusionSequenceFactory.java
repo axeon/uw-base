@@ -172,11 +172,28 @@ public class FusionSequenceFactory {
     }
 
     /**
-     * 确保已通过构造器注入 Redis 操作句柄。
-     * 防止 Spring 上下文未就绪时静态方法被调用导致 NPE。
+     * 判断 Fusion 发号器是否可用（Redis 操作句柄已通过构造器注入就绪）。
+     * <p>三个句柄在构造器中一次性同时赋值，要么全 null 要么全就绪，不会出现部分就绪的中间态。
+     * 本方法是发号器就绪状态的唯一真相源：</p>
+     * <ul>
+     *   <li>供 {@link uw.dao.SequenceFactory} 在配置了 Redis 但初始化失败时降级到
+     *       {@link DaoSequenceFactory}，避免全局发号因 Redis 不可用而瘫痪；</li>
+     *   <li>供 {@link #ensureInitialized()} 复用，保证公共方法入口校验与降级判定条件始终一致。</li>
+     * </ul>
+     *
+     * @return true 表示 Redis 句柄已就绪
+     */
+    public static boolean isAvailable() {
+        return REDIS_TEMPLATE != null && KV_OP != null && SET_OP != null;
+    }
+
+    /**
+     * 确保已通过构造器注入 Redis 操作句柄，防止 Spring 上下文未就绪时静态方法被调用导致 NPE。
+     * <p>判定逻辑复用 {@link #isAvailable()}，保持"就绪状态"单一真相源，
+     * 避免两处判定条件手工同步导致的不一致。</p>
      */
     private static void ensureInitialized() {
-        if (KV_OP == null || SET_OP == null) {
+        if (!isAvailable()) {
             throw new IllegalStateException("FusionSequenceFactory 尚未初始化，请先通过构造器注入 RedisTemplate");
         }
     }
@@ -213,18 +230,20 @@ public class FusionSequenceFactory {
     }
 
     /**
-     * 通过SeqName获取当前主键ID。
+     * 通过实体类获取当前主键ID（最近一次已发的号；未初始化返回 0）。
      *
-     * @return
+     * @param entityCls 实体类（序列名取类简单名）
+     * @return 当前已发号；未初始化返回 0
      */
     public static long getCurrentId(Class<?> entityCls) {
         return getCurrentId(entityCls.getSimpleName());
     }
 
     /**
-     * 通过SeqName获取主键ID。
+     * 通过实体类获取主键ID。
      *
-     * @return
+     * @param entityCls 实体类（序列名取类简单名）
+     * @return 下一个ID
      */
     public static long getSequenceId(Class<?> entityCls) {
         return getSequenceId(entityCls.getSimpleName());
@@ -461,7 +480,8 @@ public class FusionSequenceFactory {
      * 回收一个seqId到池中，使其可以重新用于分配。
      * 常见于前台恶意注册，浪费了seqId。
      *
-     * @param
+     * @param entityCls 实体类（池名取类简单名）
+     * @param seqId     要回收的ID
      */
     public void restoreSequenceIdToPool(Class<?> entityCls, long seqId) {
         restoreSequenceIdToPool(entityCls.getSimpleName(), seqId);
@@ -471,9 +491,11 @@ public class FusionSequenceFactory {
      * 回收一个seqId到池中，使其可以重新用于分配。
      * 常见于前台恶意注册，浪费了seqId。
      *
-     * @param
+     * @param seqName 序列名（池名）
+     * @param seqId   要回收的ID
      */
     public void restoreSequenceIdToPool(String seqName, long seqId) {
+        ensureInitialized();
         SET_OP.add(REDIS_SEQ_POOL + seqName, seqId);
     }
 

@@ -5,7 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * 批量操作的响应结果。
+ * Elasticsearch bulk api 批量操作的响应结果。
+ * <p>用于在 {@code processLogBuffer()} 提交后判断整体是否出错。
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(title = "BulkResponse", description = "批量操作的响应结果")
@@ -23,6 +24,11 @@ public class BulkResponse {
     @Schema(title = "took", description = "整个操作的耗时（毫秒）")
     private long took;
 
+    /**
+     * 是否在批量操作中出现错误。
+     *
+     * @return 出错返回 true
+     */
     public boolean isErrors() {
         return errors;
     }
@@ -31,6 +37,11 @@ public class BulkResponse {
         this.errors = errors;
     }
 
+    /**
+     * 获取整个操作的耗时。
+     *
+     * @return 耗时（毫秒）
+     */
     public long getTook() {
         return took;
     }

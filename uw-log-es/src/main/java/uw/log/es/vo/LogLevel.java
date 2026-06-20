@@ -2,6 +2,8 @@ package uw.log.es.vo;
 
 /**
  * 日志级别。
+ * <p>用于控制 {@code LogBaseVo.logLevel} 的写入门槛：单条 {@code LogClient.log()}
+ * 仅当 {@code logLevel > NONE.value} 时才真正写入。
  */
 public enum LogLevel {
 
@@ -31,7 +33,7 @@ public enum LogLevel {
     ALL(3, "记录全部信息");
 
     /**
-     * 数值。
+     * 数值（越大表示记录信息越多）。
      */
     private final int value;
 
@@ -45,10 +47,20 @@ public enum LogLevel {
         this.label = label;
     }
 
+    /**
+     * 获取级别数值。
+     *
+     * @return 级别数值
+     */
     public int getValue() {
         return value;
     }
 
+    /**
+     * 获取级别描述。
+     *
+     * @return 级别描述
+     */
     public String getLabel() {
         return label;
     }

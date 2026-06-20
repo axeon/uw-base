@@ -245,8 +245,8 @@ public class LogService {
     /**
      * 获取带引号的原始索引名（裸引号 "xxx"），用于构造写入/bulk的_index等场景。
      *
-     * @param logClass
-     * @return
+     * @param logClass 日志类
+     * @return 带引号的原始索引名；未注册时返回 {@code "null"}（调用方应先确保已注册）
      */
 
     public String getQuotedRawIndexName(Class<?> logClass) {
@@ -271,8 +271,8 @@ public class LogService {
      * 获取带引号的查询索引名（转义引号 \"xxx*\"），用于拼入ES SQL的from子句，
      * 因为SQL字符串本身已被外层JSON字符串包裹，故需对引号做反斜杠转义。
      *
-     * @param logClass
-     * @return
+     * @param logClass 日志类
+     * @return 带转义引号的查询索引名；未注册时返回 {@code \"null\"}（调用方应先确保已注册）
      */
 
     public String getQuotedQueryIndexName(Class<?> logClass) {
@@ -554,6 +554,12 @@ public class LogService {
     public DeleteScrollResponse scrollQueryClose(String scrollId) {
         if (StringUtils.isBlank(esServer)) {
             return null;
+        }
+        // scrollId 可能为 null（上游 scroll 查询失败时），避免 quoteAsString(null) 抛 NPE
+        if (scrollId == null) {
+            DeleteScrollResponse resp = new DeleteScrollResponse();
+            resp.setSucceeded(false);
+            return resp;
         }
         StringBuilder urlBuilder = new StringBuilder(esServer);
         urlBuilder.append("/_search/").append(SCROLL);

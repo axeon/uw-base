@@ -2,17 +2,20 @@
 
 # uw-log-es
 
-Elasticsearch(下文简称es)是一个基于Lucene的搜索服务器,其强大的索引功能,自动支持分片、压缩、负载均衡、自动数据恢复,复制功能,可靠的集群功能,基本上是开箱即用。
+基于 [uw-httpclient](../uw-httpclient) 封装的 Elasticsearch 日志客户端，提供日志的**批量写入**与 **DSL / SQL / Scroll 查询**能力，并自动映射到日志对象。
 
-#### 项目简介
+> Elasticsearch（下文简称 es）是基于 Lucene 的搜索服务器，天然支持分片、压缩、负载均衡与自动恢复，基本开箱即用。
 
-uw-log-es的主要特性:
+## 项目简介
 
-1. 使用uw-httpclient做REST构建查询,支持Http Basic 验证;
-2. 支持多种方式批量写入,完全自动化构建日志内容;
-3. 支持多种方式查询,并映自动射到日志对象;
+主要特性：
 
-#### 项目引入
+1. 基于 uw-httpclient 构建 REST 请求，支持 Http Basic 认证；
+2. 后台守护线程 + buffer 聚合的**批量写入**，按时间阈值或字节阈值自动 flush；
+3. 支持 **DSL 查询**、**SQL 转 DSL**、**Scroll 游标查询**，结果自动反序列化为日志对象；
+4. 提供聚合结果转换与分页映射工具方法。
+
+## 项目引入
 
 ```xml
 <dependency>
@@ -22,230 +25,197 @@ uw-log-es的主要特性:
 </dependency>
 ```
 
-#### 项目配置
+引入后由 `LogClientAutoConfiguration` 自动装配 `LogClient` 单例，业务侧通过 `LogClient.getInstance()` 或注入获取。
+
+## 项目配置
+
+配置前缀 `uw.log.es`：
 
 ```yaml
 uw:
   log:
     es:
-      # 如果不配置 server 地址,将不会把日志发送到es服务端
+      # ES 集群 HTTP REST 地址；不配置 server 时不会写入日志，仅保留查询能力
       server: http://localhost:9200
-      # 如果不配置用户名和密码,将不会有Http Basic验证头
+      # Http Basic 认证（username 与 password 同时配置时生效）
       username: admin
       password: admin
-      # READ_ONLY: 只读模式; READ_WRITE: 读写模式[会有后台线程开销]
+      # READ_ONLY: 只读模式（不起后台写入线程）; READ_WRITE: 读写模式
       mode: READ_WRITE
-      # 后台批量提交的刷新间隔（秒），默认10
-      max-flush-in-seconds: 10
-      # 触发立即提交的buffer阈值（KB），默认8192(即8MB)
-      max-kilo-bytes-of-batch: 8192
-      # 最大批量提交线程数，默认5
-      max-batch-threads: 5
-      # 批量提交线程池队列长度，默认20
-      max-batch-queue-size: 20
-      # 是否用应用信息覆写日志体中的appInfo/appHost，默认true
+      # 是否用应用信息覆写日志体中的 appInfo/appHost
       app-info-overwrite: true
-      # ES连接/读/写超时（毫秒），默认30000
+      # 后台批量提交的刷新间隔（秒），默认 10
+      max-flush-in-seconds: 10
+      # 触发立即提交的 buffer 阈值（KB），默认 8192（即 8MB）
+      max-kilo-bytes-of-batch: 8192
+      # 批量提交线程池最大线程数，默认 5
+      max-batch-threads: 5
+      # 批量提交线程池队列容量，默认 20
+      max-batch-queue-size: 20
+      # ES 连接/读/写超时（毫秒），默认 30000
       connect-timeout: 30000
       read-timeout: 30000
       write-timeout: 30000
+      # bulk api 路径（相对 server）
+      es-bulk: /_bulk?filter_path=took,errors
 ```
 
-> 注意：`max-kilo-bytes-of-batch` 单位为 **KB**，`max-flush-in-seconds` 单位为 **秒**。
+> 单位提醒：`max-kilo-bytes-of-batch` 为 **KB**，`max-flush-in-seconds` 为 **秒**。
 
-#### 基本使用
+`appInfo` 取自 `${spring.application.name}:${project.version}`，`appHost` 取自 `${spring.cloud.nacos.discovery.ip}:${server.port}`，均有默认值，未接入 nacos 也不会启动报错。
 
-##### 初始化注册日志对象
+## 基本使用
+
+### 1. 定义日志对象
+
+日志对象须继承 `LogBaseVo`，公共字段（`@timestamp` / `appInfo` / `appHost` / `logLevel`）由基类提供，写入时自动补齐。
 
 ```java
-/**
- * uw-log-es配置,主要用来注册日志对象
- *
- * 
- * @since 2018-05-03
- */
+public class MscLoginLog extends LogBaseVo {
+    private long userId;
+    private String loginIp;
+    private int status;
+    // getter/setter ...
+}
+```
+
+`logLevel` 参考 `uw.log.es.vo.LogLevel`：`NONE(-1)` 不记录、`BASE(0)` 基本信息……值越大记录信息越多。`LogClient.log()` 仅在 `logLevel > NONE` 时才写入。
+
+### 2. 注册日志类型
+
+在应用启动期（`static` 块或 `@PostConstruct`）注册，索引名默认按类名 lower_underscore 推导，也可自定义或按时间分索引：
+
+```java
 @Service
-public class MyLoginLogClient {
-    
-    
-    public void initMyLoginlogClient(final LogClient logClient) {
-        logClient.regLogObject(MscLoginLog.class);
+public class LogClientInitializer {
+    @PostConstruct
+    public void init() {
+        // 方式一：索引名按类名推导
+        LogClient.getInstance().regLogObject(MscLoginLog.class);
+        // 方式二：自定义索引名
+        LogClient.getInstance().regLogObjectWithIndexName(MscLoginLog.class, "msc_login_log");
+        // 方式三：按时间分索引（写入追加 yyyyMM 后缀，查询用 原名_* 通配）
+        LogClient.getInstance().regLogObjectWithIndexPattern(MscLoginLog.class, "yyyyMM");
     }
 }
 ```
 
-##### 日志写入
+### 3. 写入日志
 
 ```java
-public class DemoWriteLog {
-    
-    @org.springframework.beans.factory.annotation.Autowired
-    private uw.log.es.LogClient logClient;
-    
-    /**
-    * 写单条日志 
-    */
-    public void log() {
-        MscLoginLog loginLog = new MscLoginLog();
-        // 写日志...
-        logClient.log(loginLog);
-    }
-    
-    /**
-    * 批写日志 
-    */
-    public void bulkLog() {
-        List<MscLoginLog> dataLists = new ArrayList<MscLoginLog>();
-        // 写日志...
-        logClient.bulkLog(loginLog);
-    }
+@Autowired
+private LogClient logClient;
+
+public void log() {
+    MscLoginLog loginLog = new MscLoginLog();
+    loginLog.setLogLevel(LogLevel.BASE.getValue());
+    loginLog.setUserId(10001L);
+    loginLog.setLoginIp("10.8.8.89");
+    logClient.log(loginLog);          // 单条写入，经 buffer 聚合后批量提交
+}
+
+public void bulkLog() {
+    List<MscLoginLog> list = new ArrayList<>();
+    // 填充列表 ...
+    logClient.bulkLog(list);          // 批量写入
 }
 ```
 
-##### 日志查询
+### 4. 查询日志
 
-在构建查询前,先选择你熟悉的查询方式,uw-log-es目前支持:
-
-1. 简单查询日志（废弃）:
-
-2. 转换SQL为DSL:
+#### DSL 查询
 
 ```java
-public class LogClientDSLTest {
-    @Test
-    public void testSqlToDsl() throws Exception {
-        System.out.println(logClient.translateSqlToDsl("select * from \\\"saas-hotel-task_20191217\\\" where level = 'ERROR'", 10, 10));
-    }
-}
+String dsl = "{\"query\":{\"term\":{\"userId\":10001}},\"from\":0,\"size\":10}";
+SearchResponse<MscLoginLog> resp = logClient.dslQuery(MscLoginLog.class, dsl);
+// resp.getHitResponse().getHits() 取命中
 ```
 
-3. DSL(Domain Specific Language)查询:
+#### SQL 转 DSL
+
+将 SQL 交给 ES 的 `_sql/translate` 翻译为 DSL，再自行或交由 `dslQuery` 执行。表名（索引名）需用 `getQuotedQueryIndexName` 转义；SQL **不可包含 limit**。
 
 ```java
-public class LogClientDSLTest {
-    /**
-    * DSL查询,注意要带分页from,size参数。
-    * PS: 对于在查询应用中,此方法查询要求先注册日志对象
-    */
-    @Test
-        public void testDslSearch() throws Exception {
-            String dsl = logClient.translateSqlToDsl("select * from \\\"saas-hotel-task_20191217\\\"", 10, 10);
-            logClient.dslQuery(TaskRunnerLog.class, "uw.auth.server.vo.msc_action_log_20191217", dsl);
+String index = logClient.getQuotedQueryIndexName(MscLoginLog.class);
+String dsl = logClient.translateSqlToDsl(
+        "select * from " + index + " where status = 1", 0, 10, true);
+// startIndex=0 不附加 from；resultNum=10 拼接 limit 10；trueCount 附加 track_total_hits:true
+SearchResponse<MscLoginLog> resp = logClient.dslQuery(
+        MscLoginLog.class, logClient.getQueryIndexName(MscLoginLog.class), dsl);
+```
+
+#### Scroll 游标查询（大数据量导出）
+
+> 注意：scroll 的 DSL **不能包含 from 节点**；使用完毕**必须关闭** scroll 以释放 ES 资源。
+
+```java
+String index = logClient.getQueryIndexName(MscLoginLog.class);
+String dsl = "{\"query\":{\"match_all\":{}},\"size\":1000}";
+ScrollResponse<MscLoginLog> scroll = logClient.scrollQueryOpen(MscLoginLog.class, index, 60, dsl);
+try {
+    while (scroll != null && scroll.getHitResponse() != null
+            && !scroll.getHitResponse().getHits().isEmpty()) {
+        for (SearchResponse.Hit<MscLoginLog> hit : scroll.getHitResponse().getHits()) {
+            // 处理 hit.getSource()
         }
+        scroll = logClient.scrollQueryNext(MscLoginLog.class, index, scroll.getScrollId(), 60);
+    }
+} finally {
+    if (scroll != null) {
+        logClient.scrollQueryClose(scroll.getScrollId(), index);
+    }
 }
 ```
 
-4. SQL(Structured Query Language)查询 （未支持）:
+### 5. 分页查询
 
-5. Scroll API查询 :
+ES 查询默认仅返回 10 条，分页查询可通过 `from` / `size` 控制，并用工具方法转换为 `PageList`：
 
 ```java
-public class LogClientDSLTest {
-    /**
-    *  开始scroll查询
-    * @throws Exception
-    */
-     @Test
-    public void testScroll() throws Exception {
-        String dsl = logClient.translateSqlToDsl("select * from \\\"saas-hotel-task_20191217\\\"", 0, 10);
-        ScrollResponse<TaskRunnerLog> taskRunnerLogScrollResponse = logClient.scrollQueryOpen(TaskRunnerLog.class, "uw.auth.server.vo.msc_action_log_20191217", 60, dsl);
-        System.out.println(taskRunnerLogScrollResponse);
-    }
-        
-    /**
-    *  接着scroll查询
-    */
-     @Test
-    public void testScrollNext() {
-        ScrollResponse<TaskRunnerLog> taskRunnerLogScrollResponse = logClient.scrollQueryNext(TaskRunnerLog.class, index, "DXF1ZXJ5QW5kRmV0Y2gBAAAAAAAFqj0WbTg3Z180Q1FRUHEwelZjbUI0NmROQQ==", 60);
-        System.out.println(taskRunnerLogScrollResponse);
-
-    }
-    
-    
-    /**
-    * 关闭scroll查询
-     */
-    @Test
-    public void deleteScroll() {
-        DeleteScrollResponse deleteScrollResponse = logClient.scrollQueryClose("DnF1ZXJ5VGhlbkZldGNoBAAAAAAABXUDFm04N2dfNENRUVBxMHpWY21CNDZkTkEAAAAAAAV1BBZtODdnXzRDUVFQcTB6VmNtQjQ2ZE5BAAAAAAAFdQUWbTg3Z180Q1FRUHEwelZjbUI0NmROQQAAAAAABXUZFm04N2dfNENRUVBxMHpWY21CNDZkTkE="), index;
-        System.out.println(deleteScrollResponse);
-    }
-    
-        
+public PageList<MscLoginLog> list(int page, int resultNum) {
+    int startIndex = (page - 1) * resultNum;
+    String index = logClient.getQuotedQueryIndexName(MscLoginLog.class);
+    String dsl = logClient.translateSqlToDsl(
+            "select * from " + index + " where loginDate > 1524666600000",
+            startIndex, resultNum, true);
+    SearchResponse<MscLoginLog> resp = logClient.dslQuery(
+            MscLoginLog.class, logClient.getQueryIndexName(MscLoginLog.class), dsl);
+    return LogClient.mapQueryResponseToPageList(resp, startIndex, resultNum);
 }
 ```
 
-##### 日志分页查询
-
-es本身对分页查询支持良好,使用简单查询和DSL查询默认是取10条
-
-项目中常见的分页查询是前端的列表查询,可以使用带SearchResponse后缀的方法将数据查出来,然后使用[uw-dao](http://192.168.88.88:10080/uw/uw-dao "数据库操作的类库")
-提供的PageList工具类进行包装即可,比如
+### 6. 聚合查询
 
 ```java
-public class DemoPaginationQuery {
-
-    /**
-     * SQL分页查询示例
-     */
-    public PageList<MscLoginLog> list(@RequestParam(name = "page", defaultValue = "1") int page,
-                                      @RequestParam(name = "resultNum", defaultValue = "10") int resultNum) {
-        int startIndex = (page - 1) * resultNum;
-        String dsl = logClient.translateSqlToDsl(
-                "select * from " + logClient.getQuotedQueryIndexName(MscLoginLog.class) + " where loginDate > 1524666600000 ", startIndex, resultNum, true);
-        SearchResponse<MscLoginLog> response = logClient.dslQuery(MscLoginLog.class, logClient.getQueryIndexName(MscLoginLog.class), dsl);
-        // 使用工具方法直接组装分页结果
-        return LogClient.mapQueryResponseToPageList(response, startIndex, resultNum);
-    }
-}
+String dsl = "{\"size\":0,\"aggs\":{\"by_status\":{\"terms\":{\"field\":\"status\"}}}}";
+SearchResponse<MscLoginLog> resp = logClient.dslQuery(MscLoginLog.class, dsl);
+// 拉平为 聚合名+桶key -> 文档数
+Map<String, Double> flat = LogClient.convertAggBucketFlatMap(resp.getAggregations());
+// 或保留桶结构：聚合名 -> [{name, count, 子聚合名:值}]
+Map<String, List<Map<String, Object>>> buckets = LogClient.convertAggBucketListMap(resp.getAggregations());
 ```
 
-##### 学习的es的建议
+## 常见问题
 
-因为es版本目前迭代非常快。。。不要上百度搜文档了,搜出来的可能解决不了你的问题(因为版本不一致)
-,建议参考[官方文档](https://www.elastic.co/guide/en/elasticsearch/guide/current/index.html "Elasticsearch: The Definitive Guide"),[中文版](https://github.com/elasticsearch-cn/elasticsearch-definitive-guide "Elasticsearch: The Definitive Guide")
-,中文文档翻译可能与最新版的原文档有出入,但是基本够用。
+**Q: 日志没有被记录到 ES？**
+- 是否在启动期调用 `LogClient.regLogObject` 注册了日志类型？
+- `mode` 是否为 `READ_WRITE`（`READ_ONLY` 不写入）？
+- `logLevel` 是否大于 `NONE(-1)`？
+- `server` 是否已配置？
 
-#### 常见问题
+**Q: 写日志失败 401？**
+- ES 服务端开启了 Http Basic 验证，需同时配置 `username` 与 `password`。
 
-1.Q: 日志没有被记录到es?
+**Q: scroll 查询报错？**
+- scroll 的 DSL 不能含 `from` 节点；且使用完务必 `scrollQueryClose`。
 
-A: 是否在uw-log-es初始化时调用LogClient.regLogObject方法注册日志对象
+**Q: SQL 转 DSL 报错？**
+- SQL 不可包含 `limit`（由 `resultNum` 控制）；表名需用 `getQuotedQueryIndexName` 转义。
 
-2.Q: uw-log-es写日志失败401?
+## 学习建议
 
-A: uw-log-es在es服务端配置了Http Basic验证,需要配置用户名和密码。
+ES 版本迭代很快，建议直接参考 [官方文档](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html)。中文翻译可能与最新版本有出入，但基本够用。
 
-#### 2023/3/16 依赖升级
+## 更新历史
 
-| 库                                  | 升级前版本  | 升级后版本 |
-|------------------------------------|--------|-------|
-| uw-httpclient                      | 1.0.30 | 2.0.1 |
-| 删除commons-lang3，依赖迁移到uw-httpclient |        |       |
-| 删除jackson，依赖迁移到uw-httpclient       |        |       |
-
-单元测试ES遇到的一些问题解决思路
-
-https://blog.csdn.net/weixin_38650077/article/details/129116034
-
-http改为https才可以
-
-单元测试
-
-遇到这种报错
-
-```
-SunCertPathBuilderException: unable to find valid certification path to requested target
-```
-
-修改config目录下的[elasticsearch](https://so.csdn.net/so/search?q=elasticsearch&spm=1001.2101.3001.7020)
-.yml文件中xpack.security.http.ssl.enable:true 为false（修改后只能用http）
-
-```yml
-# Enable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents
-xpack.security.http.ssl:
-  enabled: false
-  keystore.path: certs/http.p12
-```
-
+见 [CHANGELOG.md](CHANGELOG.md)。

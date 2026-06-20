@@ -11,7 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Elasticsearch _search 接口返回结果的 VO 类
+ * Elasticsearch _search 接口返回结果的 VO 类。
+ * <p>支持泛型 {@code <T>} 指定 _source 反序列化的目标日志对象类型；
+ * 未知字段统一忽略，聚合结果通过 {@link Aggregation} 与 {@link Bucket} 表达，
+ * 桶下的子聚合通过 {@link Bucket#getSubAggregations()} 的 {@code @JsonAnySetter} 捕获。
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(title = "SearchResponse", description = "Elasticsearch _search 接口返回结果")
@@ -134,7 +137,7 @@ public class SearchResponse<T> {
     }
 
     /**
-     * 搜索和主体类
+     * 命中结果主体类，包含总数、最大得分与命中文档列表。
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     @Schema(title = "Hits", description = "搜索结果集合")
@@ -186,17 +189,17 @@ public class SearchResponse<T> {
 
         @JsonProperty("value")
         @Schema(title = "value", description = "文档总数")
-        private int value;
+        private long value;
 
         @JsonProperty("relation")
         @Schema(title = "relation", description = "计数是否准确（eq 表示准确，gte 表示大于或等于）")
         private String relation;
 
-        public int getValue() {
+        public long getValue() {
             return value;
         }
 
-        public void setValue(int value) {
+        public void setValue(long value) {
             this.value = value;
         }
 
@@ -210,7 +213,7 @@ public class SearchResponse<T> {
     }
 
     /**
-     * 单个匹配文档类
+     * 单个命中文档，含索引、id、得分与反序列化后的 _source。
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     @Schema(title = "Hit", description = "单个匹配文档")
@@ -286,7 +289,7 @@ public class SearchResponse<T> {
     }
 
     /**
-     * 聚合结果基类
+     * 聚合结果基类，兼容单值聚合（sum/avg/max/min）与桶聚合（terms）。
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     @Schema(title = "Aggregation", description = "聚合结果")
@@ -294,11 +297,11 @@ public class SearchResponse<T> {
 
         @JsonProperty("doc_count_error_upper_bound")
         @Schema(title = "docCountErrorUpperBound", description = "文档计数错误上限")
-        private int docCountErrorUpperBound;
+        private long docCountErrorUpperBound;
 
         @JsonProperty("sum_other_doc_count")
         @Schema(title = "sumOtherDocCount", description = "其他文档计数")
-        private int sumOtherDocCount;
+        private long sumOtherDocCount;
 
         @JsonProperty("buckets")
         @Schema(title = "buckets", description = "桶数组，包含聚合分组信息")
@@ -333,19 +336,19 @@ public class SearchResponse<T> {
         private double sum;
 
 
-        public int getDocCountErrorUpperBound() {
+        public long getDocCountErrorUpperBound() {
             return docCountErrorUpperBound;
         }
 
-        public void setDocCountErrorUpperBound(int docCountErrorUpperBound) {
+        public void setDocCountErrorUpperBound(long docCountErrorUpperBound) {
             this.docCountErrorUpperBound = docCountErrorUpperBound;
         }
 
-        public int getSumOtherDocCount() {
+        public long getSumOtherDocCount() {
             return sumOtherDocCount;
         }
 
-        public void setSumOtherDocCount(int sumOtherDocCount) {
+        public void setSumOtherDocCount(long sumOtherDocCount) {
             this.sumOtherDocCount = sumOtherDocCount;
         }
 
@@ -415,7 +418,7 @@ public class SearchResponse<T> {
     }
 
     /**
-     * 聚合分组桶类（用于 terms 聚合）
+     * 聚合分组桶类（用于 terms 聚合），子聚合通过 {@code @JsonAnySetter} 收集到 subAggregations。
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     @Schema(title = "Bucket", description = "聚合分组桶")
@@ -431,7 +434,7 @@ public class SearchResponse<T> {
 
         @JsonProperty("doc_count")
         @Schema(title = "docCount", description = "桶中的文档数量")
-        private int docCount;
+        private long docCount;
 
         @JsonAnySetter
         @Schema(title = "aggregation", description = "嵌套聚合结果")
@@ -453,11 +456,11 @@ public class SearchResponse<T> {
             this.key = key;
         }
 
-        public int getDocCount() {
+        public long getDocCount() {
             return docCount;
         }
 
-        public void setDocCount(int docCount) {
+        public void setDocCount(long docCount) {
             this.docCount = docCount;
         }
 

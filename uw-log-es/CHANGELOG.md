@@ -4,6 +4,7 @@
 
 #### 更新日志
 
+    0.4.0 评审修复：translateSqlToDsl改用JsonNode解析避免字符串拼接破坏JSON；destroy关闭路径补awaitTermination+interrupt防丢日志；processLogBuffer非200提前return；bulkLog按logLevel过滤与单条log()对齐；SearchResponse计数字段int→long；LogClientProperties去除多余@Configuration；AutoConfig的nacos/app属性加默认值；regLogObject重复注册告警；ObjectAsStringSerializer失败写空串；DeleteScrollResponse去重复getter；新增纯函数单测；README修正配置项与示例方法名
     0.3.0 使用ArrayBlockingQueue环节ES压力配置
     0.2.9 Bug FIX writeLog 也要写上时间戳
     0.2.8 写上时间戳

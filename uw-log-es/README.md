@@ -35,13 +35,23 @@ uw:
       password: admin
       # READ_ONLY: 只读模式; READ_WRITE: 读写模式[会有后台线程开销]
       mode: READ_WRITE
-      # 刷新Bucket时间毫秒数
-      max-flush-in-milliseconds:
-      # 允许最大Bucket 字节数
-      max-bytes-of-batch: 5*1024*1024
-      # 最大批量线程数
-      max-batch-threads: 3
+      # 后台批量提交的刷新间隔（秒），默认10
+      max-flush-in-seconds: 10
+      # 触发立即提交的buffer阈值（KB），默认8192(即8MB)
+      max-kilo-bytes-of-batch: 8192
+      # 最大批量提交线程数，默认5
+      max-batch-threads: 5
+      # 批量提交线程池队列长度，默认20
+      max-batch-queue-size: 20
+      # 是否用应用信息覆写日志体中的appInfo/appHost，默认true
+      app-info-overwrite: true
+      # ES连接/读/写超时（毫秒），默认30000
+      connect-timeout: 30000
+      read-timeout: 30000
+      write-timeout: 30000
 ```
+
+> 注意：`max-kilo-bytes-of-batch` 单位为 **KB**，`max-flush-in-seconds` 单位为 **秒**。
 
 #### 基本使用
 
@@ -181,21 +191,12 @@ public class DemoPaginationQuery {
      */
     public PageList<MscLoginLog> list(@RequestParam(name = "page", defaultValue = "1") int page,
                                       @RequestParam(name = "resultNum", defaultValue = "10") int resultNum) {
+        int startIndex = (page - 1) * resultNum;
         String dsl = logClient.translateSqlToDsl(
-                "select * from " + logClient.getLogObjectIndex(MscLoginLog.class) + " where loginDate > 1524666600000 ", (page - 1) * resultNum, resultNum);
-        SearchResponse<MscLoginLog> response = logClient.dslQuery(MscLoginLog.class, logClient.getLogObjectIndex(MscLoginLog.class), dsl);
-        // 组装分页参数
-        if (response != null && response.getHisResponse() != null) {
-            int total = response.getHisResponse().getTotal().getValue();
-            List<SearchResponse.Hits<TaskRunnerLog>> hitsList = response.getHisResponse().getHits();
-            if (!hitsList.isEmpty()) {
-                List<TaskRunnerLog> dataList = Lists.newArrayList();
-                for (SearchResponse.Hits<TaskRunnerLog> hits : hitsList) {
-                    dataList.add(hits.getSource());
-                }
-                return new PageList<TaskRunnerLog>(dataList, startIndex, resultNum, total);
-            }
-        }
+                "select * from " + logClient.getQuotedQueryIndexName(MscLoginLog.class) + " where loginDate > 1524666600000 ", startIndex, resultNum, true);
+        SearchResponse<MscLoginLog> response = logClient.dslQuery(MscLoginLog.class, logClient.getQueryIndexName(MscLoginLog.class), dsl);
+        // 使用工具方法直接组装分页结果
+        return LogClient.mapQueryResponseToPageList(response, startIndex, resultNum);
     }
 }
 ```

@@ -2,152 +2,245 @@
 
 #### 项目简介
 
-uw-httpclient针对接口业务需求设计的一个HttpClient库。
-当前使用okhttp作为底层实现，将来可以切换为AHC、httpclient5。
+uw-httpclient 是针对接口业务需求设计的 HttpClient 库。
+当前底层使用 OkHttp 实现，序列化使用 Jackson（支持 JSON / XML），将来可切换为 AHC、httpclient5。
 
 #### 项目特性
 
-1. 完整支持get/post/put/delete各种方法；
-2. 将请求、返回对象序列化集成到类库中，并可自由定义；
-3. 支持JSON/XML格式接口；
-4. 支持完整的http请求日志，并可定义日志类，方便接口日志记录；
-5. 变通支持上传、下载文件。
+1. 完整支持 GET / POST / PUT / PATCH / DELETE 各种方法；
+2. 请求、返回对象序列化集成到类库中，并可自由定义 `DataObjectMapper`；
+3. 支持 JSON / XML 格式接口（`JsonInterfaceHelper` / `XmlInterfaceHelper`）；
+4. 支持完整的 HTTP 请求日志（`HttpData`），并可自定义日志类与数据处理器（`HttpDataProcessor`）；
+5. 支持表单（Form）、请求体（Body）、文件上传（multipart FormFile）与文件下载。
 
 #### 快速入门
 
-##### 添加maven dependency
+##### 添加 Maven dependency
 
 ```xml
 <dependency>
     <groupId>com.umtone</groupId>
     <artifactId>uw-httpclient</artifactId>
-    <version>${version}</version>
+    <version>${uw-httpclient.version}</version>
 </dependency>
 ```
 
 ##### 常用入口
 
-- JsonInterfaceHelper 基于JSON的接口帮助入口。
+- `JsonInterfaceHelper`：基于 JSON 的接口帮助入口。
+- `XmlInterfaceHelper`：基于 XML 的接口帮助入口。
 
-- XmlInterfaceHelper 基于XML的接口帮助入口。
+两者本质都是通过构建特定参数的 `HttpInterface` 来实现，初始化方式类似。下面以 `JsonInterfaceHelper` 为例：
 
-两者初始化方法类似，本质都是通过构建特定参数的HttpInterface来实现。
-下面以JsonInterfaceHelper为例，介绍完整构造方法。
+```java
+// 最简用法
+JsonInterfaceHelper helper = new JsonInterfaceHelper();
+
+// 带配置
+JsonInterfaceHelper helper = new JsonInterfaceHelper(
+        HttpConfig.builder()
+                .connectTimeout(5000)
+                .readTimeout(30000)
+                .writeTimeout(10000)
+                .retryOnConnectionFailure(false)
+                .build());
+```
+
+完整构造器（JSON 与 XML 同构）：
 
 ```java
 /**
  * 完整构造器。
- * @param httpConfig HttpConfig配置参数。
- * @param httpDataCls 指定HttpData实现类。
- * @param httpDataLogLevel HttpDataLog级别。
- * @param httpDataFilter HttpData数据处理器。
+ * @param httpConfig        HttpConfig 配置参数（可为 null，使用全局默认 client）。
+ * @param httpDataCls       指定 HttpData 实现类（自定义日志类，可为 null，默认 HttpDefaultData）。
+ * @param httpDataLogLevel  HttpData 日志级别（可为 null，默认 RECORD_RESPONSE）。
+ * @param httpDataProcessor HttpData 数据处理器（加解密 / 日志上报等，可为 null）。
  */
-public JsonInterfaceHelper(HttpConfig httpConfig, Class<? extends HttpData> httpDataCls, HttpDataLogLevel httpDataLogLevel, HttpDataProcessor httpDataFilter) {
-    super( httpConfig, httpDataCls, httpDataLogLevel, httpDataFilter, JsonUtils, MediaTypes.JSON_UTF8 );
+public JsonInterfaceHelper(HttpConfig httpConfig,
+                           Class<? extends HttpData> httpDataCls,
+                           HttpDataLogLevel httpDataLogLevel,
+                           HttpDataProcessor httpDataProcessor) {
+    super(httpConfig, httpDataCls, httpDataLogLevel, httpDataProcessor,
+          JsonInterfaceHelper.JSON_CONVERTER, MediaTypes.JSON_UTF8);
 }
 ```
 
-##### HttpConfig配置
+##### 方法命名规律
 
-HttpConfig提供了常用的配置参数，并支持通过Builder方式进行构建。
-常用的参数说明如下：
+```
+{httpMethod}{请求体形式}{返回形式}
+  httpMethod:    get / post / put / patch / delete
+  请求体形式:    Form(表单) | Body(请求体) | FormFile(含文件上传) | 无(get/delete)
+  返回形式:      ForData(返回 HttpData) | ForEntity(返回 HttpEntity，含反序列化对象)
+```
+
+- `ForData` 返回 `HttpData`，不做响应反序列化，**二进制友好**（适合下载）。
+- `ForEntity` 返回 `HttpEntity<HttpData, T>`，含反序列化后的对象，取 `.getValue()`。
+- 每个 `ForEntity` 方法都提供 `Class<T>` / `TypeReference<T>` / `JavaType` 三套响应类型重载，每套再各有一个带 `headers` 的重载。
+
+##### 主要方法
+
+- `getForData` / `getForEntity`：GET。`getForData` 也可用于下载二进制数据（图片、文件）。
+- `postFormForData` / `postFormForEntity`：POST 表单（application/x-www-form-urlencoded）。
+- `postBodyForData` / `postBodyForEntity`：POST 请求体（按配置的 mediaType 序列化，默认 JSON）。
+- `postFormFileForData` / `postFormFileForEntity`：POST multipart，**文件上传**（fileData 值支持 `byte[]` / `File` / 其它）。
+- `putFormForData` / `putBodyForData` / `putFormForEntity` / `putBodyForEntity`：PUT。
+- `patchFormForData` / `patchBodyForData` / `patchFormForEntity` / `patchBodyForEntity`：PATCH。
+- `deleteForData` / `deleteForEntity`：DELETE（无 body，可带 queryParam）。
+
+此外提供基于 OkHttp 原生 `Request` 的基础方法，用于更灵活的场景：
+
+- `requestForData(Request)` / `requestForEntity(Request, Class)`：传入自定义 Request。
+- `getOkHttpClient()`：直接获取底层 OkHttpClient，可自由操作（兜底方案）。
+
+##### HttpConfig 配置
+
+`HttpConfig` 提供常用配置参数，通过 Builder 构建：
 
 ```java
-/**
- * 连接超时时间 - 毫秒。
- */
-private final long connectTimeout;
-
-/**
- * 读超时时间 - 毫秒。
- */
-private final long readTimeout;
-
-/**
- * 写超时时间 - 毫秒。
- */
-private final long writeTimeout;
-
-/**
- * 当一个连接失败时,配置此值可以进行重试。
- */
-private final boolean retryOnConnectionFailure;
-
-/**
- * 每主机最大并发请求数。
- */
-private final int maxRequestsPerHost;
-
-/**
- * 全局最大并发请求数。
- */
-private final int maxRequests;
-
-/**
- * 连接池最大空闲连接数。
- */
-private final int maxIdleConnections;
-
-/**
- * 连接池中空闲连接存活时间毫秒数。
- */
-private final long keepAliveTimeout;
+HttpConfig config = HttpConfig.builder()
+        .connectTimeout(5000)        // 连接超时（毫秒）
+        .readTimeout(30000)          // 读超时（毫秒）
+        .writeTimeout(10000)         // 写超时（毫秒）
+        .retryOnConnectionFailure(false) // 连接失败是否重试
+        .maxRequests(64)             // 全局最大并发
+        .maxRequestsPerHost(32)      // 每主机最大并发
+        .maxIdleConnections(50)      // 连接池最大空闲连接
+        .keepAliveTimeout(300000)    // 空闲连接存活时间（毫秒）
+        // .sslSocketFactory(...) / .trustManager(...) / .hostnameVerifier(...)
+        .build();
 ```
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| connectTimeout | long | 连接超时（毫秒） |
+| readTimeout | long | 读超时（毫秒） |
+| writeTimeout | long | 写超时（毫秒） |
+| retryOnConnectionFailure | boolean | 连接失败重试（幂等敏感接口建议 false） |
+| maxRequests / maxRequestsPerHost | int | 全局 / 每主机最大并发 |
+| maxIdleConnections / keepAliveTimeout | int / long | 连接池空闲连接数 / 存活时间 |
+| sslSocketFactory / trustManager / hostnameVerifier | — | SSL 配置 |
+
+> 每个 `HttpInterface` 实例使用**独立的 Dispatcher**，配置的 maxRequests / maxRequestsPerHost 仅作用于该实例，不会影响全局或其他实例。
 
 ##### HttpData 日志记录
 
-- uw-httpclient使用HttpData对象来记录请求->结果日志。可以记录包括请求地址，请求方法，请求时间，请求内容，返回状态码，返回结果等相关数据。
-- 为了减少无异议的copy，开发者可以自定义HttpData类型的实现类直接作为日志类使用，类库提供了HttpDefaultData的默认实现。
-- 为了兼容二进制数据和文本数据，HttpData中优先设置ResponseBytes字段，推荐当访问ResponseData的时候才转化为String类型，避免不必要的转换。
-- HttpDataLogLevel可以控制日志记录的范围，可以设定是否记录RequestData，默认不记录请求数据。
+- uw-httpclient 使用 `HttpData` 对象记录「请求 → 结果」日志，含请求地址、方法、时间、请求内容、返回状态码、返回结果等。
+- 为减少无意义的 copy，开发者可自定义 `HttpData` 实现类（继承 `HttpDefaultData`）直接作为日志类使用。
+- 为兼容二进制与文本数据，`HttpData` 优先设置 `responseBytes`，推荐在访问 `getResponseData()` 时才懒转换为字符串（UTF-8），避免不必要的转换。
+- `HttpDataLogLevel` 控制日志范围：**响应始终记录**，是否额外记录请求体取决于级别（`RECORD_RESPONSE` 默认不记录，`RECORD_REQUEST` / `RECORD_ALL` 记录）。
 
 ##### HttpDataProcessor 数据处理器
 
-- HttpDataFilter用于处理请求数据和返回数据。
+`HttpDataProcessor` 用于处理请求数据与返回数据，典型场景：
 
-- 在特定的场景下，请求数据和返回数据需要加解密，此时可以HttpDataFilter中进行处理，让代码更整洁。
-- 另外，最重要的场景是：可以在processLog中处理日志发送。
+- 加解密、签名验证：在 `requestProcess` / `responseProcess` 中统一处理，让业务代码更整洁。
+- 日志上报：在 `postProcess` 中将 `HttpData` 发送到远端日志系统。
 
-##### 主要方法介绍
+```java
+public interface HttpDataProcessor<D extends HttpData, T> {
+    void requestProcess(String requestBody, Map<String,String> formData, Map<String,String> headers);
+    void responseProcess(D httpData, Headers headers);
+    void postProcess(D httpData, T t);
+}
+```
 
-- getForData 用于get方法获取HttpData，同时也可以用于下载二进制数据，包括图片和文件。
+##### 使用示例
 
-- getForEntity 用于get方法获取HttpEntity，同时包含HttpData和序列化后的对象。
-- postFormForData 用于post formData方法获取HttpData，同时也可以用于下载二进制数据，包括图片和文件。
-- postBodyForData 用于post requestBody方法获取HttpData，同时也可以用于下载二进制数据，包括图片和文件。
-- postFormForEntity 用于post formData方法获取HttpEntity，同时包含HttpData和序列化后的对象。
-- postBodyForEntity 用于post requestBody方法获取HttpEntity，同时包含HttpData和序列化后的对象。
-- putFormForData 用于put formData方法获取HttpData，同时也可以用于下载二进制数据，包括图片和文件。
-- putBodyForData 用于put requestBody方法获取HttpData，同时也可以用于下载二进制数据，包括图片和文件。
-- putFormForEntity 用于put formData方法获取HttpEntity，同时包含HttpData和序列化后的对象。
-- putBodyForEntity 用于put requestBody方法获取HttpEntity，同时包含HttpData和序列化后的对象。
-- deleteForData 用于delete方法获取HttpData，同时也可以用于下载二进制数据，包括图片和文件。
-- deleteForEntity 用于delete方法获取HttpEntity，同时包含HttpData和序列化后的对象。
+```java
+import com.fasterxml.jackson.core.type.TypeReference;
+import uw.httpclient.json.JsonInterfaceHelper;
+import uw.httpclient.http.*;
 
-除此之外，还提供了使用okhttp request对象的基础方法。
+import java.io.File;
+import java.util.*;
 
-- requestForData，可以传入自定义的request对象返回HttpData，来提高代码的灵活度，可以使用此方法来上传数据。
-- requestForEntity，可以传入自定义的request对象返回HttpEntity，来提高代码的灵活度，可以使用此方法来上传数据。
+public class HttpHelper {
+    private static final JsonInterfaceHelper http = new JsonInterfaceHelper(
+            HttpConfig.builder()
+                    .connectTimeout(5000).readTimeout(30000).writeTimeout(10000)
+                    .retryOnConnectionFailure(false)
+                    .build());
 
-如果还不能达成目的，类库还暴露了okHttpClient方法。
+    // GET → 对象
+    public static User getUser(long userId) {
+        return http.getForEntity("https://api.example.com/users/" + userId, User.class).getValue();
+    }
 
-- getOkHttpClient，通过此方法，可以自由操作okHttpClient。
+    // GET → 泛型列表 + 查询参数
+    public static List<User> listUsers(String keyword, int page) {
+        Map<String, String> params = new HashMap<>();
+        params.put("keyword", keyword);
+        params.put("page", String.valueOf(page));
+        return http.getForEntity("https://api.example.com/users",
+                new TypeReference<List<User>>() {}, params).getValue();
+    }
 
-##### FAQ
+    // POST JSON body
+    public static User createUser(CreateUserRequest req) {
+        return http.postBodyForEntity("https://api.example.com/users", User.class, req).getValue();
+    }
 
-Q: 多次new OkHttpClient会不会带来效率问题？
+    // POST 表单
+    public static Token login(String user, String pass) {
+        Map<String, String> form = new HashMap<>();
+        form.put("username", user);
+        form.put("password", pass);
+        return http.postFormForEntity("https://api.example.com/login", Token.class, form).getValue();
+    }
 
-A: 不会，因为OkHttpClient 对Java 底层的Connection是共用的,并于OkHttpClient的静态代码块中加载，加之外层的ConnectionPool使用了一个专门线
-程(cleanupRunnable)去自动判定连接是否达到池的存活时间(keepAliveDuration)和空闲连接(idleConnections)数量的连接进行清理，减少长时间对底层
-Socket句柄的占用而带来的各种问题。
+    // 自定义 Header
+    public static User requestWithHeaders() {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Authorization", "Bearer token123");
+        return http.getForEntity("https://api.example.com/users/1",
+                User.class, headers, null).getValue();
+    }
 
-Q: ObjectMapper是否能处理不加注解的Vo类？
+    // 文件上传（multipart）
+    public static UploadResult upload(File file) {
+        Map<String, Object> fileData = new HashMap<>();
+        fileData.put("file", file);   // 值支持 byte[] / File / 其它(toString)
+        return http.postFormFileForEntity("https://api.example.com/upload",
+                UploadResult.class, null, fileData).getValue();
+    }
 
-A: 目前uw-httpclient采用jackson作为json和xml的序列化和反序列化库,没有添加jackson支持的注解能否转换成功取决于jackson对json或者xml处理的
-默认的规则,建议使用uw-code-center生成相关的Java Vo实体类。
+    // 文件下载
+    public static byte[] download(String fileUrl) {
+        return http.getForData(fileUrl).getResponseBytes();
+    }
+}
+```
 
-Q: 如何处理内部自签名的ssl访问问题？
-A: 初始化代码中加入以下代码：
-.trustManager( SSLContextUtils.getTrustAllManager() )
-.sslSocketFactory( SSLContextUtils.getTruestAllSocketFactory())
-.hostnameVerifier( (host, session) -> true )
+##### SSL 自签名证书
+
+```java
+HttpConfig config = HttpConfig.builder()
+        .sslSocketFactory(SSLContextUtils.getTruestAllSocketFactory())
+        .trustManager(SSLContextUtils.getTrustAllManager())
+        .hostnameVerifier((hostName, session) -> true)
+        .build();
+JsonInterfaceHelper helper = new JsonInterfaceHelper(config);
+```
+
+> ⚠️ 信任全部证书仅适用于内网自签名 / 测试环境，生产环境须使用受信任证书库。
+
+#### FAQ
+
+**Q: 多次 new OkHttpClient 会不会带来效率问题？**
+A: 不会。OkHttpClient 对底层连接是共用的，其 `ConnectionPool` 使用专门线程（cleanupRunnable）自动判定并清理达到存活时间（keepAliveDuration）或超出空闲连接数（idleConnections）的连接，减少长时间占用 Socket 句柄带来的问题。本库内部通过全局 `OkHttpClient.newBuilder()` 派生实例配置，连接池共享。
+
+**Q: ObjectMapper 是否能处理不加注解的 VO 类？**
+A: 本库采用 Jackson 作为 JSON / XML 的序列化与反序列化库，已关闭 `FAIL_ON_UNKNOWN_PROPERTIES`（未知属性不报错）。不加 Jackson 注解能否转换成功取决于 Jackson 的默认规则，建议使用 uw-code-center 生成相关的 Java VO 实体类。
+
+**Q: 如何处理内部自签名的 SSL 访问问题？**
+A: 构造 `HttpConfig` 时配置信任全部证书（见上文「SSL 自签名证书」章节）。
+
+**Q: `retryOnConnectionFailure` 有什么影响？**
+A: 设为 true 将开启请求失败重试。如果业务有严格幂等要求（如重复调用下单会出问题），应设为 false，让程序自己处理错误。
+
+**Q: 如何拿反序列化后的响应对象？**
+A: 用 `*ForEntity` 方法，返回 `HttpEntity`，通过 `getValue()` 获取（注意不是 `getBody()`）。
+
+**Q: 方法名记不住怎么办？**
+A: 遵循 `{method}{Form|Body|FormFile}{ForData|ForEntity}` 规律：表单用 `Form`，请求体用 `Body`，含文件上传用 `FormFile`；要反序列化用 `ForEntity`，否则用 `ForData`。

@@ -38,7 +38,18 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * 日志服务
+ * 日志服务。
+ * <p>
+ * {@link LogClient} 的核心实现，负责：
+ * <ul>
+ *   <li>日志类型注册与索引名管理（原始名 / 查询名 / 时间滚动模式）；</li>
+ *   <li>日志写入：单条与批量均写入 {@link #buffer}，由 {@link ElasticsearchDaemonExporter}
+ *       守护线程按时间阈值（{@code maxFlushInMilliseconds}）或字节阈值
+ *       （{@code maxBytesOfBatch}）触发，提交至 {@link #batchExecutor} 执行 bulk；</li>
+ *   <li>日志查询：DSL / SQL 转 DSL / scroll 游标查询。</li>
+ * </ul>
+ * 构造时根据 {@link LogClientProperties.LogMode} 决定是否启动后台写入链路：
+ * {@code READ_ONLY} 仅支持查询，不创建线程池与守护线程。
  */
 public class LogService {
 
@@ -55,26 +66,26 @@ public class LogService {
     private static final byte[] LINE_SEPARATOR_BYTES = System.lineSeparator().getBytes(LOG_CHARSET);
 
     /**
-     * 时间序列格式化
+     * 时间序列格式化（写入日志体 @timestamp 字段，ISO8601 毫秒精度）
      */
     private static final FastDateFormat DATE_FORMAT = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss.SSSZZ");
 
     /**
-     * scroll api
+     * scroll api URL 片段
      */
     private static final String SCROLL = "scroll";
 
     /**
-     * 读写锁
+     * buffer 读写互斥锁，保护 {@link #buffer} 的并发追加与换出。
      */
     private final Lock batchLock = new ReentrantLock();
 
     /**
-     * 注册Mapping,<Class<?>,String>
+     * 已注册的日志类型配置表：日志类 -> 索引配置。
      */
     private final Map<Class<?>, IndexConfigVo> regMap = new ConcurrentHashMap<>();
     /**
-     * es集群地址
+     * ES集群HTTP REST地址
      */
     private final String esServer;
     /**
@@ -86,23 +97,23 @@ public class LogService {
      */
     private final String esPassword;
     /**
-     * 应用名称
+     * 应用名称（覆写日志体 appInfo 时使用）
      */
     private final String appName;
     /**
-     * 应用主机信息
+     * 应用主机信息（覆写日志体 appHost 时使用）
      */
     private final String appHost;
     /**
-     * 是否添加执行应用信息
+     * 是否用应用信息覆写日志体中的 appInfo/appHost。
      */
     private final boolean appInfoOverwrite;
     /**
-     * httpInterface
+     * HTTP 客户端，承载所有对 ES 的请求。
      */
     private HttpInterface httpInterface;
     /**
-     * 是否需要记录日志
+     * 是否启用写入链路（READ_WRITE 模式且 ES server 已配置时为 true）。
      */
     private boolean logState;
     /**
@@ -110,40 +121,42 @@ public class LogService {
      */
     private boolean needBasicAuth;
     /**
-     * Elasticsearch bulk api 地址
+     * Elasticsearch bulk api 地址（相对 server 的 path）。
      */
     private String esBulk;
     /**
-     * 刷新Bucket时间毫秒数
+     * 触发后台 flush 的时间阈值（毫秒）。
      */
     private long maxFlushInMilliseconds;
     /**
-     * 允许最大Bucket字节数
+     * 触发立即 flush 的 buffer 字节阈值。
      */
     private long maxBytesOfBatch;
     /**
-     * 最大批量线程数
+     * 批量提交线程池的最大线程数。
      */
     private int maxBatchThreads;
     /**
-     * 最大批量线程队列数
+     * 批量提交线程池的队列容量。
      */
     private int maxBatchQueueSize;
     /**
-     * buffer
+     * 待提交的日志 bulk 内容缓冲区。
      */
     private okio.Buffer buffer = new okio.Buffer();
     /**
-     * 后台线程
+     * 后台监控守护线程，负责定时/按阈值触发 flush。
      */
     private ElasticsearchDaemonExporter daemonExporter;
     /**
-     * 后台批量线程池。
+     * 后台批量提交线程池。
      */
     private ThreadPoolExecutor batchExecutor;
 
     /**
-     * LogService.
+     * 构造日志服务。
+     * <p>当 {@code server} 未配置时标记 {@code logState=false}（不写入、不起后台线程，仅保留查询能力）；
+     * 当 {@code mode=READ_WRITE} 时初始化批量线程池与守护线程。
      *
      * @param logClientProperties 配置器
      * @param appName             应用名称
@@ -192,9 +205,13 @@ public class LogService {
     }
 
     /**
-     * 注册日志类型
+     * 注册日志类型。
+     * <p>若 {@code index} 为空则由类名按 lower_underscore 规则推导；若指定 {@code indexPattern}，
+     * 则写入索引追加时间后缀、查询索引使用 {@code 原始名_*}。重复注册且索引名变化时会输出告警。
      *
-     * @param logClass
+     * @param logClass     日志类
+     * @param index        自定义索引名，为 {@code null} 时按类名推导
+     * @param indexPattern 索引时间滚动模式，为空表示不滚动
      */
     public void regLogObject(Class<?> logClass, String index, String indexPattern) {
         String rawIndex = index == null ? buildIndexName(logClass) : index;
@@ -205,13 +222,17 @@ public class LogService {
             queryName = queryName + "_*";
         }
         IndexConfigVo indexConfigVo = new IndexConfigVo(rawIndex, queryName, dateFormat);
-        regMap.put(logClass, indexConfigVo);
+        IndexConfigVo old = regMap.put(logClass, indexConfigVo);
+        if (old != null && !old.getRawName().equals(rawIndex)) {
+            log.warn("LogClass[{}] re-registered, index changed from [{}] to [{}]", logClass.getName(), old.getRawName(), rawIndex);
+        }
     }
 
     /**
-     * 获取日志配置的索引名。
+     * 获取日志类型配置的原始索引名（不含时间后缀与通配符）。
      *
-     * @param logClass
+     * @param logClass 日志类
+     * @return 原始索引名；未注册时返回 {@code null}
      */
     public String getRawIndexName(Class<?> logClass) {
         IndexConfigVo configVo = regMap.get(logClass);
@@ -222,7 +243,7 @@ public class LogService {
     }
 
     /**
-     * 获取带引号的索引名。
+     * 获取带引号的原始索引名（裸引号 "xxx"），用于构造写入/bulk的_index等场景。
      *
      * @param logClass
      * @return
@@ -233,9 +254,10 @@ public class LogService {
     }
 
     /**
-     * 获取日志的查询索引
+     * 获取日志类型的查询索引名（设置模式时为 {@code 原始名_*} 通配形式）。
      *
-     * @param logClass
+     * @param logClass 日志类
+     * @return 查询索引名；未注册时返回 {@code null}
      */
     public String getQueryIndexName(Class<?> logClass) {
         IndexConfigVo configVo = regMap.get(logClass);
@@ -246,7 +268,8 @@ public class LogService {
     }
 
     /**
-     * 获取带引号的查询索引名。
+     * 获取带引号的查询索引名（转义引号 \"xxx*\"），用于拼入ES SQL的from子句，
+     * 因为SQL字符串本身已被外层JSON字符串包裹，故需对引号做反斜杠转义。
      *
      * @param logClass
      * @return
@@ -257,7 +280,9 @@ public class LogService {
     }
 
     /**
-     * 写日志
+     * 写入单条日志到 buffer。
+     * <p>写入前补齐 @timestamp；若启用 appInfoOverwrite 则覆写 appInfo/appHost。
+     * 未注册的日志类型或未启用写入时直接返回。
      *
      * @param source 日志对象
      */
@@ -299,10 +324,12 @@ public class LogService {
     }
 
     /**
-     * 批量写日志
+     * 批量写入日志到 buffer。
+     * <p>以列表首元素的运行时类作为整批索引判定依据；逐条补齐 @timestamp 与应用信息。
+     * 未注册、未启用写入或空列表时直接返回。
      *
      * @param sourceList 日志对象列表
-     * @param <T>
+     * @param <T>        日志对象类型
      */
     public <T extends LogBaseVo> void writeBulkLog(List<T> sourceList) {
         if (!logState) {
@@ -351,7 +378,8 @@ public class LogService {
     }
 
     /**
-     * Send buffer to Elasticsearch
+     * 换出 buffer 并通过 bulk api 提交至 Elasticsearch。
+     * <p>buffer 为空时直接返回；HTTP 非 200 或 bulk 返回 errors 时记录错误日志。
      */
     public void processLogBuffer() {
         okio.Buffer bufferData = null;
@@ -375,10 +403,11 @@ public class LogService {
             HttpData httpData = httpInterface.requestForData(requestBuilder.post(BufferRequestBody.create(bufferData, MediaTypes.JSON_UTF8)).build());
             if (httpData.getStatusCode() != 200) {
                 log.error("LogClient ES Batch process error! code:{}, response:{}", httpData.getStatusCode(), httpData.getResponseData());
+                return;
             }
             BulkResponse bulkResponse = JsonUtils.parse(httpData.getResponseData(), BulkResponse.class);
             if (bulkResponse.isErrors()) {
-                log.error("LogClient ES Batch process error! code:{}, response:{}", httpData.getStatusCode(), httpData.getResponseData());
+                log.error("LogClient ES Bulk returned errors! took:{}, response:{}", bulkResponse.getTook(), httpData.getResponseData());
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -386,25 +415,45 @@ public class LogService {
     }
 
     /**
-     * 关闭写日志系统
+     * 关闭写日志系统。
+     * <p>先置 {@code logState=false} 阻止新数据写入，再中断守护线程并等待其退出，
+     * 随后关闭批量线程池并等待已提交任务完成（最多 5 秒，超时则 shutdownNow），
+     * 最后同步 flush 一次以确保残留 buffer 落盘。
      */
     public void destroy() {
         if (logState) {
-            //先关掉log
+            //先关掉log，阻止新数据写入buffer
             logState = false;
+            //通知守护线程退出，并打断其sleep以尽快响应
             daemonExporter.readyDestroy();
+            daemonExporter.interrupt();
+            try {
+                daemonExporter.join(2000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            //关闭批量线程池，等待已提交任务完成，避免丢失buffer中的日志
             batchExecutor.shutdown();
+            try {
+                if (!batchExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    batchExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                batchExecutor.shutdownNow();
+            }
+            //最后再同步flush一次，确保剩余buffer落盘
             processLogBuffer();
         }
     }
 
     /**
-     * dsl查询日志
+     * 在指定索引上执行 DSL 查询。
      *
      * @param tClass   日志对象类型
      * @param index    索引
      * @param dslQuery dsl查询条件
-     * @return
+     * @return 搜索响应；ES server 未配置或查询异常时返回 {@code null}
      */
     @SuppressWarnings("unchecked")
     public <T> SearchResponse<T> dslQuery(Class<T> tClass, String index, String dslQuery) {
@@ -429,13 +478,14 @@ public class LogService {
     }
 
     /**
-     * scroll查询
+     * 开启 scroll 游标查询，返回首批数据与 scrollId。
      *
      * @param tClass              日志对象类型
      * @param index               索引
-     * @param scrollExpireSeconds scroll api 过期时间
-     * @param <T>
-     * @return
+     * @param scrollExpireSeconds scroll api 过期时间（秒），{@code <=0} 时默认 60
+     * @param dslQuery            dsl查询条件（不可含 from 节点）
+     * @param <T>                 日志对象类型
+     * @return scroll 响应；ES server 未配置或查询异常时返回 {@code null}
      */
     public <T> ScrollResponse<T> scrollQueryOpen(Class<T> tClass, String index, int scrollExpireSeconds, String dslQuery) {
         if (StringUtils.isBlank(esServer)) {
@@ -461,13 +511,13 @@ public class LogService {
     }
 
     /**
-     * scroll查询
+     * 基于 scrollId 获取下一批数据。
      *
-     * @param <T>
+     * @param <T>                 日志对象类型
      * @param tClass              日志对象类型
-     * @param scrollId            这里只需传递scrollId即可返回下一页的数据
-     * @param scrollExpireSeconds scroll api 过期时间
-     * @return
+     * @param scrollId            上一次返回的 scrollId，仅需传递 scrollId 即可获取下一页数据
+     * @param scrollExpireSeconds scroll api 过期时间（秒），{@code <=0} 时默认 60
+     * @return scroll 响应；ES server 未配置或查询异常时返回 {@code null}
      */
     public <T> ScrollResponse<T> scrollQueryNext(Class<T> tClass, String scrollId, int scrollExpireSeconds) {
         if (StringUtils.isBlank(esServer)) {
@@ -496,10 +546,10 @@ public class LogService {
     }
 
     /**
-     * 关闭scroll api 查询
+     * 关闭 scroll 游标，释放 ES 端上下文资源。
      *
      * @param scrollId 需删除的scrollId
-     * @return
+     * @return 删除响应；异常时返回一个 {@code succeeded=false} 的空响应
      */
     public DeleteScrollResponse scrollQueryClose(String scrollId) {
         if (StringUtils.isBlank(esServer)) {
@@ -525,11 +575,16 @@ public class LogService {
     }
 
     /**
-     * 转换Sql为DSL。
+     * 将 SQL 转换为 ES DSL。
+     * <p>通过 ES {@code _sql/translate} 接口翻译后，基于 JsonNode 改写：
+     * 附加 {@code from}（当 startIndex&gt;0）、设置 {@code track_total_hits}（当 isTrueCount）、
+     * 将 {@code _source:false} 改为 true、移除 {@code fields}。SQL 不可包含 limit。
      *
-     * @param sql
-     * @param isTrueCount
-     * @return
+     * @param sql         SQL 语句
+     * @param startIndex  分页起始偏移量
+     * @param resultNum   结果条数，{@code >0} 时拼接 limit
+     * @param isTrueCount 是否需要真实总数
+     * @return 转换后的 DSL 字符串
      */
     public String translateSqlToDsl(String sql, int startIndex, int resultNum, boolean isTrueCount) {
         if (StringUtils.isBlank(esServer)) {
@@ -542,7 +597,6 @@ public class LogService {
             throw new IllegalArgumentException("sql contains limit, please remove limit.");
         }
         sql = sql.trim();
-        String dsl = null;
         StringBuilder urlBuilder = new StringBuilder(esServer);
         urlBuilder.append("/").append("_sql/translate");
         // 这里支持count(*) 无需limit
@@ -550,42 +604,42 @@ public class LogService {
             sql = sql + " limit " + resultNum;
         }
         String escapedSql = new String(JsonStringEncoder.getInstance().quoteAsString(sql));
-        sql = String.format("{\"query\": \"%s\"}", escapedSql);
+        String sqlBody = String.format("{\"query\": \"%s\"}", escapedSql);
         Request.Builder requestBuilder = new Request.Builder().url(urlBuilder.toString());
         if (needBasicAuth) {
             requestBuilder.header("Authorization", Credentials.basic(esUsername, esPassword));
         }
-        dsl = httpInterface.requestForEntity(requestBuilder.post(RequestBody.create(sql, MediaTypes.JSON_UTF8)).build(), String.class).getValue();
+        String dsl = httpInterface.requestForEntity(requestBuilder.post(RequestBody.create(sqlBody, MediaTypes.JSON_UTF8)).build(), String.class).getValue();
 
+        // 以JsonNode方式解析后改写，避免字符串拼接破坏JSON结构（如fields数组内含']'字符、首字符非'{'等情况）。
+        com.fasterxml.jackson.databind.node.ObjectNode root;
+        try {
+            root = (com.fasterxml.jackson.databind.node.ObjectNode) JsonUtils.getJsonMapper().readTree(dsl);
+        } catch (Exception e) {
+            log.error("translateSqlToDsl parse ES _sql/translate response failed! raw:{}", dsl, e);
+            throw new IllegalArgumentException("invalid dsl from _sql/translate: " + dsl, e);
+        }
         if (startIndex > 0) {
-            dsl = "{" + " \"from\" : " + startIndex + "," + dsl.substring(1, dsl.length());
+            root.put("from", startIndex);
         }
-        if (isTrueCount && !dsl.contains("\"track_total_hits\"")) {
-            dsl = "{" + "\"track_total_hits\": true," + dsl.substring(1, dsl.length());
-        } else if (isTrueCount && dsl.contains("\"track_total_hits\"")) {
-            // es8 track_total_hits为-1、换为true
-            dsl = dsl.replace("\"track_total_hits\":-1", "\"track_total_hits\":true");
+        if (isTrueCount) {
+            root.put("track_total_hits", true);
         }
-
         // es8.x返回_source为false, 设置为true兼容
-        dsl = dsl.replace("\"_source\":false", "\"_source\":true");
-
-        // 删除无用的fields相关字段。
-        int fStart = dsl.indexOf(",\"fields\":[");
-        if (fStart > 0) {
-            int fEnd = dsl.indexOf("]", fStart + ",\"fields\":[".length());
-            if (fEnd > 0) {
-                dsl = dsl.substring(0, fStart) + dsl.substring(fEnd + 1);
-            }
+        com.fasterxml.jackson.databind.JsonNode sourceNode = root.get("_source");
+        if (sourceNode != null && sourceNode.isBoolean() && !sourceNode.asBoolean()) {
+            root.put("_source", true);
         }
-        return dsl;
+        // 删除无用的fields字段。
+        root.remove("fields");
+        return root.toString();
     }
 
     /**
-     * 根据类名建立索引名称
+     * 根据类名建立索引名称：保留包路径前缀，简单类名转为 lower_underscore 风格。
      *
-     * @param logClass
-     * @return
+     * @param logClass 日志类
+     * @return 索引名称
      */
     private String buildIndexName(Class<?> logClass) {
         String className = logClass.getName();
@@ -605,8 +659,12 @@ public class LogService {
     }
 
     /**
-     * @param logClass
-     * @return
+     * 获取日志类在指定时间戳对应的实际写入索引名。
+     * <p>未注册返回 {@code null}；无时间模式返回原始名；否则返回 {@code 原始名_时间后缀}。
+     *
+     * @param logClass  日志类
+     * @param timestamp 时间戳（毫秒）
+     * @return 实际写入索引名；未注册时为 {@code null}
      */
     private String getIndex(Class<?> logClass, long timestamp) {
         IndexConfigVo configVo = regMap.get(logClass);
@@ -621,29 +679,30 @@ public class LogService {
     }
 
     /**
-     * 后台写日志线程
+     * 后台监控守护线程，定时（按 {@code maxFlushInMilliseconds}）或按 buffer 字节阈值
+     * （{@code maxBytesOfBatch}）向 {@link #batchExecutor} 提交 flush 任务。
      */
     public class ElasticsearchDaemonExporter extends Thread {
 
         /**
-         * 运行标记.
+         * 运行标记，置 false 后线程在下一轮循环退出。
          */
         private volatile boolean isRunning = false;
 
         /**
-         * 下一次运行时间
+         * 下一次定时 flush 的时间戳。
          */
         private volatile long nextScanTime = 0;
 
         /**
-         * 初始化
+         * 初始化运行标记为 true。
          */
         public void init() {
             isRunning = true;
         }
 
         /**
-         * 销毁标记.
+         * 标记线程销毁（置 isRunning=false），由 {@link #destroy()} 调用。
          */
         public void readyDestroy() {
             isRunning = false;

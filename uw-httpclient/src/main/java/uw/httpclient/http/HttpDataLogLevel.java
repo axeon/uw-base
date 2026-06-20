@@ -2,22 +2,26 @@ package uw.httpclient.http;
 
 /**
  * HttpData日志级别。
- * 因为httpData必须返回response，所以只有RECORD_REQUEST有效。
+ * <p>
+ * 注意：响应数据始终会被记录到HttpData中，本级别仅控制是否额外记录请求体数据。
+ * - RECORD_RESPONSE：默认级别，仅记录响应，不记录请求体。
+ * - RECORD_REQUEST：记录响应，并额外记录请求体。
+ * - RECORD_ALL：等同于RECORD_REQUEST，记录响应与请求体。
  */
 public enum HttpDataLogLevel {
 
     /**
-     * 记录日志,含请求参数
+     * 记录响应，并额外记录请求体。
      */
     RECORD_REQUEST(1, "记录请求"),
 
     /**
-     * 默认记录输出。
+     * 默认记录输出，仅记录响应。
      */
     RECORD_RESPONSE(2, "记录输出"),
 
     /**
-     * 记录全部信息。
+     * 记录全部信息（响应与请求体）。
      */
     RECORD_ALL(3, "记录全部信息");
 
@@ -45,16 +49,12 @@ public enum HttpDataLogLevel {
     }
 
     /**
-     * 是否记录请求信息。
+     * 是否记录请求体信息。
      *
-     * @param logLevel
-     * @return
+     * @param logLevel 日志级别。
+     * @return 为 RECORD_REQUEST 或 RECORD_ALL 时返回 true，否则 false。
      */
     public static boolean isRecordRequest(HttpDataLogLevel logLevel) {
-        if (logLevel == RECORD_REQUEST || logLevel == RECORD_ALL) {
-            return true;
-        } else {
-            return false;
-        }
+        return logLevel == RECORD_REQUEST || logLevel == RECORD_ALL;
     }
 }

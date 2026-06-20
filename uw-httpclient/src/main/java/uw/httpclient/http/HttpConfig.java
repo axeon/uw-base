@@ -5,7 +5,14 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
 
 /**
- * HttpConfig配置。
+ * HTTP 客户端配置。
+ * <p>
+ * 不可变配置对象，承载连接/读/写超时、连接失败重试、连接池、并发限制以及 SSL 相关参数。
+ * 推荐通过 {@link #builder()} 或 {@link #builder(HttpConfig)} 构建；
+ * 全参构造器因参数过多易混淆已标记 {@link Deprecated}。
+ * <p>
+ * 传入 {@code HttpInterface} 后，每个实例使用独立的 Dispatcher，
+ * maxRequests / maxRequestsPerHost 仅作用于该实例，不会影响全局或其他实例。
  *
  * @since 2017/9/21
  */
@@ -66,6 +73,23 @@ public class HttpConfig {
      */
     private final HostnameVerifier hostnameVerifier;
 
+    /**
+     * 全参构造器。
+     *
+     * @param connectTimeout          连接超时（毫秒）。
+     * @param readTimeout             读超时（毫秒）。
+     * @param writeTimeout            写超时（毫秒）。
+     * @param retryOnConnectionFailure 连接失败是否重试。
+     * @param maxRequestsPerHost      每主机最大并发请求数。
+     * @param maxRequests             全局最大并发请求数。
+     * @param maxIdleConnections      连接池最大空闲连接数。
+     * @param keepAliveTimeout        空闲连接存活时间（毫秒）。
+     * @param sslSocketFactory        SSLSocketFactory。
+     * @param trustManager            X509TrustManager。
+     * @param hostnameVerifier        HostnameVerifier。
+     * @deprecated 参数过多且位置易混淆，请使用 {@link #builder()} 或 {@link #builder(HttpConfig)}。
+     */
+    @Deprecated
     public HttpConfig(long connectTimeout, long readTimeout, long writeTimeout, boolean retryOnConnectionFailure, int maxRequestsPerHost, int maxRequests, int maxIdleConnections
             , long keepAliveTimeout, SSLSocketFactory sslSocketFactory, X509TrustManager trustManager, HostnameVerifier hostnameVerifier) {
         this.connectTimeout = connectTimeout;
@@ -95,10 +119,21 @@ public class HttpConfig {
         hostnameVerifier = builder.hostnameVerifier;
     }
 
+    /**
+     * 创建一个新的 {@link Builder}。
+     *
+     * @return Builder 实例。
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * 基于已有 {@link HttpConfig} 创建一个拷贝用的 {@link Builder}，便于在其基础上修改少量字段。
+     *
+     * @param copy 源配置。
+     * @return 已载入源配置的 Builder。
+     */
     public static Builder builder(HttpConfig copy) {
         Builder builder = new Builder();
         builder.connectTimeout = copy.getConnectTimeout();
@@ -159,6 +194,9 @@ public class HttpConfig {
         return hostnameVerifier;
     }
 
+    /**
+     * {@link HttpConfig} 的构建器，支持链式设置各配置项。
+     */
     public static final class Builder {
         private long connectTimeout;
         private long readTimeout;
@@ -230,6 +268,11 @@ public class HttpConfig {
             return this;
         }
 
+        /**
+         * 构建不可变的 {@link HttpConfig}。
+         *
+         * @return HttpConfig 实例。
+         */
         public HttpConfig build() {
             return new HttpConfig(this);
         }

@@ -3,71 +3,79 @@ package uw.httpclient.http;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import uw.common.util.JsonUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 /**
- * http默认日志实现。
+ * {@link HttpData} 的默认实现。
+ * <p>
+ * 以普通 JavaBean 形式承载全部请求/响应字段，并支持：
+ * <ul>
+ *   <li>{@link #getResponseData()} 从 {@link #responseBytes} 按 UTF-8 懒转换；</li>
+ *   <li>{@link #toString()} 经 Jackson 序列化为 JSON，便于日志输出。</li>
+ * </ul>
+ * 可直接作为业务接口日志实体继承复用，避免 DTO 间拷贝。
  */
 public class HttpDefaultData implements HttpData {
 
     /**
-     * http url。
+     * HTTP 请求 URL。
      */
     private String requestUrl;
 
     /**
-     * http方法。
+     * HTTP 方法。
      */
     private String requestMethod;
 
     /**
-     * http header。
+     * HTTP 请求头。
      */
     private String requestHeader;
 
     /**
-     * http状态码。
+     * HTTP 响应状态码。
      */
     private int statusCode;
 
     /**
-     * 请求数据大小。
+     * 请求数据大小（字符长度）。
      */
     private long requestSize;
 
     /**
-     * 返回数据大小。
+     * 返回数据大小（字节数）。
      */
     private long responseSize;
 
     /**
-     * 返回类型。
+     * 响应的 Content-Type。
      */
     private String responseType;
 
     /**
-     * 请求数据。
+     * 请求数据（受日志级别控制）。
      */
     private String requestData;
 
     /**
-     * 返回数据。
+     * 响应数据字符串（懒转换缓存）。
      */
     private String responseData;
 
     /**
-     * 返回byte数组。
+     * 响应原始字节数组（二进制优先，不参与 JSON 序列化）。
      */
     @JsonIgnore
     private byte[] responseBytes;
 
     /**
-     * 请求时间。
+     * 请求发起时间。
      */
     private Date requestDate;
 
     /**
-     * 返回数据。
+     * 响应接收时间。
      */
     private Date responseDate;
 
@@ -76,6 +84,11 @@ public class HttpDefaultData implements HttpData {
      */
     private String errorInfo;
 
+    /**
+     * 将本对象序列化为 JSON 字符串，便于日志输出。
+     *
+     * @return JSON 字符串。
+     */
     @Override
     public String toString() {
         return JsonUtils.toString(this);
@@ -171,13 +184,18 @@ public class HttpDefaultData implements HttpData {
         this.responseSize = responseSize;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * 优先返回已显式设置的 responseData；否则从 {@link #responseBytes} 按 UTF-8 懒转换并缓存。
+     */
     @Override
     public String getResponseData() {
         if (responseData != null) {
             return responseData;
         } else {
             if (responseBytes != null) {
-                responseData = new String(this.responseBytes);
+                responseData = new String(this.responseBytes, StandardCharsets.UTF_8);
                 return responseData;
             } else {
                 return null;

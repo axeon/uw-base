@@ -1,59 +1,62 @@
 package uw.log.es;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
 
 /**
- * 日志接口服务客户端属性配置类
+ * 日志接口服务客户端属性配置类。
+ * <p>配置前缀 {@code uw.log}，其下 {@code es} 子节点承载 Elasticsearch 连接与写入参数。
+ * 通过 {@link LogClientAutoConfiguration} 的 {@code @EnableConfigurationProperties} 自动注册为 Bean。
  */
-@Configuration
 @ConfigurationProperties(prefix = "uw.log")
 public class LogClientProperties {
-
-    private EsConfig es = new EsConfig();
 
     /**
      * ES主机配置
      */
+    private EsConfig es = new EsConfig();
+
+    /**
+     * ES主机配置（连接、认证、写入参数）。
+     */
     public static class EsConfig {
 
         /**
-         * 连接超时
+         * 连接超时（毫秒）
          */
         private long connectTimeout = 30000;
 
         /**
-         * 读超时
+         * 读超时（毫秒）
          */
         private long readTimeout = 30000;
 
         /**
-         * 写超时
+         * 写超时（毫秒）
          */
         private long writeTimeout = 30000;
 
         /**
-         * 用户名
+         * 用户名（Http Basic 认证，与 password 同时配置时生效）
          */
         private String username;
 
         /**
-         * 密码
+         * 密码（Http Basic 认证，与 username 同时配置时生效）
          */
         private String password;
 
         /**
-         * ES集群HTTP REST地址
+         * ES集群HTTP REST地址；为空时不写入日志，仅保留查询能力。
          */
         private String server = null;
 
         /**
-         * Elasticsearch bulk api 地址
+         * Elasticsearch bulk api 地址（相对 server 的 path）。
          */
         private String esBulk = "/_bulk?filter_path=took,errors";
 
         /**
-         * 是否添加执行应用信息
+         * 是否用应用信息覆写日志体中的 appInfo/appHost。
          */
         private boolean appInfoOverwrite = true;
 
@@ -63,22 +66,22 @@ public class LogClientProperties {
         private LogMode mode = LogMode.READ_WRITE;
 
         /**
-         * 刷新Bucket时间秒数.
+         * 后台批量提交的刷新间隔（秒）。
          */
         private long maxFlushInSeconds = 10L;
 
         /**
-         * 允许最大Bucket字节数。
+         * 触发立即 flush 的 buffer 阈值（KB）。
          */
         private long maxKiloBytesOfBatch = 8 * 1024;
 
         /**
-         * 最大批量线程数。
+         * 批量提交线程池的最大线程数。
          */
         private int maxBatchThreads = 5;
 
         /**
-         * 最大批量线程队列数
+         * 批量提交线程池的队列容量。
          */
         private int maxBatchQueueSize = 20;
 
@@ -188,8 +191,18 @@ public class LogClientProperties {
 
     }
 
+    /**
+     * 日志工作模式。
+     */
     public enum LogMode {
-        READ_ONLY, READ_WRITE
+        /**
+         * 只读模式：不启动后台写入链路，仅支持查询。
+         */
+        READ_ONLY,
+        /**
+         * 读写模式：启动批量写入守护线程与线程池，支持写入与查询。
+         */
+        READ_WRITE
     }
 
     public EsConfig getEs() {

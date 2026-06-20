@@ -11,21 +11,25 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
- * AES加解密工具类.
+ * Captcha AES加解密工具类。
+ * <p>使用AES/ECB/PKCS5Padding算法对Captcha的subData（前端附加数据）进行加解密，</p>
+ * <p>密钥为32位captchaId。该加密仅用于防止前端篡改附加数据，不涉及敏感数据保护。</p>
  */
 public class CaptchaAESUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(CaptchaAESUtils.class);
 
-    //算法
+    /**
+     * AES算法/模式/填充，固定为AES/ECB/PKCS5Padding。
+     */
     private static final String ALGORITHM = "AES/ECB/PKCS5Padding";
 
     /**
-     * AES解密
+     * AES解密。
      *
-     * @param encryptData 待解密的字符串
-     * @param decryptKey  解密密钥
-     * @return 解密后的String
+     * @param encryptData Base64编码的待解密字符串
+     * @param decryptKey  解密密钥（32位captchaId）
+     * @return 解密后的明文字符串；入参为空返回null；解密异常返回空串（调用方应判空处理）
      */
     public static String aesDecrypt(String encryptData, String decryptKey) {
         if (StringUtils.isBlank(encryptData) || StringUtils.isBlank(decryptKey)) {
@@ -43,11 +47,11 @@ public class CaptchaAESUtils {
     }
 
     /**
-     * AES加密
+     * AES加密。
      *
-     * @param data       待加密的内容
-     * @param encryptKey 加密密钥
-     * @return 加密后的字符串(Base64编码)
+     * @param data       待加密的明文内容
+     * @param encryptKey 加密密钥（32位captchaId）
+     * @return Base64编码的加密字符串；入参为空或加密异常返回null
      */
     public static String aesEncrypt(String data, String encryptKey) {
         if (StringUtils.isBlank(data) || StringUtils.isBlank(encryptKey)) {

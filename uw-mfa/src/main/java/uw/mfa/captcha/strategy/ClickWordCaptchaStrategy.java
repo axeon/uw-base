@@ -18,7 +18,9 @@ import java.awt.image.BufferedImage;
 import java.util.*;
 
 /**
- * 点选文字Captcha
+ * 点选文字Captcha策略。
+ * <p>在底图上随机绘制多个旋转文字，其中1个不参与校验，用户需按提示顺序点击目标文字，</p>
+ * <p>点击坐标与目标坐标偏差在FONT_SIZE范围内即校验通过。</p>
  */
 public class ClickWordCaptchaStrategy implements CaptchaStrategy {
 

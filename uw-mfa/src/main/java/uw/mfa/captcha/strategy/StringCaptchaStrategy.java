@@ -17,39 +17,40 @@ import java.awt.image.BufferedImage;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 描述: 字符串Captcha
+ * 字符串Captcha策略。
+ * <p>生成4位随机字母数字验证码图片（含噪点与干扰线），校验时忽略大小写比较。</p>
  */
 public class StringCaptchaStrategy implements CaptchaStrategy {
 
     private static final Logger logger = LoggerFactory.getLogger(StringCaptchaStrategy.class);
 
     /**
-     * 图片背景色
+     * 图片背景色（浅紫色）。
      */
     private static final Color BG_COLOR = new Color(253, 251, 255);
 
     /**
-     * 随机生成器
+     * 随机生成器（线程局部）。
      */
     private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
 
     /**
-     * 图片宽度
+     * 验证码图片宽度（像素）。
      */
     private static final int WIDTH = 360;
 
     /**
-     * 图片高度
+     * 验证码图片高度（像素）。
      */
     private static final int HEIGHT = 140;
 
     /**
-     * 字体大小
+     * 基础字体大小。
      */
     private static final int FONT_SIZE = 28;
 
     /**
-     * 图片行数
+     * 干扰线条数。
      */
     private static final int LINE_NUM = 1;
 

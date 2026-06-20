@@ -16,37 +16,40 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * IP限制帮助类。
- * 支持IP白名单，和IP错误计数限制。
+ * <p>支持IP白名单（CIDR格式，命中白名单直接豁免）与基于Redis的IP错误计数限制（warn/error两级）。</p>
  */
 public class MfaIPLimitHelper {
 
     /**
-     * redis错误限制前缀.
+     * Redis IP错误限制key前缀。
      */
     private static final String REDIS_LIMIT_IP_PREFIX = "ipLimit";
 
     /**
-     * mfaRedisTemplate。
+     * MFA专用RedisTemplate。
      */
     private static RedisTemplate<String, String> mfaRedisTemplate;
 
     /**
-     * kv便捷操作的op。
+     * kv便捷操作ops。
      */
     private static ValueOperations<String, String> mfaRedisOp;
 
     /**
-     * ip白名单。
+     * 已排序的IP白名单范围列表。
      */
     private static List<IpMatchUtils.IpRange> ipWhiteList;
 
     /**
-     * 配置文件。
+     * MFA配置。
      */
     private static UwMfaProperties uwMfaProperties;
 
     /**
+     * 构造器（由Spring注入，初始化静态依赖与白名单）。
      *
+     * @param uwMfaProperties   MFA配置
+     * @param mfaRedisTemplate  MFA专用RedisTemplate
      */
     public MfaIPLimitHelper(UwMfaProperties uwMfaProperties, @Qualifier("mfaRedisTemplate") final RedisTemplate<String, String> mfaRedisTemplate) {
         if (StringUtils.isNotBlank(uwMfaProperties.getIpWhiteList())) {
@@ -58,10 +61,10 @@ public class MfaIPLimitHelper {
     }
 
     /**
-     * 检查IP白名单配置。
+     * 检查IP是否在白名单中。
      *
-     * @param ip
-     * @return
+     * @param ip 用户IP
+     * @return 在白名单返回true，否则false
      */
     public static boolean checkIpWhiteList(String ip) {
         return ipWhiteList != null && IpMatchUtils.matches(ipWhiteList, ip);
@@ -69,19 +72,33 @@ public class MfaIPLimitHelper {
 
     /**
      * 检查IP错误限制。
+     * <p>白名单IP直接放行；否则按错误次数返回：达到errorTimes返回error（已屏蔽），</p>
+     * <p>达到warnTimes返回warn（提示需验证码），未达阈值返回success。</p>
      *
-     * @param userIp
-     * @return
+     * @param userIp 用户IP
+     * @return success/warn/error 三态ResponseData
      */
     public static ResponseData checkIpErrorLimit(String userIp) {
+        // 白名单IP直接放行, 不受错误限制影响
+        if (checkIpWhiteList(userIp)) {
+            return ResponseData.success();
+        }
         String redisKey = RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, userIp);
         String limitIpInfo = mfaRedisOp.get(RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, userIp));
         int errorCount = 0;
         if (StringUtils.isNotBlank(limitIpInfo)) {
-            errorCount = Integer.parseInt(limitIpInfo);
+            try {
+                errorCount = Integer.parseInt(limitIpInfo);
+            } catch (NumberFormatException e) {
+                // Redis值被篡改或脏数据, 重置为0避免误判触发限制
+                errorCount = 0;
+            }
         }
         if (errorCount >= uwMfaProperties.getIpLimitErrorTimes()) {
             long ttl = mfaRedisTemplate.getExpire(redisKey, TimeUnit.MINUTES) + 1;
+            if (ttl < 1) {
+                ttl = 1;
+            }
             return ResponseData.errorCode(MfaResponseCode.IP_LIMIT_ERROR, userIp, uwMfaProperties.getIpLimitSeconds() / 60, errorCount, ttl);
         } else if (errorCount >= uwMfaProperties.getIpLimitWarnTimes()) {
             // 对于非白名单和登录错误次数达到限制，则发送警告。
@@ -93,11 +110,18 @@ public class MfaIPLimitHelper {
 
 
     /**
-     * 递增IP错误次数
+     * 递增IP错误次数。
+     * <p>白名单IP不计入；首次递增时同步设置过期时间，后续递增不重置TTL。</p>
      *
-     * @param userIp
+     * @param userIp 用户IP
+     * @param remark 备注（错误码等，预留）
+     * @return 本次是否设置了过期时间（仅首次递增返回true）
      */
     public static boolean incrementIpErrorTimes(String userIp, String remark) {
+        // 白名单IP不计入错误次数
+        if (checkIpWhiteList(userIp)) {
+            return false;
+        }
         Long times = mfaRedisOp.increment(RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, userIp));
         if (times != null && times == 1L) {
             return mfaRedisTemplate.expire(RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, userIp), uwMfaProperties.getIpLimitSeconds(), TimeUnit.SECONDS);
@@ -106,9 +130,10 @@ public class MfaIPLimitHelper {
     }
 
     /**
-     * 清除IP登录限制。
+     * 清除IP错误限制。
      *
-     * @param ip
+     * @param ip 用户IP
+     * @return 删除成功返回true
      */
     public static boolean clearIpErrorLimit(String ip) {
         return mfaRedisTemplate.delete(RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, ip));
@@ -116,9 +141,9 @@ public class MfaIPLimitHelper {
 
 
     /**
-     * 计数限制信息条数。
+     * 统计MFA Redis库所有限制信息条数（基于dbSize，包含所有限制类型）。
      *
-     * @return
+     * @return 信息条数
      */
     public static long countMfaInfo() {
         Long count = mfaRedisTemplate.execute((RedisCallback<Long>) connection -> connection.serverCommands().dbSize());
@@ -126,9 +151,9 @@ public class MfaIPLimitHelper {
     }
 
     /**
-     * 获取IP限制列表。
+     * 获取IP错误限制列表（扫描ipLimit:* key并去除前缀）。
      *
-     * @return
+     * @return IP集合
      */
     public static Set<String> getIpErrorLimitList() {
         Set<String> keys = new LinkedHashSet<>();

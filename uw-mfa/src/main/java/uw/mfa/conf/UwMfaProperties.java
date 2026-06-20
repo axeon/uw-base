@@ -3,6 +3,11 @@ package uw.mfa.conf;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import uw.mfa.constant.HmacAlgorithm;
 
+/**
+ * uw-mfa配置属性。
+ * <p>配置前缀为 {@code uw.mfa}，涵盖IP限制、Captcha、设备验证码、TOTP四类业务的全部参数，</p>
+ * <p>以及独立的Redis连接配置（{@link RedisProperties}，默认继承Spring Boot的Redis属性）。</p>
+ */
 @ConfigurationProperties(prefix = "uw.mfa")
 public class UwMfaProperties {
 

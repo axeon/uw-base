@@ -17,24 +17,26 @@ import java.util.Base64;
 import java.util.List;
 
 /**
- * 图片存储类
+ * Captcha图片处理工具类。
+ * <p>负责Captcha底图/图块资源的加载与缓存、图片旋转/抠图/遮罩、Base64编解码、高斯模糊等图像处理。</p>
+ * <p>底图与图块在类加载时从classpath读取并缓存，运行时通过深拷贝避免多线程修改共享原图。</p>
  */
 public class CaptchaImageUtils {
 
     private static final Logger log = LoggerFactory.getLogger(CaptchaImageUtils.class);
 
     /**
-     * slide主图。
+     * 滑动Captcha主图缓存（slideImg/0~9.png），运行时深拷贝使用。
      */
     private static final List<BufferedImage> slideMainImageCache = new ArrayList<>();
 
     /**
-     * slide图块。
+     * 滑动Captcha图块缓存（方形/七角星/月亮/正方形/三角形/五角星/梯形等缺块模板）。
      */
     private static final List<BufferedImage> slideJigsawImageCache = new ArrayList<>();
 
     /**
-     * 旋转主图。 (滑块需要底图色彩分明 故和通用底图分开)
+     * 旋转Captcha主图缓存（rotateImg/0~9.png）。旋转Captcha需底图色彩分明，故与滑动底图分开维护。
      */
     private static final List<BufferedImage> rotateMainImageCache = new ArrayList<>();
 
@@ -330,6 +332,14 @@ public class CaptchaImageUtils {
         }
     }
 
+    /**
+     * 读取指定坐标周围3x3像素块（带边界镜像处理），用于高斯模糊取色。
+     *
+     * @param img    源图片
+     * @param x      中心点x坐标
+     * @param y      中心点y坐标
+     * @param pixels 输出像素数组（长度需为9）
+     */
     private static void readPixel(BufferedImage img, int x, int y, int[] pixels) {
         int xStart = x - 1;
         int yStart = y - 1;
@@ -355,6 +365,12 @@ public class CaptchaImageUtils {
         }
     }
 
+    /**
+     * 将9个像素值填入3x3矩阵。
+     *
+     * @param matrix 3x3矩阵
+     * @param values 9个像素值
+     */
     private static void fillMatrix(int[][] matrix, int[] values) {
         int filled = 0;
         for (int[] x : matrix) {
@@ -364,6 +380,12 @@ public class CaptchaImageUtils {
         }
     }
 
+    /**
+     * 计算3x3矩阵除中心点外8个像素的RGB平均值（高斯模糊），返回平均色RGB值。
+     *
+     * @param matrix 3x3像素矩阵
+     * @return 平均色RGB值
+     */
     private static int avgMatrix(int[][] matrix) {
         int r = 0;
         int g = 0;

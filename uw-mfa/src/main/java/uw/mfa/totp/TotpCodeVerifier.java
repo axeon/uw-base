@@ -14,43 +14,46 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 /**
- * TOTP Code Verifier.
+ * TOTP验证码校验器。
+ * <p>实现RFC 6238基于时间的一次性密码（TOTP）校验，</p>
+ * <p>允许配置时间窗口偏移量以容忍客户端与服务端时钟不同步。</p>
  *
  * @author axeon
  */
 public class TotpCodeVerifier {
     /**
-     * Logger.
+     * Logger。
      */
     private static final Logger logger = LoggerFactory.getLogger(TotpCodeVerifier.class);
     /**
-     * Hashing algorithm.
+     * HMAC哈希算法。
      */
     private final HmacAlgorithm algorithm;
     /**
-     * 代码位数。
+     * 验证码位数。
      */
     private final int digits;
     /**
-     * 时间周期(s)。
+     * 时间周期（秒），默认30s。
      */
     private final int timePeriod;
 
     /**
-     * 时间周期偏移量。
+     * 允许的时间周期偏移量（前后各N个窗口），默认2。
      */
     private final int allowedTimePeriodDiscrepancy;
 
     /**
      * 构造器。
      *
-     * @param algorithm
-     * @param digits
-     * @param timePeriod
-     * @param allowedTimePeriodDiscrepancy
+     * @param algorithm                     HMAC算法
+     * @param digits                        验证码位数
+     * @param timePeriod                    时间周期（秒）
+     * @param allowedTimePeriodDiscrepancy  允许的时间窗口偏移量
      */
     public TotpCodeVerifier(HmacAlgorithm algorithm, int digits, int timePeriod, int allowedTimePeriodDiscrepancy) {
         this.algorithm = algorithm;
@@ -60,11 +63,12 @@ public class TotpCodeVerifier {
     }
 
     /**
-     * 检查代码是否正确。
+     * 校验TOTP验证码。
+     * <p>在 [-discrepancy, +discrepancy] 窗口范围内逐一比对，全部计算完成后再判定以规避定时攻击。</p>
      *
-     * @param secret
-     * @param code
-     * @return
+     * @param secret Base32编码的密钥
+     * @param code   待校验的验证码
+     * @return 校验成功返回success，密钥/验证码缺失或校验失败返回对应errorCode
      */
     public ResponseData verifyCode(String secret, String code) {
         if (StringUtils.isBlank(secret)) {
@@ -90,7 +94,12 @@ public class TotpCodeVerifier {
     }
 
     /**
-     * 检查一个代码是否与给定的密钥和计数器匹配。
+     * 检查验证码是否与给定密钥和时间计数器匹配。
+     *
+     * @param secret  Base32编码的密钥
+     * @param counter 时间计数器（当前秒数/时间周期）
+     * @param code    待校验的验证码
+     * @return 匹配返回true；生成失败、非法密钥或比对不一致返回false
      */
     private boolean checkCode(String secret, long counter, String code) {
         try {
@@ -99,17 +108,22 @@ public class TotpCodeVerifier {
                 return false;
             }
             return timeSafeStringComparison(actualCode, code);
-        } catch (CodeGenerationException e) {
+        } catch (RuntimeException e) {
+            // 非法密钥(Base32解码异常)等运行时异常视为校验失败, 而非抛500
             return false;
         }
     }
 
     /**
-     * 比较两个字符串是否相等，而不泄露时间信息。
+     * 常量时间比较两个字符串是否相等，避免通过响应耗时泄露字符信息（定时攻击防护）。
+     *
+     * @param a 字符串a
+     * @param b 字符串b
+     * @return 相等返回true，长度不同或内容不一致返回false
      */
     private boolean timeSafeStringComparison(String a, String b) {
-        byte[] aBytes = a.getBytes();
-        byte[] bBytes = b.getBytes();
+        byte[] aBytes = a.getBytes(StandardCharsets.UTF_8);
+        byte[] bBytes = b.getBytes(StandardCharsets.UTF_8);
 
         if (aBytes.length != bBytes.length) {
             return false;
@@ -124,12 +138,12 @@ public class TotpCodeVerifier {
     }
 
     /**
-     * 生成代码。
+     * 根据密钥和时间计数器生成TOTP验证码。
      *
-     * @param key
-     * @param counter
-     * @return
-     * @throws CodeGenerationException
+     * @param key     Base32编码的密钥
+     * @param counter 时间计数器
+     * @return 生成的验证码字符串；生成异常返回null
+     * @throws CodeGenerationException 生成过程中的异常（实际异常被捕获并返回null）
      */
     public String generate(String key, long counter) throws CodeGenerationException {
         try {
@@ -143,7 +157,13 @@ public class TotpCodeVerifier {
 
 
     /**
-     * 生成计数器数值的 HMAC-SHA1 哈希值。
+     * 生成计数器数值的HMAC哈希值。
+     *
+     * @param key     Base32编码的密钥
+     * @param counter 时间计数器
+     * @return HMAC哈希字节数组
+     * @throws InvalidKeyException       密钥非法
+     * @throws NoSuchAlgorithmException  算法不支持
      */
     private byte[] generateHash(String key, long counter) throws InvalidKeyException, NoSuchAlgorithmException {
         byte[] data = new byte[8];
@@ -164,7 +184,10 @@ public class TotpCodeVerifier {
     }
 
     /**
-     * 从给定的哈希值中提取一个n位数字的代码。
+     * 从HMAC哈希值中动态截断并提取指定位数的数字验证码（RFC 4226动态截断算法）。
+     *
+     * @param hash HMAC哈希字节数组
+     * @return 左侧补零的n位数字验证码字符串
      */
     private String getDigitsFromHash(byte[] hash) {
         int offset = hash[hash.length - 1] & 0xF;

@@ -6,7 +6,9 @@ import uw.common.response.ResponseCode;
 import uw.common.util.EnumUtils;
 
 /**
- * 登录错误信息。
+ * MFA模块响应码枚举。
+ * <p>涵盖IP限制、Captcha、设备验证码、TOTP四类业务场景的错误码，</p>
+ * <p>codePrefix为 {@code uw.mfa}，i18n资源文件为 {@code i18n/messages/uw_mfa}。</p>
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum MfaResponseCode implements ResponseCode {
@@ -61,7 +63,7 @@ public enum MfaResponseCode implements ResponseCode {
 
     ;
     /**
-     * 国际化信息MESSAGE_SOURCE。
+     * 国际化信息MESSAGE_SOURCE，读取 {@code i18n/messages/uw_mfa} 多语言资源。
      */
     private static final ResourceBundleMessageSource MESSAGE_SOURCE = new ResourceBundleMessageSource() {{
         setBasename("i18n/messages/uw_mfa");
@@ -70,12 +72,12 @@ public enum MfaResponseCode implements ResponseCode {
     }};
 
     /**
-     * 响应码。
+     * 响应码（由枚举名转换为点分小写形式，如 {@code ip.limit.error}）。
      */
     private final String code;
 
     /**
-     * 错误信息。
+     * 默认错误信息（支持 {@code %s} 占位符，由 {@code errorCode(code, params)} 格式化）。
      */
     private final String message;
 
@@ -85,9 +87,9 @@ public enum MfaResponseCode implements ResponseCode {
     }
 
     /**
-     * 获取配置前缀.
+     * 获取响应码前缀，固定为 {@code uw.mfa}。
      *
-     * @return
+     * @return 响应码前缀
      */
     @Override
     public String codePrefix() {
@@ -95,9 +97,9 @@ public enum MfaResponseCode implements ResponseCode {
     }
 
     /**
-     * 获取响应码
+     * 获取响应码（不含前缀，完整码由 {@code codePrefix + getCode} 拼接）。
      *
-     * @return
+     * @return 响应码
      */
     @Override
     public String getCode() {
@@ -105,9 +107,9 @@ public enum MfaResponseCode implements ResponseCode {
     }
 
     /**
-     * 获取响应消息.
+     * 获取默认响应消息（未经过i18n与参数格式化）。
      *
-     * @return
+     * @return 默认消息
      */
     @Override
     public String getMessage() {
@@ -115,9 +117,9 @@ public enum MfaResponseCode implements ResponseCode {
     }
 
     /**
-     * 获取消息源.
+     * 获取i18n消息源。
      *
-     * @return
+     * @return 消息源
      */
     @Override
     public ResourceBundleMessageSource messageSource() {

@@ -17,7 +17,8 @@ import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 
 /**
- * 描述: 旋转
+ * 旋转拼图Captcha策略。
+ * <p>从底图抠出圆形区域并随机旋转，用户需旋转图块到正确角度（容差ROTATE_OFFSET度）即校验通过。</p>
  */
 public class RotatePuzzleCaptchaStrategy implements CaptchaStrategy {
     private static final Logger logger = LoggerFactory.getLogger(RotatePuzzleCaptchaStrategy.class);

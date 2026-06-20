@@ -3,12 +3,18 @@ package uw.mfa.captcha.vo;
 import java.util.Objects;
 
 /**
- * 坐标信息 (滑块和点选文字方式都会使用)
+ * Captcha坐标信息（滑块拼图与点选文字方式共用）。
  */
 public class CaptchaPoint {
 
+    /**
+     * x坐标。
+     */
     public int x;
 
+    /**
+     * y坐标。
+     */
     public int y;
 
     public CaptchaPoint() {
@@ -35,6 +41,11 @@ public class CaptchaPoint {
         this.y = y;
     }
 
+    /**
+     * 序列化为精简JSON字符串（无空格），如 {@code {"x":85,"y":34}}。
+     *
+     * @return JSON字符串
+     */
     public String toJsonString() {
         return String.format("{\"x\":%d,\"y\":%d}", x, y);
     }

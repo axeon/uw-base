@@ -22,43 +22,48 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * captcha帮助类。
+ * Captcha帮助类。
+ * <p>封装Captcha的生成（含发送频率限制）、校验（一次性消费）、发送限制管理能力，</p>
+ * <p>正确答案存储于Redis，校验时通过getAndDelete实现一次性消费防止重放。</p>
  */
 public class MfaCaptchaHelper {
 
     private static final Logger log = LoggerFactory.getLogger(MfaCaptchaHelper.class);
 
     /**
-     * redis captcha前缀.
+     * Redis Captcha答案存储key前缀。
      */
     private static final String REDIS_CAPTCHA_PREFIX = "captcha";
 
     /**
-     * redisCAPTCHA限制前缀.
+     * Redis Captcha发送频率限制key前缀。
      */
     private static final String REDIS_CAPTCHA_LIMIT_PREFIX = "captchaLimit";
 
     /**
-     * mfaRedisTemplate。
+     * MFA专用RedisTemplate。
      */
     private static RedisTemplate<String, String> mfaRedisTemplate;
 
     /**
-     * kv便捷操作的op。
+     * kv便捷操作ops。
      */
     private static ValueOperations<String, String> mfaRedisOp;
 
     /**
-     * captcha服务。
+     * Captcha服务（类加载时初始化为全策略，构造器注入时按配置重置）。
      */
     private static CaptchaService captchaService = new CaptchaService();
     /**
-     * 配置文件。
+     * MFA配置。
      */
     private static UwMfaProperties uwMfaProperties;
 
     /**
+     * 构造器（由Spring注入，按配置初始化Captcha策略）。
      *
+     * @param uwMfaProperties   MFA配置
+     * @param mfaRedisTemplate  MFA专用RedisTemplate
      */
     public MfaCaptchaHelper(UwMfaProperties uwMfaProperties, @Qualifier("mfaRedisTemplate") final RedisTemplate<String, String> mfaRedisTemplate) {
         MfaCaptchaHelper.uwMfaProperties = uwMfaProperties;
@@ -68,9 +73,12 @@ public class MfaCaptchaHelper {
     }
 
     /**
-     * 生成captcha。
+     * 生成Captcha。
+     * <p>先检查发送频率限制，未超限则生成问题并存储答案到Redis（带过期时间）。</p>
      *
-     * @param captchaId
+     * @param userIp    用户IP（用于发送频率限制）
+     * @param captchaId 前端传入的captchaId，为空或非32位时自动生成
+     * @return 成功返回CaptchaQuestion，超限返回CAPTCHA_SEND_LIMIT_ERROR
      */
     public static ResponseData<CaptchaQuestion> generateCaptcha(String userIp, String captchaId) {
         //检查发送限制情况
@@ -81,6 +89,9 @@ public class MfaCaptchaHelper {
         }
         if (sentTimes >= uwMfaProperties.getCaptchaSendLimitTimes()) {
             long ttl = mfaRedisTemplate.getExpire(redisKey, TimeUnit.MINUTES) + 1;
+            if (ttl < 1) {
+                ttl = 1;
+            }
             return ResponseData.errorCode(MfaResponseCode.CAPTCHA_SEND_LIMIT_ERROR, userIp, uwMfaProperties.getCaptchaSendLimitSeconds() / 60, uwMfaProperties.getCaptchaSendLimitTimes(), ttl);
         }
         ResponseData<CaptchaData> captchaResData = captchaService.generateCaptcha(captchaId);
@@ -96,10 +107,12 @@ public class MfaCaptchaHelper {
     }
 
     /**
-     * 验证captcha。
+     * 验证Captcha。
+     * <p>从Redis一次性取出（getAndDelete）正确答案进行校验，防止重放攻击。</p>
      *
-     * @param captchaId
-     * @return
+     * @param captchaId   captchaId
+     * @param captchaSign 前端提交的加密应答
+     * @return 校验成功返回success，参数缺失返回CAPTCHA_LOST_ERROR，校验失败返回CAPTCHA_VERIFY_ERROR
      */
     public static ResponseData verifyCaptcha(String captchaId, String captchaSign) {
         if (StringUtils.isBlank(captchaId) || StringUtils.isBlank(captchaSign)) {
@@ -115,18 +128,19 @@ public class MfaCaptchaHelper {
 
 
     /**
-     * 清除CAPTCHA验证码发送限制。
+     * 清除Captcha发送频率限制。
      *
-     * @param ip
+     * @param ip 用户IP
+     * @return 删除成功返回true
      */
     public static boolean clearSendLimit(String ip) {
         return mfaRedisTemplate.delete(RedisKeyUtils.buildKey(REDIS_CAPTCHA_LIMIT_PREFIX, ip));
     }
 
     /**
-     * 获取IP限制列表。
+     * 获取Captcha发送限制IP列表（扫描captchaLimit:* key并去除前缀）。
      *
-     * @return
+     * @return IP集合
      */
     public static Set<String> getSendLimitList() {
         Set<String> keys = new LinkedHashSet<>();

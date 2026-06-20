@@ -16,7 +16,8 @@ import java.awt.image.BufferedImage;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 滑动Captcha
+ * 滑动拼图Captcha策略。
+ * <p>从底图按随机模板抠出图块并生成缺块阴影，用户滑动图块到正确x坐标（容差SLIP_OFFSET）即校验通过。</p>
  */
 public class SlidePuzzleCaptchaStrategy implements CaptchaStrategy {
 

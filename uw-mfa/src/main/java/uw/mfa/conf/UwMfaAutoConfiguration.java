@@ -31,7 +31,9 @@ import uw.mfa.helper.MfaTotpHelper;
 
 
 /**
- * 启动配置。
+ * uw-mfa自动配置类。
+ * <p>创建MFA专用RedisTemplate（独立连接池，不复用主Redis）、4个Helper Bean（Captcha/DeviceCode/IPLimit/Totp），</p>
+ * <p>并配置通知服务RPC客户端。Bean可通过 @ConditionalOnMissingBean 覆盖。</p>
  */
 @Configuration
 @EnableConfigurationProperties({UwMfaProperties.class})
@@ -39,6 +41,13 @@ import uw.mfa.helper.MfaTotpHelper;
 public class UwMfaAutoConfiguration {
     private static final Logger log = LoggerFactory.getLogger(UwMfaAutoConfiguration.class);
 
+    /**
+     * 创建MFA专用RedisTemplate（String序列化，独立Lettuce连接池）。
+     *
+     * @param uwMfaProperties MFA配置（含独立Redis配置）
+     * @param clientResources Lettuce客户端资源共享配置
+     * @return RedisTemplate实例
+     */
     @Bean("mfaRedisTemplate")
     protected RedisTemplate<String, String> mfaRedisTemplate(final UwMfaProperties uwMfaProperties, final ClientResources clientResources) {
         RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
@@ -81,11 +90,11 @@ public class UwMfaAutoConfiguration {
     }
 
     /**
-     * Redis连接工厂
+     * 创建Redis连接工厂（Lettuce，独立于主Redis）。
      *
-     * @param redisProperties
-     * @param clientResources
-     * @return
+     * @param redisProperties Redis配置
+     * @param clientResources Lettuce客户端资源共享配置
+     * @return RedisConnectionFactory实例
      */
     private RedisConnectionFactory redisConnectionFactory(RedisProperties redisProperties, ClientResources clientResources) {
         //设置连接池。

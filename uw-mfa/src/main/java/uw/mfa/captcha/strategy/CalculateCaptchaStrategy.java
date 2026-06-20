@@ -15,7 +15,8 @@ import java.awt.image.BufferedImage;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 描述: 计算式Captcha生成策略
+ * 计算式Captcha策略。
+ * <p>生成两位数的加减法算式图片（如 "73-28="），用户输入计算结果校验，忽略大小写比较。</p>
  */
 public class CalculateCaptchaStrategy implements CaptchaStrategy {
 

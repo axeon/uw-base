@@ -2,6 +2,7 @@ package uw.auth.client.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import uw.common.util.MaskUtils;
 
 import java.util.Date;
 
@@ -294,27 +295,11 @@ public class TokenResponse {
                 .append("lastPasswdDate", lastPasswdDate)
                 .append("loginNotice", loginNotice)
                 // token / refreshToken 属于敏感凭证，脱敏输出避免泄漏到日志。
-                .append("token", mask(token))
-                .append("refreshToken", mask(refreshToken))
+                .append("token", MaskUtils.maskSecret(token))
+                .append("refreshToken", MaskUtils.maskSecret(refreshToken))
                 .append("expiresIn", expiresIn)
                 .append("refreshExpiresIn", refreshExpiresIn)
                 .append("createAt", createAt)
                 .toString();
-    }
-
-    /**
-     * 对敏感凭证脱敏：保留前4后4，中间以 * 替换。null/空串/过短则统一返回占位。
-     */
-    private static String mask(String secret) {
-        if (secret == null || secret.isEmpty()) {
-            return secret == null ? "null" : "";
-        }
-        if (secret.length() <= 8) {
-            return "****";
-        }
-        int keep = 4;
-        String head = secret.substring(0, keep);
-        String tail = secret.substring(secret.length() - keep);
-        return head + "****" + tail;
     }
 }

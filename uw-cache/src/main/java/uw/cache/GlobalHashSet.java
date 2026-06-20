@@ -14,7 +14,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 基于Redis实现的HashSet。
+ * 基于 Redis Set 实现的全局集合。
+ * <p>
+ * 元素经 Kryo 序列化为 byte[] 后存入 Redis Set，{@code add/remove/contains} 三者序列化协议一致。
+ * Redis key 格式：{@code uw-set:{setName}}。value 由 dataCacheRedisTemplate（byte[]）承载。
  */
 public class GlobalHashSet {
 
@@ -30,16 +33,21 @@ public class GlobalHashSet {
      */
     private static RedisTemplate<String, byte[]> dataCacheRedisTemplate;
 
+    /**
+     * 构造方法，由 Spring 注入 byte[] RedisTemplate 到 static 字段。
+     *
+     * @param dataCacheRedisTemplate byte[] 值 RedisTemplate
+     */
     public GlobalHashSet(RedisTemplate<String, byte[]> dataCacheRedisTemplate) {
         GlobalHashSet.dataCacheRedisTemplate = dataCacheRedisTemplate;
     }
 
     /**
-     * 向集合中增加对象。
+     * 向集合中添加对象。
      *
      * @param setName Set名。
-     * @param item    队列对象。
-     * @return boolean 是否成功
+     * @param item    元素对象，null 或 setName 为 null 时返回 false。
+     * @return true 表示新增成功，false 表示已存在或参数非法
      */
     public static boolean add(String setName, Object item) {
         if (setName == null || item == null) {
@@ -49,10 +57,10 @@ public class GlobalHashSet {
     }
 
     /**
-     * 从队列中移除对象。
+     * 获取集合大小。
      *
      * @param setName Set名。
-     * @return long 删除数量。
+     * @return 集合大小，setName 为 null 或 Redis 异常返回 -1
      */
     public static long size(String setName) {
         if (setName == null) {
@@ -67,11 +75,11 @@ public class GlobalHashSet {
     }
 
     /**
-     * 从队列中移除对象。
+     * 从集合中移除对象。
      *
      * @param setName Set名。
-     * @param item    对象。
-     * @return long 删除数量。
+     * @param item    元素对象，null 或 setName 为 null 时返回 -1。
+     * @return 删除数量（0 表示不存在），参数非法或 Redis 异常返回 -1
      */
     public static <T> long remove(String setName, T item) {
         if (setName == null || item == null) {
@@ -86,24 +94,25 @@ public class GlobalHashSet {
     }
 
     /**
-     * 从队列中根据Score批量移除对象。
+     * 判断集合中是否包含指定对象。
      *
      * @param setName Set名。
-     * @param item    最小分。
-     * @return long 删除数量。
+     * @param item    对象，null 或 setName 为 null 时返回 false。
+     * @return true 表示包含，false 表示不包含或参数非法
      */
     public static boolean contains(String setName, Object item) {
-        if (setName == null) {
+        if (setName == null || item == null) {
             return false;
         }
-        return Boolean.TRUE.equals(dataCacheRedisTemplate.opsForSet().isMember(REDIS_PREFIX + setName, item));
+        return Boolean.TRUE.equals(dataCacheRedisTemplate.opsForSet().isMember(REDIS_PREFIX + setName, KryoUtils.serialize(item)));
     }
 
     /**
-     * 随机获取一个元素。
+     * 随机获取一个元素（不删除）。
      *
-     * @param setName Set名。
-     * @return 是否解锁成功
+     * @param setName   Set名。
+     * @param itemClazz 元素类型
+     * @return 随机元素，集合为空或 setName 为 null 时返回 null
      */
     public static <T> T random(String setName, Class<T> itemClazz) {
         if (setName == null) {
@@ -113,16 +122,21 @@ public class GlobalHashSet {
     }
 
     /**
-     * 随机获取指定数量的元素。
+     * 随机获取指定数量的元素（不删除）。
      *
-     * @param setName Set名。
-     * @return 是否解锁成功
+     * @param setName   Set名。
+     * @param count     获取数量
+     * @param itemClazz 元素类型
+     * @return 随机元素集合，集合为空或 setName 为 null 时返回空集
      */
     public static <T> Set<T> random(String setName, long count, Class<T> itemClazz) {
         if (setName == null) {
             return null;
         }
         List<byte[]> byteSet = dataCacheRedisTemplate.opsForSet().randomMembers(REDIS_PREFIX + setName, count);
+        if (byteSet == null) {
+            return new HashSet<>();
+        }
         HashSet<T> dataSet = new HashSet<T>((int) (byteSet.size() * 1.5f));
         for (byte[] item : byteSet) {
             dataSet.add(KryoUtils.deserialize(item, itemClazz));
@@ -131,10 +145,11 @@ public class GlobalHashSet {
     }
 
     /**
-     * 随机删除后获取一个元素。
+     * 随机弹出（删除并返回）一个元素。
      *
-     * @param setName Set名。
-     * @return 是否解锁成功
+     * @param setName   Set名。
+     * @param itemClazz 元素类型
+     * @return 被弹出的元素，集合为空或 setName 为 null 时返回 null
      */
     public static <T> T pop(String setName, Class<T> itemClazz) {
         if (setName == null) {
@@ -144,16 +159,21 @@ public class GlobalHashSet {
     }
 
     /**
-     * 随机删除后获取指定数量元素。
+     * 随机弹出（删除并返回）指定数量的元素。
      *
-     * @param setName Set名。
-     * @return 是否解锁成功
+     * @param setName   Set名。
+     * @param count     弹出数量
+     * @param itemClazz 元素类型
+     * @return 被弹出的元素集合，集合为空或 setName 为 null 时返回空集
      */
     public static <T> Set<T> pop(String setName, long count, Class<T> itemClazz) {
         if (setName == null) {
             return null;
         }
         List<byte[]> byteSet = dataCacheRedisTemplate.opsForSet().pop(REDIS_PREFIX + setName, count);
+        if (byteSet == null) {
+            return new HashSet<>();
+        }
         HashSet<T> dataSet = new HashSet<T>((int) (byteSet.size() * 1.5f));
         for (byte[] item : byteSet) {
             dataSet.add(KryoUtils.deserialize(item, itemClazz));
@@ -162,16 +182,20 @@ public class GlobalHashSet {
     }
 
     /**
-     * 列表。
+     * 列出集合中的全部元素。
      *
-     * @param setName Set名。
-     * @return 是否解锁成功
+     * @param setName   Set名。
+     * @param itemClazz 元素类型
+     * @return 全部元素集合，集合为空或 setName 为 null 时返回空集
      */
     public static <T> Set<T> list(String setName, Class<T> itemClazz) {
         if (setName == null) {
             return null;
         }
         Set<byte[]> byteSet = dataCacheRedisTemplate.opsForSet().members(REDIS_PREFIX + setName);
+        if (byteSet == null) {
+            return new HashSet<>();
+        }
         HashSet<T> dataSet = new HashSet<T>((int) (byteSet.size() * 1.5f));
         for (byte[] item : byteSet) {
             dataSet.add(KryoUtils.deserialize(item, itemClazz));
@@ -180,10 +204,10 @@ public class GlobalHashSet {
     }
 
     /**
-     * 删除Set。
+     * 删除整个 Set。
      *
      * @param setName Set名。
-     * @return 是否解锁成功
+     * @return true 表示删除成功，false 表示 key 不存在或 setName 为 null
      */
     public static boolean delete(String setName) {
         if (setName == null) {
@@ -197,7 +221,7 @@ public class GlobalHashSet {
      *
      * @param setName   集合名
      * @param keyPrefix key前缀，请注意key最后不用加"*",全部清除用*即可。
-     * @return
+     * @return key集合
      */
     public static Set<String> keys(String setName, String keyPrefix) {
         if (StringUtils.isBlank(keyPrefix)) {

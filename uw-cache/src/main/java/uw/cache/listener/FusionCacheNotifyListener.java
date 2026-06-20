@@ -11,13 +11,24 @@ import uw.cache.vo.FusionCacheNotifyMessage;
 
 /**
  * 融合缓存通知的监听器。
- * 主要用于多实例之间同步清除缓存。
+ * <p>
+ * 订阅 Redis Pub/Sub 通道 {@code UW_CACHE_NOTIFY_CHANNEL}，处理集群内其他实例广播的缓存失效/刷新通知，
+ * 从而保证多实例本地 Caffeine 缓存的一致性。
+ * <p>
+ * 处理逻辑：忽略自身发出的消息（按 senderId 判断），其余按 notifyType 分发到
+ * {@link FusionCache#invalidate} / {@link FusionCache#refresh}（notify=false，避免再次广播形成环路）。
  */
 public class FusionCacheNotifyListener implements MessageListener {
 
     private final Logger logger = LoggerFactory.getLogger(FusionCacheNotifyListener.class);
 
 
+    /**
+     * 接收并处理集群缓存通知消息。
+     *
+     * @param message Redis 消息体（Kryo 序列化的 {@link FusionCacheNotifyMessage}）
+     * @param pattern 订阅模式（未使用）
+     */
     @Override
     public void onMessage(Message message, byte[] pattern) {
         try {

@@ -8,8 +8,18 @@ import uw.cache.FusionCache;
 import uw.cache.vo.CacheValueWrapper;
 
 /**
- * 重试缓存Loader
- * 主要在load失败后重试指定次数,如果加载仍然失败将抛出运行时异常
+ * 本地重试缓存加载器。
+ * <p>
+ * 作为 Caffeine {@code CacheLoader} 的适配实现，适用于 {@code isGlobalCache=false} 的纯本地缓存场景。
+ * 当本地缓存未命中时，直接调用 {@link CacheDataLoader#load} 加载数据，
+ * 失败时按 {@code reloadIntervalMillis} 间隔重试最多 {@code reloadMaxTimes} 次。
+ * <ul>
+ *   <li>loader 返回 null：返回 nullProtect 时长的空值 wrapper（防穿透）。</li>
+ *   <li>重试耗尽仍失败：返回 failProtect 时长的空值 wrapper（防穿透）。</li>
+ * </ul>
+ *
+ * @param <K> 缓存主键类型
+ * @param <V> 缓存值类型
  */
 public class LocalRetryCacheLoader<K, V> implements CacheLoader<K, CacheValueWrapper<V>> {
 
@@ -24,17 +34,22 @@ public class LocalRetryCacheLoader<K, V> implements CacheLoader<K, CacheValueWra
      */
     private final CacheDataLoader<K, V> cacheDataLoader;
 
+    /**
+     * 构造加载器。
+     *
+     * @param cacheConfig     缓存配置
+     * @param cacheDataLoader 数据加载函数
+     */
     public LocalRetryCacheLoader(FusionCache.Config cacheConfig, CacheDataLoader cacheDataLoader) {
         this.cacheConfig = cacheConfig;
         this.cacheDataLoader = cacheDataLoader;
     }
 
     /**
-     * 加载数据。
+     * 加载缓存值包装对象（带重试）。
      *
-     * @param key
-     * @return
-     * @throws Exception
+     * @param key 缓存主键
+     * @return 缓存值包装对象（永不为 null，加载失败或返回 null 时返回保护期空值 wrapper）
      */
     @Override
     public CacheValueWrapper<V> load(K key) {

@@ -22,7 +22,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 /**
- * 基于caffeine和redis构建的复合缓存，可以大幅度提升效率。
+ * 基于 Caffeine 和 Redis 构建的复合（融合）缓存。
+ * <p>
+ * 本地 Caffeine 兜性能，Redis（{@link GlobalCache}）兜全局一致性，通过 Redis Pub/Sub（通道
+ * {@link #FUSION_CACHE_NOTIFY_CHANNEL}）实现多实例间缓存失效/刷新同步。
+ * <p>
+ * 使用前必须调用 {@link #config} 注册缓存（建议放在 Helper 的 static 块中，仅调用一次，重复 config 会丢弃旧本地缓存）。
+ * 提供两种参数风格：{@code (entityClass, key)} 与 {@code (cacheName, key)}，前者语义更明确、推荐使用。
  */
 public class FusionCache {
 
@@ -104,7 +110,10 @@ public class FusionCache {
         }
 
         LoadingCache<?, ?> caffeineCache = caffeine.build(cacheLoader);
-        cacheWrapperMap.put(config.getCacheName(), new CacheWrapper(caffeineCache, config));
+        if (cacheWrapperMap.put(config.getCacheName(), new CacheWrapper(caffeineCache, config)) != null) {
+            // 重复 config 会丢弃旧的本地 Caffeine 缓存实例，属于高风险操作（本地数据全部丢失），此处告警提示。
+            log.warn("FusionCache[{}] 已存在配置，本次 config 将覆盖旧实例，旧本地缓存数据将被丢弃！", config.getCacheName());
+        }
     }
 
     /**
@@ -322,8 +331,8 @@ public class FusionCache {
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key         缓存主键
-     * @param <T>
-     * @return
+     * @param <T>         数据类型
+     * @return 缓存数据，未配置缓存或重试耗尽仍过期返回 null
      */
     public static <T> T get(Class<?> entityClass, Object key) {
         return get(entityClass.getSimpleName(), key);
@@ -334,8 +343,8 @@ public class FusionCache {
      *
      * @param cacheName 缓存名
      * @param key       缓存主键
-     * @param <T>
-     * @return
+     * @param <T>       数据类型
+     * @return 缓存数据，未配置缓存或重试耗尽仍过期返回 null
      */
     public static <T> T get(String cacheName, Object key) {
         CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
@@ -355,7 +364,13 @@ public class FusionCache {
                 log.warn("FusionCache[{}] key=[{}] still expired after {} retries, returning null", cacheName, key, MAX_RETRY_TIMES);
                 return null;
             }
-            invalidate(cacheName, key, true);
+            // 重试路径：删除本地缓存以便 loader 重新加载；全局缓存场景下需同时删除 Redis 中已过期的 wrapper，
+            // 否则 loader 会反复从 Redis 取到同一过期数据导致重试空转。
+            // 此处直接操作缓存底座，绕过 invalidate() 以避免触发 cacheChangeNotifyListener（重试循环不需要监听副作用）和集群通知。
+            if (cacheWrapper.config.isGlobalCache()) {
+                GlobalCache.invalidate(cacheName, key);
+            }
+            cacheWrapper.cache.invalidate(key);
         }
         return null;
     }
@@ -366,8 +381,8 @@ public class FusionCache {
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key         缓存主键
-     * @param <T>
-     * @return
+     * @param <T>         数据类型
+     * @return 缓存值包装对象，未配置缓存返回 null
      */
     public static <T> CacheValueWrapper<T> getValueWrapper(Class<?> entityClass, Object key) {
         return getValueWrapper(entityClass.getSimpleName(), key);
@@ -378,8 +393,8 @@ public class FusionCache {
      *
      * @param cacheName 缓存名
      * @param key       缓存主键
-     * @param <T>
-     * @return
+     * @param <T>       数据类型
+     * @return 缓存值包装对象，未配置缓存返回 null
      */
     public static <T> CacheValueWrapper<T> getValueWrapper(String cacheName, Object key) {
         CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
@@ -396,7 +411,7 @@ public class FusionCache {
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key         缓存主键
-     * @return
+     * @return true 表示存在且未过期，未配置缓存返回 false
      */
     public static boolean containsKey(Class<?> entityClass, Object key) {
         return containsKey(entityClass.getSimpleName(), key);
@@ -407,7 +422,7 @@ public class FusionCache {
      *
      * @param cacheName 缓存名
      * @param key       缓存主键
-     * @return
+     * @return true 表示存在且未过期，未配置缓存返回 false
      */
     public static boolean containsKey(String cacheName, Object key) {
         CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
@@ -423,7 +438,7 @@ public class FusionCache {
      * 获取指定缓存本地大小。
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
-     * @return
+     * @return 本地缓存条目数，未配置缓存返回 -1
      */
     public static long localCacheSize(Class<?> entityClass) {
         return localCacheSize(entityClass.getSimpleName());
@@ -433,7 +448,7 @@ public class FusionCache {
      * 获取指定缓存本地大小。
      *
      * @param cacheName 缓存名
-     * @return
+     * @return 本地缓存条目数，未配置缓存返回 -1
      */
     public static long localCacheSize(String cacheName) {
         CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
@@ -448,7 +463,7 @@ public class FusionCache {
      * 以Map形式返回指定缓存内容。
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
-     * @return
+     * @return 本地缓存视图，未配置缓存返回 null
      */
     public static ConcurrentMap<?, ?> localCacheMap(Class<?> entityClass) {
         return localCacheMap(entityClass.getSimpleName());
@@ -458,7 +473,7 @@ public class FusionCache {
      * 以Map形式返回指定缓存内容。
      *
      * @param cacheName 缓存名
-     * @return
+     * @return 本地缓存视图，未配置缓存返回 null
      */
     public static ConcurrentMap<?, ?> localCacheMap(String cacheName) {
         CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
@@ -472,8 +487,8 @@ public class FusionCache {
     /**
      * 获取本地缓存。
      *
-     * @param entityClass
-     * @return
+     * @param entityClass 缓存对象类
+     * @return 本地 Caffeine 缓存实例，未配置缓存返回 null
      */
     public static LoadingCache<?, ?> getLocalCache(Class<?> entityClass) {
         return getLocalCache(entityClass.getSimpleName());
@@ -482,8 +497,8 @@ public class FusionCache {
     /**
      * 获取本地缓存。
      *
-     * @param cacheName
-     * @return
+     * @param cacheName 缓存名
+     * @return 本地 Caffeine 缓存实例，未配置缓存返回 null
      */
     private static LoadingCache<?, ?> getLocalCache(String cacheName) {
         CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
@@ -498,7 +513,7 @@ public class FusionCache {
      * 获取指定缓存统计信息。
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
-     * @return
+     * @return Caffeine 命中统计，未配置缓存返回 null
      */
     public static CacheStats localStats(Class<?> entityClass) {
         return localStats(entityClass.getSimpleName());
@@ -508,7 +523,7 @@ public class FusionCache {
      * 获取指定缓存统计信息。
      *
      * @param cacheName 缓存名
-     * @return
+     * @return Caffeine 命中统计，未配置缓存返回 null
      */
     public static CacheStats localStats(String cacheName) {
         CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
@@ -544,7 +559,7 @@ public class FusionCache {
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param keyPrefix   key前缀
-     * @return
+     * @return key集合，未配置缓存返回 null
      */
     public static Set<String> keys(Class<?> entityClass, String keyPrefix) {
         return keys(entityClass.getSimpleName(), keyPrefix);
@@ -555,7 +570,7 @@ public class FusionCache {
      *
      * @param cacheName 缓存名
      * @param keyPrefix key前缀
-     * @return
+     * @return key集合，未配置缓存返回 null
      */
     public static Set<String> keys(String cacheName, String keyPrefix) {
         CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
@@ -585,6 +600,7 @@ public class FusionCache {
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key         缓存主键
+     * @return true 表示执行成功，未配置缓存返回 false
      */
     public static boolean invalidate(Class<?> entityClass, Object key) {
         return invalidate(entityClass.getSimpleName(), key, true);
@@ -596,6 +612,7 @@ public class FusionCache {
      *
      * @param cacheName 缓存名
      * @param key       缓存主键
+     * @return true 表示执行成功，未配置缓存返回 false
      */
     public static boolean invalidate(String cacheName, Object key) {
         return invalidate(cacheName, key, true);
@@ -607,6 +624,7 @@ public class FusionCache {
      * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key         缓存主键
      * @param notify      是否通知集群内其他主机。
+     * @return true 表示执行成功，未配置缓存返回 false
      */
     public static boolean invalidate(Class<?> entityClass, Object key, boolean notify) {
         return invalidate(entityClass.getSimpleName(), key, notify);
@@ -618,6 +636,7 @@ public class FusionCache {
      * @param cacheName 缓存名
      * @param key       缓存主键
      * @param notify    是否通知集群内其他主机。
+     * @return true 表示执行成功，未配置缓存返回 false
      */
     public static boolean invalidate(String cacheName, Object key, boolean notify) {
         CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
@@ -674,6 +693,7 @@ public class FusionCache {
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key         缓存主键
+     * @return 接收到该通知的客户端数量
      */
     public static Long notifyInvalidate(Class<?> entityClass, Object key) {
         return notifyInvalidate(entityClass.getSimpleName(), key);
@@ -684,6 +704,7 @@ public class FusionCache {
      *
      * @param cacheName 缓存名
      * @param key       缓存主键
+     * @return 接收到该通知的客户端数量
      */
     public static Long notifyInvalidate(String cacheName, Object key) {
         //发布通知
@@ -695,6 +716,7 @@ public class FusionCache {
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key         缓存主键
+     * @return 接收到该通知的客户端数量
      */
     public static Long notifyRefresh(Class<?> entityClass, Object key) {
         return notifyRefresh(entityClass.getSimpleName(), key);
@@ -705,6 +727,7 @@ public class FusionCache {
      *
      * @param cacheName 缓存名
      * @param key       缓存主键
+     * @return 接收到该通知的客户端数量
      */
     public static Long notifyRefresh(String cacheName, Object key) {
         //发布通知
@@ -717,6 +740,7 @@ public class FusionCache {
      *
      * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key         缓存主键
+     * @return true 表示执行成功，未配置缓存返回 false
      */
     public static boolean refresh(Class<?> entityClass, Object key) {
         return refresh(entityClass.getSimpleName(), key, true);
@@ -728,6 +752,7 @@ public class FusionCache {
      *
      * @param cacheName 缓存名
      * @param key       缓存主键
+     * @return true 表示执行成功，未配置缓存返回 false
      */
     public static boolean refresh(String cacheName, Object key) {
         return refresh(cacheName, key, true);
@@ -739,6 +764,7 @@ public class FusionCache {
      * @param entityClass 缓存对象类(主要用于构造cacheName)
      * @param key         缓存主键
      * @param notify      是否通知集群内其他主机。
+     * @return true 表示执行成功，未配置缓存返回 false
      */
     public static boolean refresh(Class<?> entityClass, Object key, boolean notify) {
         return refresh(entityClass.getSimpleName(), key, notify);
@@ -750,6 +776,7 @@ public class FusionCache {
      * @param cacheName 缓存名
      * @param key       缓存主键
      * @param notify    是否通知集群内其他主机。
+     * @return true 表示执行成功，未配置缓存返回 false
      */
     public static boolean refresh(String cacheName, Object key, boolean notify) {
         CacheWrapper cacheWrapper = cacheWrapperMap.get(cacheName);
@@ -807,25 +834,12 @@ public class FusionCache {
 
 
     /**
-     * 缓存对象包装类。
+     * 缓存对象包装类，封装 Caffeine 本地缓存实例与其配置。
      *
-     * @param cache
-     * @param config
+     * @param cache  本地 Caffeine LoadingCache
+     * @param config 缓存配置
      */
     private record CacheWrapper(LoadingCache cache, Config config) {
-
-        public CacheWrapper(LoadingCache cache, Config config) {
-            this.cache = cache;
-            this.config = config;
-        }
-
-        public LoadingCache cache() {
-            return cache;
-        }
-
-        public Config config() {
-            return config;
-        }
     }
 
     /**
@@ -837,8 +851,11 @@ public class FusionCache {
          */
         private String cacheName;
         /**
-         * 缓存有效期毫秒数，默认为0，表示永不过期。
-         * 鉴于redis的特性，一般建议设置一个有效期，防止redis爆库。
+         * 缓存有效期毫秒数，默认 -1。
+         * <p>
+         * -1 或 0：永不过期（本地与 Redis 均不设过期）。
+         * 大于 0：同时作为本地 wrapper 过期时间与 Redis TTL。
+         * 注意：本地设过期会拖累 Caffeine 性能（劣化约 200 倍），高频缓存建议保持 -1。
          */
         private long cacheExpireMillis = -1;
         /**
@@ -882,19 +899,22 @@ public class FusionCache {
         private boolean isGlobalCache = true;
 
         /**
-         * 缓存作废监听器。
+         * 缓存变更监听器。
          */
         private CacheChangeNotifyListener cacheChangeNotifyListener;
 
+        /**
+         * 默认构造函数，配合 setter 链式配置使用。
+         */
         public Config() {
         }
 
         /**
          * 常用构造器。
          *
-         * @param entityClass
-         * @param localCacheMaxNum
-         * @param cacheExpireMillis
+         * @param entityClass      缓存对象类（取 simpleName 作为 cacheName）
+         * @param localCacheMaxNum 本地缓存最大数量
+         * @param cacheExpireMillis 缓存有效期毫秒数
          */
         public Config(Class<?> entityClass, int localCacheMaxNum, long cacheExpireMillis) {
             this.cacheName = entityClass.getSimpleName();
@@ -905,9 +925,9 @@ public class FusionCache {
         /**
          * 常用构造器。
          *
-         * @param cacheName
-         * @param localCacheMaxNum
-         * @param cacheExpireMillis
+         * @param cacheName        缓存名
+         * @param localCacheMaxNum 本地缓存最大数量
+         * @param cacheExpireMillis 缓存有效期毫秒数
          */
         public Config(String cacheName, int localCacheMaxNum, long cacheExpireMillis) {
             this.cacheName = cacheName;
@@ -918,9 +938,11 @@ public class FusionCache {
         /**
          * 常用构造器。
          *
-         * @param entityClass
-         * @param localCacheMaxNum
-         * @param cacheExpireMillis
+         * @param entityClass       缓存对象类（取 simpleName 作为 cacheName）
+         * @param localCacheMaxNum  本地缓存最大数量
+         * @param cacheExpireMillis 缓存有效期毫秒数
+         * @param nullProtectMillis 空值保护毫秒数
+         * @param failProtectMillis 失败保护毫秒数
          */
         public Config(Class<?> entityClass, int localCacheMaxNum, long cacheExpireMillis, long nullProtectMillis, long failProtectMillis) {
             this.cacheName = entityClass.getSimpleName();
@@ -933,9 +955,11 @@ public class FusionCache {
         /**
          * 常用构造器。
          *
-         * @param cacheName
-         * @param localCacheMaxNum
-         * @param cacheExpireMillis
+         * @param cacheName         缓存名
+         * @param localCacheMaxNum  本地缓存最大数量
+         * @param cacheExpireMillis 缓存有效期毫秒数
+         * @param nullProtectMillis 空值保护毫秒数
+         * @param failProtectMillis 失败保护毫秒数
          */
         public Config(String cacheName, int localCacheMaxNum, long cacheExpireMillis, long nullProtectMillis, long failProtectMillis) {
             this.cacheName = cacheName;
@@ -967,8 +991,8 @@ public class FusionCache {
         /**
          * builder构造器。
          *
-         * @param cacheName
-         * @return
+         * @param cacheName 缓存名
+         * @return Builder 实例
          */
         public static Builder builder(String cacheName) {
             return new Builder().cacheName(cacheName);
@@ -977,8 +1001,8 @@ public class FusionCache {
         /**
          * builder构造器。
          *
-         * @param entityClass
-         * @return
+         * @param entityClass 缓存对象类（取 simpleName 作为 cacheName）
+         * @return Builder 实例
          */
         public static Builder builder(Class<?> entityClass) {
             return new Builder().cacheName(entityClass.getSimpleName());
@@ -987,10 +1011,10 @@ public class FusionCache {
         /**
          * builder构造器。
          *
-         * @param cacheName
-         * @param localCacheMaxNum
-         * @param cacheExpireMillis
-         * @return
+         * @param cacheName         缓存名
+         * @param localCacheMaxNum  本地缓存最大数量
+         * @param cacheExpireMillis 缓存有效期毫秒数
+         * @return Builder 实例
          */
         public static Builder builder(String cacheName, int localCacheMaxNum, long cacheExpireMillis) {
             return new Builder().cacheName(cacheName).localCacheMaxNum(localCacheMaxNum).cacheExpireMillis(cacheExpireMillis);
@@ -999,15 +1023,21 @@ public class FusionCache {
         /**
          * builder构造器。
          *
-         * @param entityClass
-         * @param localCacheMaxNum
-         * @param cacheExpireMillis
-         * @return
+         * @param entityClass       缓存对象类（取 simpleName 作为 cacheName）
+         * @param localCacheMaxNum  本地缓存最大数量
+         * @param cacheExpireMillis 缓存有效期毫秒数
+         * @return Builder 实例
          */
         public static Builder builder(Class<?> entityClass, int localCacheMaxNum, long cacheExpireMillis) {
             return new Builder().cacheName(entityClass.getSimpleName()).localCacheMaxNum(localCacheMaxNum).cacheExpireMillis(cacheExpireMillis);
         }
 
+        /**
+         * 基于已有 Config 复制构造 Builder。
+         *
+         * @param copy 源配置
+         * @return 复制了源配置的 Builder 实例
+         */
         public static Builder builder(Config copy) {
             Builder builder = new Builder();
             builder.cacheName = copy.getCacheName();
@@ -1023,78 +1053,173 @@ public class FusionCache {
         }
 
 
+        /**
+         * 通过实体类设置缓存名（取 simpleName）。
+         *
+         * @param entityClass 缓存对象类
+         */
         public void setEntityClass(Class<?> entityClass) {
             this.cacheName = entityClass.getSimpleName();
         }
 
+        /**
+         * 获取缓存名。
+         *
+         * @return 缓存名
+         */
         public String getCacheName() {
             return cacheName;
         }
 
+        /**
+         * 设置缓存名。
+         *
+         * @param cacheName 缓存名
+         */
         public void setCacheName(String cacheName) {
             this.cacheName = cacheName;
         }
 
+        /**
+         * 获取本地缓存最大数量。
+         *
+         * @return 本地缓存最大数量
+         */
         public int getLocalCacheMaxNum() {
             return localCacheMaxNum;
         }
 
+        /**
+         * 设置本地缓存最大数量。
+         *
+         * @param localCacheMaxNum 本地缓存最大数量
+         */
         public void setLocalCacheMaxNum(int localCacheMaxNum) {
             this.localCacheMaxNum = localCacheMaxNum;
         }
 
+        /**
+         * 获取缓存有效期毫秒数。
+         *
+         * @return 缓存有效期毫秒数，-1/0 表示永久
+         */
         public long getCacheExpireMillis() {
             return cacheExpireMillis;
         }
 
+        /**
+         * 设置缓存有效期毫秒数。
+         *
+         * @param cacheExpireMillis 缓存有效期毫秒数，-1/0 表示永久
+         */
         public void setCacheExpireMillis(long cacheExpireMillis) {
             this.cacheExpireMillis = cacheExpireMillis;
         }
 
+        /**
+         * 获取空值保护毫秒数。
+         *
+         * @return 空值保护毫秒数
+         */
         public long getNullProtectMillis() {
             return nullProtectMillis;
         }
 
+        /**
+         * 设置空值保护毫秒数。
+         *
+         * @param nullProtectMillis 空值保护毫秒数
+         */
         public void setNullProtectMillis(long nullProtectMillis) {
             this.nullProtectMillis = nullProtectMillis;
         }
 
+        /**
+         * 获取失败保护毫秒数。
+         *
+         * @return 失败保护毫秒数
+         */
         public long getFailProtectMillis() {
             return failProtectMillis;
         }
 
+        /**
+         * 设置失败保护毫秒数。
+         *
+         * @param failProtectMillis 失败保护毫秒数
+         */
         public void setFailProtectMillis(long failProtectMillis) {
             this.failProtectMillis = failProtectMillis;
         }
 
+        /**
+         * 获取重载间隔毫秒数。
+         *
+         * @return 重载间隔毫秒数
+         */
         public long getReloadIntervalMillis() {
             return reloadIntervalMillis;
         }
 
+        /**
+         * 设置重载间隔毫秒数。
+         *
+         * @param reloadIntervalMillis 重载间隔毫秒数
+         */
         public void setReloadIntervalMillis(long reloadIntervalMillis) {
             this.reloadIntervalMillis = reloadIntervalMillis;
         }
 
+        /**
+         * 获取重载最大次数。
+         *
+         * @return 重载最大次数
+         */
         public int getReloadMaxTimes() {
             return reloadMaxTimes;
         }
 
+        /**
+         * 设置重载最大次数。
+         *
+         * @param reloadMaxTimes 重载最大次数
+         */
         public void setReloadMaxTimes(int reloadMaxTimes) {
             this.reloadMaxTimes = reloadMaxTimes;
         }
 
+        /**
+         * 是否启用加载成功后自动通知集群失效。
+         *
+         * @return true 表示启用
+         */
         public boolean isAutoNotifyInvalidate() {
             return autoNotifyInvalidate;
         }
 
+        /**
+         * 设置是否加载成功后自动通知集群失效。
+         *
+         * @param autoNotifyInvalidate true 表示启用
+         */
         public void setAutoNotifyInvalidate(boolean autoNotifyInvalidate) {
             this.autoNotifyInvalidate = autoNotifyInvalidate;
         }
 
+        /**
+         * 是否启用全局（Redis）缓存。
+         *
+         * @return true 表示全局缓存，false 表示纯本地缓存
+         */
         public boolean isGlobalCache() {
             return isGlobalCache;
         }
 
+        /**
+         * 设置是否启用全局（Redis）缓存。
+         *
+         * @param globalCache true 表示全局缓存
+         */
         public void setGlobalCache(boolean globalCache) {
             isGlobalCache = globalCache;
         }
@@ -1156,63 +1281,136 @@ public class FusionCache {
             private boolean isGlobalCache = true;
 
 
+            /**
+             * 私有构造，通过 {@link Config#builder()} 获取实例。
+             */
             private Builder() {
             }
 
+            /**
+             * 创建 Builder 实例。
+             *
+             * @return Builder 实例
+             */
             public static Builder builder() {
                 return new Builder();
             }
 
+            /**
+             * 通过实体类设置缓存名（取 simpleName）。
+             *
+             * @param entityClass 缓存对象类
+             * @return 当前 Builder
+             */
             public Builder entityClass(Class<?> entityClass) {
                 this.cacheName = entityClass.getSimpleName();
                 return this;
             }
 
+            /**
+             * 设置缓存名。
+             *
+             * @param cacheName 缓存名
+             * @return 当前 Builder
+             */
             public Builder cacheName(String cacheName) {
                 this.cacheName = cacheName;
                 return this;
             }
 
+            /**
+             * 设置本地缓存最大数量。
+             *
+             * @param localCacheMaxNum 本地缓存最大数量
+             * @return 当前 Builder
+             */
             public Builder localCacheMaxNum(int localCacheMaxNum) {
                 this.localCacheMaxNum = localCacheMaxNum;
                 return this;
             }
 
+            /**
+             * 设置缓存有效期毫秒数。
+             *
+             * @param cacheExpireMillis 缓存有效期毫秒数，-1/0 表示永久
+             * @return 当前 Builder
+             */
             public Builder cacheExpireMillis(long cacheExpireMillis) {
                 this.cacheExpireMillis = cacheExpireMillis;
                 return this;
             }
 
+            /**
+             * 设置空值保护毫秒数。
+             *
+             * @param nullProtectMillis 空值保护毫秒数
+             * @return 当前 Builder
+             */
             public Builder nullProtectMillis(long nullProtectMillis) {
                 this.nullProtectMillis = nullProtectMillis;
                 return this;
             }
 
+            /**
+             * 设置失败保护毫秒数。
+             *
+             * @param failProtectMillis 失败保护毫秒数
+             * @return 当前 Builder
+             */
             public Builder failProtectMillis(long failProtectMillis) {
                 this.failProtectMillis = failProtectMillis;
                 return this;
             }
 
+            /**
+             * 设置重载间隔毫秒数。
+             *
+             * @param reloadIntervalMillis 重载间隔毫秒数
+             * @return 当前 Builder
+             */
             public Builder reloadIntervalMillis(long reloadIntervalMillis) {
                 this.reloadIntervalMillis = reloadIntervalMillis;
                 return this;
             }
 
+            /**
+             * 设置重载最大次数。
+             *
+             * @param reloadMaxTimes 重载最大次数
+             * @return 当前 Builder
+             */
             public Builder reloadMaxTimes(int reloadMaxTimes) {
                 this.reloadMaxTimes = reloadMaxTimes;
                 return this;
             }
 
+            /**
+             * 设置是否加载成功后自动通知集群失效。
+             *
+             * @param autoNotifyInvalidate true 表示启用
+             * @return 当前 Builder
+             */
             public Builder autoNotifyInvalidate(boolean autoNotifyInvalidate) {
                 this.autoNotifyInvalidate = autoNotifyInvalidate;
                 return this;
             }
 
+            /**
+             * 设置是否启用全局（Redis）缓存。
+             *
+             * @param globalCache true 表示全局缓存
+             * @return 当前 Builder
+             */
             public Builder globalCache(boolean globalCache) {
                 this.isGlobalCache = globalCache;
                 return this;
             }
 
+            /**
+             * 构建不可变的 Config 实例。
+             *
+             * @return Config 实例
+             */
             public Config build() {
                 return new Config(this);
             }

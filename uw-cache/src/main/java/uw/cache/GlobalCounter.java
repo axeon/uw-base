@@ -12,7 +12,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * 基于Redis实现的全局计数器。
+ * 基于 Redis 实现的全局计数器。
+ * <p>
+ * 直接操作 Redis 的数值键，保证集群内强一致。value 序列化采用 Long 字符串（longCacheRedisTemplate）。
+ * Redis key 格式：{@code uw-counter:{counterType}:{counterId}}。
  */
 public class GlobalCounter {
 
@@ -29,6 +32,11 @@ public class GlobalCounter {
     private static RedisTemplate<String, Long> longCacheRedisTemplate;
 
 
+    /**
+     * 构造方法，由 Spring 注入 Long RedisTemplate 到 static 字段。
+     *
+     * @param longCacheRedisTemplate Long 值 RedisTemplate
+     */
     public GlobalCounter(RedisTemplate<String, Long> longCacheRedisTemplate) {
         GlobalCounter.longCacheRedisTemplate = longCacheRedisTemplate;
     }
@@ -39,7 +47,7 @@ public class GlobalCounter {
      * @param entityType   entity类型(主要用于构造counterType)。
      * @param counterId    计数器ID
      * @param incrementNum 增加的计数。
-     * @return 计数数值
+     * @return 计数数值，Redis 异常返回 -1
      */
     public static long increment(Class<?> entityType, Object counterId, long incrementNum) {
         return increment(entityType.getSimpleName(), counterId, incrementNum);
@@ -51,7 +59,7 @@ public class GlobalCounter {
      * @param counterType  计数器类型
      * @param counterId    计数器ID
      * @param incrementNum 增加的计数。
-     * @return 计数数值
+     * @return 计数数值，Redis 异常返回 -1
      */
     public static long increment(String counterType, Object counterId, long incrementNum) {
         Long count = longCacheRedisTemplate.opsForValue().increment(RedisKeyUtils.buildTypeId(REDIS_PREFIX, counterType, counterId), incrementNum);
@@ -64,7 +72,7 @@ public class GlobalCounter {
      * @param entityType   entity类型(主要用于构造counterType)。
      * @param counterId    计数器ID
      * @param decrementNum 减少的计数。
-     * @return 计数数值
+     * @return 计数数值，Redis 异常返回 -1
      */
     public static long decrement(Class<?> entityType, Object counterId, long decrementNum) {
         return decrement(entityType.getSimpleName(), counterId, decrementNum);
@@ -76,7 +84,7 @@ public class GlobalCounter {
      * @param counterType  计数器类型
      * @param counterId    计数器ID
      * @param decrementNum 减少的计数。
-     * @return 计数数值
+     * @return 计数数值，Redis 异常返回 -1
      */
     public static long decrement(String counterType, Object counterId, long decrementNum) {
         Long count = longCacheRedisTemplate.opsForValue().decrement(RedisKeyUtils.buildTypeId(REDIS_PREFIX, counterType, counterId), decrementNum);
@@ -112,6 +120,7 @@ public class GlobalCounter {
      * @param entityType entity类型(主要用于构造counterType)。
      * @param counterId  计数器ID
      * @param num        数值
+     * @return true 表示设置成功（原先不存在），false 表示已存在未覆盖
      */
     public static boolean setIfAbsent(Class<?> entityType, Object counterId, long num) {
         return setIfAbsent(entityType.getSimpleName(), counterId, num);
@@ -124,6 +133,7 @@ public class GlobalCounter {
      * @param counterType 计数器类型
      * @param counterId   计数器ID
      * @param num         数值
+     * @return true 表示设置成功（原先不存在），false 表示已存在未覆盖
      */
     public static boolean setIfAbsent(String counterType, Object counterId, long num) {
         return Boolean.TRUE.equals(longCacheRedisTemplate.opsForValue().setIfAbsent(RedisKeyUtils.buildTypeId(REDIS_PREFIX, counterType, counterId), num));
@@ -134,7 +144,7 @@ public class GlobalCounter {
      *
      * @param entityType entity类型(主要用于构造counterType)。
      * @param counterId  计数器ID
-     * @return 计数数值
+     * @return 计数数值，不存在返回 0
      */
     public static long get(Class<?> entityType, Object counterId) {
         return get(entityType.getSimpleName(), counterId);
@@ -145,7 +155,7 @@ public class GlobalCounter {
      *
      * @param counterType 计数器类型
      * @param counterId   计数器ID
-     * @return 计数数值
+     * @return 计数数值，不存在返回 0
      */
     public static long get(String counterType, Object counterId) {
         Long count = longCacheRedisTemplate.opsForValue().get(RedisKeyUtils.buildTypeId(REDIS_PREFIX, counterType, counterId));
@@ -157,7 +167,7 @@ public class GlobalCounter {
      *
      * @param entityType entity类型(主要用于构造counterType)。
      * @param counterId  计数器ID
-     * @return 是否成功
+     * @return true 表示删除成功
      */
     public static boolean delete(Class<?> entityType, Object counterId) {
         return delete(entityType.getSimpleName(), counterId);
@@ -168,7 +178,7 @@ public class GlobalCounter {
      *
      * @param counterType 计数器类型
      * @param counterId   计数器ID
-     * @return 是否成功
+     * @return true 表示删除成功
      */
     public static boolean delete(String counterType, Object counterId) {
         return Boolean.TRUE.equals(longCacheRedisTemplate.delete(RedisKeyUtils.buildTypeId(REDIS_PREFIX, counterType, counterId)));
@@ -179,7 +189,7 @@ public class GlobalCounter {
      *
      * @param entityType entity类型(主要用于构造counterType)。
      * @param counterId  计数器ID
-     * @return 计数数值
+     * @return 计数数值，不存在返回 -1
      */
     public static long getAndDelete(Class<?> entityType, Object counterId) {
         return getAndDelete(entityType.getSimpleName(), counterId);
@@ -190,7 +200,7 @@ public class GlobalCounter {
      *
      * @param counterType 计数器类型
      * @param counterId   计数器ID
-     * @return 计数数值
+     * @return 计数数值，不存在返回 -1
      */
     public static long getAndDelete(String counterType, Object counterId) {
         Long count = longCacheRedisTemplate.opsForValue().getAndDelete(RedisKeyUtils.buildTypeId(REDIS_PREFIX, counterType, counterId));

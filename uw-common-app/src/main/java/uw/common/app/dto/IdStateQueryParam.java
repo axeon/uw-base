@@ -8,8 +8,11 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * 自带验证信息的查询参数类。
- * 自带了saasId, mchId, userId, userType属性。
+ * 基于 ID 与状态的查询参数。
+ * <p>
+ * 在 {@link IdQueryParam} 基础上增加 state/states/stateGte/stateLte 状态过滤字段，
+ * 不带鉴权信息，适用于无租户隔离、需状态过滤的通用查询。
+ * </p>
  */
 public class IdStateQueryParam extends QueryParam<IdStateQueryParam> {
 

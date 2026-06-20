@@ -7,22 +7,27 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * Json配置参数定义。
+ * JSON 配置参数定义接口。
+ * <p>
+ * 通常以枚举形式实现，每个枚举常量描述一个配置项的 key、类型、默认值、描述与校验正则。
+ * 配合 {@link JsonConfigHelper} 构建 {@link JsonConfigBox} 进行结构化读取与校验。
+ * </p>
  */
 @Schema(title = "Json配置参数定义", description = "Json配置参数定义")
 public interface JsonConfigParam {
 
     /**
-     * 配置参数数据。
+     * 获取配置参数数据（由实现类提供元数据载体）。
      *
-     * @return
+     * @return 参数数据
      */
     @JsonIgnore
     ParamData getParamData();
 
     /**
-     * 配置参数名。
-     * 当使用enum的时候。
+     * 获取配置参数名（key）。
+     *
+     * @return 配置 key
      */
     @Schema(title = "配置名", description = "配置名")
     default String getKey() {
@@ -30,8 +35,9 @@ public interface JsonConfigParam {
     }
 
     /**
-     * 配置类型。 数值，字符串，布尔值，浮点数，浮点数，日期，时间，日期时间,枚举.
-     * 详见ConfigParamType。
+     * 获取配置类型（数值/字符串/布尔/日期/枚举等，详见 {@link ParamType}）。
+     *
+     * @return 配置类型
      */
     @Schema(title = "配置类型", description = "配置类型")
     default ParamType getType() {
@@ -39,7 +45,9 @@ public interface JsonConfigParam {
     }
 
     /**
-     * 配置默认值。
+     * 获取配置默认值（未提供实际值时使用；ENUM 类型时也可承载可选值集合）。
+     *
+     * @return 默认值
      */
     @Schema(title = "配置默认值", description = "配置默认值")
     default String getValue() {
@@ -47,7 +55,9 @@ public interface JsonConfigParam {
     }
 
     /**
-     * 配置描述。
+     * 获取配置描述。
+     *
+     * @return 描述文本
      */
     @Schema(title = "配置描述", description = "配置描述")
     default String getDesc() {
@@ -55,7 +65,9 @@ public interface JsonConfigParam {
     }
 
     /**
-     * 正则表达式。
+     * 获取校验正则表达式（无则为 null）。
+     *
+     * @return 正则表达式
      */
     @Schema(title = "正则表达式", description = "正则表达式")
     default String getRegex() {
@@ -63,7 +75,7 @@ public interface JsonConfigParam {
     }
 
     /**
-     * 配置参数数据。
+     * 配置参数数据载体（不可变）。
      */
     class ParamData {
 
@@ -93,6 +105,15 @@ public interface JsonConfigParam {
          */
         private final String regex;
 
+        /**
+         * 构造参数数据。
+         *
+         * @param key   配置 key
+         * @param type  配置类型
+         * @param value 默认值（ENUM 类型时也可承载可选值集合）
+         * @param desc  描述文本
+         * @param regex 校验正则表达式（无则传 null）
+         */
         public ParamData(String key, ParamType type, String value, String desc, String regex) {
             this.key = key;
             this.type = type;
@@ -101,22 +122,37 @@ public interface JsonConfigParam {
             this.regex = regex;
         }
 
+        /**
+         * @return 配置类型
+         */
         public ParamType getType() {
             return type;
         }
 
+        /**
+         * @return 配置 key
+         */
         public String getKey() {
             return key;
         }
 
+        /**
+         * @return 默认值
+         */
         public String getValue() {
             return value;
         }
 
+        /**
+         * @return 描述文本
+         */
         public String getDesc() {
             return desc;
         }
 
+        /**
+         * @return 校验正则表达式
+         */
         public String getRegex() {
             return regex;
         }
@@ -246,11 +282,23 @@ public interface JsonConfigParam {
         MAP("map", "MAP类型"),
         ;
 
+        /**
+         * 序列化输出的类型标识（如 string/int/set&lt;int&gt;）。
+         */
         @JsonValue
         private final String value;
 
+        /**
+         * 类型中文描述。
+         */
         private final String label;
 
+        /**
+         * 构造参数类型。
+         *
+         * @param value 类型标识
+         * @param label 类型描述
+         */
         ParamType(String value, String label) {
             this.value = value;
             this.label = label;
@@ -259,8 +307,9 @@ public interface JsonConfigParam {
         /**
          * 反序列化时根据 value 值解析枚举。
          *
-         * @param value
-         * @return
+         * @param value 类型标识
+         * @return 匹配的 ParamType
+         * @throws IllegalArgumentException 未知 value 时抛出
          */
         @JsonCreator
         public static ParamType fromValue(String value) {
@@ -272,10 +321,16 @@ public interface JsonConfigParam {
             throw new IllegalArgumentException("Unknown ParamType value: " + value);
         }
 
+        /**
+         * @return 类型中文描述
+         */
         public String getLabel() {
             return label;
         }
 
+        /**
+         * @return 类型标识
+         */
         public String getValue() {
             return value;
         }

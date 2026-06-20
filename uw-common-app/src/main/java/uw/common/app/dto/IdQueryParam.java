@@ -8,7 +8,10 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * 基于id查询参数。
+ * 基于 ID 的查询参数。
+ * <p>
+ * 提供单 ID（id）与多 ID（ids）查询字段，不带鉴权信息，适用于无租户隔离的通用查询。
+ * </p>
  */
 public class IdQueryParam extends QueryParam<IdQueryParam> {
 

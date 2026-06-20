@@ -1,9 +1,19 @@
 package uw.common.app.constant;
 
 /**
- * 常用常量
+ * 常用常量。
+ * <p>
+ * 集中维护分隔符、控制符、编码等高频字面量，避免在业务代码中散落魔法值。
+ * 该类为工具常量类，不可实例化。
+ * </p>
  */
 public final class CommonConstants {
+
+    /**
+     * 私有构造器，禁止实例化。
+     */
+    private CommonConstants() {
+    }
 
     /**
      * 空字符串

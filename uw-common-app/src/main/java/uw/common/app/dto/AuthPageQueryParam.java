@@ -8,8 +8,12 @@ import uw.common.dto.PageQueryParam;
 import uw.dao.annotation.QueryMeta;
 
 /**
- * 自带验证信息的分页查询参数类。
- * 自带了saasId, mchId, userId, userType属性。
+ * 自带鉴权信息的分页查询参数类。
+ * <p>
+ * 继承 {@link PageQueryParam}，自带 saasId/mchId/userId/userType 四个权限字段，
+ * 默认构造器在 web 环境自动绑定当前用户 saasId。是 {@link SysCritLogQueryParam}、
+ * {@link SysDataHistoryQueryParam} 等分页查询参数的基类。
+ * </p>
  */
 @Schema(title = "带验证的页面查询参数", description = "带验证的页面查询参数")
 public class AuthPageQueryParam extends PageQueryParam {

@@ -12,38 +12,59 @@ import java.util.Map;
 
 
 /**
- * Json配置参数盒子。
- * 使用Json保存配置信息，同时支持强类型校验和参数获取。
+ * JSON 配置参数盒子。
+ * <p>
+ * 持有一份合并后的配置 Map（默认值 + 实际数据），提供强类型读取方法（字符串/数值/布尔/数组/Map 等）
+ * 与按 {@link JsonConfigParam} 读取的重载。读取失败时返回默认值或空集合，不抛异常。
+ * </p>
  */
 public class JsonConfigBox {
 
     /**
-     * 空的配置参数盒子。
+     * 空的配置参数盒子（内部 Map 不可变，作为安全默认值使用）。
      */
-    public static final JsonConfigBox EMPTY_PARAM_BOX = new JsonConfigBox(new HashMap<>(0));
+    public static final JsonConfigBox EMPTY_PARAM_BOX = new JsonConfigBox(Collections.emptyMap());
     /**
      * 日志记录器。
      */
     private static final Logger logger = LoggerFactory.getLogger(JsonConfigBox.class);
     /**
-     * 配置混合Map。
+     * 配置混合 Map（默认值与实际数据合并后的结果）。
      */
     private Map<String, String> configMixMap;
 
 
+    /**
+     * 默认构造器（configMixMap 为 null，使用前需 setConfigMixMap）。
+     */
     public JsonConfigBox() {
     }
 
 
+    /**
+     * 构造指定配置 Map 的盒子。
+     *
+     * @param configMixMap 配置混合 Map
+     */
     public JsonConfigBox(Map<String, String> configMixMap) {
         this.configMixMap = configMixMap;
     }
 
 
+    /**
+     * 获取配置混合 Map 的不可变视图。
+     *
+     * @return 不可变 Map
+     */
     public Map<String, String> getConfigMixMap() {
-        return configMixMap;
+        return Collections.unmodifiableMap(configMixMap);
     }
 
+    /**
+     * 设置配置混合 Map。
+     *
+     * @param configMixMap 配置混合 Map
+     */
     public void setConfigMixMap(Map<String, String> configMixMap) {
         this.configMixMap = configMixMap;
     }

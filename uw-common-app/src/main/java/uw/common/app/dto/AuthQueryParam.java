@@ -8,8 +8,11 @@ import uw.dao.annotation.QueryMeta;
 import uw.common.dto.QueryParam;
 
 /**
- * 自带验证信息的查询参数类。
- * 自带了saasId, mchId, userId, userType属性。
+ * 自带鉴权信息的查询参数类。
+ * <p>
+ * 自带 saasId、mchId、userId、userType 四个权限字段及对应 @QueryMeta，并支持链式绑定当前登录用户上下文。
+ * 仅限 Controller 层使用（依赖 web 请求上下文）；Helper/Service 层应使用 {@link AuthIdQueryParam} 等显式传参版本。
+ * </p>
  */
 @Schema(title = "带验证的查询参数", description = "带验证的查询参数")
 public class AuthQueryParam extends QueryParam<AuthQueryParam> {
@@ -51,10 +54,12 @@ public class AuthQueryParam extends QueryParam<AuthQueryParam> {
     }
 
     /**
-     * 带saasId构造器。
-     * saasId可以设置为null，用于非web环境中。
+     * 带 saasId 构造器。
+     * <p>
+     * saasId 可设置为 null，用于非 web 环境（不会触发自动绑定）。
+     * </p>
      *
-     * @param saasId
+     * @param saasId 租户ID
      */
     public AuthQueryParam(Long saasId) {
         this.saasId = saasId;

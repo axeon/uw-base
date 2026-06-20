@@ -3,8 +3,8 @@ package uw.common.app.helper;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.web.util.UriComponentsBuilder;
-import uw.common.dto.QueryParam;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -45,7 +45,15 @@ public class QueryParamHelper {
     );
 
     /**
-     * 将对象属性展开为URI查询参数。
+     * 将对象属性展开为 URI 查询参数。
+     * <p>
+     * 遍历 queryParam（含父类）的非 static/非 transient 业务字段，将非空值附加到 baseUrl 之后。
+     * 过滤 Auth 系字段（saasId/userId/mchId/userType）与魔法字段，魔法参数按 {@link #MAGIC_PARAMS} 映射为短名（如 PAGE→$pg）。
+     * </p>
+     *
+     * @param baseUrl   基础 URL
+     * @param queryParam 查询参数对象，为 null 时原样返回 baseUrl
+     * @return 附加查询参数后的 URL 字符串
      */
     public static String buildUriWithParams(String baseUrl, Object queryParam) {
         // 参数为空则返回
@@ -75,16 +83,25 @@ public class QueryParamHelper {
     }
 
     /**
-     * 将对象属性展开为URI查询参数。
+     * 将单个属性值附加为 URI 查询参数。
+     * <p>
+     * 数组（含基本类型数组）与 Iterable 展开为同名多值参数；空数组/空集合不附加；
+     * 普通值在转为空字符串时不附加。
+     * </p>
+     *
+     * @param builder   URI 构建器
+     * @param paramName 参数名
+     * @param value     参数值（非 null）
      */
     private static void appendValue(UriComponentsBuilder builder, String paramName, Object value) {
         if (value.getClass().isArray()) {
-            Object[] arr = (Object[]) value;
-            if (arr.length == 0) {
+            // 兼容基本类型数组（int[]/long[]/...），避免直接强转 Object[] 抛 ClassCastException 导致参数被静默丢弃。
+            int length = Array.getLength(value);
+            if (length == 0) {
                 return;
             }
-            for (Object item : arr) {
-                builder.queryParam(paramName, String.valueOf(item));
+            for (int i = 0; i < length; i++) {
+                builder.queryParam(paramName, String.valueOf(Array.get(value, i)));
             }
         } else if (value instanceof Iterable<?> iterable) {
             boolean added = false;
@@ -138,6 +155,9 @@ public class QueryParamHelper {
 
     /**
      * 类字段元数据。
+     *
+     * @param paramName URL 参数名（魔法参数映射后的短名或原字段名）
+     * @param field     反射字段
      */
     private record FieldMeta(String paramName, Field field) {
     }

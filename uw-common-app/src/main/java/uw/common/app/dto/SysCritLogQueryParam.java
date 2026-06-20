@@ -8,14 +8,26 @@ import java.util.Map;
 
 /**
  * 系统关键日志列表查询参数。
+ * <p>
+ * 继承 {@link AuthPageQueryParam}（自带 saasId/mchId/userId/userType），用于 {@code sys_crit_log} 分页查询，
+ * 支持按用户、API、业务类型、响应状态、耗时等多维度过滤。mchId/userId/userType 复用父类字段。
+ * </p>
  */
 @Schema(title = "系统关键日志列表查询参数", description = "系统关键日志列表查询参数")
 public class SysCritLogQueryParam extends AuthPageQueryParam {
 
+    /**
+     * 默认构造器（web 环境自动绑定 saasId）。
+     */
     public SysCritLogQueryParam() {
         super();
     }
 
+    /**
+     * 指定 saasId 构造器（非 web 环境使用）。
+     *
+     * @param saasId 租户ID
+     */
     public SysCritLogQueryParam(Long saasId) {
         super(saasId);
     }
@@ -50,26 +62,7 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
     @Schema(title = "数组ID", description = "ID数组，可同时匹配多个。")
     private Long[] ids;
 
-    /**
-     * 商户ID。
-     */
-    @QueryMeta(expr = "mch_id=?")
-    @Schema(title = "商户ID", description = "商户ID")
-    private Long mchId;
-
-    /**
-     * 用户id。
-     */
-    @QueryMeta(expr = "user_id=?")
-    @Schema(title = "用户id", description = "用户id")
-    private Long userId;
-
-    /**
-     * 用户类型。
-     */
-    @QueryMeta(expr = "user_type=?")
-    @Schema(title = "用户类型", description = "用户类型")
-    private Integer userType;
+    // mchId/userId/userType 复用父类 AuthPageQueryParam 的同名字段，避免 @QueryMeta 重复注入。
 
     /**
      * 用户组ID。
@@ -239,72 +232,6 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
      */
     public SysCritLogQueryParam ids(Long[] ids) {
         setIds(ids);
-        return this;
-    }
-
-    /**
-     * 获取商户ID。
-     */
-    public Long getMchId() {
-        return this.mchId;
-    }
-
-    /**
-     * 设置商户ID。
-     */
-    public void setMchId(Long mchId) {
-        this.mchId = mchId;
-    }
-
-    /**
-     * 设置商户ID链式调用。
-     */
-    public SysCritLogQueryParam mchId(Long mchId) {
-        setMchId(mchId);
-        return this;
-    }
-
-    /**
-     * 获取用户id。
-     */
-    public Long getUserId() {
-        return this.userId;
-    }
-
-    /**
-     * 设置用户id。
-     */
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    /**
-     * 设置用户id链式调用。
-     */
-    public SysCritLogQueryParam userId(Long userId) {
-        setUserId(userId);
-        return this;
-    }
-
-    /**
-     * 获取用户类型。
-     */
-    public Integer getUserType() {
-        return this.userType;
-    }
-
-    /**
-     * 设置用户类型。
-     */
-    public void setUserType(Integer userType) {
-        this.userType = userType;
-    }
-
-    /**
-     * 设置用户类型链式调用。
-     */
-    public SysCritLogQueryParam userType(Integer userType) {
-        setUserType(userType);
         return this;
     }
 
@@ -487,14 +414,14 @@ public class SysCritLogQueryParam extends AuthPageQueryParam {
     /**
      * 设置业务对象类。
      */
-    public void setBizTypeClass(Class bizTypeClass) {
+    public void setBizTypeClass(Class<?> bizTypeClass) {
         this.bizType = bizTypeClass.getName();
     }
 
     /**
      * 设置业务对象类型链式调用。
      */
-    public SysCritLogQueryParam bizTypeClass(Class bizTypeClass) {
+    public SysCritLogQueryParam bizTypeClass(Class<?> bizTypeClass) {
         setBizTypeClass(bizTypeClass);
         return this;
     }

@@ -11,8 +11,11 @@ import java.io.Serializable;
 
 
 /**
- * SysCritLog实体类
- * 系统关键日志
+ * 系统关键日志实体类（对应表 {@code sys_crit_log}）。
+ * <p>
+ * 由 {@link uw.common.app.service.SysCritLogStorageService} 在鉴权框架捕获 CRIT 级别操作时异步落库，
+ * 记录操作人、API、业务对象、请求/响应、耗时等审计信息。
+ * </p>
  *
  * @author axeon
  */
@@ -38,8 +41,8 @@ public class SysCritLog implements DataEntity, Serializable {
     /**
      * 商户ID
      */
-    @ColumnMeta(columnName = "mch_id", dataType = "long", dataSize = 19, nullable = true)
-    @Schema(title = "商户ID", description = "商户ID", maxLength = 19, nullable = true)
+    @ColumnMeta(columnName = "mch_id", dataType = "long", dataSize = 19, nullable = false)
+    @Schema(title = "商户ID", description = "商户ID", maxLength = 19, nullable = false)
     private long mchId;
 
     /**
@@ -52,15 +55,15 @@ public class SysCritLog implements DataEntity, Serializable {
     /**
      * 用户类型
      */
-    @ColumnMeta(columnName = "user_type", dataType = "int", dataSize = 10, nullable = true)
-    @Schema(title = "用户类型", description = "用户类型", maxLength = 10, nullable = true)
+    @ColumnMeta(columnName = "user_type", dataType = "int", dataSize = 10, nullable = false)
+    @Schema(title = "用户类型", description = "用户类型", maxLength = 10, nullable = false)
     private int userType;
 
     /**
      * 用户组ID
      */
-    @ColumnMeta(columnName = "group_id", dataType = "long", dataSize = 19, nullable = true)
-    @Schema(title = "用户组ID", description = "用户组ID", maxLength = 19, nullable = true)
+    @ColumnMeta(columnName = "group_id", dataType = "long", dataSize = 19, nullable = false)
+    @Schema(title = "用户组ID", description = "用户组ID", maxLength = 19, nullable = false)
     private long groupId;
 
     /**
@@ -171,15 +174,15 @@ public class SysCritLog implements DataEntity, Serializable {
     /**
      * 请求毫秒数
      */
-    @ColumnMeta(columnName = "response_millis", dataType = "long", dataSize = 19, nullable = true)
-    @Schema(title = "请求毫秒数", description = "请求毫秒数", maxLength = 19, nullable = true)
+    @ColumnMeta(columnName = "response_millis", dataType = "long", dataSize = 19, nullable = false)
+    @Schema(title = "请求毫秒数", description = "请求毫秒数", maxLength = 19, nullable = false)
     private long responseMillis;
 
     /**
      * 响应状态码
      */
-    @ColumnMeta(columnName = "status_code", dataType = "int", dataSize = 10, nullable = true)
-    @Schema(title = "响应状态码", description = "响应状态码", maxLength = 10, nullable = true)
+    @ColumnMeta(columnName = "status_code", dataType = "int", dataSize = 10, nullable = false)
+    @Schema(title = "响应状态码", description = "响应状态码", maxLength = 10, nullable = false)
     private int statusCode;
 
     /**
@@ -208,6 +211,8 @@ public class SysCritLog implements DataEntity, Serializable {
 
     /**
      * 获得实体的表名。
+     *
+     * @return 表名 sys_crit_log
      */
     @Override
     public String ENTITY_TABLE() {
@@ -216,6 +221,8 @@ public class SysCritLog implements DataEntity, Serializable {
 
     /**
      * 获得实体的表注释。
+     *
+     * @return 表注释
      */
     @Override
     public String ENTITY_NAME() {
@@ -223,7 +230,9 @@ public class SysCritLog implements DataEntity, Serializable {
     }
 
     /**
-     * 获得主键
+     * 获得主键值。
+     *
+     * @return 主键 id
      */
     @Override
     public Serializable ENTITY_ID() {
@@ -231,7 +240,9 @@ public class SysCritLog implements DataEntity, Serializable {
     }
 
     /**
-     * 获取更新信息.
+     * 获取字段更新信息（setter 累积的差异记录）。
+     *
+     * @return 更新信息，无更新时为 null
      */
     @Override
     public DataUpdateInfo GET_UPDATED_INFO() {
@@ -239,7 +250,7 @@ public class SysCritLog implements DataEntity, Serializable {
     }
 
     /**
-     * 清除更新信息.
+     * 清除字段更新信息。
      */
     @Override
     public void CLEAR_UPDATED_INFO() {

@@ -11,8 +11,11 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * 自带验证信息的查询参数类。
- * 自带了saasId, mchId, userId, userType属性。
+ * 自带鉴权信息、ID 与状态的查询参数类。
+ * <p>
+ * 在 {@link AuthIdQueryParam} 基础上增加 state/states/stateGte/stateLte 状态过滤字段，
+ * 支持通过构造器显式传入 saasId，适用于按 ID + 状态查询的场景。
+ * </p>
  */
 public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
 

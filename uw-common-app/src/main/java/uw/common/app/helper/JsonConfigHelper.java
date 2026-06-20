@@ -16,27 +16,35 @@ import java.util.*;
 import java.util.regex.PatternSyntaxException;
 
 /**
- * Json配置参数帮助类。
- * 通过JsonParam定义的配置参数，构建JsonParamBox来获取结构化和类型化参数。
+ * JSON 配置参数帮助类。
+ * <p>
+ * 通过 {@link JsonConfigParam} 定义配置参数元数据（类型、默认值、校验规则），构建 {@link JsonConfigBox}
+ * 以获取结构化和强类型的配置值，并支持配置数据的校验。
+ * </p>
  */
 public class JsonConfigHelper {
 
     /**
-     * 对象映射器。
+     * 日志记录器。
      */
     private static final Logger logger = LoggerFactory.getLogger(JsonConfigHelper.class);
 
 
     /**
      * 构建配置参数盒子。
+     * <p>
+     * 参数定义列表为 null 时返回错误（data 为 null）；配置数据 Map 为 null 时使用默认值并返回 WARN；
+     * 否则将默认值与实际数据合并后返回成功。
+     * </p>
      *
-     * @param configParamList 配置参数列表
-     * @param configDataMap   配置数据Map
-     * @return
+     * @param configParamList 配置参数定义列表
+     * @param configDataMap   配置数据 Map（可为 null）
+     * @return 携带 {@link JsonConfigBox} 的响应数据
      */
     public static ResponseData<JsonConfigBox> buildParamBox(List<JsonConfigParam> configParamList, Map<String, String> configDataMap) {
         if (configParamList == null) {
-            return ResponseData.error(JsonConfigBox.EMPTY_PARAM_BOX, "", "配置参数为空！");
+            // 配置参数定义缺失属于错误，data 返回 null，避免调用方误用空盒子。
+            return ResponseData.error(null, "", "配置参数为空！");
         }
         Map<String, String> configMixMap = new HashMap<>();
         for (JsonConfigParam configParam : configParamList) {
@@ -52,9 +60,9 @@ public class JsonConfigHelper {
     /**
      * 构建配置参数盒子。
      *
-     * @param configParamList 配置参数列表
-     * @param configDataJson  配置数据Json
-     * @return
+     * @param configParamList 配置参数定义列表
+     * @param configDataJson  配置数据 JSON 字符串（可为空）
+     * @return 携带 {@link JsonConfigBox} 的响应数据
      */
     public static ResponseData<JsonConfigBox> buildParamBox(List<JsonConfigParam> configParamList, String configDataJson) {
         Map<String, String> configDataMap = null;
@@ -72,9 +80,9 @@ public class JsonConfigHelper {
     /**
      * 构建配置参数盒子。
      *
-     * @param configParamJson 配置参数Json
-     * @param configDataJson  配置数据Json
-     * @return
+     * @param configParamJson 配置参数定义 JSON 字符串（可为空）
+     * @param configDataJson  配置数据 JSON 字符串（可为空）
+     * @return 携带 {@link JsonConfigBox} 的响应数据；参数解析失败时 data 为 null
      */
     public static ResponseData<JsonConfigBox> buildParamBox(String configParamJson, String configDataJson) {
         List<JsonConfigParam> configParams = null;
@@ -84,7 +92,7 @@ public class JsonConfigHelper {
                 configParams = Arrays.asList(JsonUtils.parse(configParamJson, JsonConfigParam[].class));
             } catch (Exception e) {
                 logger.error("配置参数解析失败！{}", e.getMessage(), e);
-                return ResponseData.error(JsonConfigBox.EMPTY_PARAM_BOX, "", "配置参数解析失败！" + e.getMessage());
+                return ResponseData.error(null, "", "配置参数解析失败！" + e.getMessage());
             }
         }
         if (StringUtils.isNotBlank(configDataJson)) {
@@ -99,11 +107,11 @@ public class JsonConfigHelper {
     }
 
     /**
-     * 验证配置数据。
+     * 校验单个配置参数值（按类型与正则）。
      *
-     * @param configParam 配置参数
+     * @param configParam 配置参数定义
      * @param paramValue  参数值
-     * @return
+     * @return 校验失败结果；通过时返回 null
      */
     private static ValidateResult validateParam(JsonConfigParam configParam, String paramValue) {
         if (paramValue == null) {
@@ -165,14 +173,18 @@ public class JsonConfigHelper {
                 return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.DATA_FORMAT_ERROR, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.ENUM) {
+            // ENUM 的可选值集合约定存放在 getValue() 中（JSON 数组形式）。
+            // 若 value 不是合法集合（如未配置或为单值默认值），跳过集合校验，仅依赖后续正则校验，避免误判。
             Set<String> enumSet = null;
-            try {
-                enumSet = JsonUtils.parse(configParam.getValue(), new TypeReference<Set<String>>() {
-                });
-            } catch (Exception e) {
-                return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.DATA_FORMAT_ERROR, null);
+            if (StringUtils.isNotBlank(configParam.getValue())) {
+                try {
+                    enumSet = JsonUtils.parse(configParam.getValue(), new TypeReference<Set<String>>() {
+                    });
+                } catch (Exception ignored) {
+                    // value 非集合形式，跳过枚举集合校验
+                }
             }
-            if (enumSet != null && !enumSet.contains(paramValue)) {
+            if (enumSet != null && !enumSet.isEmpty() && !enumSet.contains(paramValue)) {
                 return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.DATA_FORMAT_ERROR, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.MAP) {
@@ -199,13 +211,13 @@ public class JsonConfigHelper {
     }
 
     /**
-     * 验证配置数据。
+     * 校验配置数据。
      *
-     * @param configParamList 配置参数列表
-     * @param configDataMap   配置数据信息
-     * @return
+     * @param configParamList 配置参数定义列表
+     * @param configDataMap   配置数据 Map
+     * @return 校验通过返回成功；失败时 data 为校验结果列表
      */
-    public ResponseData<List<ValidateResult>> validateConfigData(List<JsonConfigParam> configParamList, Map<String, String> configDataMap) {
+    public static ResponseData<List<ValidateResult>> validateConfigData(List<JsonConfigParam> configParamList, Map<String, String> configDataMap) {
         if (configParamList == null) {
             return ResponseData.errorMsg("配置参数为空！");
         }
@@ -230,11 +242,11 @@ public class JsonConfigHelper {
     /**
      * 校验配置数据。
      *
-     * @param configParamList 配置参数列表
-     * @param configDataJson  配置数据Json
-     * @return
+     * @param configParamList 配置参数定义列表
+     * @param configDataJson  配置数据 JSON 字符串（可为空）
+     * @return 校验通过返回成功；失败时 data 为校验结果列表
      */
-    public ResponseData<List<ValidateResult>> validateConfigData(List<JsonConfigParam> configParamList, String configDataJson) {
+    public static ResponseData<List<ValidateResult>> validateConfigData(List<JsonConfigParam> configParamList, String configDataJson) {
         Map<String, String> configDataMap = null;
         if (StringUtils.isNotBlank(configDataJson)) {
             try {
@@ -251,11 +263,11 @@ public class JsonConfigHelper {
     /**
      * 校验配置数据。
      *
-     * @param configParamJson 配置参数Json
-     * @param configDataJson  配置数据Json
-     * @return
+     * @param configParamJson 配置参数定义 JSON 字符串（可为空）
+     * @param configDataJson  配置数据 JSON 字符串（可为空）
+     * @return 校验通过返回成功；失败时 data 为校验结果列表
      */
-    public ResponseData<List<ValidateResult>> validateConfigData(String configParamJson, String configDataJson) {
+    public static ResponseData<List<ValidateResult>> validateConfigData(String configParamJson, String configDataJson) {
         Map<String, String> configDataMap = null;
         List<JsonConfigParam> configParamList = null;
         if (StringUtils.isNotBlank(configParamJson)) {

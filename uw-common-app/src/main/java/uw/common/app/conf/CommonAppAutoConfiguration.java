@@ -19,6 +19,7 @@ import org.apache.commons.lang3.ThreadUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -58,7 +59,11 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 /**
- * 启动配置。
+ * uw-common-app 启动配置。
+ * <p>
+ * 在 {@link AuthServiceAutoConfiguration} 之后、{@link WebMvcAutoConfiguration} 之前装配，
+ * 提供国际化、关键日志存储、LoadBalancer 缓存、Nacos 优雅停机、Swagger 禁用、ObjectMapper 定制等公共能力。
+ * </p>
  */
 @Configuration
 @AutoConfigureBefore({WebMvcAutoConfiguration.class})
@@ -67,37 +72,37 @@ import java.util.TimeZone;
 public class CommonAppAutoConfiguration implements WebMvcConfigurer {
 
     /**
-     * 日志.
+     * 日志记录器。
      */
     private static final Logger logger = LoggerFactory.getLogger(CommonAppAutoConfiguration.class);
 
     /**
-     * 对象映射器.
+     * Jackson 对象映射器（由 Spring 容器注入，本类在其上追加日期反序列化模块与时区配置）。
      */
     private final ObjectMapper objectMapper;
 
     /**
-     * nacos服务注册.
+     * Nacos 服务注册对象（通过 ObjectProvider 注入，未启用 Nacos 时为 null）。
      */
     private final NacosAutoServiceRegistration nacosAutoServiceRegistration;
 
     /**
-     * 默认语言.
+     * 默认语言（Accept-Language 缺失或匹配失败时使用）。
      */
     private final Locale DEFAULT_LOCALE;
 
     /**
-     * 语言列表.
+     * 可选语言列表（参与 Accept-Language 的 lookup 匹配）。
      */
     private final List<Locale> LOCALE_LIST;
 
     /**
-     * 通用配置.
+     * 通用配置。
      */
     private final CommonAppProperties commonAppProperties;
 
     /**
-     * 缓存语言对象.
+     * Accept-Language → Locale 的解析缓存，避免重复 lookup。
      */
     private final LoadingCache<String, Locale> LOCALE_CACHE = Caffeine.newBuilder().maximumSize(1000).build(new CacheLoader<>() {
 
@@ -124,18 +129,32 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     });
 
     /**
-     * 构造函数.
+     * 构造函数。
+     * <p>
+     * NacosAutoServiceRegistration 通过 ObjectProvider 注入，使本公共库在未启用 Nacos 服务发现
+     * 的应用中也能正常装配（如非 cloud 应用、本地测试）。
+     * </p>
+     *
+     * @param commonAppProperties       通用应用配置
+     * @param objectMapper              Jackson 对象映射器
+     * @param nacosRegistrationProvider Nacos 服务注册对象提供者（可能不存在）
      */
-    public CommonAppAutoConfiguration(CommonAppProperties commonAppProperties, ObjectMapper objectMapper, NacosAutoServiceRegistration nacosAutoServiceRegistration) {
+    public CommonAppAutoConfiguration(CommonAppProperties commonAppProperties, ObjectMapper objectMapper,
+                                      ObjectProvider<NacosAutoServiceRegistration> nacosRegistrationProvider) {
         this.commonAppProperties = commonAppProperties;
         this.DEFAULT_LOCALE = commonAppProperties.getLocaleDefault();
         this.LOCALE_LIST = commonAppProperties.getLocaleList();
         this.objectMapper = objectMapper;
-        this.nacosAutoServiceRegistration = nacosAutoServiceRegistration;
+        this.nacosAutoServiceRegistration = nacosRegistrationProvider.getIfAvailable();
     }
 
     /**
-     * 语言解析器.
+     * 语言解析器 Bean。
+     * <p>
+     * 从请求头 Accept-Language 解析 Locale（命中 LOCALE_CACHE），缺失时返回默认语言。
+     * </p>
+     *
+     * @return Locale 解析器
      */
     @Bean
     @Primary
@@ -164,7 +183,9 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
 
 
     /**
-     * 默认拦截器 其中lang表示切换语言的参数名
+     * 语言切换拦截器，通过请求参数 {@code lang} 切换 Locale。
+     *
+     * @return WebMvc 配置器
      */
     @Bean
     public WebMvcConfigurer localeInterceptor() {
@@ -179,17 +200,25 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     }
 
     /**
-     * critical日志存储服务.
+     * 关键日志存储服务 Bean。
+     * <p>
+     * 唯一注册点（实现类 {@link SysCritLogStorageService} 不再标注 @Service），避免重复 bean 注册。
+     * </p>
+     *
+     * @param uwAppBaseProperties 通用应用配置
+     * @return 关键日志存储实现
      */
     @Bean
     @Primary
-    public AuthCriticalLogStorage SysCritLogStorageService(CommonAppProperties uwAppBaseProperties) {
+    public AuthCriticalLogStorage sysCritLogStorageService(CommonAppProperties uwAppBaseProperties) {
         logger.info("Init SysCritLogStorageService.");
         return new SysCritLogStorageService(uwAppBaseProperties);
     }
 
     /**
-     * 添加mvc的Date格式转换器.
+     * 注册 String→Date 转换器（基于 {@link DateUtils#stringToDate}）。
+     *
+     * @param registry 格式化注册器
      */
     @Override
     public void addFormatters(FormatterRegistry registry) {
@@ -197,7 +226,9 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     }
 
     /**
-     * 移除XML消息转换器
+     * 移除 XML 消息转换器，禁用 XML 响应能力。
+     *
+     * @param converters HTTP 消息转换器列表
      */
     @Override
     public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
@@ -205,7 +236,7 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     }
 
     /**
-     * 配置ObjectMapper.
+     * 定制 ObjectMapper：注册日期反序列化模块、设置时区、关闭未知属性失败。
      */
     @PostConstruct
     public void configureObjectMapper() {
@@ -220,16 +251,21 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
         });
         // 不设置日期序列化的原因，是为了使用系统设置。
         objectMapper.registerModule(dateUtilModule);
+        // 注意：时区跟随 JVM 运行机器（TimeZone.getDefault()）。多时区部署时需保证各节点 JVM 时区一致，
+        // 否则 Date 序列化输出会产生漂移。如需固定时区，建议在应用层覆盖此 ObjectMapper 配置。
         objectMapper.setTimeZone(TimeZone.getDefault());
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     }
 
     /**
-     * 禁用Spring LoadBalancer缓存层，直连Nacos服务发现，实现秒级响应服务上下线。
+     * 禁用 Spring LoadBalancer 缓存层，直连 Nacos 服务发现，实现秒级响应服务上下线。
      * <p>
-     * Spring LoadBalancer默认使用Caffeine缓存（TTL 35秒），导致服务下线后延迟感知。
-     * 返回NoOpCache，每次请求都cache miss，直接走delegate从Nacos获取实例列表。
+     * Spring LoadBalancer 默认使用 Caffeine 缓存（TTL 35 秒），导致服务下线后延迟感知。
+     * 返回 NoOpCache，每次请求都 cache miss，直接走 delegate 从 Nacos 获取实例列表。
+     * </p>
+     *
+     * @return NoOp 实现的 LoadBalancer 缓存管理器
      */
     @Bean
     @Primary
@@ -249,11 +285,20 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     }
 
     /**
-     * crack！
-     * bugfix解决nacos不能正确graceful stop的问题。
+     * 容器关闭事件处理：解决 Nacos 无法正确优雅停机的问题。
+     * <p>
+     * 先停止 Nacos 服务注册（触发反注册），再预留 {@link CommonAppProperties#getShutdownTimeout()}
+     * 时长等待流量摘除。未启用 Nacos 时跳过。
+     * </p>
+     *
+     * @param contextClosedEvent 容器关闭事件
      */
     @EventListener(ContextClosedEvent.class)
     void onContextClosedEvent(ContextClosedEvent contextClosedEvent) {
+        // 未启用 Nacos 服务发现时跳过优雅停机逻辑
+        if (nacosAutoServiceRegistration == null) {
+            return;
+        }
         logger.info("onContextClosedEvent stop nacos discovery service.");
         // 停止nacos服务注册
         nacosAutoServiceRegistration.stop();
@@ -262,7 +307,9 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     }
 
     /**
-     * 根据profile拦截swagger接口。
+     * 按 Profile 禁用 Swagger：仅在非 debug/dev 环境、且未显式关闭禁用时生效。
+     *
+     * @return 拦截 Swagger 路径的 WebMvc 配置器
      */
     @Bean
     @Profile("!debug & !dev")
@@ -272,8 +319,9 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     }
 
     /**
-     * 强制禁用：仅配置项控制（无视Profile）
-     * 只要disableSwagger=true，所有环境都禁用
+     * 强制禁用 Swagger：仅由配置项控制（无视 Profile），disableSwagger=true 时所有环境均禁用。
+     *
+     * @return 拦截 Swagger 路径的 WebMvc 配置器
      */
     @Bean
     @ConditionalOnProperty(name = "uw.common.app.disableSwagger", havingValue = "true")
@@ -282,7 +330,9 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     }
 
     /**
-     * 禁用swagger接口.
+     * 构建 Swagger 禁用拦截器：对 /v3/api-docs/**、/swagger-ui 路径抛出 NoResourceFoundException。
+     *
+     * @return WebMvc 配置器
      */
     private WebMvcConfigurer swaggerDisableInterceptor() {
         return new WebMvcConfigurer() {
@@ -291,7 +341,8 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
                 registry.addInterceptor(new HandlerInterceptor() {
                     @Override
                     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-                        throw new NoResourceFoundException(HttpMethod.GET, request.getRequestURI());
+                        HttpMethod httpMethod = HttpMethod.valueOf(request.getMethod());
+                        throw new NoResourceFoundException(httpMethod, request.getRequestURI());
                     }
                 }).addPathPatterns("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**");
             }

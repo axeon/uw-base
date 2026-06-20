@@ -11,9 +11,11 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * 带验证信息的查询参数类。
- * 自带了saasId, mchId, userId, userType属性。
- * 使用assign方法来对以上参数进行赋值。
+ * 自带鉴权信息与 ID 的查询参数类。
+ * <p>
+ * 在 {@link AuthQueryParam} 基础上增加 id/ids 查询字段，并支持通过构造器显式传入 saasId，
+ * 适用于 Helper/Service 层（非 web 上下文）按 ID 查询的场景。通过 bindXxx 方法链式绑定当前用户上下文。
+ * </p>
  */
 public class AuthIdQueryParam extends QueryParam<AuthIdQueryParam> {
 

@@ -8,14 +8,26 @@ import java.util.Map;
 
 /**
  * 系统数据历史列表查询参数。
+ * <p>
+ * 继承 {@link AuthPageQueryParam}（自带 saasId/mchId/userId/userType），用于 {@code sys_data_history} 分页查询，
+ * 支持按用户、实体类、实体ID、创建时间等多维度过滤。mchId/userId/userType 复用父类字段。
+ * </p>
  */
 @Schema(title = "系统数据历史列表查询参数", description = "系统数据历史列表查询参数")
 public class SysDataHistoryQueryParam extends AuthPageQueryParam {
 
+    /**
+     * 默认构造器（web 环境自动绑定 saasId）。
+     */
     public SysDataHistoryQueryParam() {
         super();
     }
 
+    /**
+     * 指定 saasId 构造器（非 web 环境使用）。
+     *
+     * @param saasId 租户ID
+     */
     public SysDataHistoryQueryParam(Long saasId) {
         super(saasId);
     }
@@ -49,26 +61,7 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
     @Schema(title = "数组ID", description = "ID数组，可同时匹配多个。")
     private Long[] ids;
 
-    /**
-     * 商户ID。
-     */
-    @QueryMeta(expr = "mch_id=?")
-    @Schema(title = "商户ID", description = "商户ID")
-    private Long mchId;
-
-    /**
-     * 用户ID。
-     */
-    @QueryMeta(expr = "user_id=?")
-    @Schema(title = "用户ID", description = "用户ID")
-    private Long userId;
-
-    /**
-     * 用户类型。
-     */
-    @QueryMeta(expr = "user_type=?")
-    @Schema(title = "用户类型", description = "用户类型")
-    private Integer userType;
+    // mchId/userId/userType 复用父类 AuthPageQueryParam 的同名字段，避免 @QueryMeta 重复注入。
 
     /**
      * 用户的组ID。
@@ -175,72 +168,6 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam {
      */
     public SysDataHistoryQueryParam ids(Long[] ids) {
         setIds(ids);
-        return this;
-    }
-
-    /**
-     * 获取商户ID。
-     */
-    public Long getMchId() {
-        return this.mchId;
-    }
-
-    /**
-     * 设置商户ID。
-     */
-    public void setMchId(Long mchId) {
-        this.mchId = mchId;
-    }
-
-    /**
-     * 设置商户ID链式调用。
-     */
-    public SysDataHistoryQueryParam mchId(Long mchId) {
-        setMchId(mchId);
-        return this;
-    }
-
-    /**
-     * 获取用户ID。
-     */
-    public Long getUserId() {
-        return this.userId;
-    }
-
-    /**
-     * 设置用户ID。
-     */
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    /**
-     * 设置用户ID链式调用。
-     */
-    public SysDataHistoryQueryParam userId(Long userId) {
-        setUserId(userId);
-        return this;
-    }
-
-    /**
-     * 获取用户类型。
-     */
-    public Integer getUserType() {
-        return this.userType;
-    }
-
-    /**
-     * 设置用户类型。
-     */
-    public void setUserType(Integer userType) {
-        this.userType = userType;
-    }
-
-    /**
-     * 设置用户类型链式调用。
-     */
-    public SysDataHistoryQueryParam userType(Integer userType) {
-        setUserType(userType);
         return this;
     }
 

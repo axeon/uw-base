@@ -12,8 +12,11 @@ import java.io.Serializable;
 
 
 /**
- * SysDataHistory实体类
- * 系统数据历史
+ * 系统数据历史实体类（对应表 {@code sys_data_history}）。
+ * <p>
+ * 由 {@link uw.common.app.helper.SysDataHistoryHelper} 在实体变更时落库，记录实体快照（JSON）与变更差异，
+ * 用于数据回滚与审计追踪。
+ * </p>
  *
  * @author axeon
  */
@@ -39,8 +42,8 @@ public class SysDataHistory implements DataEntity, Serializable {
     /**
      * 商户ID
      */
-    @ColumnMeta(columnName = "mch_id", dataType = "long", dataSize = 19, nullable = true)
-    @Schema(title = "商户ID", description = "商户ID", maxLength = 19, nullable = true)
+    @ColumnMeta(columnName = "mch_id", dataType = "long", dataSize = 19, nullable = false)
+    @Schema(title = "商户ID", description = "商户ID", maxLength = 19, nullable = false)
     private long mchId;
 
     /**
@@ -53,15 +56,15 @@ public class SysDataHistory implements DataEntity, Serializable {
     /**
      * 用户类型
      */
-    @ColumnMeta(columnName = "user_type", dataType = "int", dataSize = 10, nullable = true)
-    @Schema(title = "用户类型", description = "用户类型", maxLength = 10, nullable = true)
+    @ColumnMeta(columnName = "user_type", dataType = "int", dataSize = 10, nullable = false)
+    @Schema(title = "用户类型", description = "用户类型", maxLength = 10, nullable = false)
     private int userType;
 
     /**
      * 用户的组ID
      */
-    @ColumnMeta(columnName = "group_id", dataType = "long", dataSize = 19, nullable = true)
-    @Schema(title = "用户的组ID", description = "用户的组ID", maxLength = 19, nullable = true)
+    @ColumnMeta(columnName = "group_id", dataType = "long", dataSize = 19, nullable = false)
+    @Schema(title = "用户的组ID", description = "用户的组ID", maxLength = 19, nullable = false)
     private long groupId;
 
     /**
@@ -154,6 +157,8 @@ public class SysDataHistory implements DataEntity, Serializable {
 
     /**
      * 获得实体的表名。
+     *
+     * @return 表名 sys_data_history
      */
     @Override
     public String ENTITY_TABLE() {
@@ -162,6 +167,8 @@ public class SysDataHistory implements DataEntity, Serializable {
 
     /**
      * 获得实体的表注释。
+     *
+     * @return 表注释
      */
     @Override
     public String ENTITY_NAME() {
@@ -169,7 +176,9 @@ public class SysDataHistory implements DataEntity, Serializable {
     }
 
     /**
-     * 获得主键
+     * 获得主键值。
+     *
+     * @return 主键 id
      */
     @Override
     public Serializable ENTITY_ID() {
@@ -177,7 +186,9 @@ public class SysDataHistory implements DataEntity, Serializable {
     }
 
     /**
-     * 获取更新信息.
+     * 获取字段更新信息（setter 累积的差异记录）。
+     *
+     * @return 更新信息，无更新时为 null
      */
     @Override
     public DataUpdateInfo GET_UPDATED_INFO() {
@@ -185,7 +196,7 @@ public class SysDataHistory implements DataEntity, Serializable {
     }
 
     /**
-     * 清除更新信息.
+     * 清除字段更新信息。
      */
     @Override
     public void CLEAR_UPDATED_INFO() {

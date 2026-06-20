@@ -10,6 +10,7 @@ import org.springframework.data.redis.core.ValueOperations;
 import uw.cache.util.KryoCacheUtils;
 import uw.cache.util.RedisKeyUtils;
 import uw.cache.vo.CacheValueWrapper;
+import uw.common.util.KryoUtils;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -134,7 +135,7 @@ public class GlobalCache {
         if (redisData == null) {
             return null;
         }
-        return (CacheValueWrapper<V>) KryoCacheUtils.deserializeValueWrapper(redisData, KryoCacheUtils.type2Class(valueClass));
+        return (CacheValueWrapper<V>) KryoCacheUtils.deserializeValueWrapper(redisData, KryoUtils.type2Class(valueClass));
     }
 
     /**
@@ -332,7 +333,7 @@ public class GlobalCache {
         if (redisData != null && redisData.length > 0) {
             try {
                 //正常数据
-                valueWrapper = (CacheValueWrapper<V>) KryoCacheUtils.deserializeValueWrapper(redisData, KryoCacheUtils.type2Class(cacheDataLoader.getValueType()));
+                valueWrapper = (CacheValueWrapper<V>) KryoCacheUtils.deserializeValueWrapper(redisData, KryoUtils.type2Class(cacheDataLoader.getValueType()));
                 return valueWrapper;
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -351,7 +352,7 @@ public class GlobalCache {
             if (redisData != null && redisData.length > 0) {
                 try {
                     //正常数据
-                    valueWrapper = (CacheValueWrapper<V>) KryoCacheUtils.deserializeValueWrapper(redisData, KryoCacheUtils.type2Class(cacheDataLoader.getValueType()));
+                    valueWrapper = (CacheValueWrapper<V>) KryoCacheUtils.deserializeValueWrapper(redisData, KryoUtils.type2Class(cacheDataLoader.getValueType()));
                     return valueWrapper;
                 } catch (Throwable e) {
                     e.printStackTrace();
@@ -492,7 +493,7 @@ public class GlobalCache {
      * @param message 消息。
      */
     public static Long notifyMsg(String channel, Object message) {
-        return cacheRedisTemplate.convertAndSend(channel, KryoCacheUtils.serialize(message));
+        return cacheRedisTemplate.convertAndSend(channel, KryoUtils.serialize(message));
     }
 
     /**

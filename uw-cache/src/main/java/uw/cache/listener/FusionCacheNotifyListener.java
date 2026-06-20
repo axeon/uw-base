@@ -6,7 +6,7 @@ import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import uw.cache.FusionCache;
 import uw.cache.constant.CacheNotifyType;
-import uw.cache.util.KryoCacheUtils;
+import uw.common.util.KryoUtils;
 import uw.cache.vo.FusionCacheNotifyMessage;
 
 /**
@@ -21,7 +21,7 @@ public class FusionCacheNotifyListener implements MessageListener {
     @Override
     public void onMessage(Message message, byte[] pattern) {
         try {
-            FusionCacheNotifyMessage notifyMessage = KryoCacheUtils.deserialize(message.getBody(), FusionCacheNotifyMessage.class);
+            FusionCacheNotifyMessage notifyMessage = KryoUtils.deserialize(message.getBody(), FusionCacheNotifyMessage.class);
             if (FusionCache.existsCache(notifyMessage.getCacheName())) {
                 if (logger.isDebugEnabled()) {
                     logger.debug("receive fusion cache notify message! type: {}, Name: {}, key: {}", notifyMessage.getNotifyType(), notifyMessage.getCacheName(),

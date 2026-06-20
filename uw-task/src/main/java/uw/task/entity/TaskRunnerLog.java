@@ -10,31 +10,46 @@ import uw.task.TaskData;
 import java.util.Date;
 
 /**
- * 专门用于发送日志给log-es。
- * 因为task参数的问题。
+ * 队列任务执行日志。
+ *
+ * <p>每次队列任务执行后由 {@code TaskRunnerContainer} 构造并写入 ES。内部持有 {@link TaskData} 引用，
+ * 各 getter 委托 taskData 取值（因 taskParam/resultData 泛型类型无法直接平铺为字段，故用委托方式）。
+ * 序列化时忽略 taskData 本身（由各 getter 暴露具体字段），resultData 超过 logLimitSize 时截断。</p>
  *
  * @author axeon
  */
 @JsonIgnoreProperties({"taskData"})
 public class TaskRunnerLog extends LogBaseVo {
 
+    /**
+     * 日志器。
+     */
     private static final Logger logger = LoggerFactory.getLogger(TaskRunnerLog.class);
 
+    /**
+     * 关联的任务数据对象（日志各字段委托自此对象取值）。
+     */
     private TaskData taskData;
 
     /**
-     * logLimitSize。
+     * 日志字符串字段（resultData 等）最大长度，0 表示不限制。
      */
     private int logLimitSize;
 
     /**
-     * 对应的TaskCronerConfig的id
+     * 对应的 TaskRunnerConfig 的 id。
      */
     private long taskId;
 
+    /**
+     * 默认构造器。
+     */
     public TaskRunnerLog() {
     }
 
+    /**
+     * @param taskData 关联的任务数据对象
+     */
     public TaskRunnerLog(TaskData taskData) {
         this.taskData = taskData;
     }

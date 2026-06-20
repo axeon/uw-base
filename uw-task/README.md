@@ -2,59 +2,67 @@
 
 ## 简介
 
-uw-task是一个分布式任务框架，通过uw-task可以快速构建分布式任务体系，支持定时任务和队列任务，同时支持任务运维监控和报警设置。
+uw-task 是一个分布式任务框架，基于 Spring Boot + RabbitMQ + Redis 实现，可快速构建分布式任务体系，支持定时任务（TaskCroner）与队列任务（TaskRunner），并提供任务运维监控、动态配置与多规则报警。
+
+配合服务端 [uw-task-center](../../uw-task-center) 使用：任务执行主机向 task-center 注册、上报状态、拉取动态配置；task-center 负责配置管理、统计汇总与报警分发。
 
 ## 主要特性
 
-1. 基于spring boot实现，依赖rabbitMQ,redis。
-2. 完全分布式，支持混合云，可指定主机或指定集群运行。
-3. 支持定时任务，并支持服务端动态配置。
-4. 支持队列任务，支持各种流量控制，支持错误重试，并支持服务端动态配置。
-5. 支持RPC风格调用，支持错误重试，并支持服务器端动态配置。
-6. 支持多种规则的任务报警。
+1. 基于 Spring Boot 实现，依赖 RabbitMQ（任务派发）与 Redis（全局限速 / Leader 选举 / 序列发号）。
+2. 完全分布式，支持混合云，可指定主机或指定集群（runTarget）运行。
+3. 支持定时任务（cron 表达式），支持服务端动态配置，支持全局单例（Leader）运行。
+4. 支持队列任务，提供多维流量控制（本地/全局、按进程/主机/TAG/TASK 组合）、错误重试、服务端动态配置。
+5. 支持 RPC 风格调用（同步/异步），支持错误重试与服务端动态配置。
+6. 支持按失败率、等待超时、运行超时、队列堆积等多规则的任务报警。
 
-## maven引入
+## 版本要求
 
-```
+- JDK 17+（建议 21）
+- Spring Boot 3.5.x
+- RabbitMQ 3.x
+- Redis 6.x+
+
+## maven 引入
+
+```xml
 <dependency>
-	<groupId>com.umtone</groupId>
-	<artifactId>uw-task</artifactId>
-	<version>${version}</version>
+    <groupId>com.umtone</groupId>
+    <artifactId>uw-task</artifactId>
+    <version>${version}</version>
 </dependency>
 ```
 
+引入后由 `TaskAutoConfiguration` 自动装配，无需额外 `@EnableXxx`。
+
 ## 应用配置
 
-直接使用spring boot的application.yml文件。
+直接使用 Spring Boot 的 `application.yml`：
 
 ```yaml
-#任务基础包名
 uw:
   task:
-    # 如果是任务执行主机，此配置应为true。
+    # 是否启用任务注册（任务执行主机设为 true；仅作为任务调用方的服务设为 false）
     enable-registry: true
-    # 任务管理服务器地址
+    # 任务管理服务器（uw-task-center）地址
     task-center-host: http://localhost:8080
-    # 任务项目，必须是包名前缀，用于扫描任务注册。
+    # 任务项目，必须是包名前缀，用于扫描任务注册（只扫描该包下的 TaskCroner/TaskRunner）
     task-project: com.demo.task
-    # 运行目标，这是重要参数，用于识别任务执行集群，默认为default。
+    # 运行目标，用于识别任务执行集群，默认 default
     run-target: default
-    # croner线程数，默认在5个，建议按照实际croner任务数量*70%。
+    # croner 调度线程数，默认 5，建议按实际 croner 任务数 * 70% 设置
     croner-thread-num: 3
-    # RPC最小线程数,用于执行RPC调用，如不使用rpc，建议设置为1，否则按照最大并发量*10%设置。
+    # RPC 线程池：用于执行 RPC 调用，如不使用 rpc 建议设为 1，否则按最大并发量 * 10% 设置
     task-rpc-min-thread-num: 1
-    # RPC最大线程数,用于执行RPC调用，超过此线程数，将会导致阻塞。
     task-rpc-max-thread-num: 60
-    # 本地队列任务运行最小线程数，用于运行本地队列任务，减少资源消耗。
+    # 本地队列线程池：用于运行本地队列任务
     task-local-min-thread-num: 1
-    # 本地队列任务运行最大线程数，用于运行本地队列任务，减少资源消耗。
     task-local-max-thread-num: 60
-    # 队列任务重试延时毫秒数，默认2秒
+    # 队列任务重试延时（毫秒），默认 2 秒
     task-queue-retry-delay: 2000
-    # rpc任务重试延时毫秒数，默认100毫秒
+    # RPC 任务重试延时（毫秒），默认 100 毫秒
     task-rpc-retry-delay: 100
-    
-    # rabbitmq
+
+    # RabbitMQ（task 使用独立的连接工厂，与业务 MQ 隔离）
     rabbitmq:
       host: 127.0.0.1
       port: 5672
@@ -62,8 +70,7 @@ uw:
       password: guest
       publisher-confirms: true
       virtual-host: /
-  
-    # redis 缓存
+    # Redis（task 使用独立的连接工厂）
     redis:
       database: 0
       host: 127.0.0.1
@@ -78,534 +85,307 @@ uw:
       timeout: 30s
 ```
 
-## 定时任务配置
+> 说明：`enable-registry=false` 的服务仅能作为任务调用方（`sendToQueue`/`runTask`），不会注册主机、不执行任务、不参与 Leader 选举。
 
-定时任务使用cron表达式来定时执行指定任务。
+## 定时任务（TaskCroner）
 
-```
-/**
- * 这是一个demo任务。
- * 定时任务需要继承TaskCroner。
- **/
+定时任务使用 cron 表达式定时执行，需继承 `TaskCroner` 并实现三个方法。
+
+```java
 @Component
-public class DemoCronTask extends TaskCroner{
+public class DemoCronTask extends TaskCroner {
 
-	/**
-	 * 运行任务。
-	 * 如果需要在日志中记录执行信息，请返回值中记录。
-	 **/
-	@Override
-	public String runTask(TaskCronerLog taskCronerLog) throws TaskException {
-		logger.info("just test for cron task!");
-		return "";
-	}
+    /**
+     * 运行任务。返回值会记录到执行日志（TaskCronerLog）的 resultData 字段。
+     * 业务异常请按需抛出 TaskPartnerException / TaskDataException（见"任务内异常处理"）。
+     */
+    @Override
+    public String runTask(TaskCronerLog taskCronerLog) throws Exception {
+        logger.info("just test for cron task!");
+        return "";
+    }
 
-	/**
-	 * 初始化定时任务配置。
-	 * 在没有服务端配置的时候，默认使用此配置。
-	 **/
-	@Override
-	public TaskCronerConfig initConfig() {
+    /**
+     * 初始化定时任务配置（首次注册时上传到 task-center，之后以服务端动态配置为准）。
+     */
+    @Override
+    public TaskCronerConfig initConfig() {
         TaskCronerConfig config = new TaskCronerConfig();
         config.setTaskName("测试定时任务");
         config.setTaskDesc("这是一个测试定时任务");
-        //指定cron表达式
-        config.setTaskCron("*/5 * * * * ?");
-        //指定运行主机配置
-        config.setRunTarget("");
-        //指定运行模式
-        config.setRunType(TaskCronerConfig.RUN_TYPE_SINGLETON);
-        //报警信息：总失败率百分比数值
-        config.setAlertFailRate(10);
-        //程序失败率百分比数值
-        config.setAlertFailProgramRate(10);
-        //接口失败率百分比数值
-        config.setAlertFailPartnerRate(10);
-        //限速等待超时ms数
-        config.setAlertWaitTimeout(10000);
-        //运行超时ms数
-        config.setAlertRunTimeout(1000);
+        config.setTaskCron("*/5 * * * * ?");          // cron 表达式
+        config.setRunType(TaskCronerConfig.RUN_TYPE_SINGLETON); // 全局单例运行（仅 Leader 执行）
+        config.setAlertFailRate(10);                  // 总失败率报警阈值（百分比）
+        config.setAlertFailProgramRate(10);           // 程序失败率
+        config.setAlertFailPartnerRate(10);           // 接口失败率
+        config.setAlertWaitTimeout(10000);            // 等待超时报警（ms）
+        config.setAlertRunTimeout(1000);              // 运行超时报警（ms）
         return config;
-	}
+    }
 
-	/**
-	 * 初始化联系人信息。
-	 * 用于在服务器端设置默认的报警通知信息。
-	 */
-	@Override
-	public TaskContact initContact() {
-		return new TaskContact("开发人员姓名", "手机号码", "邮箱地址", "微信", "im", “notifyUrl”，"备注");
-	}
-
+    /**
+     * 初始化联系人信息（首次注册时上传，用于报警通知）。
+     */
+    @Override
+    public TaskContact initContact() {
+        return new TaskContact("姓名", "手机号", "邮箱", "微信", "im", "notifyUrl", "备注");
+    }
 }
-
 ```
 
-## 队列任务配置
+## 队列任务（TaskRunner）
 
-- 实现TaskRunner接口的runTask方法。
-- 对于接口异常，请抛出TaskPartnerException用于标识，可以引发重试。
-- 对于执行结果，通过返回值来设置。
+实现 `TaskRunner` 的 `runTask` 方法，通过泛型指定入参与返回类型。
 
-```
+```java
 @Component
 public class DemoTask extends TaskRunner<DemoTaskParam, String> {
 
-	private static final Logger log = LoggerFactory.getLogger(DemoTask.class);
+    private static final Logger log = LoggerFactory.getLogger(DemoTask.class);
 
-	
-	@Override
-	public String runTask(TaskData<DemoTaskParam, String> taskData) throws TaskException {
-		log.info("这是一个DemoTask:{},{},{}", taskData.getTaskParam().getId(), taskData.getTaskParam().getName(),
-				taskData.getTaskParam().getDate());
-		return "ok";
-	}
-	
-	/**
-	 * 初始化队列任务配置。
-	 * 在没有服务端配置的时候，默认使用此配置。
-	 **/
-	@Override
-	public TaskRunnerConfig initConfig() {
-		TaskRunnerConfig config = new TaskRunnerConfig();
-		config.setTaskName("测试队列任务");
-		config.setTaskDesc("测试队列任务描述");
-		//设定限速类型
-		config.setRateLimitType(TaskRunnerConfig.RATE_LIMIT_TYPE_NONE);
-		//设定限速秒数
-		config.setRateLimitTime(1);
-		//设定限速次数
-		config.setRateLimitValue(10);
-		//设定限速超时等待时间
-		config.setRateLimitWait(60);
-		//设定因为对方接口错，重试的次数，默认为0
-		config.setRetryTimesByPartner(0);
-		//设定因为超过限速的错误，重试的次数，默认为0
-		config.setRetryTimesByOverrated(0);
-		//并发数，会开启几个并发进程处理任务。
-		config.setConsumerNum(5);
-		//预取数，大批量任务可以设置为5，一般任务建议设置为1
-		config.setPrefetchNum(1);
-		//总失败率百分比数值
-		config.setAlertFailRate(10);
-		//程序失败率百分比数值
-		config.setAlertFailProgramRate(10);
-	    //接口失败率百分比数值
-		config.setAlertFailPartnerRate(10);
-		//程序失败率百分比数值
-		config.setAlertFailConfigRate(10);
-		//队列排队超
-		config.setAlertQueueOversize(1000);
-		//队列排队超时ms数
-		config.setAlertQueueTimeout(600000);
-		//限速等待超时ms数
-		config.setAlertWaitTimeout(10000);
-		//运行超时ms数
-		config.setAlertRunTimeout(1000);
-		
-		return config;
-	}
+    @Override
+    public String runTask(TaskData<DemoTaskParam, String> taskData) throws Exception {
+        log.info("DemoTask: {},{}", taskData.getTaskParam().getId(), taskData.getTaskParam().getName());
+        return "ok";
+    }
 
-	/**
-	 * 初始化联系人信息。
-	 * 用于在服务器端设置默认的报警通知信息。
-	 */
-	@Override
-	public TaskContact initContact() {
-		return new TaskContact("开发人员姓名", "手机号码", "邮箱地址", "微信", "im", “notifyUrl”，"备注");
-	}
+    @Override
+    public TaskRunnerConfig initConfig() {
+        TaskRunnerConfig config = new TaskRunnerConfig();
+        config.setTaskName("测试队列任务");
+        config.setTaskDesc("测试队列任务描述");
+        // 限速配置（详见"流量控制功能"）
+        config.setRateLimitType(TaskRunnerConfig.RATE_LIMIT_NONE);
+        config.setRateLimitTime(1);
+        config.setRateLimitValue(10);
+        config.setRateLimitWait(60);
+        // 重试次数（设为 N 时，总计执行 N+1 次：1 次初始 + N 次重试）
+        config.setRetryTimesByPartner(0);       // 合作方异常重试次数
+        config.setRetryTimesByOverrated(0);     // 超限流异常重试次数
+        // 消费并发
+        config.setConsumerNum(5);               // 消费者并发数
+        config.setPrefetchNum(1);               // 预取数，大批量任务可设为 5
+        // 报警阈值
+        config.setAlertFailRate(10);
+        config.setAlertFailProgramRate(10);
+        config.setAlertFailPartnerRate(10);
+        config.setAlertFailConfigRate(10);
+        config.setAlertQueueOversize(1000);     // 队列堆积报警
+        config.setAlertQueueTimeout(600000);    // 队列排队超时报警（ms）
+        config.setAlertWaitTimeout(10000);
+        config.setAlertRunTimeout(1000);
+        return config;
+    }
+
+    @Override
+    public TaskContact initContact() {
+        return new TaskContact("姓名", "手机号", "邮箱", "微信", "im", "notifyUrl", "备注");
+    }
 }
-
 ```
 
 ## 任务内异常处理
 
--
+为支持监控与重试，`runTask` 抛出的异常分三类，框架据此设置任务状态：
 
-为了更好的支持监控，runTask的异常主要分为3类。分别是：TaskDataException数据异常；TaskPartnerException合作方异常；其他程序异常。其中限速超时异常由框架自动生成。程序异常、数据异常、接口方异常需要程序员来维护。
+| 异常 | 状态 | 是否重试 | 场景 |
+|---|---|---|---|
+| `TaskPartnerException` | `STATE_FAIL_PARTNER` | 是（按 `retryTimesByPartner`） | 合作方/第三方接口错误（超时、错误码、限流等） |
+| `TaskDataException` | `STATE_FAIL_DATA` | 否 | 任务入参数据错误（格式非法、缺失、业务规则不满足） |
+| 其他未捕获异常 | `STATE_FAIL_PROGRAM` | 否 | 程序异常（bug、空指针等），框架自动捕获 |
+| （限速超时） | `STATE_FAIL_CONFIG` | 是（按 `retryTimesByOverrated`） | 超过流量限制，框架自动生成 |
 
-- TaskPartnerException 任务合作方异常，此异常会引发任务重试。
-- TaskDataException 任务数据异常，此异常不会引发任务重试。
-- 一般来说，尽量不要捕获异常，除非这个异常捕获后不影响任务的完整执行。不捕获的异常，框架会自动捕获为程序异常。
+正确抛出异常有助于发现潜在问题。非必要不要在 `runTask` 内吞掉异常——不捕获的异常会被框架归为程序异常并记录。
 
-## 队列任务发布
+## 任务派发（TaskFactory）
 
-1. 定义TaskFactory
+注入 `TaskFactory` 后可选择不同的派发方式：
 
-```
+```java
 @Autowired
 private TaskFactory taskFactory;
 ```
 
-2. 发送任务到队列，此操作为完全异步操作。
+### 1. `sendToQueue(taskData)` — 异步入队
+
+完全异步，无返回值。任务投递到 RabbitMQ 队列，由具备匹配 runner 的远端主机消费。
+
+### 2. `runQueue(taskData)` — 本地队列优先
+
+高频短任务优先在本地线程池执行（减少 MQ 压力）；线程池满时自动降级入队。带 `taskDelay` 的任务直接入队。
+
+> 实现细节：本地队列线程**只走本地执行或降级入队，绝不走同步 RPC**，避免阻塞。
+
+### 3. `runTask(taskData)` — 同步执行
+
+根据 `runType` 判定：`AUTO_RPC`（默认）自动选择本地/远程；`LOCAL` 强制本地；其他走全局同步 RPC（默认 180s 超时）。**会阻塞调用线程**。
+
+### 4. `runTaskLocal(taskData)` — 强制本地同步
+
+仅本地执行，本机无匹配 runner 时抛 `TaskRuntimeException`（不回退入队）。同样阻塞调用线程。
+
+### 5. `runTaskAsync(taskData)` — 异步执行
+
+返回 `Future<TaskData>`，通过 `future.get()` 获取结果。远程模式下每个 future 占用一个线程等待 RPC 返回，**大并发下注意线程数与限速叠加可能导致线程池耗尽**。
+
+### 方法对比与快速选型
+
+六个方法本质是三个维度的组合：**执行位置（本地/远程）× 是否阻塞调用线程 × 是否需要返回值**。
+
+| 方法 | 执行位置 | 阻塞调用方 | 返回结果 | 本机无 runner 时 | 典型用途 |
+|---|---|---|---|---|---|
+| `sendToQueue` | 远程（入队） | 否 | 无 | 入队（正常） | 标准异步队列任务，不关心结果 |
+| `runTask` | AUTO 自动选 | **是** | 有 | 回退远程 RPC | 需立即同步拿结果 |
+| `runTaskLocal` | 仅本地 | **是** | 有 | **抛异常** | 强制本机执行，不允许远程 |
+| `runTaskAsync` | AUTO 自动选 | 否（Future） | 有（get 时） | 回退远程 RPC | 异步拿结果，注意线程池 |
+| `runQueue` | 本地优先，否则入队 | 否 | 无 | 入队 | 高频短任务优化，省 MQ |
+
+**选型决策树**：
 
 ```
-/**
- * 把任务发送到队列中。
- * 
- * @param target
- *            目标主机配置名，如果没有，则为空
- * @param taskData
- */
-public void sendToQueue(TaskData<?, ?> taskData);
+需要执行结果吗？
+├─ 否 → 本机有 runner 且高频短耗时？
+│        ├─ 是 → runQueue（本地优先，省 MQ）
+│        └─ 否 → sendToQueue（标准入队）
+│
+└─ 是 → 调用方能接受阻塞吗？
+         ├─ 能（且要立即拿结果）
+         │    ├─ 必须本机跑  → runTaskLocal
+         │    └─ 本地/远程都行 → runTask
+         │
+         └─ 不能（异步） → runTaskAsync（注意线程池上限）
 ```
 
-3. 本地运行队列。为了优化实时性高，且频繁的队列任务，可以优先在本地执行，减少**mq**压力，提升运行效率。当本地执行线程池满的时候，会直接转到队列执行。
+> **重要**：`runTask`/`runTaskLocal`/`runTaskAsync`/`runQueue` 会向传入的 taskData 写入 id/queueDate/runType 等运行期字段，**请勿在多次调用间复用同一 taskData 对象**。远程模式（`runTask`/`runTaskAsync`）默认 sendAndReceive 超时 180 秒，**避免在 Web 请求线程高频同步调用**，以免耗尽 Tomcat 线程。
 
-```
-    /**
-     * 本地运行队列。
-     * 为了优化实时性高，且频繁的队列任务，可以优先在本地执行，减少mq压力，提升运行效率。
-     * 当本地执行线程池满的时候，会直接转到队列执行。
-     *
-     * @param taskData 任务数据
-     */
-    public void runQueue(final TaskData<?, ?> taskData) {
-        taskQueueService.submit(new TaskQueueLocalExecutor(this, taskData));
-    }
-```
+### 运行类型（runType）
 
-4. 本地执行任务。没有线程池支持，会导致阻塞。
+| 常量 | 值 | 说明 |
+|---|---|---|
+| `RUN_TYPE_LOCAL` | 1 | 本地运行，不受流控限制 |
+| `RUN_TYPE_GLOBAL` | 3 | 全局异步运行（入队），受流控限制 |
+| `RUN_TYPE_GLOBAL_RPC` | 5 | 全局同步 RPC，不受流控限制 |
+| `RUN_TYPE_AUTO_RPC` | 6 | 自动判定（默认），本机有 runner 则本地，否则走 GLOBAL_RPC |
 
-```
-    /**
-     * 同步执行任务，没有线程池支持，会导致阻塞。
-     * 在调用的时候，尤其要注意，taskData对象不可改变！
-     *
-     * @param taskData 任务数据
-     * @return
-     */
-    @SuppressWarnings("unchecked")
-    public <TP, RD> TaskData<TP, RD> runTaskLocal(final TaskData<TP, RD> taskData) {
-        taskData.setId(globalSequenceManager.nextId("task_runner_log"));
-        taskData.setQueueDate(SystemClock.nowDate());
-        // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
-        if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && TaskMetaInfoManager.checkRunnerRunLocal(taskData)) {
-            // 启动本地运行模式。
-            taskData.setRunType(TaskData.RUN_TYPE_LOCAL);
-        }
-        if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
-            taskRunnerContainer.process(taskData);
-            return taskData;
-        } else {
-            throw new TaskRuntimeException(taskData.getClass().getName() + " is not a local task! ");
-        }
-    }
+## TaskData 说明
+
+`TaskData<TP, RD>` 是任务传值与返回容器。`TP`/`RD` 必须与 `TaskRunner` 的泛型完全一致，否则运行时出错。推荐使用 builder：
+
+```java
+TaskData<MyParam, MyResult> data = TaskData.<MyParam, MyResult>builder(DemoTask.class)
+        .taskParam(new MyParam(1, "x"))
+        .taskTag("tag-1")
+        .runTarget("default")
+        .rateLimitTag("api-config-100")
+        .build();
 ```
 
-5. 同步执行任务
-   运行期，程序根据runType判断，并结合任务代码是否在本地的判定，决定是运行在本地还是远程。
-   一般来说，程序的默认runType=RUN_TYPE_AUTO_RPC，此时是自动判定默认。
-   也可以指定RUN_TYPE_GLOBAL_RPC和RUN_TYPE_LOCAL。
+关键字段：
 
-```
-	/**
-	 * 同步执行任务，可能会导致阻塞。
-	 *
-	 * @param runTarget
-	 *            目标主机配置名，如果没有，则为空
-	 * @param taskData
-	 *            任务数据
-	 * @return
-	 */
-	public <TP, RD> TaskData<TP, RD> runTask(final TaskData<TP, RD> taskData,final TypeReference<TaskData<TP, RD>> typeRef);
-```
+| 字段 | 设置方 | 说明 |
+|---|---|---|
+| `taskClass` | 调用方（必填） | 要执行的 TaskRunner 全限定名 |
+| `taskParam` | 调用方（必填） | 执行参数 |
+| `taskTag` | 调用方 | 任务标签，用于多实例区分 |
+| `runTarget` | 调用方 | 运行目标，默认 default |
+| `rateLimitTag` | 调用方 | 限速 TAG（推荐设为接口配置 ID） |
+| `taskDelay` | 调用方 | 延迟毫秒数（配合延迟队列，建议 ≤ 60s） |
+| `refId`/`refSubId`/`refTag` | 调用方 | 关联信息，用于第三方统计 |
+| `refObject` | 调用方 | 关联对象，不入库，可通过 Listener 访问 |
+| `id`/`queueDate`/`consumeDate`/`runDate`/`finishDate`/`runType`/`ranTimes`/`state`/`errorInfo`/`resultData` | 框架 | 由框架自动设置 |
 
-6. 异步执行任务
-
-```
-	/**
-	 * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获取数据，可以使用futrue.get()来获取。
-	 * 此方法要谨慎使用，因为task存在限速，大并发下可能会导致线程数超。
-	 * @param runTarget
-	 *            目标主机配置名，如果没有，则为空
-	 * @param taskData
-	 *            任务数据
-	 * @return
-	 */
-	public <TP, RD> Future<TaskData<TP, RD>> runTaskAsync(final TaskData<TP, RD> taskData,
-			final TypeReference<TaskData<TP, RD>> typeRef);
-```
-
-## TaskData说明
-
-TaskData是分发任务传递参数和返回
-
-```
-/**
- * TaskData用于任务执行的传值，以为任务完成后返回结构。
- * TaskParam和ResultData可通过泛型参数制定具体类型。
- * TP,TD应和TaskRunner的泛型参数完全一致，否则会导致运行时出错。
- *
- */
-public class TaskData<TP,TD> implements Serializable {
-
-    /**
-     * 任务状态:未设置
-     */
-    public static final int STATUS_UNKNOW = 0;
-    
-    /**
-     * 任务状态:成功
-     */
-    public static final int STATUS_SUCCESS = 1;
-    
-    /**
-     * 任务状态:程序错误
-     */
-    public static final int STATUS_FAIL_PROGRAM = 2;
-    
-    /**
-     * 任务状态:配置错误，如超过流量限制
-     */
-    public static final int STATUS_FAIL_CONFIG = 3;
-    
-    /**
-     * 任务状态:第三方接口错误
-     */
-    public static final int STATUS_FAIL_PARTNER = 4;
-    
-    /**
-     * 运行模式：本地运行
-     */
-    public static final int RUN_TYPE_LOCAL = 1;
-    
-    /**
-     * 运行模式：全局运行
-     */
-    public static final int RUN_TYPE_GLOBAL = 3;	
-    
-    /**
-     * 运行模式：全局运行RPC返回结果
-     */
-    public static final int RUN_TYPE_GLOBAL_RPC = 5;	
-
-    /**
-     * id，此序列值由框架自动生成，无需手工设置。
-     */
-    private long id;
-    
-    /**
-     * 关联TAG，由调用方设定，用于第三方统计信息。
-     */
-    private String refTag;
-    
-    /**
-     * 任务延迟毫秒数。一般这个时间不宜太长，大多数情况下不要超过60秒。
-     */
-    private long taskDelay;
-    
-    /**
-     * 关联id，由调用方根据需要设置，用于第三方统计信息。
-     */
-    private long refId;
-
-    /**
-     * 关联子id，由调用方根据需要设置，用于第三方统计信息。
-     */
-    private long refSubId;
-
-    /**
-     * 关联对象，此对象不存入数据库，但可以通过Listener来访问。
-     */
-    private Object refObject;
-
-    /**
-     * 流量限制TAG。
-     */
-    private String rateLimitTag;
-    
-    /**
-     * 需要执行的类名，此数值必须由调用方设置。
-     */
-    private String taskClass = "";
-
-    /**
-     * 任务标签，用于细分任务队列，支持多实例运行。
-     */
-    private String taskTag = "";
-    
-    /**
-     * 执行参数，此数值必须有调用方设置。
-     */
-    private TP taskParam;
-
-    /**
-     * 任务运行类型。由框架设置，无需手工设置。
-     */
-    private int runType;
-
-    /**
-     * 指定运行目标。
-     */
-    private String runTarget = "";
-
-    /**
-     * 任务运行时主机IP，此信息由框架自动设置。
-     */
-    private String hostIp;
-
-    /**
-     * 任务运行时主机ID（可能为docker的ContainerID），此信息由框架自动设置。
-     */
-    private String hostId;
-
-    /**
-     * 进入队列时间，此信息由框架自动设置。
-     */
-    private Date queueDate;
-
-    /**
-     * 开始消费时间，此信息由框架自动设置。
-     */
-    private Date consumeDate;
-
-    /**
-     * 开始运行时间，此信息由框架自动设置。
-     */
-    private Date runDate;
-
-    /**
-     * 运行结束日期，此信息由框架自动设置。
-     */
-    private Date finishDate;
-
-    /**
-     * 执行信息，用于存储框架自动设置。
-     */
-    private RD resultData;
-
-    /**
-     * 出错信息
-     */
-    private String errorInfo;
-
-    /**
-     * 已经执行的次数，此信息由框架自动设置。
-     */
-    private int ranTimes;
-
-    /**
-     * 执行状态，此信息由框架自动设置。
-     */
-    private int status;
-
-
-}
-
-```
+任务状态（`state`）：`0=未知 1=成功 2=程序错误 3=配置错误 4=三方接口错误 5=数据错误`。
 
 ## 流量控制功能
 
-在TaskRunnerConfig中定义了以下几种流量限制方式。对于全局限速器，建议检测时间不要低于5S。
+在 `TaskRunnerConfig` 中配置限速类型与参数。**全局限速器基于 Redis 固定窗口，建议检测窗口（`rateLimitTime`）不要低于 5 秒**，以减小网络 IO 开销。
 
-```
-	/**
-	 * 限速类型：不限速
-	 */
-	public static final int RATE_LIMIT_TYPE_NONE = 0;
-	
-	/**
-	 * 限速类型：基于当前进程的限速，所有任务共用一个进程限速器。
-	 */
-	public static final int RATE_LIMIT_TYPE_PROCESS = 1;
-	
-	/**
-	 * 限速类型：基于当前主机IP限速，所有任务共用一个IP的限速器。
-	 */
-	public static final int RATE_LIMIT_TYPE_IP = 2;
+### 限速类型（rateLimitType）
 
-	/**
-	 * 限速类型：基于TaskData的RateLimitTag（推荐设定为接口配置ID）限速
-	 */
-	public static final int RATE_LIMIT_TYPE_TAG = 3;
-	
-	/**
-	 * 限速类型：基于TaskName限速，基于当前任务限速。
-	 */
-	public static final int RATE_LIMIT_TYPE_TASK = 5;
-	
-	/**
-	 * 限速类型：进程内基于当前任务的限速
-	 */
-	public static final int RATE_LIMIT_TYPE_TASK_PROCESS = 6;
+分为本地（进程内 Guava 令牌桶）与全局（Redis 固定窗口）两大类：
 
-	/**
-	 * 限速类型：基于当前任务的当前主机IP限速
-	 */
-	public static final int RATE_LIMIT_TYPE_TASK_IP = 7;
+| 常量 | 值 | 限流 key 维度 | 说明 |
+|---|---|---|---|
+| `RATE_LIMIT_NONE` | 0 | — | 不限速 |
+| `RATE_LIMIT_LOCAL` | 1 | 进程（共享） | 本地进程，所有任务共用一个限速器 |
+| `RATE_LIMIT_LOCAL_TASK` | 2 | 进程 + taskClass | 本地按任务隔离 |
+| `RATE_LIMIT_LOCAL_TASK_TAG` | 3 | 进程 + taskClass + tag | 本地按任务+TAG 隔离 |
+| `RATE_LIMIT_GLOBAL_HOST` | 4 | host | **跨任务共享**：按主机限速 |
+| `RATE_LIMIT_GLOBAL_TAG` | 5 | tag | **跨任务共享**：按 TAG 限速（对接同一第三方接口的多个任务共享配额） |
+| `RATE_LIMIT_GLOBAL_TASK` | 6 | taskClass | 按任务隔离 |
+| `RATE_LIMIT_GLOBAL_TAG_HOST` | 7 | tag + host | **跨任务共享** |
+| `RATE_LIMIT_GLOBAL_TASK_HOST` | 8 | taskClass + host | 按任务+主机隔离 |
+| `RATE_LIMIT_GLOBAL_TASK_TAG` | 9 | taskClass + tag | 按任务+TAG 隔离 |
+| `RATE_LIMIT_GLOBAL_TASK_TAG_HOST` | 10 | taskClass + tag + host | 全维度隔离 |
 
-	/**
-	 * 限速类型：根据当前任务的TaskData的RateLimitTag（推荐设定为接口配置ID）限速
-	 */
-	public static final int RATE_LIMIT_TYPE_TASK_TAG = 8;
-	
-	/**
-	 * 限速类型：根据当前IP和进程限速
-	 */
-	public static final int RATE_LIMIT_TYPE_TAG_PROCESS = 9;
-	
-	/**
-	 * 限速类型：根据当前IP和TaskData的RateLimitTag（推荐设定为接口配置ID）限速
-	 */
-	public static final int RATE_LIMIT_TYPE_TAG_IP = 10;
+> **`GLOBAL_TAG`/`GLOBAL_HOST`/`GLOBAL_TAG_HOST` 是跨任务共享配额**（限流 key 不含 taskClass）：多个不同任务只要 TAG/HOST 相同即共享同一限流池，适用于多个任务对接同一第三方接口、需共享 QPS 上限的场景。`GLOBAL_TASK*` 系列则按任务隔离。
 
-```
+### 限速参数
 
-流量限制的参数设定：
+| 参数 | 默认 | 说明 |
+|---|---|---|
+| `rateLimitValue` | 10 | 窗口内配额上限（次数） |
+| `rateLimitTime` | 1 | 窗口长度（秒） |
+| `rateLimitWait` | 30 | 触发限速时最长等待秒数，超时仍不足则放弃任务（标记 STATE_FAIL_CONFIG） |
+| `retryTimesByOverrated` | 0 | 超限流重试次数（N → 总计执行 N+1 次） |
 
-```
-    /**
-     * 详见流量限制类型说明。
-     */
-    private int rateLimitType = 1;
+## 重试机制
 
-    /**
-     * 流量限定数值，默认为10次
-     */
-    private int rateLimitValue = 10;
+任务失败后，按 `retryType`（默认 `AUTO`）与失败类型决定是否重试：
 
-    /**
-     * 流量限定时间(S)，默认为1秒
-     */
-    private int rateLimitTime = 1;
+- `STATE_FAIL_PARTNER`（合作方异常）：按 `retryTimesByPartner` 重试。
+- `STATE_FAIL_CONFIG`（超限流）：按 `retryTimesByOverrated` 重试。
+- `STATE_FAIL_PROGRAM` / `STATE_FAIL_DATA`：不重试。
 
-    /**
-     * 当发生流量限制时，等待的秒数，默认60秒
-     */
-    private int rateLimitWait = 60;
-    
-    /**
-     * 超过流量限制重试次数，默认不再重试，放弃任务。
-     */
-    private int retryTimesByOverrated = 0;
-
-```
+设 `retryTimes = N` 时，**总计执行 N+1 次**（1 次初始 + N 次重试）。重试延时按执行轮次线性递增：队列任务为 `ranTimes * taskQueueRetryDelay`，RPC 任务为 `ranTimes * taskRpcRetryDelay`。LOCAL/RPC 模式在本地重跑，GLOBAL 模式重新入队。
 
 ## 多实例运行
 
-- 有时候会存在一套定时任务/队列任务，存在多个并发运行任务实例的情况。此功能需要经过服务器端多配置来实现。
-- TaskCroner通过配置中的TaskParam参数来指标识多实例。在实际使用中，可以使用空值（默认值）来处理绝大多数请求，特定用户使用特定ID作为TaskParam数值。
-- TaskRunner通过TaskData/TaskRunnerConfig中的TaskTag来标识多实例。发送任务的时候，就需要指定TaskTag/RunTarget。
-- 如果指定的TaskRunner的TaskTag&RunTarget无法匹配到指定服务器端配置，框架会宽松匹配最合适的配置。
+同一套定时任务/队列任务存在多个并发运行实例时，通过服务器端多份配置实现：
 
-## 运行目标RunTarget
+- **TaskCroner** 通过配置中的 `taskParam` 标识多实例。多数场景用空值（默认），特定用户用特定 ID 作为 taskParam。
+- **TaskRunner** 通过 `taskTag` 标识多实例。发送任务时指定 taskTag/runTarget。
+- 若指定的 taskTag/runTarget 无法精确匹配服务端配置，框架会宽松匹配最合适的配置。
 
-- 运行目标是非常重要的参数，它和taskProject一起决定了任务配置的同步联系。
+多实例唯一性由服务端按三元组（`taskClass + 区分维度 + runTarget`）保证：RPC 自动注册时按三元组幂等去重，ops 端新增/修改时校验重复。
 
-- 任务可以指定运行目标，此运行目标通过服务器端配置来实现。
+## 运行目标 RunTarget
+
+`runTarget` 是非常重要的参数，与 `taskProject` 一起决定任务配置的同步关系：
+
+- 任务执行主机只拉取与自身 `taskProject` + `runTarget` 匹配的配置并执行。
+- 调用方可在 `TaskData` 中指定 runTarget，将任务路由到特定服务器集群。
+- 默认 runTarget 为 `default`。
+
+## 全局单例运行（Leader 选举）
+
+`TaskCronerConfig.RUN_TYPE_SINGLETON` 的定时任务通过 Redis Leader 锁保证全局唯一执行：仅由 Leader 主机执行，其余主机跳过。
+
+- Leader 任期 90 秒，续期间隔 60 秒；Leader 掉线后最长 90 秒由其他主机接管。
+- Redis 短暂抖动期间，原 Leader 按本地快照继续执行（接受极小概率的双跑）。**关键业务需配合幂等**。
 
 ## 常见问题
 
 **任务不能注册，无法启动任务。**
 
-1.任务上有没有设置@Componet注解？uw-task的任务通过Spring的@Componet注解扫描识别并注入系统。
+1. 任务类上有没有设置 `@Component` 注解？uw-task 通过 Spring 的 `@Component` 扫描识别并注入。
+2. 任务类是否在 `task-project` 配置的包路径下？
+3. `enable-registry` 是否设为 true？
 
-**尼玛队列堵成狗，队列任务根本就没按照限速执行。**
+**队列堵成狗，任务没按限速执行。**
 
-是不是不看文档？限速类型设定为“进程内限速”了？这样所有的任务会共用一个限速器，不卡死你才怪。认真阅读文档，选择合理的限速类型！
+是不是把限速类型设成了 `RATE_LIMIT_LOCAL`（进程内共享）？这样所有任务会共用一个限速器，必然卡死。认真阅读"流量控制功能"，按需选择按任务/全局隔离的限速类型。
 
-**关于uw-task的延时队列任务**
-当前uw-task的延时队列任务通过死信队列实现，所以存在长延时任务会阻塞短延时任务问题，需要谨慎使用。
-一般情况下，并不推荐使用mq的延时队列任务，这不是一个节省资源的方案。
-小负载情况可以直接轮询数据库；大负载情况可使用uw-cache:GlobalSortedSet，均可有效降低资源消耗。
+**关于 uw-task 的延时队列任务**
+
+uw-task 的延时队列通过 RabbitMQ 死信队列实现，存在**长延时任务阻塞短延时任务**的问题，需谨慎使用。一般情况下不推荐使用 MQ 延时队列——小负载可直接轮询数据库，大负载可使用 `uw-cache: GlobalSortedSet`，均能有效降低资源消耗。
+
+**调用方线程会被阻塞的场景（重要）**
+
+uw-task 的部分操作是同步阻塞的，直接在调用线程执行，务必避免在 Web 请求线程等敏感线程中高频/大批量调用：
+
+1. `sendToQueue` / `runTask`：当 RabbitMQ 出现 `channelMax limit is reached` 等瞬时资源错误时，框架会在调用线程内重试（最多 20 次，退避递增），最坏情况单次调用阻塞近 2 分钟。
+2. `runTask` / `runTaskAsync` 远程模式：通过 `sendAndReceive` 同步 RPC，默认 180 秒超时。
+3. 队列任务全局限速（`RATE_LIMIT_GLOBAL_*`）：触发限速时，消费者线程会在 `rateLimitWait` 内轮询等待配额，期间该消费者不消费下一条消息。若限速配置激进（等待长、配额小），会导致并发消费者数虚高却实际空转、消息堆积。
+
+建议：高频调用走 `runQueue`（本地队列线程池执行，满则降级入队）；限速场景优先评估 `rateLimitWait` 与并发消费者数的比例，必要时改用进程内限速（`RATE_LIMIT_LOCAL*`）或调小等待时间。

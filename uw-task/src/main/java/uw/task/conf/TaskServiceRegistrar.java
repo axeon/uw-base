@@ -35,18 +35,39 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class TaskServiceRegistrar {
 
+    /**
+     * 日志器。
+     */
     private static final Logger log = LoggerFactory.getLogger(TaskServiceRegistrar.class);
 
+    /**
+     * 任务专用的 RabbitMQ 连接工厂（用于队列监听容器）。
+     */
     private final ConnectionFactory taskConnectionFactory;
 
+    /**
+     * 队列任务容器。
+     */
     private final TaskRunnerContainer taskRunnerContainer;
 
+    /**
+     * 定时任务容器。
+     */
     private final TaskCronerContainer taskCronerContainer;
 
+    /**
+     * 任务配置。
+     */
     private final TaskProperties taskProperties;
 
+    /**
+     * 任务中心 API 客户端。
+     */
     private final TaskApiClient taskApiClient;
 
+    /**
+     * RabbitMQ 管理器（声明队列/交换机/绑定）。
+     */
     private final RabbitAdmin rabbitAdmin;
 
     /**
@@ -80,14 +101,15 @@ public class TaskServiceRegistrar {
     private HostReportResponse reportResponse;
 
     /**
-     * 默认构造器
+     * 默认构造器。
      *
-     * @param taskProperties
-     * @param taskApiClient
-     * @param taskRunnerContainer
-     * @param taskCronerContainer
-     * @param taskRabbitConnectionFactory
-     * @param rabbitAdmin
+     * @param taskProperties         任务配置
+     * @param taskApiClient          任务中心 API 客户端
+     * @param taskRunnerContainer    队列任务容器
+     * @param taskCronerContainer    定时任务容器
+     * @param taskRabbitConnectionFactory 任务专用 RabbitMQ 连接工厂
+     * @param rabbitAdmin            RabbitMQ 管理器
+     * @param taskMetaInfoManager    任务元信息管理器
      */
     public TaskServiceRegistrar(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskRunnerContainer taskRunnerContainer, TaskCronerContainer taskCronerContainer,
                                 ConnectionFactory taskRabbitConnectionFactory,
@@ -102,9 +124,9 @@ public class TaskServiceRegistrar {
     }
 
     /**
-     * 是否开启任务注册。
+     * 是否开启任务注册（注册主机并执行任务的开关）。
      *
-     * @return
+     * @return 开启返回 true
      */
     public boolean isEnableRegistry() {
         return taskProperties.isEnableRegistry();
@@ -112,7 +134,10 @@ public class TaskServiceRegistrar {
 
 
     /**
-     * 注册当前所有的服务。 每隔1分钟刷新一次。
+     * 注册并刷新当前主机的任务配置。
+     * <p>由调度器每分钟调用：从 task-center 拉取 runner/croner 配置增量，首次启动时上传本地默认配置，
+     * 随后按 taskProject+runTarget 过滤、配置并启动 croner 调度与 runner 队列监听。
+     * 拉取失败时进入 fail-fast，保留上次配置不更新。</p>
      */
     public void updateConfig() {
         long startUpdateTimeMills = SystemClock.now();
@@ -291,15 +316,18 @@ public class TaskServiceRegistrar {
     public void stopAllTaskRunner() {
         log.info("All TaskRunner Destroy....");
         for (SimpleMessageListenerContainer container : queueListenerMap.values()) {
-            container.shutdown();
-            container.stop();
+            // shutdown() 是彻底关闭、stop() 是优雅停止；先 shutdown 后 stop 状态会异常。
+            // SimpleMessageListenerContainer 的 destroy() 按 Spring 生命周期顺序处理关闭，最为稳妥。
+            container.destroy();
         }
     }
 
     /**
-     * 报告主机状态。
+     * 上报主机状态。
+     * <p>采集 JVM 内存/线程、任务统计、各队列积压与消费者数，提交到 task-center；
+     * 返回值（含主机记录 id）缓存供下次上报定位记录。</p>
      *
-     * @return
+     * @return 服务端响应；网络失败返回 null
      */
     public HostReportResponse reportHostInfo() {
         //最后提交主机状态报告。
@@ -333,19 +361,22 @@ public class TaskServiceRegistrar {
         hostStats.setTaskRunnerStatsList(TaskStatsService.getRunnerStats());
         //查询队列信息。
         List<TaskRunnerStats> taskRunnerStatsList = hostStats.getTaskRunnerStatsList();
+        // 预先构建 taskId -> queueName 索引，避免对每个 stats 遍历全部 config（O(n*m)）。
+        Map<Long, String> queueNameByTaskId = new HashMap<>(taskMetaInfoManager.getRunnerConfigMap().size());
+        for (TaskRunnerConfig taskRunnerConfig : taskMetaInfoManager.getRunnerConfigMap().values()) {
+            queueNameByTaskId.put(taskRunnerConfig.getId(), taskMetaInfoManager.getQueueNameByConfig(taskRunnerConfig));
+        }
         //查询缓存，应对公用队列的情况，防止重复查询。key:队列名。
         Map<String, AMQP.Queue.DeclareOk> queueInfoMap = new HashMap<>();
         for (TaskRunnerStats stats : taskRunnerStatsList) {
-            for (TaskRunnerConfig taskRunnerConfig : taskMetaInfoManager.getRunnerConfigMap().values()) {
-                if (stats.getTaskId() == taskRunnerConfig.getId()) {
-                    String queueName = taskMetaInfoManager.getQueueNameByConfig(taskRunnerConfig);
-                    AMQP.Queue.DeclareOk declareOk = queueInfoMap.computeIfAbsent(queueName,
-                            (Key) -> rabbitAdmin.getRabbitTemplate().execute(channel -> channel.queueDeclarePassive(queueName)));
-                    stats.setQueueSize(declareOk.getMessageCount());
-                    stats.setConsumerNum(declareOk.getConsumerCount());
-                    break;
-                }
+            String queueName = queueNameByTaskId.get(stats.getTaskId());
+            if (queueName == null) {
+                continue;
             }
+            AMQP.Queue.DeclareOk declareOk = queueInfoMap.computeIfAbsent(queueName,
+                    (Key) -> rabbitAdmin.getRabbitTemplate().execute(channel -> channel.queueDeclarePassive(queueName)));
+            stats.setQueueSize(declareOk.getMessageCount());
+            stats.setConsumerNum(declareOk.getConsumerCount());
         }
         ResponseData<HostReportResponse> reportResult = taskApiClient.reportHostInfo(hostStats);
         reportResponse = reportResult != null && reportResult.isSuccess() ? reportResult.getData() : null;
@@ -461,14 +492,18 @@ public class TaskServiceRegistrar {
                 if (runnerConfig.getDelayType() == TaskRunnerConfig.TYPE_DELAY_ON) {
                     // 建立TTL队列，需要设置名称
                     Queue ttlQueue =
-                            QueueBuilder.durable(taskMetaInfoManager.getTTLQueueName(queueName)).withArgument("x-dead-letter-exchange", queueName).withArgument("x"
-                                    + "-dead-letter-routing-key", queueName).build();
+                            QueueBuilder.durable(taskMetaInfoManager.getTTLQueueName(queueName))
+                                    .withArgument("x-dead-letter-exchange", queueName)
+                                    .withArgument("x-dead-letter-routing-key", queueName)
+                                    .build();
                     // 声明处理
                     declareManage(ttlQueue);
                 }
                 return container;
             } catch (Exception e) {
-                log.error("任务队列创建失败! {}", e.getMessage(), e);
+                // 此处每分钟（updateConfig 周期）会重试，为避免大堆栈刷屏仅打 message；
+                // 配置持续失败（如 MQ 不可用）会在后续周期自动重试恢复。
+                log.warn("任务队列创建失败, 将持续重试: queue=[{}], msg={}", queueName, e.getMessage());
             }
             return null;
         });
@@ -486,8 +521,7 @@ public class TaskServiceRegistrar {
                 }
             } else {
                 queueListenerMap.remove(queueName);
-                sysContainer.shutdown();
-                sysContainer.stop();
+                sysContainer.destroy();
             }
         }
     }

@@ -16,10 +16,9 @@ public abstract class TaskRunner<TP, RD> {
 
     /**
      * 执行任务。
-     * 业务层面的异常请根据实际情况手动Throw TaskException:
-     * 目前支持的异常:
-     * 1. TaskPartnerException 任务合作方异常，此异常会引发任务重试。
-     * 2. TaskDataException 任务数据异常，此异常不会引发任务重试。
+     * 业务层面的异常请根据实际情况手动抛出以下受识别的异常：
+     * 1. {@link uw.task.exception.TaskPartnerException} 任务合作方异常，此异常会引发任务重试。
+     * 2. {@link uw.task.exception.TaskDataException} 任务数据异常，此异常不会引发任务重试。
      * ！！！其它未捕获异常一律认为是程序异常，不会引发任务重试。
      *
      * @param taskData 数据

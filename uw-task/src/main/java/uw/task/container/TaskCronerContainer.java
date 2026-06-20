@@ -38,6 +38,9 @@ import java.util.concurrent.ScheduledFuture;
  */
 public class TaskCronerContainer {
 
+    /**
+     * 日志器。
+     */
     private static final Logger log = LoggerFactory.getLogger(TaskCronerContainer.class);
     /**
      * cronerTask任务索引。
@@ -72,10 +75,6 @@ public class TaskCronerContainer {
      * 任务配置
      */
     private final TaskProperties taskProperties;
-    /**
-     * TaskCronerLog的ThreadLocal。
-     */
-    private final ThreadLocal<TaskCronerLog> cronerLogHolder = new ThreadLocal<>();
 
     public TaskCronerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskSequenceManager taskSequenceManager, TaskListenerManager taskListenerManager,
                                TaskGlobalLocker taskGlobalLocker) {
@@ -84,22 +83,24 @@ public class TaskCronerContainer {
         this.taskListenerManager = taskListenerManager;
         this.taskSequenceManager = taskSequenceManager;
         this.taskProperties = taskProperties;
-        // 如果禁用任务注册，则croner线程数设置为1，节省资源。
-        if (!taskProperties.isEnableRegistry()) {
-            taskProperties.setCronerThreadNum(1);
-        }
-        executorService = Executors.newScheduledThreadPool(taskProperties.getCronerThreadNum(),
+        // 如果禁用任务注册，则croner线程数按 1 计，节省资源。
+        // 注意：不回写 taskProperties，避免篡改共享配置对象影响其他读取方。
+        int cronerThreadNum = taskProperties.isEnableRegistry() ? taskProperties.getCronerThreadNum() : 1;
+        executorService = Executors.newScheduledThreadPool(cronerThreadNum,
                 new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskCroner-%d").build());
-        log.info("TaskCronerContainer start with [{}] threads...", taskProperties.getCronerThreadNum());
+        log.info("TaskCronerContainer start with [{}] threads...", cronerThreadNum);
         taskScheduler = new ConcurrentTaskScheduler(executorService);
     }
 
     /**
-     * 配置任务
+     * 按 croner 配置注册并调度一个定时任务。
+     * <p>若该配置 id 已有调度则先停止旧调度；配置无效（null/线程数异常/状态禁用）时跳过并返回 false。
+     * 通过 {@link CronTrigger} 注册到调度器，每次执行时按 runType 判定是否需 Leader 身份（SINGLETON），
+     * 执行结果与统计通过闭包变量在 Trigger 回调中落库。</p>
      *
-     * @param taskCroner
-     * @param taskCronerConfig
-     * @return
+     * @param taskCroner       任务实例
+     * @param taskCronerConfig 任务配置
+     * @return 成功注册返回 true，配置无效或状态禁用返回 false
      */
     public boolean configureTask(TaskCroner taskCroner, TaskCronerConfig taskCronerConfig) {
 
@@ -120,6 +121,12 @@ public class TaskCronerContainer {
         }
         CronTrigger cronTrigger = new CronTrigger(taskCronerConfig.getTaskCron());
 
+        // 任务体(Runnable)与 Trigger.nextExecution 回调在同一次 schedule() 调用内，
+        // 共享此闭包变量传递本次执行的 TaskCronerLog，替代原先的 ThreadLocal。
+        // 好处：不依赖"调度器在同线程内连续执行任务体与 trigger 回调"这一隐式契约，
+        // 且作用域局限在单次调度闭包内，无跨任务/跨线程串扰与残留风险。
+        final TaskCronerLog[] logHolder = new TaskCronerLog[1];
+
         ScheduledFuture<?> future = this.taskScheduler.schedule(() -> {
             // 判断全局唯一条件
             if (taskCronerConfig.getRunType() == TaskCronerConfig.RUN_TYPE_SINGLETON && !taskGlobalLocker.isLeader()) {
@@ -130,7 +137,7 @@ public class TaskCronerContainer {
             }
             // 任务逻辑
             TaskCronerLog taskCronerLog = new TaskCronerLog(taskCronerConfig.getLogLevel(), taskCronerConfig.getLogLimitSize());
-            cronerLogHolder.set(taskCronerLog);
+            logHolder[0] = taskCronerLog;
             taskCronerLog.setId(taskSequenceManager.nextId("TaskCronerLog"));
             taskCronerLog.setTaskClass(taskCronerConfig.getTaskClass());
             taskCronerLog.setTaskParam(taskCronerConfig.getTaskParam());
@@ -180,9 +187,9 @@ public class TaskCronerContainer {
         }, triggerContext -> {
             // 下次计划执行日期。
             Instant nextExec = cronTrigger.nextExecution(triggerContext);
-            //通过threadLocal获取日志实例，并立即删除。
-            TaskCronerLog taskCronerLog = cronerLogHolder.get();
-            cronerLogHolder.remove();
+            // 从闭包变量取出本次执行的日志实例，并立即清理引用，避免对象滞留至下一轮调度。
+            TaskCronerLog taskCronerLog = logHolder[0];
+            logHolder[0] = null;
             if (taskCronerLog != null && taskCronerLog.getId() > 0) {
                 //写入下次计划执行时间。
                 if (nextExec != null) {

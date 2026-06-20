@@ -3,7 +3,11 @@ package uw.task.entity;
 import java.io.Serializable;
 
 /**
- * taskCronerConfig实体类。
+ * 定时任务配置。
+ *
+ * <p>由 {@link uw.task.TaskCroner#initConfig()} 产出默认值，首次注册时上传到 task-center，
+ * 之后以服务端下发的动态配置为准。支持多实例：同一 taskClass 通过不同 taskParam 区分。
+ * 关键字段：runType（单例/到处运行）、taskCron（cron 表达式）、各类 alertFailRate（报警阈值）。</p>
  *
  * @author axeon
  * @version $Revision: 1.00 $ $Date: 2017-05-03 16:51:06
@@ -158,29 +162,39 @@ public class TaskCronerConfig implements Serializable {
 
 
     /**
-     * builder模式，带taskName参数。
+     * builder 模式，带 taskName 参数。
      *
-     * @param taskName
-     * @return
+     * @param taskName 任务名称
+     * @return 新的 Builder
      */
     public static Builder builder(String taskName) {
         return new Builder().taskName(taskName);
     }
 
     /**
-     * builder模式，带taskName和taskCron参数。
+     * builder 模式，带 taskName 和 taskCron 参数。
      *
-     * @param taskName
-     * @return
+     * @param taskName 任务名称
+     * @param taskCron cron 表达式
+     * @return 新的 Builder
      */
     public static Builder builder(String taskName, String taskCron) {
         return new Builder().taskName(taskName).taskCron(taskCron);
     }
 
+    /**
+     * @return 空白 Builder
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * 基于已有配置复制出一个 Builder（用于局部修改后重建）。
+     *
+     * @param copy 源配置
+     * @return 复制了源配置字段的 Builder
+     */
     public static Builder builder(TaskCronerConfig copy) {
         Builder builder = new Builder();
         builder.id = copy.getId();

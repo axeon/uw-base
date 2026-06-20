@@ -1,119 +1,168 @@
-#### 1.简述一下uw-task的主要功能和特性
+#### 1. 简述 uw-task 的主要功能和特性
 
-uw-task是一个分布式任务框架，通过uw-task可以快速构建分布式任务体系，支持定时任务和队列任务，同时支持任务运维监控和报警设置。
+uw-task 是一个分布式任务框架，基于 Spring Boot + RabbitMQ + Redis，支持定时任务（TaskCroner）与队列任务（TaskRunner），并提供运维监控、动态配置与多规则报警。配合服务端 uw-task-center 使用。
 
-1. 基于spring boot实现，依赖rabbitMQ,redis。
-2. 完全分布式，支持混合云，可指定主机或指定集群运行。
-3. 支持定时任务，并支持服务端动态配置。
-4. 支持队列任务，支持各种流量控制，支持错误重试，并支持服务端动态配置。
-5. 支持RPC风格调用，支持错误重试，并支持服务器端动态配置。
-6. 支持多种规则的任务报警。
+1. 基于 Spring Boot 实现，依赖 RabbitMQ（任务派发）与 Redis（全局限速 / Leader 选举 / 发号）。
+2. 完全分布式，支持混合云，可指定主机或指定集群（runTarget）运行。
+3. 支持定时任务（cron 表达式），支持服务端动态配置，支持全局单例（Leader）运行。
+4. 支持队列任务，多维流量控制、错误重试、服务端动态配置。
+5. 支持 RPC 风格调用（同步/异步），支持错误重试与服务端动态配置。
+6. 支持按失败率、等待超时、运行超时、队列堆积等多规则报警。
 
-#### 2.服务是否开启执行任务，需要修改什么配置？
+#### 2. 服务是否开启执行任务，需要修改什么配置？
 
-配置文件修改uw.task.enable-task-registry属性。
+配置 `uw.task.enable-registry`：
 
-```yml
-# 如果是任务执行主机，此配置应为true。
-  enable-task-registry: true
+```yaml
+uw:
+  task:
+    # 任务执行主机设为 true；仅作为任务调用方的服务设为 false
+    enable-registry: true
 ```
 
-#### 3.配置属性task-project和run-target有什么作用？
+`enable-registry=false` 的服务仅能作为任务调用方（`sendToQueue`/`runTask`），不会注册主机、不执行任务、不参与 Leader 选举。
 
-task-project： 任务项目，必须是包名前缀，用于扫描任务注册。
+#### 3. 配置属性 task-project 和 run-target 有什么作用？
 
-run-target：运行目标，这是重要参数，用于识别任务执行集群，默认为default。
+- **task-project**：任务项目，必须是包名前缀，用于扫描任务注册。框架只扫描该包下的 `TaskCroner`/`TaskRunner`。
+- **run-target**：运行目标，用于识别任务执行集群，默认 `default`。
 
-运行目标是非常重要的参数，它和taskProject一起决定了任务配置的同步联系。
+两者一起决定任务配置的同步关系：任务执行主机只拉取与自身 `taskProject + runTarget` 匹配的配置并执行。调用方也可在 `TaskData` 中临时指定 runTarget，将任务路由到特定集群。
 
-任务可以在运行期，在TaskData中指定运行目标，来指定执行具体任务的服务器集群。
+#### 4. 设定定时任务和队列任务分别需要继承什么类？实现什么方法？
 
-#### 4.设定定时任务和队列任务分别需要继承什么类？实现什么方法？
+- **定时任务**：继承 `TaskCroner`，实现 `runTask(TaskCronerLog)`、`initConfig()`、`initContact()`。
+- **队列任务**：继承 `TaskRunner<TP, RD>`，实现 `runTask(TaskData<TP, RD>)`、`initConfig()`、`initContact()`。
 
-定时任务：继承TaskCroner类实现runTask方法。
+两类任务都必须加 `@Component` 注解，且类需位于 `task-project` 包路径下。
 
-队列任务：继承TaskRunner类实现runTask方法。
+#### 5. 队列任务的线程模型是怎样的？
 
-#### 5.队列任务的线程模型是怎样的？
+TaskRunner 是**单例**（Spring Bean），类的属性被多线程共享。`consumerNum` 决定并发消费线程数，多个线程并发调用同一个实例的 `runTask`。因此：
 
-单一实例，类的属性是多线程共享的。
+- `runTask` 内不要使用非线程安全的实例变量（如可变 Map、SimpleDateFormat）。
+- 共享状态需自行保证线程安全，或使用方法局部变量 / ThreadLocal。
 
-#### 6.uw-task的任务入口类是哪个？其中sendToQueue/runTask/runQueue/...方法有什么差别？什么样的任务优先考虑本地执行？
+#### 6. uw-task 的任务入口类是哪个？sendToQueue / runQueue / runTask / runTaskLocal / runTaskAsync 有什么差别？什么样的任务优先本地执行？
 
-TaskFactory.java
+入口类是 `TaskFactory`，提供 5 个派发方法（三个维度组合：执行位置 × 是否阻塞调用方 × 是否需要返回值）。
 
-runTask: 同步执行任务，可能会导致堵塞。运行期，程序根据runType判断，并结合任务代码是否在本地的判定，决定是运行在本地还是远程。
-一般来说，程序的默认runType=RUN_TYPE_AUTO_RPC，此时是自动判定默认。 也可以指定RUN_TYPE_GLOBAL_RPC和RUN_TYPE_LOCAL。
+| 方法 | 执行位置 | 阻塞调用方 | 返回结果 | 本机无 runner 时 | 典型用途 |
+|---|---|---|---|---|---|
+| `sendToQueue` | 远程（入队） | 否 | 无 | 入队（正常） | 标准异步队列任务，不关心结果 |
+| `runTask` | AUTO 自动选 | **是** | 有 | 回退远程 RPC | 需立即同步拿结果 |
+| `runTaskLocal` | 仅本地 | **是** | 有 | **抛异常** | 强制本机执行，不允许远程 |
+| `runTaskAsync` | AUTO 自动选 | 否（Future） | 有（get 时） | 回退远程 RPC | 异步拿结果，注意线程池 |
+| `runQueue` | 本地优先，否则入队 | 否 | 无 | 入队 | 高频短任务优化，省 MQ |
 
-runTaskAsync：方法上与runTask几乎一致，但是是异步运行任务，用future来获取方法的返回值。
-此方法要谨慎使用，因为task存在限速，大并发下可能会导致线程数超。
+**快速选型决策树**：
 
-计算量小耗时短的任务应优先考虑本地执行，降低网络io等开销。
+```
+需要执行结果吗？
+├─ 否 → 本机有 runner 且高频短耗时？
+│        ├─ 是 → runQueue（本地优先，省 MQ）
+│        └─ 否 → sendToQueue（标准入队）
+│
+└─ 是 → 调用方能接受阻塞吗？
+         ├─ 能（且要立即拿结果）
+         │    ├─ 必须本机跑  → runTaskLocal
+         │    └─ 本地/远程都行 → runTask
+         │
+         └─ 不能（异步） → runTaskAsync（注意线程池上限）
+```
 
-#### 7.如果发现任务不能注册，有可能是什么原因？
+**关键区别**：
+- `runTask` vs `runTaskLocal`：本机没 runner 时，`runTask` **自动回退远程 RPC**，`runTaskLocal` **直接抛异常**（绝不远程）。
+- `sendToQueue` vs `runQueue`：`sendToQueue` **一定入 MQ**（本机有 runner 也不本地跑）；`runQueue` **优先本地**，不行才入队。
+- `runTask` vs `runTaskAsync`：前者在调用线程同步等结果（最长 180s），后者提交到 RPC 线程池返回 Future。
 
-可能是任务上有没有设置@Componet注解，uw-task的任务通过Spring的@Componet注解扫描识别并注入系统，或者任务没有写在task-project指定的包里。
+**计算量小、耗时短的任务应优先本地执行**（`runQueue` 或 `runTask` 的 AUTO_RPC/LOCAL 模式），降低网络 IO 开销。
 
-#### 8.uw-task的异常抛出有几种？分别对应什么场景？会造成什么影响?
+> 注意：`runTask`/`runTaskLocal`/`runTaskAsync`/`runQueue` 会向传入的 taskData 写入运行期字段，**不要复用同一对象**。远程模式（`runTask`/`runTaskAsync`）默认 180 秒超时，避免在 Web 请求线程高频同步调用。
 
-TaskDataException：数据异常。出现TaskDataException，说明是数据错误。传入了错误或者不合法的任务参数，或者任务中获取到的一些数据也不合法的时候抛出。
+#### 7. 如果发现任务不能注册，有可能是什么原因？
 
-TaskPartnerException：合作方异常。出现TaskPartnerException，说明是合作方的错误。，此异常需要程序员手工抛出。一般http超时，返回码错误（非200）肯定要抛接口方异常的，其他可能为接口方异常的，可自行决断抛出。
+1. 任务类上没有 `@Component` 注解——uw-task 通过 Spring 的 `@Component` 扫描识别。
+2. 任务类不在 `task-project` 配置的包路径下。
+3. `enable-registry` 未设为 true。
 
-其它程序异常：一般来说，尽量不要捕获异常，除非这个异常捕获后不影响任务的完整执行。不捕获的异常，框架会自动捕获为程序异常。
+#### 8. uw-task 的异常抛出有几种？分别对应什么场景？会造成什么影响？
 
-程序会根据抛出的异常设置任务的执行状态，用于统计和监控执行情况，所以正确地抛出异常，可以发现任务中的潜在问题，方便改进。
+框架识别三类异常（外加框架自动生成的限速异常），据此设置任务状态：
 
-#### 9.TaskData类的两个泛型属性分别作为什么？
+- **`TaskPartnerException`（合作方异常）→ STATE_FAIL_PARTNER**：合作方/第三方接口错误（HTTP 超时、非 200、限流等）。需程序员手工抛出。**会触发重试**（按 `retryTimesByPartner`）。
+- **`TaskDataException`（数据异常）→ STATE_FAIL_DATA**：任务入参数据本身错误（格式非法、缺失、业务规则不满足）。**不触发重试**。
+- **其他未捕获异常 → STATE_FAIL_PROGRAM**：程序 bug（空指针等），框架自动捕获。**不触发重试**。
+- **限速超时 → STATE_FAIL_CONFIG**：超过流量限制，框架自动生成。**会触发重试**（按 `retryTimesByOverrated`）。
 
-TaskData用于队列任务执行的传值。以及任务完成后返回结构。TaskParam和ResultData可通过泛型参数制定具体类型。
+正确抛出异常有助于监控与统计，发现潜在问题。非必要不要在 `runTask` 内吞掉异常。
 
-TaskParam执行参数，此数值必须由调用方设置。
+#### 9. TaskData 类的两个泛型属性分别作为什么？
 
-ResultData是作为任务的返回结果。
+`TaskData<TP, RD>` 用于队列任务的传值与返回：
 
-#### 10.在哪里设置队列任务的限流类型？请详述不同限流类型的差异和使用场景。
+- **TP（taskParam）**：执行参数，由调用方设置。
+- **RD（resultData）**：任务返回结果。
 
-在队列任务的TaskRunnerConfig中设置限流类型。
+两个泛型必须与 `TaskRunner` 的泛型完全一致，否则运行时出错。
 
-- RATE_LIMIT_LOCAL：本地进程限速，设置了进程内限速，没有设置任务名，这样所有的任务会共用一个限速器，导致会很卡。
+#### 10. 在哪里设置队列任务的限流类型？请详述不同限流类型的差异和使用场景。
 
-- RATE_LIMIT_LOCAL_TASK：本地TASK限速，指定任务用指定限速器，但是没有对这个任务限速，可能导致服务器压力过大。
+在 `TaskRunnerConfig` 的 `rateLimitType` 中设置。分为本地（进程内 Guava 令牌桶）与全局（Redis 固定窗口）两类：
 
-- RATE_LIMIT_LOCAL_TASK_TAG：本地TASK+TAG限速，指定任务用指定限速器，并且设置了流量限制TAG的大小。
+**本地限速（进程内）**：
+- `RATE_LIMIT_LOCAL`：进程共享，所有任务共用一个限速器（**慎用，易卡死**）。
+- `RATE_LIMIT_LOCAL_TASK`：按 taskClass 隔离。
+- `RATE_LIMIT_LOCAL_TASK_TAG`：按 taskClass + tag 隔离。
 
-- RATE_LIMIT_GLOBAL_TASK：全局TASK限速。
+**全局限速（Redis）**：
+- `RATE_LIMIT_GLOBAL_TAG` / `GLOBAL_HOST` / `GLOBAL_TAG_HOST`：**跨任务共享**（限流 key 不含 taskClass），适用于多个任务对接同一第三方接口、需共享 QPS 上限。
+- `RATE_LIMIT_GLOBAL_TASK` / `GLOBAL_TASK_HOST` / `GLOBAL_TASK_TAG` / `GLOBAL_TASK_TAG_HOST`：按 taskClass 隔离。
 
-- RATE_LIMIT_GLOBAL_HOST：全局主机HOST限速，按照本机的外网IP限速。
+**选择建议**：
+- 单实例部署 → 本地限速（开销低）。
+- 多实例、对接同一第三方接口需共享配额 → `GLOBAL_TAG` 系列。
+- 多实例、每个任务独立配额 → `GLOBAL_TASK*` 系列。
+- 全局限速建议 `rateLimitTime` 不低于 5 秒，降低 Redis IO 开销。
 
-- RATE_LIMIT_GLOBAL_TAG：全局TAG限速，按照流量限制TAG的大小限速。
+#### 11. uw-task 什么情况下使用全局限流器？什么情况下使用本地限流器？全局限流器的限制是什么？
 
-- RATE_LIMIT_GLOBAL_TAG_HOST：全局TAG+HOST限速，按照本机的外网IP和流量限制TAG限速。
+- **全局限流器**基于 Redis，跨进程共享配额；**本地限流器**基于 Guava RateLimiter，仅进程内生效。资源消耗上，全局远大于本地。
+- 确定仅单实例运行的项目，建议用本地限流器，大幅降低开销。
+- 多实例需要共享配额时用全局限流器。
+- 全局限流器建议检测窗口（`rateLimitTime`）不低于 5 秒，减小网络 IO。
+- 全局限流器在 Redis 不可用时会降级放行（优先保证任务可用），短暂抖动期间可能超限。
 
-- RATE_LIMIT_GLOBAL_TASK_HOST：全局TASK+IP限速，所有任务按照本机的外网IP限速。
+#### 12. uw-task 的运行模式（runType）有哪几种？
 
-- RATE_LIMIT_GLOBAL_TASK_TAG：全局TASK+TAG限速，所有任务按照流量限制TAG的大小限速。
+- `RUN_TYPE_LOCAL`：本地运行，不受流控限制。
+- `RUN_TYPE_GLOBAL`：全局异步运行（入队），受流控限制。
+- `RUN_TYPE_GLOBAL_RPC`：全局同步 RPC，不受流控限制。
+- `RUN_TYPE_AUTO_RPC`（默认）：自动判定，本机有 runner 则本地运行，否则走 GLOBAL_RPC。
 
-- RATE_LIMIT_GLOBAL_TASK_TAG_HOST：全局TASK+TAG+IP限速，所有任务按照本机的外网IP和流量限制TAG限速。
+#### 13. uw-task 的重试机制是怎样的？
 
-#### 11.uw-task什么情况下使用全局限流器？什么情况下使用本地限流器？全局限流器的限制是什么？
+按 `retryType`（默认 `AUTO`）与失败类型决定：
 
-全局限流器使用Redis进行限速控制，本地限流器使用guava RateLimiter限速，从资源消耗上，全局限流器远大于本地限流器。
+- `STATE_FAIL_PARTNER`（合作方异常）按 `retryTimesByPartner` 重试。
+- `STATE_FAIL_CONFIG`（超限流）按 `retryTimesByOverrated` 重试。
+- `STATE_FAIL_PROGRAM` / `STATE_FAIL_DATA` 不重试。
 
-对于确定仅有单实例运行的项目，建议使用本地限流器，可以大幅度降低限流开销。
+设 `retryTimes = N` 时，**总计执行 N+1 次**（1 次初始 + N 次重试）。重试延时按执行轮次线性递增。LOCAL/RPC 模式在本地重跑，GLOBAL 模式重新入队。
 
-对于全局限速器，建议检测时间不要低于5S，减小网络io等开销。
+#### 14. uw-task 的延时队列如何使用？
 
-#### 12.uw-task的队列运行模式有哪几种？请详述不同队列类型的差异和使用场景。
+将 `TaskRunnerConfig` 的 `delayType` 设为 `1`（`TYPE_DELAY_ON`）开启。发送带 `taskDelay` 的任务时，框架会投递到 TTL 队列，到期后经死信转发到业务队列。
 
-- RUN_TYPE_LOCAL：本地运行，对于本地调用来说，不受任何流控限制。
+注意：基于死信队列实现，存在**长延时任务阻塞短延时任务**的问题。不推荐大范围使用——小负载可轮询数据库，大负载可用 `uw-cache: GlobalSortedSet`。
 
-- RUN_TYPE_GLOBAL：全局运行，会受到限速器的限制。
+#### 15. 多实例任务如何配置？
 
-- RUN_TYPE_GLOBAL_RPC：全局运行RPC返回结果，对于RPC调用来说，不受任何流控限制。
+- **TaskCroner** 通过 `taskParam` 区分多实例（同一 taskClass 不同 taskParam = 不同实例）。
+- **TaskRunner** 通过 `taskTag` 区分多实例。
 
-- RUN_TYPE_AUTO_RPC：自动运行RPC返回结果，使用此模式，会自动选择本地和远程运行模式。
+多实例唯一性由服务端按三元组（`taskClass + 区分维度 + runTarget`）保证。无法精确匹配时框架会宽松匹配最合适的配置。
 
-#### 13.uw-task的延时队列如何使用？
+#### 16. 全局单例定时任务（SINGLETON）如何保证唯一执行？
 
-修改TaskRunnerConfig中的delayType属性为1，开启延时任务，这样在要发送任务到队列前选择合适的队列的时候，会获取到TTL队列的队列名，然后发送到该队列。
+`TaskCronerConfig.RUN_TYPE_SINGLETON` 的任务通过 Redis Leader 锁选举唯一 Leader 主机执行，其余主机跳过。Leader 任期 90 秒、续期 60 秒，掉线后最长 90 秒由其他主机接管。Redis 短暂抖动期间原 Leader 按本地快照继续执行（接受极小概率双跑），**关键业务需配合幂等**。

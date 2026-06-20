@@ -4,12 +4,17 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * TaskHostStats 实体类
+ * 主机状态上报数据。
+ *
+ * <p>由任务执行主机周期性采集并上报到 task-center（见 {@code TaskServiceRegistrar.reportHostInfo}），
+ * 含应用标识、JVM 内存与线程指标、注册的任务数量、以及各任务的执行统计（{@link TaskCronerStats}/{@link TaskRunnerStats}）。</p>
+ *
+ * @author axeon
  */
 public class TaskHostStats implements Serializable {
 
     /**
-     * id
+     * 主机记录 id（首次上报时为 0，服务端分配后回传，后续上报携带以定位记录）。
      */
     private long id;
 

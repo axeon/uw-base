@@ -55,8 +55,8 @@ public class TaskMetaInfoManager {
     /**
      * 设置队列任务配置。
      *
-     * @param runnerConfigKey
-     * @param config
+     * @param runnerConfigKey 配置键（见 {@link #getRunnerConfigKey}）
+     * @param config          队列任务配置
      */
     public void setRunnerConfig(String runnerConfigKey, TaskRunnerConfig config) {
         runnerConfigMap.put(runnerConfigKey, config);
@@ -65,7 +65,7 @@ public class TaskMetaInfoManager {
     /**
      * 移除队列任务配置。
      *
-     * @param runnerConfigKey
+     * @param runnerConfigKey 配置键（见 {@link #getRunnerConfigKey}）
      */
     public void removeRunnerConfig(String runnerConfigKey) {
         runnerConfigMap.remove(runnerConfigKey);
@@ -74,62 +74,62 @@ public class TaskMetaInfoManager {
     /**
      * 设置定时任务配置。
      *
-     * @param cronerConfigKey
-     * @param config
+     * @param cronerConfigKey 配置键（见 {@link #getCronerConfigKey}）
+     * @param config          定时任务配置
      */
     public void setCronerConfig(String cronerConfigKey, TaskCronerConfig config) {
         cronerConfigMap.put(cronerConfigKey, config);
     }
 
     /**
-     * 获取队列任务实例Map。
+     * 获取队列任务实例 Map（key 为 taskClass 全限定名）。
      *
-     * @return
+     * @return 队列任务实例 Map
      */
     public Map<String, TaskRunner> getRunnerInstanceMap() {
         return runnerInstanceMap;
     }
 
     /**
-     * 获取定时任务实例Map。
+     * 获取定时任务实例 Map（key 为 taskClass 全限定名）。
      *
-     * @return
+     * @return 定时任务实例 Map
      */
     public Map<String, TaskCroner> getCronerInstanceMap() {
         return cronerInstanceMap;
     }
 
     /**
-     * 获取队列任务实例。
+     * 获取指定 taskClass 的队列任务实例。
      *
-     * @param runnerCls
-     * @return
+     * @param runnerCls taskClass 全限定名
+     * @return 任务实例，无匹配时返回 null
      */
     public TaskRunner getRunnerInstance(String runnerCls) {
         return runnerInstanceMap.get(runnerCls);
     }
 
     /**
-     * 获取定时任务实例。
+     * 获取指定 taskClass 的定时任务实例。
      *
-     * @param cronerCls
-     * @return
+     * @param cronerCls taskClass 全限定名
+     * @return 任务实例，无匹配时返回 null
      */
     public TaskCroner getCronerInstance(String cronerCls) {
         return cronerInstanceMap.get(cronerCls);
     }
 
     /**
-     * 获取队列任务配置Map。
+     * 获取队列任务配置 Map（key 为配置键，见 {@link #getRunnerConfigKey}）。
      *
-     * @return
+     * @return 队列任务配置 Map
      */
     public ConcurrentHashMap<String, TaskRunnerConfig> getRunnerConfigMap() {
         return runnerConfigMap;
     }
 
     /**
-     * 获取定时任务配置Map。
+     * 获取定时任务配置 Map（key 为配置键，见 {@link #getCronerConfigKey}）。
      *
      * @return
      */
@@ -138,7 +138,8 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 初始化任务实例Map。
+     * 初始化任务实例 Map。
+     * <p>从 Spring 容器扫描所有 {@link TaskCroner} / {@link TaskRunner} Bean，按 taskClass 全限定名建立索引。</p>
      */
     public void init() {
         // 设置当前主机上所有的TaskCroner
@@ -160,10 +161,10 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 检查一个runner是否可以在本地运行。
+     * 检查一个 runner 是否可以在本机运行（本机是否注册了该 taskClass 的实例）。
      *
-     * @param taskData
-     * @return
+     * @param taskData 任务数据
+     * @return 本机存在该 runner 返回 true，否则 false
      */
     public boolean checkRunnerRunLocal(TaskData<?, ?> taskData) {
         return runnerInstanceMap.containsKey(taskData.getTaskClass());
@@ -171,10 +172,12 @@ public class TaskMetaInfoManager {
 
     /**
      * 客户端发送任务到队列时，通过此方法获取合适的队列。
-     * 根据服务器端Queue列表，匹配合适的key。
-     * 队列格式为：taskClass#taskTag$runTarget
+     * <p>根据服务端配置匹配配置键（taskClass#taskTag$runTarget），无 taskTag 时宽松匹配；
+     * 再按队列类型（任务级/组级/项目级）映射出最终队列名。延迟任务且 runType=GLOBAL 时返回 TTL 队列名。</p>
      *
-     * @return
+     * @param data 任务数据
+     * @return 匹配到的队列名
+     * @throws RuntimeException 找不到任何匹配配置时抛出
      */
     public String getFitQueue(TaskData<?, ?> data) {
         String fitName = getRunnerConfigKeyByData(data);
@@ -211,10 +214,12 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 任务执行端执行任务时，调用此方法来获取合适的队列。
+     * 任务执行端执行任务时，按 taskData 匹配合适的 runner 配置。
+     * <p>匹配规则同 {@link #getFitQueue}：精确 taskTag 匹配优先，无则宽松匹配无 taskTag 的配置。</p>
      *
-     * @param data
-     * @return
+     * @param data 任务数据
+     * @return 匹配到的 runner 配置
+     * @throws RuntimeException 找不到任何匹配配置时抛出
      */
     public TaskRunnerConfig getRunnerConfigByData(TaskData<?, ?> data) {
         TaskRunnerConfig config = null;
@@ -238,15 +243,19 @@ public class TaskMetaInfoManager {
 
 
     /**
-     * 获取croner配置键。 使用taskClass#Id$target来配置
+     * 获取croner配置键。 使用 taskClass#taskParam$target 来配置。
+     * <p>多实例场景下，同一个 TaskCroner 子类通过不同的 taskParam 区分（与 Runner 侧用 taskTag 对称），
+     * 因此配置 key 以 taskParam 作为第三维度。此前误用 {@code config.getId()}，而本地默认配置在首次上传前
+     * id 为 0，会导致多个多实例任务 key 碰撞、且无法命中服务端动态配置。</p>
      *
-     * @return
+     * @param config 定时任务配置
+     * @return 配置键 taskClass#taskParam$runTarget
      */
     public String getCronerConfigKey(TaskCronerConfig config) {
         StringBuilder sb = new StringBuilder(168);
         sb.append(config.getTaskClass()).append("#");
         if (config.getTaskParam() != null && !config.getTaskParam().isEmpty()) {
-            sb.append(config.getId());
+            sb.append(config.getTaskParam());
         }
         sb.append("$");
         if (config.getRunTarget() != null && !config.getRunTarget().isEmpty()) {
@@ -256,9 +265,10 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 获取Runner配置的key。
+     * 获取 Runner 配置的 key：taskClass#taskTag$runTarget。
      *
-     * @return
+     * @param config 队列任务配置
+     * @return 配置键
      */
     public String getRunnerConfigKey(TaskRunnerConfig config) {
         StringBuilder sb = new StringBuilder(168);
@@ -274,9 +284,10 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 获取taskData的key。
+     * 由 taskData 计算配置键：taskClass#taskTag$runTarget（与 {@link #getRunnerConfigKey} 同构）。
      *
-     * @return
+     * @param data 任务数据
+     * @return 配置键
      */
     public String getRunnerConfigKeyByData(TaskData<?, ?> data) {
         StringBuilder sb = new StringBuilder(168);
@@ -293,9 +304,10 @@ public class TaskMetaInfoManager {
 
 
     /**
-     * 根据runner配置，计算出队列名。
+     * 根据 runner 配置的队列类型，计算出实际队列名。
      *
-     * @return
+     * @param config 队列任务配置
+     * @return 队列名（任务级/组级/项目级，依 queueType 而定）
      */
     public String getQueueNameByConfig(TaskRunnerConfig config) {
         return switch (config.getQueueType()) {
@@ -321,10 +333,10 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 是否是ttl队列名称
+     * 是否是 TTL 队列名称（以 '*' 结尾）。
      *
      * @param queueName 队列名
-     * @return ttl队列名
+     * @return 是 TTL 队列返回 true，否则 false
      */
     public boolean isTTLQueueName(String queueName) {
         return queueName.endsWith("*");
@@ -332,9 +344,12 @@ public class TaskMetaInfoManager {
 
 
     /**
-     * 根据TaskData获取包下队列名。
+     * 根据任务类所在的包，计算任务组队列名：{包名}@{type}${runTarget}。
      *
-     * @return
+     * @param taskClass  任务类全限定名
+     * @param type       队列类型标识（如 "default"、"priority"）
+     * @param runTarget  运行目标
+     * @return 任务组队列名；taskClass 无包名时原样返回
      */
     public String getGroupQueueName(String taskClass, String type, String runTarget) {
         if (taskClass != null) {

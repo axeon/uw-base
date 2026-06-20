@@ -4,7 +4,12 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * taskRunnerConfig实体类。
+ * 队列任务配置。
+ *
+ * <p>由 {@link uw.task.TaskRunner#initConfig()} 产出默认值，首次注册时上传到 task-center，
+ * 之后以服务端下发的动态配置为准。支持多实例：同一 taskClass 通过不同 taskTag 区分。
+ * 关键配置：queueType（队列粒度）、delayType（延迟投递）、rateLimitType/Value/Time/Wait（限速）、
+ * consumerNum/prefetchNum（消费并发）、retryTimesByPartner/Overrated（重试）、各类 alert 阈值。</p>
  *
  * @author axeon
  * @version $Revision: 1.00 $ $Date: 2017-05-03 14:00:50
@@ -189,12 +194,16 @@ public class TaskRunnerConfig implements Serializable {
     private int rateLimitWait = 30;
 
     /**
-     * 超过流量限制重试次数，默认不在重试，放弃任务。
+     * 超过流量限制时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。
+     * <p>实现说明（见 {@code TaskRunnerContainer.process()}）：以 {@code ranTimes <= retryTimesByOverrated}
+     * 作为是否继续重试的判定，{@code ranTimes} 在每次进入 process 时自增（含首次执行）。
+     * 设为 N 时，任务总计执行 {@code N+1} 次（1 次初始 + N 次重试）；N=0 时仅执行 1 次不重试。</p>
      */
     private int retryTimesByOverrated = 0;
 
     /**
-     * 对方接口错误重试次数，默认不再重试，放弃任务。
+     * 对方接口错误时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。
+     * <p>同 {@link #retryTimesByOverrated}，设为 N 时总计执行 N+1 次（1 次初始 + N 次重试）。</p>
      */
     private int retryTimesByPartner = 0;
 
@@ -313,21 +322,30 @@ public class TaskRunnerConfig implements Serializable {
         setLogLimitSize(builder.logLimitSize);
     }
 
+    /**
+     * @return 空白 Builder
+     */
     public static Builder builder() {
         return new Builder();
     }
 
 
     /**
-     * builder模式，带taskName参数。
+     * builder 模式，带 taskName 参数。
      *
-     * @param taskName
-     * @return
+     * @param taskName 任务名称
+     * @return 新的 Builder
      */
     public static Builder builder(String taskName) {
         return new Builder().taskName(taskName);
     }
 
+    /**
+     * 基于已有配置复制出一个 Builder（用于局部修改后重建）。
+     *
+     * @param copy 源配置
+     * @return 复制了源配置字段的 Builder
+     */
     public static Builder builder(TaskRunnerConfig copy) {
         Builder builder = new Builder();
         builder.id = copy.getId();

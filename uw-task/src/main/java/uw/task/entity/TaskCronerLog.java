@@ -8,13 +8,20 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * taskCronerLog实体类。
+ * 定时任务执行日志。
+ *
+ * <p>每次定时任务执行后由 {@code TaskCronerContainer} 构造并写入 ES。继承 {@link LogBaseVo}
+ * 获取日志基础字段（如 logLevel）。resultData/taskParam 超过 {@link #logLimitSize} 时会被截断。
+ * 序列化时忽略 refObject（运行期临时对象，不入库）。</p>
  *
  * @author axeon
  */
 @JsonIgnoreProperties({"refObject"})
 public class TaskCronerLog extends LogBaseVo implements Serializable {
 
+    /**
+     * 日志 id（由框架发号器生成）。
+     */
     private long id;
 
     /**
@@ -92,6 +99,12 @@ public class TaskCronerLog extends LogBaseVo implements Serializable {
     private int logLimitSize;
 
 
+    /**
+     * 构造定时任务日志，指定日志级别与字段截断长度。
+     *
+     * @param logLevel     日志级别（见 {@link uw.task.constant.TaskLogRecordType}）
+     * @param logLimitSize 日志字符串字段（resultData/taskParam）最大长度，0 表示不限制
+     */
     public TaskCronerLog(int logLevel, int logLimitSize) {
         this.logLevel = logLevel;
         this.logLimitSize = logLimitSize;

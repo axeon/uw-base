@@ -83,10 +83,23 @@ public class TaskRunnerContainer {
 
 
     /**
-     * 执行任务
+     * 执行单个队列任务（MQ 消费端 / 本地执行 / RPC 服务端的统一入口）。
+     * <p>
+     * 完整流程：
+     * <ol>
+     *   <li>记录消费时间，定位 runner 实例与配置；runner 缺失则标记 STATE_FAIL_PROGRAM；</li>
+     *   <li>按配置的限速类型执行流控（LOCAL 系列用进程令牌桶，GLOBAL 系列用 Redis 固定窗口，
+     *       超限则在 rateLimitWait 内轮询等待，仍超限标记 STATE_FAIL_CONFIG）；</li>
+     *   <li>无延迟队列时按 taskDelay 做线程内延时；</li>
+     *   <li>调用 {@code runTask}，按异常类型映射状态（PARTNER/DATA/PROGRAM）；</li>
+     *   <li>触发 RunnerTaskListener、更新统计、按 logLevel 写日志；</li>
+     *   <li>失败时按 retryType/retryTimes 自动重试：LOCAL/RPC 走 {@link TaskFactory#runTaskLocal}，
+     *       GLOBAL 走 {@link TaskFactory#sendToQueue}。</li>
+     * </ol>
+     * RPC/LOCAL 模式返回携带结果的 taskData；GLOBAL 模式（MQ 消费）返回 null（结果已随重试/日志处理）。</p>
      *
-     * @param taskData
-     * @return
+     * @param taskData 任务数据
+     * @return RPC/LOCAL 模式返回 taskData（含结果）；GLOBAL 模式返回 null；入参为 null 时返回 null
      */
     @SuppressWarnings("ALL")
     public TaskData process(TaskData taskData) {
@@ -130,28 +143,38 @@ public class TaskRunnerContainer {
                     boolean flag = taskLocalRateLimiter.tryAcquire(locker, taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), taskConfig.getRateLimitWait(), 1);
                     noLimitFlag = flag ? 0 : -1;
                 } else {
-                    StringBuilder locker = new StringBuilder(50).append(taskData.getTaskClass());
-                    switch (taskConfig.getRateLimitType()) {
+                    // 限流 key 拼接规则：
+                    // - GLOBAL_TASK* 系列（TASK/TASK_TAG/TASK_HOST/TASK_TAG_HOST）：key 含 taskClass 前缀，
+                    //   即"按任务隔离"配额。
+                    // - GLOBAL_TAG / GLOBAL_HOST / GLOBAL_TAG_HOST：key 不含 taskClass，
+                    //   即"跨任务共享"配额——多个不同 task 只要 tag/host 相同即共享同一限流池。
+                    //   这是限流的常见场景（如多个任务都对接同一第三方接口，需共享 QPS 上限）。
+                    int rateLimitType = taskConfig.getRateLimitType();
+                    boolean taskScoped = rateLimitType == TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK
+                            || rateLimitType == TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_TAG
+                            || rateLimitType == TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_HOST
+                            || rateLimitType == TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_TAG_HOST;
+                    StringBuilder locker = new StringBuilder(50);
+                    if (taskScoped) {
+                        locker.append(taskData.getTaskClass());
+                    }
+                    switch (rateLimitType) {
                         case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TAG:
+                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_TAG:
                             locker.append("$").append(taskData.getRateLimitTag());
                             break;
                         case TaskRunnerConfig.RATE_LIMIT_GLOBAL_HOST:
+                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_HOST:
                             locker.append("$@").append(taskProperties.getAppHost());
                             break;
                         case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK:
                             locker.append("$");
                             break;
                         case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TAG_HOST:
-                            locker.append("$").append(taskData.getRateLimitTag()).append("@").append(taskProperties.getAppHost());
-                            break;
-                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_TAG:
-                            locker.append("$").append(taskData.getRateLimitTag());
-                            break;
-                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_HOST:
-                            locker.append("$@").append(taskProperties.getAppHost());
-                            break;
                         case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_TAG_HOST:
                             locker.append("$").append(taskData.getRateLimitTag()).append("@").append(taskProperties.getAppHost());
+                            break;
+                        default:
                             break;
                     }
                     // 全局流量限制
@@ -254,11 +277,13 @@ public class TaskRunnerContainer {
                     //设置任务延时，原计划使用Math.pow(2,x)的，后来决定不用了
                     taskData.setTaskDelay(taskData.getRanTimes() * taskProperties.getTaskRpcRetryDelay());
                     if (taskData.getState() == TaskData.STATE_FAIL_CONFIG) {
-                        if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
+                        // 重试判定用 <=：ranTimes 含本次执行，N 次额外重试意味着 ranTimes 可达 N+1。
+                        // 即 retryTimesByOverrated=N 时，总计执行 N+1 次（1 次初始 + N 次重试）。
+                        if (taskData.getRanTimes() <= taskConfig.getRetryTimesByOverrated()) {
                             taskData = TaskFactory.getInstance().runTaskLocal(cleanTaskInfo(taskData));
                         }
                     } else if (taskData.getState() == TaskData.STATE_FAIL_PARTNER) {
-                        if (taskData.getRanTimes() < taskConfig.getRetryTimesByPartner()) {
+                        if (taskData.getRanTimes() <= taskConfig.getRetryTimesByPartner()) {
                             taskData = TaskFactory.getInstance().runTaskLocal(cleanTaskInfo(taskData));
                         }
                     }
@@ -272,11 +297,12 @@ public class TaskRunnerContainer {
                     //设置任务延时，原计划使用Math.pow(2,x)的，后来决定不用了
                     taskData.setTaskDelay(taskData.getRanTimes() * taskProperties.getTaskQueueRetryDelay());
                     if (taskData.getState() == TaskData.STATE_FAIL_CONFIG) {
-                        if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
+                        // 重试判定用 <=：ranTimes 含本次执行，N 次额外重试意味着 ranTimes 可达 N+1。
+                        if (taskData.getRanTimes() <= taskConfig.getRetryTimesByOverrated()) {
                             TaskFactory.getInstance().sendToQueue(cleanTaskInfo(taskData));
                         }
                     } else if (taskData.getState() == TaskData.STATE_FAIL_PARTNER) {
-                        if (taskData.getRanTimes() < taskConfig.getRetryTimesByPartner()) {
+                        if (taskData.getRanTimes() <= taskConfig.getRetryTimesByPartner()) {
                             TaskFactory.getInstance().sendToQueue(cleanTaskInfo(taskData));
                         }
                     }

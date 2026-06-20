@@ -25,6 +25,9 @@ import java.util.concurrent.*;
  */
 public class TaskFactory {
 
+    /**
+     * 日志器。
+     */
     private static final Logger log = LoggerFactory.getLogger(TaskFactory.class);
 
     /**
@@ -76,16 +79,24 @@ public class TaskFactory {
     /**
      * 返回全局唯一实例。
      *
-     * @return
+     * @return 全局 TaskFactory 实例
      */
     public static TaskFactory getInstance() {
         return INSTANCE;
     }
 
     /**
-     * 发送到延迟队列中
+     * 将任务异步投递到 RabbitMQ 队列，由具备匹配 runner 的远端主机消费。
+     * <p>
+     * 完全异步、无返回值。任务 ID 与入队时间由框架自动设置；runType 会在方法内临时置为
+     * {@link TaskData#RUN_TYPE_GLOBAL}（仅作用于本次发送，方法返回前恢复原值，不污染调用方对象）。
+     * 若任务带 taskDelay 且配置了延迟队列，将投递到 TTL 队列延迟消费。
+     * <p>
+     * <b>阻塞风险</b>：RabbitMQ 出现 channelMax 资源耗尽时会在线程内重试（最多 {@value #MAX_RETRY_TIMES} 次，
+     * 退避递增），最坏阻塞约 2 分钟，避免在 Web 请求线程等敏感线程直接调用（见 README）。
      *
-     * @param taskData 执行任务对象
+     * @param taskData 执行任务对象（taskClass/taskParam 必须已设置）
+     * @throws TaskRuntimeException 投递重试全部失败时抛出
      */
     public void sendToQueue(final TaskData<?, ?> taskData) {
         Message message = buildTaskQueueMessage(taskData);
@@ -117,16 +128,25 @@ public class TaskFactory {
         if (taskData.getTaskDelay() > 0) {
             this.sendToQueue(taskData);
         } else {
-            taskQueueService.submit(new TaskQueueLocalExecutor(this, taskData));
+            taskQueueService.submit(new TaskQueueLocalExecutor(this, taskMetaInfoManager, taskData));
         }
     }
 
     /**
-     * 同步执行任务，可能会导致阻塞。
-     * 在调用的时候，尤其要注意，taskData对象不可改变！
+     * 同步执行任务。
+     * <p>
+     * 根据 runType 决定执行方式：{@link TaskData#RUN_TYPE_AUTO_RPC} 时自动判定本机有无 runner——
+     * 有则本地执行，无则走全局 RPC；{@link TaskData#RUN_TYPE_LOCAL} 强制本地执行；
+     * 其他走全局 RPC（{@code sendAndReceive}，默认 180s 超时）。
+     * <p>
+     * <b>阻塞</b>：远程 RPC 在调用线程同步等待结果，本地执行也会阻塞至任务完成。
+     * <b>不可变性</b>：调用方传入的 taskData 对象会被框架写入 id/queueDate/runType 等运行期字段，请勿复用同一对象。
      *
      * @param taskData 任务数据
-     * @return
+     * @param <TP>     任务参数类型
+     * @param <RD>     返回结果类型
+     * @return 携带执行结果与状态的 taskData（同传入对象）
+     * @throws TaskRuntimeException RPC 超时或 channelMax 资源耗尽时抛出
      */
     @SuppressWarnings("unchecked")
     public <TP, RD> TaskData<TP, RD> runTask(final TaskData<TP, RD> taskData) {
@@ -170,11 +190,17 @@ public class TaskFactory {
     }
 
     /**
-     * 同步执行任务，没有线程池支持，会导致阻塞。
-     * 在调用的时候，尤其要注意，taskData对象不可改变！
+     * 强制本地同步执行任务，不经 MQ。
+     * <p>
+     * {@link TaskData#RUN_TYPE_AUTO_RPC} 且本机有匹配 runner 时降级为本地执行；否则抛
+     * {@link TaskRuntimeException}（不回退到队列，区别于本地队列优先的 {@link #runQueue}）。
+     * 同样会阻塞调用线程至任务完成；调用方传入的 taskData 会被写入运行期字段，请勿复用。
      *
      * @param taskData 任务数据
-     * @return
+     * @param <TP>     任务参数类型
+     * @param <RD>     返回结果类型
+     * @return 携带执行结果与状态的 taskData（同传入对象）
+     * @throws TaskRuntimeException 任务无法在本地执行（本机无匹配 runner 或非 LOCAL/AUTO_RPC 类型）时抛出
      */
     @SuppressWarnings("unchecked")
     public <TP, RD> TaskData<TP, RD> runTaskLocal(final TaskData<TP, RD> taskData) {
@@ -194,13 +220,17 @@ public class TaskFactory {
     }
 
     /**
-     * 远程运行任务，并返回future。
-     * 如果需要获取数据，可以使用future.get()来获取。
-     * 此方法要谨慎使用，因为task存在限速，大并发下可能会导致线程数超。
-     * 在调用的时候，尤其要注意，taskData对象不可改变！
+     * 异步执行任务，返回 {@link Future}。
+     * <p>
+     * 本地或远程执行的判定逻辑同 {@link #runTask}，区别在于实际执行提交到 RPC 线程池异步进行，
+     * 调用方可通过 {@code future.get()} 获取结果。远程模式下每个 future 占用一个线程等待 RPC 返回，
+     * <b>大并发下需注意线程数与限速叠加可能导致线程池耗尽</b>，谨慎使用。
+     * 调用方传入的 taskData 会被写入运行期字段，请勿复用。
      *
      * @param taskData 任务数据
-     * @return
+     * @param <TP>     任务参数类型
+     * @param <RD>     返回结果类型
+     * @return 异步执行结果的 Future
      */
     @SuppressWarnings("unchecked")
     public <TP, RD> Future<TaskData<TP, RD>> runTaskAsync(final TaskData<TP, RD> taskData) {
@@ -250,10 +280,10 @@ public class TaskFactory {
     }
 
     /**
-     * 获取队列信息。
+     * 查询指定队列的积压消息数与消费者数。
      *
-     * @param queueName
-     * @return 0 是消息数量 1 是消费者数量
+     * @param queueName 队列名
+     * @return 长度为 2 的数组：下标 0 为消息数量，下标 1 为消费者数量
      */
     public int[] getQueueInfo(String queueName) {
         AMQP.Queue.DeclareOk declareOk = this.rabbitTemplate.execute(channel -> channel.queueDeclarePassive(queueName));
@@ -261,10 +291,10 @@ public class TaskFactory {
     }
 
     /**
-     * 清除队列。
+     * 清空指定队列中的全部消息（危险操作，仅供运维使用）。
      *
-     * @param queueName
-     * @return 被清除的队列数
+     * @param queueName 队列名
+     * @return 被清除的消息数量
      */
     public int purgeQueue(String queueName) {
         return this.rabbitTemplate.execute(channel -> {
@@ -282,14 +312,23 @@ public class TaskFactory {
     private Message buildTaskQueueMessage(final TaskData taskData) {
         taskData.setId(taskSequenceManager.nextId("TaskRunnerLog"));
         taskData.setQueueDate(SystemClock.nowDate());
+        // 发队列的消息体必须是 GLOBAL，消费端 process 依赖此值判定走限速/重试链路，
+        // getFitQueue 也依赖 GLOBAL 判定 TTL 队列。但调用方传入的 taskData 可能被复用
+        // （README 强调"taskData 对象不可改变"），故仅在此方法作用域内临时改为 GLOBAL，结束时恢复，
+        // 避免污染调用方持有的对象。
+        int originRunType = taskData.getRunType();
         taskData.setRunType(TaskData.RUN_TYPE_GLOBAL);
-        MessageProperties messageProperties = new MessageProperties();
-        messageProperties.setConsumerQueue(taskMetaInfoManager.getFitQueue(taskData));
-        // 没法拿到配置信息，除非返回。暂时先用taskDelay > 0处理
-        if (taskData.getTaskDelay() > 0) {
-            messageProperties.setExpiration(String.valueOf(taskData.getTaskDelay()));
+        try {
+            MessageProperties messageProperties = new MessageProperties();
+            messageProperties.setConsumerQueue(taskMetaInfoManager.getFitQueue(taskData));
+            // 没法拿到配置信息，除非返回。暂时先用taskDelay > 0处理
+            if (taskData.getTaskDelay() > 0) {
+                messageProperties.setExpiration(String.valueOf(taskData.getTaskDelay()));
+            }
+            return rabbitTemplate.getMessageConverter().toMessage(taskData, messageProperties);
+        } finally {
+            taskData.setRunType(originRunType);
         }
-        return rabbitTemplate.getMessageConverter().toMessage(taskData, messageProperties);
     }
 
 }

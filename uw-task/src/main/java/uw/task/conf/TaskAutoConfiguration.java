@@ -55,13 +55,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * 启动配置。
+ * uw-task 自动配置入口。
+ *
+ * <p>通过 spring-boot 自动装配机制（见 META-INF/spring/...AutoConfiguration.imports）启用任务框架：
+ * 构建 task 专用的 RabbitMQ/Redis 连接工厂与各类工具（限速器、Leader 锁、发号器），
+ * 装配 {@link TaskFactory} 及配套容器，并在容器就绪后启动周期性任务
+ * （配置刷新、主机上报、Leader 选举）。所有组件在 {@link #taskFactory} Bean 内手动创建与串联。</p>
+ *
+ * @author axeon
  */
 @Configuration
 @EnableScheduling
 @EnableConfigurationProperties({TaskProperties.class})
 @AutoConfigureAfter({RedisAutoConfiguration.class, RabbitAutoConfiguration.class})
 public class TaskAutoConfiguration {
+    /**
+     * 日志器。
+     */
     private static final Logger log = LoggerFactory.getLogger(TaskAutoConfiguration.class);
 
     /**
@@ -115,7 +125,9 @@ public class TaskAutoConfiguration {
     }
 
     /**
-     * ApplicationReadyEvent初始化完成或刷新后执行init方法
+     * 应用就绪后初始化任务框架（仅执行一次）。
+     * <p>扫描任务实例、启动内部调度线程池：注册主机时额外调度主机上报（180s）与 Leader 选举（60s），
+     * 无论是否注册都调度配置刷新（60s）。</p>
      */
     @EventListener(ApplicationReadyEvent.class)
     public void handleContextRefresh() {
@@ -141,8 +153,14 @@ public class TaskAutoConfiguration {
         if (scheduledExecutorService != null) {
             scheduledExecutorService.shutdown();
         }
-        taskServiceRegistrar.stopAllTaskRunner();
-        taskCronerContainer.stopAllTaskCroner();
+        // 以下组件仅在 taskFactory Bean 内部初始化；若该 Bean 因依赖缺失等原因未创建，
+        // 这些字段为 null，直接调用会 NPE 并掩盖真正的关闭异常，故先判空。
+        if (taskServiceRegistrar != null) {
+            taskServiceRegistrar.stopAllTaskRunner();
+        }
+        if (taskCronerContainer != null) {
+            taskCronerContainer.stopAllTaskCroner();
+        }
     }
 
     /**

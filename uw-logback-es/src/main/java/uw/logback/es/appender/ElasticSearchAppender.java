@@ -135,7 +135,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
 
     /**
      * 批量提交触发阈值，单位：KB（千字节）。buffer 累积字节数 {@code >> 10}（即除以 1024）
-     * 后超过该值即触发 flush。默认 {@code 8 * 1024}（即 8MB）。
+     * 后超过该值即触发 flush。默认 {@code 8 * 1024}（即 8MB）；小于 1 会在 {@link #start()} 中被提升到 1。
      */
     private long maxKiloBytesOfBatch = 8 * 1024;
 
@@ -538,6 +538,9 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
         }
         if (maxFlushInSeconds < 1) {
             maxFlushInSeconds = 1;
+        }
+        if (maxKiloBytesOfBatch < 1) {
+            maxKiloBytesOfBatch = 1;
         }
         ThrowableProxyUtils.MaxDepthPerThrowable = maxDepthPerThrowable;
         // 预热索引全名,避免 daemon 线程首次 calcIndexName 之前到达的日志写入 index="null"。

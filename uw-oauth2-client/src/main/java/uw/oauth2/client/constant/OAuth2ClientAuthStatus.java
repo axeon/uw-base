@@ -1,7 +1,16 @@
 package uw.oauth2.client.constant;
 
 /**
- * 验证状态。
+ * OAuth2授权状态枚举，描述stateId在授权流程中的生命周期阶段。
+ * <p>
+ * 典型流转：
+ * <ul>
+ *     <li>网页授权：SCANNED →（换Token成功）→ CONFIRMED；</li>
+ *     <li>扫码授权：WAITING → SCANNED → CONFIRMED；</li>
+ *     <li>任意阶段超时 → EXPIRED，失败 → FAILED。</li>
+ * </ul>
+ *
+ * @author axeon
  */
 public enum OAuth2ClientAuthStatus {
     /**

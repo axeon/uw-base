@@ -6,7 +6,12 @@ import uw.common.response.ResponseCode;
 import uw.common.util.EnumUtils;
 
 /**
- * OAuth2错误码枚举，定义清晰的错误码体系
+ * OAuth2错误码枚举，定义清晰的错误码体系。
+ * <p>
+ * 支持国际化（资源文件位于 i18n/messages/uw_oauth2_client*.properties），
+ * 序列化为JSON时输出为对象形态（含code与message）。
+ *
+ * @author axeon
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum OAuth2ClientResponseCode implements ResponseCode {
@@ -31,7 +36,7 @@ public enum OAuth2ClientResponseCode implements ResponseCode {
     INVALID_STATE_ID("无效的状态ID"),
 
     /**
-     * 无效的授权码
+     * 无效的HTTP状态码
      */
     INVALID_HTTP_CODE("无效的HTTP状态码：%s，错误：%s"),
 

@@ -10,8 +10,12 @@ import uw.oauth2.client.vo.OAuth2UserInfo;
 import java.util.Map;
 
 /**
- * 标准OAuth2 Provider，用于处理符合OAuth2标准的平台。
- * 如Google、Apple、GitHub等。
+ * 标准OAuth2 Provider，用于处理符合OAuth2标准的平台（如Google、GitHub等）。
+ * <p>
+ * 直接按OAuth2Token字段映射解析响应，并兼容多种平台的字段命名（sub/openid/uid、
+ * nickname/name/screen_name、picture/avatar_url/headimgurl等）。
+ *
+ * @author axeon
  */
 public class StandardOAuth2Provider extends AbstractOAuth2Provider {
 
@@ -20,13 +24,15 @@ public class StandardOAuth2Provider extends AbstractOAuth2Provider {
      *
      * @param providerCode   Provider名称
      * @param providerConfig Provider配置
+     * @param redirectUri    重定向URI
+     * @param qrcodeUri      二维码URI
      */
     public StandardOAuth2Provider(String providerCode, OAuth2ClientProperties.ProviderConfig providerConfig, String redirectUri, String qrcodeUri) {
         super(providerCode, providerConfig, redirectUri, qrcodeUri);
     }
 
     /**
-     * 解析令牌响应。
+     * 解析标准OAuth2令牌响应，并尝试从id_token解析用户信息。
      *
      * @param responseBody 响应体
      * @return 令牌对象
@@ -35,7 +41,7 @@ public class StandardOAuth2Provider extends AbstractOAuth2Provider {
     protected ResponseData<OAuth2Token> parseTokenResponse(String responseBody) {
         // 直接使用OAuth2Token解析令牌响应，消除中间转换步骤
         OAuth2Token token = JsonUtils.parse(responseBody, OAuth2Token.class);
-        // 保存原始响应数据
+        // 保存完整原始响应数据（供调用方获取非标准字段）。
         token.setRawParams(JsonUtils.parse(responseBody, Map.class));
         // 尝试解析idToken。
         if (StringUtils.isNotBlank(token.getIdToken())) {
@@ -52,7 +58,7 @@ public class StandardOAuth2Provider extends AbstractOAuth2Provider {
     }
 
     /**
-     * 解析用户信息响应。
+     * 解析标准OAuth2用户信息响应，兼容多种平台的字段命名。
      *
      * @param responseBody 响应体
      * @return 用户信息对象

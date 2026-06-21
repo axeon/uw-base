@@ -4,6 +4,7 @@ import uw.common.response.ResponseData;
 import uw.common.util.JsonUtils;
 import uw.httpclient.http.HttpData;
 import uw.oauth2.client.conf.OAuth2ClientProperties;
+import uw.oauth2.client.constant.OAuth2ClientAuthStatus;
 import uw.oauth2.client.constant.OAuth2ClientResponseCode;
 import uw.oauth2.client.vo.OAuth2Token;
 import uw.oauth2.client.vo.OAuth2UserInfo;
@@ -17,30 +18,44 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * 支付宝OAuth2 Provider，处理支付宝特有的OAuth2流程
+ * 支付宝OAuth2 Provider，处理支付宝特有的OAuth2流程。
+ * <p>
+ * 差异点：使用app_id而非client_id、所有请求需RSA2签名（私钥配置在extParam.privateKey）、
+ * 授权URL与token/用户信息接口均通过网关method区分、业务结果码为10000表示成功。
+ *
+ * @author axeon
  */
 public class AlipayOAuth2Provider extends AbstractOAuth2Provider {
 
     /**
-     * 构造函数
+     * 构造函数。
      *
      * @param providerCode   Provider名称
-     * @param providerConfig Provider配置
+     * @param providerConfig Provider配置（需在extParam配置privateKey）
+     * @param redirectUri    重定向URI
+     * @param qrcodeUri      二维码URI
      */
     public AlipayOAuth2Provider(String providerCode, OAuth2ClientProperties.ProviderConfig providerConfig, String redirectUri, String qrcodeUri) {
         super(providerCode, providerConfig, redirectUri, qrcodeUri);
     }
 
     /**
-     * 获取token
+     * 使用授权码换取支付宝访问令牌。
+     * <p>
+     * 先校验 {@code authStateId} 处于SCANNED状态（CSRF防护），再组装网关参数并RSA2签名后发起请求；
+     * 成功置CONFIRMED，失败或异常清理state。
      *
      * @param authCode    授权码
-     * @param authStateId state
-     * @param extParam
-     * @return token
+     * @param authStateId 状态参数
+     * @param extParam    扩展参数（可为null）
+     * @return token；state无效、HTTP或解析失败时返回对应错误码
      */
     @Override
     public ResponseData<OAuth2Token> getToken(String authCode, String authStateId, Map<String, String> extParam) {
+        // 校验state，防止CSRF（与父类标准流程保持一致）。
+        if (!checkAuthState(authStateId, OAuth2ClientAuthStatus.SCANNED)) {
+            return ResponseData.errorCode(OAuth2ClientResponseCode.INVALID_STATE_ID);
+        }
         try {
             // 支付宝获取token需要使用签名
             Map<String, String> params = new TreeMap<>();
@@ -60,20 +75,30 @@ public class AlipayOAuth2Provider extends AbstractOAuth2Provider {
             // 修改httpClient调用方式，使用正确的方法
             HttpData httpData = JSON_INTERFACE_HELPER.postBodyForData(providerConfig.getTokenUri(), params);
             if (httpData.getStatusCode() != 200) {
+                invalidateAuthState(authStateId);
                 return ResponseData.errorCode(OAuth2ClientResponseCode.INVALID_HTTP_CODE, httpData.getStatusCode(), httpData.getResponseData());
             }
-            return parseTokenResponse(httpData.getResponseData());
+            ResponseData<OAuth2Token> result = parseTokenResponse(httpData.getResponseData());
+            if (result.isSuccess()) {
+                setAuthState(authStateId, OAuth2ClientAuthStatus.CONFIRMED);
+            } else {
+                invalidateAuthState(authStateId);
+            }
+            return result;
         } catch (Exception e) {
+            invalidateAuthState(authStateId);
             logger.error("Failed to exchange token for provider {}", providerCode, e);
             return ResponseData.errorCode(OAuth2ClientResponseCode.HTTP_REQUEST_FAILED, e.toString());
         }
     }
 
     /**
-     * 获取用户信息
+     * 获取支付宝用户信息。
+     * <p>
+     * 以auth_token携带accessToken，组装网关参数并RSA2签名后请求用户信息共享接口。
      *
      * @param oAuth2Token accessToken
-     * @return 用户信息
+     * @return 用户信息；HTTP或解析失败时返回对应错误码
      */
     @Override
     public ResponseData<OAuth2UserInfo> getUserInfo(OAuth2Token oAuth2Token) {
@@ -109,9 +134,9 @@ public class AlipayOAuth2Provider extends AbstractOAuth2Provider {
     }
 
     /**
-     * 生成签名
+     * 添加支付宝授权URL特有参数：将client_id替换为app_id。
      *
-     * @param params 参数
+     * @param params 参数映射
      */
     @Override
     protected void addAuthParam(Map<String, String> params) {
@@ -125,10 +150,12 @@ public class AlipayOAuth2Provider extends AbstractOAuth2Provider {
     }
 
     /**
-     * 解析token响应
+     * 解析支付宝令牌响应。
+     * <p>
+     * 业务结果封装在 {@code alipay_system_oauth_token_response} 字段中，code为10000表示成功。
      *
      * @param responseBody 响应体
-     * @return token
+     * @return token；code非10000时返回错误
      */
     @Override
     protected ResponseData<OAuth2Token> parseTokenResponse(String responseBody) {
@@ -150,7 +177,7 @@ public class AlipayOAuth2Provider extends AbstractOAuth2Provider {
                 token.setAccessToken((String) response.get("access_token"));
                 token.setRefreshToken((String) response.get("refresh_token"));
                 token.setTokenType("Bearer");
-                token.setExpiresIn(((Number) response.getOrDefault("expires_in", 0)).longValue());
+                token.setExpiresIn(toLong(response.get("expires_in"), 0L));
                 token.setScope((String) response.get("scope"));
 
                 // 支付宝返回的用户ID设置到token中
@@ -173,10 +200,13 @@ public class AlipayOAuth2Provider extends AbstractOAuth2Provider {
     }
 
     /**
-     * 解析用户信息响应
+     * 解析支付宝用户信息响应。
+     * <p>
+     * 业务结果封装在 {@code alipay_user_info_share_response} 字段中，code为10000表示成功。
+     * 性别按支付宝规则（M男F女）映射。
      *
      * @param responseBody 响应体
-     * @return 用户信息
+     * @return 用户信息；code非10000或解析失败时返回错误
      */
     @Override
     protected ResponseData<OAuth2UserInfo> parseUserInfoResponse(String responseBody) {
@@ -232,10 +262,13 @@ public class AlipayOAuth2Provider extends AbstractOAuth2Provider {
     }
 
     /**
-     * 生成支付宝签名
+     * 生成支付宝RSA2签名。
+     * <p>
+     * 将参数按字典序拼接为 key=value& 形式（剔除sign与空值），使用extParam.privateKey做SHA256withRSA签名。
+     * 私钥未配置时抛RuntimeException。
      *
-     * @param params 请求参数
-     * @return 签名结果
+     * @param params 请求参数（TreeMap保证字典序）
+     * @return Base64编码的签名结果
      */
     private String generateSign(Map<String, String> params) {
         try {
@@ -288,5 +321,26 @@ public class AlipayOAuth2Provider extends AbstractOAuth2Provider {
      */
     private String generateTimestamp() {
         return java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    }
+
+    /**
+     * 安全转换为long，兼容Number与字符串数字两种返回形态。
+     *
+     * @param value        原始值
+     * @param defaultValue 解析失败时的默认值
+     * @return long值
+     */
+    private static long toLong(Object value, long defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        try {
+            return Long.parseLong(value.toString().trim());
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
     }
 }

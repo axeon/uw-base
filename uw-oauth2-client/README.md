@@ -64,6 +64,9 @@ uw:
         alipay:
           clientId: your-alipay-client-id
           clientSecret: your-alipay-client-secret
+          # 支付宝需配置RSA2私钥（PKCS8格式，可含PEM头尾），用于网关请求签名
+          extParam:
+            privateKey: your-alipay-rsa2-private-key
 ```
 
 ### 3. 系统集成库表变动
@@ -796,14 +799,14 @@ public class MscAuthHelper {
 
 ### 6. 自定义Provider
 
-如果需要集成新的第三方登录平台，可以通过实现`OAuth2Provider`接口来创建自定义Provider：
+如果需要集成新的第三方登录平台，可以通过继承`AbstractOAuth2Provider`来创建自定义Provider：
 
 ```java
+import uw.common.response.ResponseData;
 import uw.oauth2.client.conf.OAuth2ClientProperties;
 import uw.oauth2.client.vo.OAuth2Token;
 import uw.oauth2.client.vo.OAuth2UserInfo;
 import uw.oauth2.client.provider.AbstractOAuth2Provider;
-import uw.httpclient.UwHttpClient;
 
 public class CustomOAuth2Provider extends AbstractOAuth2Provider {
 
@@ -812,29 +815,23 @@ public class CustomOAuth2Provider extends AbstractOAuth2Provider {
     }
 
     @Override
-    public OAuth2UserInfo getUserInfo(OAuth2Token token) {
-        // 实现获取用户信息的逻辑
-        // ...
-    }
-
-    @Override
-    protected OAuth2Token parseTokenResponse(String responseBody) {
+    protected ResponseData<OAuth2Token> parseTokenResponse(String responseBody) {
         // 实现解析令牌响应的逻辑
         // ...
     }
 
     @Override
-    protected OAuth2UserInfo parseUserInfoResponse(String responseBody) {
+    protected ResponseData<OAuth2UserInfo> parseUserInfoResponse(String responseBody) {
         // 实现解析用户信息响应的逻辑
         // ...
     }
 }
 ```
 
-然后将自定义Provider注册到OAuth2Service中：
+然后将自定义Provider注册到OAuth2ClientHelper中（注意registerProvider需要两个参数：providerCode与provider实例）：
 
 ```java
-OAuth2ClientHelper.registerProvider(new CustomOAuth2Provider("custom", config, redirectUri, qrcodeUri));
+OAuth2ClientHelper.registerProvider("custom", new CustomOAuth2Provider("custom", config, redirectUri, qrcodeUri));
 ```
 
 ### 7. 前端集成说明

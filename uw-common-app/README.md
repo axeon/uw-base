@@ -228,6 +228,5 @@ uw.common.app
 └── vo/                                值对象
     ├── JsonConfigBox                  JSON 配置盒子
     ├── JsonConfigParam                JSON 配置参数定义
-    ├── ValidateResult                 校验结果
-    └── KryoRedisSerializer            Kryo Redis 序列化器
+    └── ValidateResult                 校验结果
 ```

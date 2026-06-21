@@ -7,9 +7,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 /**
- * 翻译列表参数。
+ * 翻译 Map 参数。
  */
-@Schema(title = "翻译列表参数", description = "翻译列表参数")
+@Schema(title = "翻译Map参数", description = "翻译Map参数")
 public class AiTranslateMapParam extends AiTranslateBaseParam {
 
     /**

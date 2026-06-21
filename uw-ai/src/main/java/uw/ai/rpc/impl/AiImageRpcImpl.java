@@ -40,7 +40,8 @@ public class AiImageRpcImpl implements AiImageRpc {
             body.add("sessionId", param.getSessionId());
         }
         if (param.getUserPrompt() != null) {
-            body.add("prompt", param.getUserPrompt());
+            // 字段名须与服务端 @ModelAttribute AiImageGenerateParam 的 setter(setUserPrompt)一致，否则提示词绑定不上。
+            body.add("userPrompt", param.getUserPrompt());
         }
         if (param.getSaasId() > 0) {
             body.add("saasId", param.getSaasId());
@@ -57,7 +58,8 @@ public class AiImageRpcImpl implements AiImageRpc {
 
         ResponseData<AiImageResultData> result = authRestClient.post()
                 .uri(uwAiProperties.getAiCenterHost() + "/rpc/image/generate")
-                .contentType(MediaType.APPLICATION_JSON)
+                // 与AiChatRpcImpl保持一致：使用multipart/form-data传输，避免LinkedMultiValueMap被错误地按JSON序列化。
+                .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body)
                 .retrieve()
                 .body(new ParameterizedTypeReference<ResponseData<AiImageResultData>>() {});

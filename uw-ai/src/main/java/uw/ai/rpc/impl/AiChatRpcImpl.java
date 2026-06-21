@@ -1,6 +1,5 @@
 package uw.ai.rpc.impl;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
@@ -106,10 +105,10 @@ public class AiChatRpcImpl implements AiChatRpc {
         if (param.getConfigCode() != null) {
             body.add("configCode", param.getConfigCode());
         }
-        if (StringUtils.isNotBlank(param.getUserPrompt())) {
+        if (param.getUserPrompt() != null) {
             body.add("userPrompt", param.getUserPrompt());
         }
-        if (StringUtils.isNotBlank(param.getSystemPrompt())) {
+        if (param.getSystemPrompt() != null) {
             body.add("systemPrompt", param.getSystemPrompt());
         }
         // 认证信息：bindAuthInfo() 绑定后透传给服务中心。

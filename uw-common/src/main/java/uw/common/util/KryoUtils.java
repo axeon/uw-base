@@ -65,7 +65,7 @@ import java.util.function.Function;
  *
  * <h3>4. 接口式手工序列化（KryoData，纯原语，无池）</h3>
  * <ul>
- *   <li>{@link #serializeData(KryoData)} / {@link #serializeData(int, KryoData)} / {@link #deserializeData(byte[], KryoData)}：
+ *   <li>{@link #serializeData(KryoData)} / {@link #serializeData(int, KryoData)} / {@link #deserializeData(byte[], KryoData)} / {@link #deserializeData(byte[], Class)}：
  *       数据类实现 {@link KryoData} 接口（自实现 serialize/deserialize 原语），本方法负责借 Output/Input 并 toBytes。</li>
  *   <li>与方式3同属轻量无池路径，区别是把读写逻辑内聚到数据类自身（而非 lambda）；serializeData 同样支持可选 bufferSize。</li>
  *   <li><b>适用</b>：一个类固定一套读写逻辑、多处复用；不想每次写 lambda。</li>
@@ -160,9 +160,9 @@ public class KryoUtils {
      * writeData 默认的 Output 初始缓冲区大小（字节）。
      * <p>
      * 多数业务对象序列化结果在 2KB 以内，超出会自动扩容（Output maxCapacity=-1 无上限）。
-     * 调用方若能精确预估输出大小，应直接用 {@link #write(int, Consumer)} 传紧凑 bufferSize 以降低 GC。
+     * 调用方若能精确预估输出大小，应直接用 {@link #serialize(int, Consumer)} 传紧凑 bufferSize 以降低 GC。
      */
-    private static final int DEFAULT_BUFFER_SIZE = 2048;
+    private static final int DEFAULT_BUFFER_SIZE = 2560;
     /**
      * 后台shrink线程的执行间隔（毫秒）。
      */
@@ -498,6 +498,46 @@ public class KryoUtils {
     public static <T extends KryoData> T deserializeData(byte[] data, T instance) {
         if (data == null || data.length == 0 || instance == null) {
             return instance;
+        }
+        final Input input = new Input(data);
+        instance.deserialize(input);
+        return instance;
+    }
+
+    /**
+     * 反序列化：按目标类型反射创建实例并填充（接口式手工序列化）。
+     * <p>
+     * 与 {@link #deserializeData(byte[], KryoData)} 的区别：调用方无需自行 {@code new} 实例，
+     * 传入目标 {@link Class}，本方法通过其<b>公开无参构造</b>反射创建实例后再填充。
+     * 适合调用方只持有 {@code Class} 而不便创建实例的场景（如泛型工具、序列化框架适配）。
+     * <p>
+     * <b>实例创建约定</b>：目标类必须提供公开无参构造（见 {@link KryoData} 的实现要点）。
+     * 反射失败（无公开无参构造、抽象类、构造抛异常等）会被包装为 {@code KryoException}（RuntimeException）直接上浮，
+     * 遵循本类"绝不吞异常"的统一策略——创建失败即视为数据契约被破坏，不应被静默忽略。
+     * <p>
+     * <b>命名与签名说明</b>：沿用 deserializeData 独立方法名（见 {@link #deserializeData(byte[], KryoData)} 的命名说明）。
+     * 返回类型 {@code <T extends KryoData>} 由调用方按需强转；因入参为 {@code Class<? extends KryoData>}
+     * （而非 {@code Class<T>}），编译器无法精确推导 {@code T}，调用方一般得到 {@code KryoData} 后强转为具体类型。
+     *
+     * @param data    字节数组，为null或空时返回 null
+     * @param dataCls 目标类型，必须提供公开无参构造
+     * @param <T>     目标类型
+     * @return 反射创建并填充后的实例；data 为 null/空时返回 null
+     * @throws com.esotericsoftware.kryo.KryoException 目标类无法实例化时包装抛出
+     * @see #deserializeData(byte[], KryoData)
+     * @see KryoData
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends KryoData> T deserializeData(byte[] data, Class<? extends KryoData> dataCls) {
+        if (data == null || data.length == 0) {
+            return null;
+        }
+        final T instance;
+        try {
+            instance = (T) dataCls.getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
+            throw new com.esotericsoftware.kryo.KryoException(
+                    "Cannot new instance of " + dataCls.getName() + " for deserializeData: " + e.getMessage(), e);
         }
         final Input input = new Input(data);
         instance.deserialize(input);

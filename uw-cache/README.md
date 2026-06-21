@@ -12,6 +12,26 @@ uw-cache是一个基于caffeine和redis的缓存库。提供cache、locker、cou
 
 > 启动自动配置：`uw.cache.conf.UwCacheAutoConfiguration` 已声明 `@ConditionalOnClass(RedisTemplate)`，引入 starter-data-redis 即生效。它注册两个 RedisTemplate：`dataCacheRedisTemplate`（byte[] 值，用于 Cache/HashSet/SortedSet）与 `longCacheRedisTemplate`（Long 值，用于 Counter/Locker）。**同一 JVM 仅支持一套 Redis 配置**（Global* 组件通过 static 字段持有 template）。
 
+# Redis 序列化器（`uw.cache.serializer`）
+
+业务方自定义 `RedisTemplate` 的值序列化器时，可从以下两个 Kryo 实现中选一个。模块内部组件（FusionCache/HashSet 等）的序列化不经过它们，而是由 `uw.cache.util.KryoCacheUtils` 直接完成。
+
+| 序列化器 | 要求对象实现 | 底层路径 | 吞吐/锁 | 字节流是否带类信息 |
+|---------|------------|---------|---------|----------------|
+| `KryoRedisSerializer` | 无要求（任意类型） | 整对象反射 `serialize(Object)`/`deserialize(byte[],Class)` | 走 KryoUtils 池（JCTools 无锁 CAS） | 取决于构造模式（见下） |
+| `KryoDataRedisSerializer` | 必须 `KryoData` | 接口式无池 `serializeData/deserializeData`（对象自写字段读写） | **无池**（每次 new Output/Input，零池竞争，吞吐更高） | 否（最紧凑） |
+
+**选型**：吞吐/延迟敏感、且能接受为数据类实现 `KryoData` 并手写字段读写逻辑，优先 `KryoDataRedisSerializer`；追求省心、不想改业务类，用 `KryoRedisSerializer`。
+
+## `KryoRedisSerializer` 的两种构造模式
+
+构造器是否传入 type 决定走哪条路径，**二选一、不可运行期切换**（否则字节流不兼容）：
+
+- **类型已知模式** `new KryoRedisSerializer<>(UserVO.class)`：序列化 `KryoUtils.serialize(Object)`、反序列化 `KryoUtils.deserialize(data, type)`。字节流**不带类信息**，体积更小；**序列化端与反序列化端必须传同一个 type**。
+- **类型未知模式** `new KryoRedisSerializer<>()`：序列化 `KryoUtils.serializeWithClass`、反序列化 `KryoUtils.deserializeWithClass`。字节流**自带类信息**，反序列化端无需知道类型即可还原，代价是多一份类标识（适合同一序列化器存取多种类型）。
+
+> ⚠️ Kryo 反序列化的硬性要求：类型必须是**具体实现类**，不可用接口或抽象类型（`List/Map/Set` 要用 `ArrayList/LinkedHashMap/HashSet` 等具体实现）。
+
 # 基础配置
 
 ## maven引用

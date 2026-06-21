@@ -5,7 +5,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * uw-notify-client 连接配置。
  * <p>
- * 配置前缀：{@code uw.notify}。
+ * 配置前缀：{@code uw.notify}。默认指向服务发现名称 {@code http://uw-notify-center}，
+ * 由 {@code NotifyClientHelper} 用于拼装 RPC 调用地址。
  *
  * @author axeon
  */

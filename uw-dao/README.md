@@ -875,7 +875,49 @@ dao.save(profile, table);
 
 **前提**：基表必须存在（框架不会创建基表本身）。
 
+> **注意**：`TableShardingTask` 只负责"预创建当前/下一分片表"，**不维护全量分表清单**。
+> 业务侧若需要遍历所有历史分表（典型如过期数据清理、跨表统计），无法从框架直接拿到列表，
+> 需自行查询 `information_schema.tables`（按 `LIKE '基表_%'` 过滤）或自行维护一份分表注册表。
+
+### 定时清理 / 批量任务与分表
+
+**这是分表使用中最容易踩的坑**：分表后，数据按日期/ID 散落在多张物理表里，
+**任何"全量清理""过期删除""跨周期统计"类后台任务都必须显式遍历分表**，
+否则只操作基表（`delete from 基表 ...`）会静默漏掉所有分片数据。
+
+判定逻辑与遍历方式：
+
+| 分片类型 | 如何遍历所有分表 |
+|--------|------------|
+| `date`（day/month/year） | 按分片粒度从最早分片日期推算到当前，逐表用 `ShardingTableUtils.getTableNameByDate(baseTable, date)` 生成表名 |
+| `id` | 表名为 `基表_{id/batchSize}`，序号上界未知，需查 `information_schema.tables WHERE table_name LIKE '基表_%'` 拿到全部分表名后再逐表处理 |
+
+通用写法（查 `information_schema` 枚举分表）：
+
+```java
+// 枚举某基表的所有分片表名（含基表本身）
+ResponseData<PageRowSet> rs = dao.queryForRowSet(
+    "select table_name from information_schema.tables " +
+    "where table_schema = database() and table_name like ?",
+    new Object[]{"tiny_url%"});
+List<String> allTables = new ArrayList<>();
+PageRowSet ds = rs.getData();
+while (ds.next()) {
+    allTables.add(ds.getString(1));
+}
+// 对每张表执行清理
+for (String table : allTables) {
+    dao.execute("delete from " + table + " where expire_date<? limit 1000",
+        new Object[]{expireDate});
+}
+```
+
+> **设计建议**：业务侧的清理任务在运行时应先判断该表是否配置了分表
+> （`DaoConfigManager.getTableShardingConfig(tableName) != null`），未分表走基表高效批量删除，
+> 已分表则遍历分表。避免写成只认基表的死代码——一旦后续运维启用分表，清理任务会静默失效。
+
 ---
+
 
 ## 13. SQL 执行监控
 
@@ -1039,7 +1081,7 @@ uw:
         read-pools: [db-read]
 ```
 
-### Q4：如何查询跨多个分片表的数据？
+### Q4：如何查询/清理跨多个分片表的数据？
 
 框架不支持自动跨表联合查询，需在业务层手动处理：
 
@@ -1057,6 +1099,10 @@ for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
     }
 }
 ```
+
+**删除/清理任务同理**——分表场景下绝不能只 `delete from 基表`，必须遍历分表，
+否则分片数据会被静默漏删。id 分片因表名序号上界未知，需查 `information_schema.tables`
+枚举全部分表（详见[第 12 节 · 定时清理 / 批量任务与分表](#定时清理--批量任务与分表)）。
 
 ### Q5：enableSqlExecuteStats() 对性能有影响吗？
 

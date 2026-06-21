@@ -7,8 +7,15 @@ import java.io.Serializable;
 /**
  * Web 通知消息体。
  * <p>
- * 描述一条通知的目标（用户/运营商）与内容（{@link NotifyBody}）。
- * {@code userId=0} 表示对该运营商下所有用户广播；{@code saasId=0} 表示对所有运营商广播。
+ * 描述一条通知的目标用户与内容（{@link NotifyBody}）。
+ * <p>
+ * <b>当前实现约束（重要）：</b>
+ * <ul>
+ *     <li>{@code userId} 必须为全局唯一且 &gt; 0 的有效用户 ID，notify-center 仅支持向单个在线用户定向投递；</li>
+ *     <li>不支持按 {@code userId} 或 {@code saasId} 维度的广播，传入 {@code userId<=0} 会被 notify-center 直接拒绝；</li>
+ *     <li>{@code saasId} 当前仅作为消息溯源字段参与记录，不参与投递路由
+ *     （SSE 连接池以全局唯一的 {@code userId} 为 key，故不会跨运营商串号）。</li>
+ * </ul>
  *
  * @author axeon
  */
@@ -16,15 +23,19 @@ import java.io.Serializable;
 public class WebNotifyMsg implements Serializable {
 
     /**
-     * 用户 ID；{@code 0} 表示对该运营商下所有用户广播。
+     * 目标用户 ID（全局唯一，必须 &gt; 0）。
+     * <p>
+     * notify-center 仅支持向单个在线用户定向投递；{@code userId<=0} 会被拒绝。
      */
-    @Schema(title = "用户ID", description = "用户ID，0表示广播")
+    @Schema(title = "用户ID", description = "目标用户ID，必须大于0")
     private long userId;
 
     /**
-     * 运营商编号；{@code 0} 表示对所有运营商广播。
+     * 运营商编号。
+     * <p>
+     * 当前仅作为消息溯源字段记录，不参与投递路由（投递仅依据全局唯一的 {@code userId}）。
      */
-    @Schema(title = "运营商编号", description = "运营商编号，0表示所有运营商")
+    @Schema(title = "运营商编号", description = "运营商编号，仅作溯源，不参与投递")
     private long saasId;
 
     /**
@@ -42,8 +53,8 @@ public class WebNotifyMsg implements Serializable {
     /**
      * 通过用户、运营商与通知内容构造消息体。
      *
-     * @param userId     用户 ID（0 表示广播）
-     * @param saasId     运营商编号（0 表示所有运营商）
+     * @param userId     目标用户 ID（必须 &gt; 0）
+     * @param saasId     运营商编号（仅作溯源）
      * @param notifyBody 通知内容
      */
     public WebNotifyMsg(long userId, long saasId, NotifyBody notifyBody) {
@@ -52,26 +63,44 @@ public class WebNotifyMsg implements Serializable {
         this.notifyBody = notifyBody;
     }
 
+    /**
+     * @return 目标用户 ID（必须 &gt; 0）
+     */
     public long getUserId() {
         return userId;
     }
 
+    /**
+     * @param userId 目标用户 ID（必须 &gt; 0）
+     */
     public void setUserId(long userId) {
         this.userId = userId;
     }
 
+    /**
+     * @return 运营商编号（仅作溯源）
+     */
     public long getSaasId() {
         return saasId;
     }
 
+    /**
+     * @param saasId 运营商编号（仅作溯源）
+     */
     public void setSaasId(long saasId) {
         this.saasId = saasId;
     }
 
+    /**
+     * @return 通知内容
+     */
     public NotifyBody getNotifyBody() {
         return notifyBody;
     }
 
+    /**
+     * @param notifyBody 通知内容
+     */
     public void setNotifyBody(NotifyBody notifyBody) {
         this.notifyBody = notifyBody;
     }
@@ -138,34 +167,58 @@ public class WebNotifyMsg implements Serializable {
             this.data = data;
         }
 
+        /**
+         * @return 通知类型
+         */
         public String getType() {
             return type;
         }
 
+        /**
+         * @param type 通知类型
+         */
         public void setType(String type) {
             this.type = type;
         }
 
+        /**
+         * @return 消息标题
+         */
         public String getSubject() {
             return subject;
         }
 
+        /**
+         * @param subject 消息标题
+         */
         public void setSubject(String subject) {
             this.subject = subject;
         }
 
+        /**
+         * @return 消息正文
+         */
         public String getContent() {
             return content;
         }
 
+        /**
+         * @param content 消息正文
+         */
         public void setContent(String content) {
             this.content = content;
         }
 
+        /**
+         * @return 消息附加数据
+         */
         public Object getData() {
             return data;
         }
 
+        /**
+         * @param data 消息附加数据
+         */
         public void setData(Object data) {
             this.data = data;
         }

@@ -12,7 +12,8 @@ import uw.notify.client.vo.WebNotifyMsg;
 /**
  * Web 通知推送客户端 Helper。
  * <p>
- * 通过 HTTP RPC 调用 notify-center 服务，向指定用户或运营商推送 Web 通知消息。
+ * 通过 HTTP RPC 调用 notify-center 服务，向指定的单个在线用户推送 Web 通知消息
+ * （当前不支持广播，{@code WebNotifyMsg.userId} 必须 &gt; 0）。
  * 推送的消息经 notify-center 转发后，最终通过 SSE（Server-Sent Events）等实时通道下发给前端。
  * 所有方法均为静态方法，由 {@link uw.notify.client.conf.UwNotifyAutoConfiguration}
  * 在启动时通过依赖注入完成对内部静态 {@code RestClient} 与配置的初始化，
@@ -61,8 +62,8 @@ public class NotifyClientHelper {
      * RPC 调用阶段的任何异常（网络、序列化、HTTP 4xx/5xx）均被捕获并以 {@link ResponseData#errorMsg} 返回，
      * 不会向外抛出。
      *
-     * @param webNotifyMsg 通知消息体（不可为 null）
-     * @return 推送结果：SUCCESS=推送成功 / ERROR=参数非法或推送失败（含异常信息）
+     * @param webNotifyMsg 通知消息体（不可为 null，{@code userId} 必须 &gt; 0）
+     * @return 推送结果：SUCCESS=推送成功 / ERROR=参数非法或推送失败（使用固定文案，异常细节仅入日志）
      */
     public static ResponseData<Void> pushNotify(WebNotifyMsg webNotifyMsg) {
         if (webNotifyMsg == null) {
@@ -80,8 +81,9 @@ public class NotifyClientHelper {
             }
             return result;
         } catch (Exception e) {
+            // 详细原因只进日志（可能含序列化/网络内部关键字），对外用固定文案，避免信息泄露。
             log.error("NotifyClientHelper.pushNotify()异常: {}", e.getMessage(), e);
-            return ResponseData.errorMsg("NotifyClientHelper.pushNotify()异常: " + e.getMessage());
+            return ResponseData.errorMsg("推送通知失败，请稍后重试。");
         }
     }
 

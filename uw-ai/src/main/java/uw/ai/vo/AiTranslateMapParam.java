@@ -27,6 +27,7 @@ public class AiTranslateMapParam extends AiTranslateBaseParam {
         setUserType(builder.userType);
         setUserInfo(builder.userInfo);
         setConfigId(builder.configId);
+        setConfigCode(builder.configCode);
         setSystemPrompt(builder.systemPrompt);
         setLangList(builder.langList);
         setTextMap(builder.textMap);
@@ -43,6 +44,7 @@ public class AiTranslateMapParam extends AiTranslateBaseParam {
         builder.userType = copy.getUserType();
         builder.userInfo = copy.getUserInfo();
         builder.configId = copy.getConfigId();
+        builder.configCode = copy.getConfigCode();
         builder.systemPrompt = copy.getSystemPrompt();
         builder.langList = copy.getLangList();
         builder.textMap = copy.getTextMap();
@@ -63,6 +65,7 @@ public class AiTranslateMapParam extends AiTranslateBaseParam {
         private int userType;
         private String userInfo;
         private long configId;
+        private String configCode;
         private String systemPrompt;
         private List<String> langList;
         private LinkedHashMap<String, String> textMap;
@@ -103,6 +106,11 @@ public class AiTranslateMapParam extends AiTranslateBaseParam {
 
         public Builder configId(long configId) {
             this.configId = configId;
+            return this;
+        }
+
+        public Builder configCode(String configCode) {
+            this.configCode = configCode;
             return this;
         }
 

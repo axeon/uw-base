@@ -16,7 +16,13 @@ import uw.common.response.ResponseData;
 import java.util.List;
 
 /**
- * AiClientHelper。
+ * AI 客户端静态门面。
+ * <p>
+ * 封装对话生成（同步/流式）、结构化输出、翻译、图片生成、模型/API 配置查询与工具元数据管理。
+ * 底层 RPC Bean 由 {@link uw.ai.conf.UwAiAutoConfiguration} 自动装配，并在构造本类时注入静态字段，
+ * 因此应用启动后即可通过静态方法调用。
+ * <p>
+ * 所有调用统一返回 {@link ResponseData}，可使用 {@code onSuccess/onError} 处理结果。
  */
 public class AiClientHelper {
 
@@ -178,12 +184,15 @@ public class AiClientHelper {
     }
 
     /**
-     * 聊天生成实体。
+     * 聊天生成实体（结构化输出）。
+     * <p>
+     * 自动在系统提示后追加目标类型的 JSON Schema 格式说明，并对大模型返回的文本进行清洗
+     * （去除 markdown 标记、think 标签等）后反序列化为目标类型。
      *
-     * @param param
-     * @param clazz
-     * @param <T>
-     * @return
+     * @param param 对话生成参数（系统提示可为空，会追加格式说明）
+     * @param clazz 目标类型
+     * @param <T>   目标类型泛型
+     * @return 转换后的实体；生成失败或 JSON 转换失败时返回错误 ResponseData
      */
     @SuppressWarnings("unchecked")
     public static <T> ResponseData<T> generateEntity(AiChatGenerateParam param, Class<T> clazz) {

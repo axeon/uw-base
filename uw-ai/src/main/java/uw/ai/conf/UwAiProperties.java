@@ -4,7 +4,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * 配置类。
+ * uw-ai 配置属性。
+ * <p>
+ * 配置前缀 {@code uw.ai}。{@code appName} 取自 {@code project.name}，用于启动时按应用维度
+ * 注册/拉取工具元数据；{@code aiCenterHost} 为 AI 服务中心地址。
  *
  * @author axeon
  */

@@ -17,8 +17,10 @@ import uw.auth.service.constant.UserType;
 import uw.common.response.ResponseData;
 
 /**
- * 运行AipVendor的容器。
- * 用于执行本地任务。
+ * AI工具执行控制器。
+ * <p>
+ * 供 AI 服务中心（uw-ai-center）回调，以 RPC 用户身份（{@link UserType#RPC}）在本地执行
+ * 已注册的 {@link AiTool} 工具。
  **/
 @RestController
 @RequestMapping("/rpc/ai/tool")
@@ -37,8 +39,12 @@ public class AiToolExecuteController {
 
     /**
      * 运行任务。
+     * <p>
+     * 服务中心决策调用某工具时，回调本接口执行：根据 {@code toolClass} 从 Spring 容器获取
+     * {@link AiTool} Bean，将 {@code toolInput} 反序列化为参数后执行 {@code apply}。
      *
-     * @return 是否成功
+     * @param executeParam 工具执行参数（工具类全限定名 + JSON 输入）
+     * @return 工具执行结果
      */
     @PostMapping("/execute")
     @MscPermDeclare(user = UserType.RPC)

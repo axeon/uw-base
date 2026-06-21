@@ -5,7 +5,9 @@ import uw.ai.vo.AiImageResultData;
 import uw.common.response.ResponseData;
 
 /**
- * AI图片生成RPC接口。
+ * AI 图片生成 RPC 接口。
+ * <p>
+ * 实现类（{@link uw.ai.rpc.impl.AiImageRpcImpl}）通过 RestClient 调用 AI 服务中心生成图片。
  */
 public interface AiImageRpc {
 

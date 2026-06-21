@@ -26,6 +26,7 @@ public class AiTranslateListParam extends AiTranslateBaseParam {
         setUserType(builder.userType);
         setUserInfo(builder.userInfo);
         setConfigId(builder.configId);
+        setConfigCode(builder.configCode);
         setSystemPrompt(builder.systemPrompt);
         setLangList(builder.langList);
         setTextList(builder.textList);
@@ -42,6 +43,7 @@ public class AiTranslateListParam extends AiTranslateBaseParam {
         builder.userType = copy.getUserType();
         builder.userInfo = copy.getUserInfo();
         builder.configId = copy.getConfigId();
+        builder.configCode = copy.getConfigCode();
         builder.systemPrompt = copy.getSystemPrompt();
         builder.langList = copy.getLangList();
         builder.textList = copy.getTextList();
@@ -63,6 +65,7 @@ public class AiTranslateListParam extends AiTranslateBaseParam {
         private int userType;
         private String userInfo;
         private long configId;
+        private String configCode;
         private String systemPrompt;
         private List<String> langList;
         private List<String> textList;
@@ -103,6 +106,11 @@ public class AiTranslateListParam extends AiTranslateBaseParam {
 
         public Builder configId(long configId) {
             this.configId = configId;
+            return this;
+        }
+
+        public Builder configCode(String configCode) {
+            this.configCode = configCode;
             return this;
         }
 

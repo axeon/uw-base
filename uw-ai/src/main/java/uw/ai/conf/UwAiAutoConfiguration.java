@@ -32,12 +32,16 @@ import uw.common.response.ResponseData;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 启动自动配置。
+ * uw-ai 自动配置。
+ * <p>
+ * 装配各 RPC Bean 与 {@link AiClientHelper} 静态门面；应用就绪后扫描并按版本同步工具元数据到
+ * AI 服务中心。通过 {@code META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports} 注册。
  */
 @Configuration
 @EnableScheduling
@@ -62,11 +66,7 @@ public class UwAiAutoConfiguration {
     }
 
     /**
-     * AiToolRpc初始化。
-     *
-     * @param uwAiProperties
-     * @param authRestClient
-     * @return
+     * 初始化 AiToolRpc Bean（工具元数据拉取与同步）。
      */
     @Bean
     @ConditionalOnMissingBean
@@ -75,11 +75,7 @@ public class UwAiAutoConfiguration {
     }
 
     /**
-     * AiChatRpc初始化。
-     *
-     * @param uwAiProperties
-     * @param authRestClient
-     * @return
+     * 初始化 AiChatRpc Bean（同步经 RestClient，流式经 WebClient）。
      */
     @Bean
     @ConditionalOnMissingBean
@@ -88,7 +84,7 @@ public class UwAiAutoConfiguration {
     }
 
     /**
-     * AiConfigRpc初始化。
+     * 初始化 AiConfigRpc Bean（模型/API 配置查询）。
      */
     @Bean
     @ConditionalOnMissingBean
@@ -97,11 +93,7 @@ public class UwAiAutoConfiguration {
     }
 
     /**
-     * AiTranslateRpc初始化。
-     *
-     * @param uwAiProperties
-     * @param authRestClient
-     * @return
+     * 初始化 AiTranslateRpc Bean（列表/Map 批量翻译）。
      */
     @Bean
     @ConditionalOnMissingBean
@@ -110,11 +102,7 @@ public class UwAiAutoConfiguration {
     }
 
     /**
-     * AiImageRpc初始化。
-     *
-     * @param uwAiProperties
-     * @param authRestClient
-     * @return
+     * 初始化 AiImageRpc Bean（图片生成）。
      */
     @Bean
     @ConditionalOnMissingBean
@@ -124,10 +112,7 @@ public class UwAiAutoConfiguration {
 
 
     /**
-     * AiClientHelper初始化。
-     *
-     * @param toolRpc
-     * @return
+     * 初始化 AiClientHelper 静态门面，注入全部底层 RPC Bean。
      */
     @Bean
     @ConditionalOnMissingBean
@@ -136,9 +121,11 @@ public class UwAiAutoConfiguration {
     }
 
     /**
-     * ApplicationContext初始化完成或刷新后执行init方法。
-     * 首先获取服务器端的TOOL配置，然后初始化本地TOOL配置。
-     * 如果发现TOOL有升级，则更新到服务器端。
+     * 应用就绪后注册工具元数据。
+     * <p>
+     * 先从服务中心拉取本应用已有工具元数据，再扫描容器内所有 {@link AiTool} Bean：
+     * 若工具不存在或版本不一致，则基于 {@link AiToolSchemaGenerator} 重新生成输入/输出
+     * JSON Schema 并同步到服务中心。
      */
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
@@ -153,14 +140,24 @@ public class UwAiAutoConfiguration {
                 return;
             }
             List<AiToolMeta> sysAiToolMetaList = sysAiToolMetaListData.getData();
-            Map<String, AiToolMeta> sysAiToolMetaMap = sysAiToolMetaList.stream().collect(Collectors.toMap(x -> x.getToolClass(), x -> x,
+            // 防御服务中心返回 data 为 null 的场景。
+            if (sysAiToolMetaList == null) {
+                sysAiToolMetaList = Collections.emptyList();
+            }
+            Map<String, AiToolMeta> sysAiToolMetaMap = sysAiToolMetaList.stream()
+                    .filter(x -> x != null && x.getToolClass() != null)
+                    .collect(Collectors.toMap(x -> x.getToolClass(), x -> x,
                     (existingValue, newValue) -> newValue));
             logger.info("系统端拉取到有效AiTool共{}条！", sysAiToolMetaMap.size());
             for (AiTool aiTool : aiToolMap.values()) {
                 String toolClass = aiTool.getClass().getName();
                 Method applyMethod;
                 try {
-                    applyMethod = Arrays.stream(aiTool.getClass().getDeclaredMethods()).filter(method -> method.getName().equals("apply")).findFirst().orElse(null);
+                    // 排除泛型擦除产生的 synthetic/bridge 方法，避免拿到擦除后的参数类型导致 Schema 生成错误。
+                    applyMethod = Arrays.stream(aiTool.getClass().getDeclaredMethods())
+                            .filter(method -> method.getName().equals("apply") && !method.isBridge() && !method.isSynthetic())
+                            .findFirst()
+                            .orElse(null);
                 } catch (Exception e) {
                     logger.error("AiTool[{}]找不到正确定义的apply方法！{}", toolClass, e.getMessage(), e);
                     continue;
@@ -195,10 +192,7 @@ public class UwAiAutoConfiguration {
     }
 
     /**
-     * AiToolExecuteController初始化。
-     *
-     * @param applicationContext
-     * @return
+     * 初始化工具执行控制器 Bean（供服务中心回调执行工具）。
      */
     @Bean
     @ConditionalOnMissingBean

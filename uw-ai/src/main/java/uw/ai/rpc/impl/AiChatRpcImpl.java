@@ -18,7 +18,9 @@ import uw.ai.vo.AiChatGenerateParam;
 import uw.common.response.ResponseData;
 
 /**
- * AiChatRpcImpl.
+ * {@link AiChatRpc} 实现：调用 AI 服务中心生成对话（同步经 RestClient，流式经 WebClient SSE）。
+ * <p>
+ * 认证四元组（saasId/userId/userType/userInfo）随每次请求透传给服务中心。
  */
 public class AiChatRpcImpl implements AiChatRpc {
 
@@ -54,47 +56,7 @@ public class AiChatRpcImpl implements AiChatRpc {
      */
     @Override
     public ResponseData<String> generate(AiChatGenerateParam param) {
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-
-        body.add("configId", param.getConfigId());
-        if (param.getConfigCode() != null) {
-            body.add("configCode", param.getConfigCode());
-        }
-        if (param.getUserPrompt() != null) {
-            body.add("userPrompt", param.getUserPrompt());
-        }
-        if (param.getSystemPrompt() != null) {
-            body.add("systemPrompt", param.getSystemPrompt());
-        }
-        if (param.getToolList() != null) {
-            for (int i = 0; i < param.getToolList().size(); i++) {
-                if (param.getToolList().get(i) != null) {
-                    body.add("toolList[" + i + "]", param.getToolList().get(i));
-                }
-            }
-        }
-
-        if (param.getToolContext() != null) {
-            for (String key : param.getToolContext().keySet()) {
-                if (param.getToolContext().get(key) != null) {
-                    body.add("toolContext['" + key + "']", param.getToolContext().get(key));
-                }
-            }
-        }
-
-        if (param.getRagLibIds() != null) {
-            for (int i = 0; i < param.getRagLibIds().length; i++) {
-                body.add("ragLibIds[" + i + "]", param.getRagLibIds()[i]);
-            }
-        }
-
-        if (param.getFileList() != null) {
-            for (MultipartFile file : param.getFileList()) {
-                if (file != null) {
-                    body.add("fileList", file);
-                }
-            }
-        }
+        MultiValueMap<String, Object> body = buildChatBody(param);
 
         ResponseData<String> result = authRestClient.post()
                 .uri(uwAiProperties.getAiCenterHost() + "/rpc/chat/generate")
@@ -117,6 +79,27 @@ public class AiChatRpcImpl implements AiChatRpc {
      */
     @Override
     public Flux<String> chatGenerate(AiChatGenerateParam param) {
+        MultiValueMap<String, Object> body = buildChatBody(param);
+
+        return authWebClient.post()
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/chat/chatGenerate")
+                .contentType(MediaType.MULTIPART_FORM_DATA).
+                body(BodyInserters.fromMultipartData(body))
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .retrieve()
+                .bodyToFlux(String.class).doOnError(e -> {
+                    logger.error("sse error", e);
+                });
+    }
+
+    /**
+     * 统一构建对话生成的multipart请求体。
+     * 同步补全认证信息(saasId/userId/userType/userInfo)，确保服务中心能识别调用者身份。
+     *
+     * @param param 对话生成参数
+     * @return multipart请求体
+     */
+    private MultiValueMap<String, Object> buildChatBody(AiChatGenerateParam param) {
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
 
         body.add("configId", param.getConfigId());
@@ -128,6 +111,19 @@ public class AiChatRpcImpl implements AiChatRpc {
         }
         if (StringUtils.isNotBlank(param.getSystemPrompt())) {
             body.add("systemPrompt", param.getSystemPrompt());
+        }
+        // 认证信息：bindAuthInfo() 绑定后透传给服务中心。
+        if (param.getSaasId() > 0) {
+            body.add("saasId", param.getSaasId());
+        }
+        if (param.getUserId() > 0) {
+            body.add("userId", param.getUserId());
+        }
+        if (param.getUserType() > 0) {
+            body.add("userType", param.getUserType());
+        }
+        if (param.getUserInfo() != null) {
+            body.add("userInfo", param.getUserInfo());
         }
         if (param.getToolList() != null) {
             for (int i = 0; i < param.getToolList().size(); i++) {
@@ -159,14 +155,6 @@ public class AiChatRpcImpl implements AiChatRpc {
             }
         }
 
-        return authWebClient.post()
-                .uri(uwAiProperties.getAiCenterHost() + "/rpc/chat/chatGenerate")
-                .contentType(MediaType.MULTIPART_FORM_DATA).
-                body(BodyInserters.fromMultipartData(body))
-                .accept(MediaType.TEXT_EVENT_STREAM)
-                .retrieve()
-                .bodyToFlux(String.class).doOnError(e -> {
-                    logger.error("sse error", e);
-                });
+        return body;
     }
 }

@@ -10,7 +10,7 @@ import uw.ai.vo.AiTranslateResultData;
 import uw.common.response.ResponseData;
 
 /**
- * AiToolRpcImpl.
+ * {@link AiTranslateRpc} 实现：调用 AI 服务中心执行列表/Map 批量翻译。
  */
 public class AiTranslateRpcImpl implements AiTranslateRpc {
 

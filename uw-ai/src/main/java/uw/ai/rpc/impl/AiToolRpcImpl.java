@@ -10,7 +10,7 @@ import uw.common.response.ResponseData;
 import java.util.List;
 
 /**
- * AiToolRpcImpl.
+ * {@link AiToolRpc} 实现：调用 AI 服务中心拉取与更新工具元数据。
  */
 public class AiToolRpcImpl implements AiToolRpc {
 

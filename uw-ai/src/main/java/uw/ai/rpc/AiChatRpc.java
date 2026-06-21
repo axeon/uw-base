@@ -5,25 +5,27 @@ import uw.ai.vo.AiChatGenerateParam;
 import uw.common.response.ResponseData;
 
 /**
- * AiChatRpc.
+ * AI 对话生成 RPC 接口。
+ * <p>
+ * 实现类（{@link uw.ai.rpc.impl.AiChatRpcImpl}）通过 RestClient/WebClient 调用 AI 服务中心。
  */
 public interface AiChatRpc {
 
 
     /**
-     * 生成响应数据。
+     * 同步生成对话响应数据。
      *
-     * @param param param
-     * @return ResponseData
+     * @param param 对话生成参数
+     * @return 完整响应文本
      */
     ResponseData<String> generate(AiChatGenerateParam param);
 
 
     /**
-     * 生成流式响应数据。
+     * 流式生成对话响应数据（SSE）。
      *
-     * @param param param
-     * @return ResponseData
+     * @param param 对话生成参数
+     * @return 文本片段流
      */
     Flux<String> chatGenerate(AiChatGenerateParam param);
 

@@ -143,7 +143,7 @@ public interface AiTool<P extends AiToolParam, R> extends Function<P, R> {
 | 参数            | 说明                       |
 |---------------|--------------------------|
 | configId      | 配置 ID                    |
-| configCode    | 配置代码（基类字段，列表/Map Builder 暂未暴露 setter） |
+| configCode    | 配置代码（与 configId 二选一，列表/Map Builder 均已支持） |
 | systemPrompt  | 系统提示                     |
 | langList      | 目标语言列表                   |
 

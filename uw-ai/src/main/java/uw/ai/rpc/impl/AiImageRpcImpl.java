@@ -42,6 +42,18 @@ public class AiImageRpcImpl implements AiImageRpc {
         if (param.getUserPrompt() != null) {
             body.add("prompt", param.getUserPrompt());
         }
+        if (param.getSaasId() > 0) {
+            body.add("saasId", param.getSaasId());
+        }
+        if (param.getUserId() > 0) {
+            body.add("userId", param.getUserId());
+        }
+        if (param.getUserType() > 0) {
+            body.add("userType", param.getUserType());
+        }
+        if (param.getUserInfo() != null) {
+            body.add("userInfo", param.getUserInfo());
+        }
 
         ResponseData<AiImageResultData> result = authRestClient.post()
                 .uri(uwAiProperties.getAiCenterHost() + "/rpc/image/generate")

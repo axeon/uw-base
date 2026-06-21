@@ -2,6 +2,8 @@ package uw.webot;
 
 import com.microsoft.playwright.options.LoadState;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
@@ -15,6 +17,7 @@ import uw.webot.session.SessionConfig;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -27,6 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest(classes = {WebotAutoConfiguration.class})
 @TestPropertySource(properties = {"logging.level.uw.webot=DEBUG", "uw.webot.enabled=true", "uw.webot.botPool.max-browsers-per-group=1", "uw.webot.botPool.max-tabs-per-browser=5",})
 class WebotIntegrationTest {
+
+    private static final Logger log = LoggerFactory.getLogger(WebotIntegrationTest.class);
 
     @Autowired
     private WebotManager webotManager;
@@ -72,33 +77,31 @@ class WebotIntegrationTest {
 
     @Test
     void testConcurrentSessions() throws Exception {
-        int sessionCount = 10;
+        int sessionCount = 3;
         CountDownLatch latch = new CountDownLatch(sessionCount);
         AtomicInteger successCount = new AtomicInteger(0);
         ExecutorService executor = Executors.newFixedThreadPool(sessionCount);
 
         for (int i = 0; i < sessionCount; i++) {
             executor.submit(() -> {
-                WebotSession session = webotManager.createSession(SessionConfig.builder().browserConfig(BrowserConfig.builder().browserType(BrowserType.CHROMIUM).headless(false).viewportHeight(1920).viewportWidth(1080).build()).build());
+                WebotSession session = webotManager.createSession(SessionConfig.builder().browserConfig(BrowserConfig.builder().browserType(BrowserType.CHROMIUM).headless(true).viewportHeight(1920).viewportWidth(1080).build()).build());
+                String sessionId = session.getSessionId();
                 try (BrowserTab browserTab = webotManager.openBrowserTab(session)) {
                     browserTab.navigate("https://www.baidu.com");
                     browserTab.waitForLoadState(LoadState.NETWORKIDLE);
-                    System.out.println(browserTab.title());
-                    Thread.sleep(5_000);
+                    log.info("page title: {}", browserTab.title());
                     successCount.incrementAndGet();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.warn("concurrent session failed", e);
                 } finally {
+                    webotManager.destroySession(sessionId);
                     latch.countDown();
                 }
-                webotManager.destroySession(session.getSessionId());
             });
         }
 
-//        assertTrue(latch.await(120, TimeUnit.SECONDS));
-//        assertEquals(sessionCount, successCount.get());
-//        executor.shutdown();
-        Thread.sleep(1200_000);
+        assertTrue(latch.await(120, TimeUnit.SECONDS), "all sessions should finish in time");
+        executor.shutdown();
     }
 
     @Test

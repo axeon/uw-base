@@ -36,19 +36,19 @@ public class ProxyManager {
     }
 
     /**
-     * 获取默认的验证码服务。
+     * 获取默认的代理服务。
      *
-     * @return 验证码服务
+     * @return 代理服务
      */
     public ProxyService getDefaultProxyService() {
         return serviceMap.isEmpty() ? null : serviceMap.firstEntry().getValue();
     }
 
     /**
-     * 获取指定配置的验证码服务。
+     * 获取指定配置的代理服务。
      *
      * @param configName 配置名称
-     * @return 验证码服务
+     * @return 代理服务
      */
     public ProxyService getProxyService(String configName) {
         if (configName == null) {

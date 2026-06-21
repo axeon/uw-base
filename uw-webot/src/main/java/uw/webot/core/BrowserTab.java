@@ -25,12 +25,16 @@ import java.util.function.Function;
  * 管理的浏览器页面。
  * <p>
  * 封装Playwright的BrowserContext和Page，是混合模式中的基础资源单元。
- * 多个BrowserTab可以共享同一个Browser实例，实现资源复用。
+ * 多个BrowserTab可以共享同一个Browser实例（Browser进程级复用），实现资源复用。
+ * </p>
+ * <p>
+ * <strong>关于 Context 复用：</strong>Playwright 的 BrowserContext 池化复用经实测不稳定，
+ * 因此当前实现采用一次性 Context 模式。每次 {@link BrowserBotPool#openBrowserTab(uw.webot.WebotSession)}
+ * 都会新建 Context + Page；调用 {@link #close()} 会彻底关闭并销毁该 Context/Page，<em>不会</em>归还复用。
+ * Browser 进程及其底层 Playwright 实例仍由 {@link BrowserInstance} 持有并在多个 Tab 间共享。
  * </p>
  * <p>
  * 该类实现了 {@link Closeable} 接口，支持 try-with-resources 语句进行自动资源管理。
- * 当调用 {@link #close()} 方法时，BrowserTab 会自动归还到所属的 {@link BrowserBotPool} 中，
- * 类似于 JDBC 连接池的连接归还机制。
  * </p>
  * <p>
  * <strong>线程安全说明：</strong>
@@ -39,10 +43,10 @@ import java.util.function.Function;
  * </p>
  * <p>使用示例：</p>
  * <pre>
- * try (BrowserTab page = browserBotPool.openBrowserTab(sessionConfig)) {
- *     page.navigate("https://example.com");
+ * try (BrowserTab tab = browserBotPool.openBrowserTab(sessionConfig)) {
+ *     tab.navigate("https://example.com");
  *     // 执行其他操作...
- * } // 自动调用 close() 归还到 BrowserBotPool
+ * } // 自动调用 close() 释放 Context/Page
  * </pre>
  *
  * @author axeon
@@ -205,6 +209,25 @@ public class BrowserTab implements Closeable {
     }
 
     // ==================== 页面操作方法 ====================
+
+    /**
+     * 在浏览器上下文中注册初始化脚本。
+     * <p>
+     * 脚本会在每个新页面任何站点脚本执行之前运行，适合用于反检测属性的预先注入。
+     * 必须在 {@link #navigate(String)} 等操作之前调用。
+     * </p>
+     *
+     * @param script 要注入的 JavaScript 脚本（直接以语句形式书写，不需要包裹函数）
+     */
+    public void addInitScript(String script) {
+        browserInstance.submitAndWait(() -> {
+            checkActive();
+            if (context != null) {
+                context.addInitScript(script);
+            }
+            return null;
+        });
+    }
 
     /**
      * 在 BrowserInstance 的专属线程中执行自定义操作（无返回值）。
@@ -520,6 +543,10 @@ public class BrowserTab implements Closeable {
 
     /**
      * 关闭浏览器页面上下文。
+     * <p>
+     * 关闭并销毁当前 BrowserTab 持有的 Page 和 BrowserContext（一次性 Context，不复用），
+     * 并从所属 {@link BrowserInstance} 中移除自身登记。Browser 进程本身不受影响，仍由池持有。
+     * </p>
      * <p>
      * 此方法线程安全，可重复调用（重复调用会忽略）。
      * 实现自 {@link Closeable} 接口，支持 try-with-resources 语句。

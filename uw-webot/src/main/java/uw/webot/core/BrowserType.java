@@ -7,7 +7,10 @@ package uw.webot.core;
  * </p>
  */
 public enum BrowserType {
+    /** Google Chromium / Chrome 内核浏览器。 */
     CHROMIUM,
+    /** Mozilla Firefox 浏览器。 */
     FIREFOX,
+    /** WebKit 内核浏览器（macOS 上为 Safari 内核）。 */
     WEBKIT
 }

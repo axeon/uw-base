@@ -9,7 +9,6 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.util.Base64;
 
 /**
@@ -240,34 +239,19 @@ public class LocalOcrCaptchaServiceImpl implements CaptchaService {
 
     /**
      * 执行OCR识别。
-     * 注意：此为简化实现，实际应集成Tesseract或EasyOCR。
+     * <p>
+     * 注意：当前实现未集成真正的 OCR 引擎（如 Tesseract / EasyOCR），
+     * 直接返回 {@code null} 以使上层包装为识别失败结果。
+     * 接入真实引擎后，应在此处返回识别文本。
+     * </p>
      *
      * @param image   预处理后的图片
      * @param options 识别选项
-     * @return 识别结果
+     * @return 识别结果，{@code null} 表示未识别到
      */
     private String performOcr(BufferedImage image, CaptchaOptions options) {
-        // 简化实现：返回占位符
-        // 实际生产环境应使用以下方式之一：
-        // 1. Tesseract: Tesseract.doOCR(image)
-        // 2. EasyOCR: reader.readtext(image)
-
-        log.warn("OCR recognition is using simplified implementation. " +
-                "For production use, please integrate Tesseract or EasyOCR.");
-
-        // 返回一个占位符，提示需要集成真正的OCR引擎
-        return "OCR_PLACEHOLDER";
-    }
-
-    /**
-     * 获取图片的Base64编码。
-     *
-     * @param image 图片
-     * @return Base64编码
-     */
-    private String imageToBase64(BufferedImage image) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(image, "png", baos);
-        return Base64.getEncoder().encodeToString(baos.toByteArray());
+        log.warn("Local OCR engine is not integrated. " +
+                "Please configure 2captcha/capsolver service or integrate Tesseract/EasyOCR.");
+        return null;
     }
 }

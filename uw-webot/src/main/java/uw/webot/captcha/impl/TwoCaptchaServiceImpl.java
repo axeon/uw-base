@@ -354,6 +354,9 @@ public class TwoCaptchaServiceImpl implements CaptchaService {
 
     /**
      * 轮询获取结果。
+     * <p>
+     * 注意：API key 通过 POST body 传递，避免出现在 URL/访问日志中。
+     * </p>
      */
     private CaptchaResult pollForResult(String captchaId, long startTime) {
         Duration timeout = captchaConfig.getMaxTimeout();
@@ -366,12 +369,17 @@ public class TwoCaptchaServiceImpl implements CaptchaService {
             try {
                 Thread.sleep(pollingInterval.toMillis());
 
-                String url = String.format("%s/res.php?key=%s&action=get&id=%s&json=1",
-                        API_BASE_URL, apiKey, captchaId);
+                // 通过 POST form 传递 key，避免 key 泄漏到 URL/日志
+                Map<String, String> params = new HashMap<>();
+                params.put("key", apiKey);
+                params.put("action", "get");
+                params.put("id", captchaId);
+                params.put("json", "1");
 
                 HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(url))
-                        .GET()
+                        .uri(URI.create(API_BASE_URL + "/res.php"))
+                        .header("Content-Type", "application/x-www-form-urlencoded")
+                        .POST(HttpRequest.BodyPublishers.ofString(buildFormData(params)))
                         .build();
 
                 HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -417,6 +425,9 @@ public class TwoCaptchaServiceImpl implements CaptchaService {
 
     /**
      * 获取账户余额。
+     * <p>
+     * API key 通过 POST body 传递，避免出现在 URL/访问日志中。
+     * </p>
      *
      * @return 账户余额
      */
@@ -428,10 +439,15 @@ public class TwoCaptchaServiceImpl implements CaptchaService {
         }
 
         try {
-            String url = String.format("%s/res.php?key=%s&action=getbalance&json=1", API_BASE_URL, apiKey);
+            Map<String, String> params = new HashMap<>();
+            params.put("key", apiKey);
+            params.put("action", "getbalance");
+            params.put("json", "1");
+
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .GET()
+                    .uri(URI.create(API_BASE_URL + "/res.php"))
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(HttpRequest.BodyPublishers.ofString(buildFormData(params)))
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());

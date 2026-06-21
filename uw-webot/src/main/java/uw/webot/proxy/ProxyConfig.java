@@ -231,17 +231,11 @@ public class ProxyConfig implements Serializable {
     }
 
     public static final class Builder {
-        private boolean enabled;
         private int maxFailures;
         private Duration healthCheckInterval;
         private List<ProxyServer> servers;
 
         private Builder() {
-        }
-
-        public Builder enabled(boolean enabled) {
-            this.enabled = enabled;
-            return this;
         }
 
         public Builder maxFailures(int maxFailures) {

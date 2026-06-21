@@ -39,19 +39,19 @@ public class StealthManager {
     }
 
     /**
-     * 获取默认的验证码服务。
+     * 获取默认的反检测服务。
      *
-     * @return 验证码服务
+     * @return 反检测服务
      */
     public StealthService getDefaultStealthService() {
         return serviceMap.isEmpty() ? null : serviceMap.firstEntry().getValue();
     }
 
     /**
-     * 获取指定配置的验证码服务。
+     * 获取指定配置的反检测服务。
      *
      * @param configName 配置名称
-     * @return 验证码服务
+     * @return 反检测服务
      */
     public StealthService getStealthService(String configName) {
         if (configName == null) {
@@ -61,7 +61,7 @@ public class StealthManager {
     }
 
     /**
-     * 应用指定配置的验证码服务。
+     * 应用指定配置的反检测服务。
      *
      * @param browserTab       浏览器标签
      * @param stealthConfigKey 配置名称

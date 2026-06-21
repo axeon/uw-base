@@ -94,10 +94,20 @@ public class BrowserInstance {
     private final AtomicBoolean active = new AtomicBoolean(false);
 
     /**
+     * 是否已关闭（幂等关闭标志，独立于 active）。
+     */
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+
+    /**
+     * executor 线程引用（在 init 的首个任务中捕获），用于准确判断调用线程归属。
+     */
+    private volatile Thread executorThread;
+
+    /**
      * 构造方法。
      *
      * @param browserId         浏览器 ID
-     * @param browserGroup      所属的 BrowserBotPool
+     * @param browserGroup      所属的 BrowserGroup
      * @param browserConfig     浏览器配置
      * @param maxTabsPerBrowser 最大 Page 数量
      */
@@ -106,7 +116,7 @@ public class BrowserInstance {
             throw new IllegalArgumentException("browserId cannot be null");
         }
         if (browserGroup == null) {
-            throw new IllegalArgumentException("ownerPool cannot be null");
+            throw new IllegalArgumentException("browserGroup cannot be null");
         }
         this.browserId = browserId;
         this.browserGroup = browserGroup;
@@ -133,6 +143,8 @@ public class BrowserInstance {
         submitAndWait(() -> {
             try {
                 log.debug("Initializing BrowserInstance [{}] in executor thread", browserId);
+                // 捕获 executor 线程引用，供 isExecutorThread() 准确判断
+                this.executorThread = Thread.currentThread();
                 // 创建 Playwright
                 this.playwright = Playwright.create();
                 // 创建浏览器启动选项
@@ -248,40 +260,39 @@ public class BrowserInstance {
 
     /**
      * 检查当前线程是否是 executor 线程。
+     * <p>
+     * 通过线程引用比对（而非线程名），避免重名/线程改名导致误判。
+     * </p>
      *
      * @return true 如果当前线程是 executor 线程
      */
     private boolean isExecutorThread() {
-        return Thread.currentThread().getName().equals(browserId);
+        return Thread.currentThread() == executorThread;
     }
 
     /**
      * 提交任务到专属线程执行，并等待结果。
+     * <p>
+     * 默认超时 60 秒。超时后会尝试 {@link Future#cancel(boolean) 中断}正在执行的任务，
+     * 并把当前 BrowserInstance 标记为失效（触发后续重建），避免超时任务继续占用单线程
+     * 导致后续提交的任务被阻塞或串扰。
+     * </p>
      *
      * @param task 任务
      * @param <T>  返回类型
      * @return 任务执行结果
      */
     public <T> T submitAndWait(Callable<T> task) {
-        try {
-            Future<T> future = executor.submit(task);
-            return future.get(60, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            throw new RuntimeException("Task execution timeout", e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Task execution interrupted", e);
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof RuntimeException) {
-                throw (RuntimeException) cause;
-            }
-            throw new RuntimeException("Task execution failed", cause);
-        }
+        return submitAndWait(task, 60, TimeUnit.SECONDS);
     }
 
     /**
      * 提交任务到专属线程执行，并等待结果（带超时）。
+     * <p>
+     * 超时后会尝试 {@link Future#cancel(boolean) 中断}正在执行的任务，
+     * 并把当前 BrowserInstance 标记为失效（触发后续重建），避免超时任务继续占用单线程
+     * 导致后续提交的任务被阻塞或串扰。
+     * </p>
      *
      * @param task    任务
      * @param timeout 超时时间
@@ -290,13 +301,17 @@ public class BrowserInstance {
      * @return 任务执行结果
      */
     public <T> T submitAndWait(Callable<T> task, long timeout, TimeUnit unit) {
+        Future<T> future = executor.submit(task);
         try {
-            Future<T> future = executor.submit(task);
             return future.get(timeout, unit);
         } catch (TimeoutException e) {
+            // 中断正在执行的任务，并把 instance 标记为失效（触发上层重建），避免单线程被卡死任务长期占用
+            future.cancel(true);
+            markFailed();
             throw new RuntimeException("Task execution timeout", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            future.cancel(true);
             throw new RuntimeException("Task execution interrupted", e);
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
@@ -395,26 +410,55 @@ public class BrowserInstance {
     }
 
     /**
+     * 标记实例失效并异步关闭。
+     * <p>
+     * 用于任务执行超时等异常路径：在独立线程中执行 {@link #close()}，
+     * 避免在 submitAndWait 超时上下文中再次提交清理任务导致自死锁。close 内部用独立 {@code closed}
+     * 标志保证幂等，并先将 active 置 false 让负载均衡立即跳过本实例。
+     * </p>
+     */
+    private void markFailed() {
+        Thread cleaner = new Thread(() -> {
+            try {
+                close();
+            } catch (Exception e) {
+                log.warn("Error closing failed BrowserInstance [{}]", browserId, e);
+            }
+        }, browserId + "-cleaner");
+        cleaner.setDaemon(true);
+        cleaner.start();
+    }
+
+    /**
      * 关闭浏览器实例。
+     * <p>
+     * 幂等：通过独立的 {@code closed} 标志保证只执行一次，不依赖 {@code active} 的 CAS，
+     * 因此即使实例已被 {@link #markFailed()} 置为失效，close 仍能完成资源回收。
+     * </p>
      */
     public void close() {
-        if (active.compareAndSet(true, false)) {
-            log.debug("Closing BrowserInstance [{}]", browserId);
+        if (!closed.compareAndSet(false, true)) {
+            return;
+        }
+        // 标记为不活跃，让负载均衡跳过本实例
+        active.set(false);
+        log.debug("Closing BrowserInstance [{}]", browserId);
 
-            // 从 BrowserGroup 中移除
-            this.browserGroup.removeBrowserInstance(this);
+        // 从 BrowserGroup 中移除
+        this.browserGroup.removeBrowserInstance(this);
 
-            // 关闭所有 Page
-            for (BrowserTab browserTab : browserTabMap.values()) {
-                try {
-                    browserTab.close();
-                } catch (Exception e) {
-                    log.warn("Error closing browserTab [{}] during browser shutdown", browserTab.getBrowserTabId(), e);
-                }
+        // 关闭所有 Page
+        for (BrowserTab browserTab : browserTabMap.values()) {
+            try {
+                browserTab.close();
+            } catch (Exception e) {
+                log.warn("Error closing browserTab [{}] during browser shutdown", browserTab.getBrowserTabId(), e);
             }
-            browserTabMap.clear();
+        }
+        browserTabMap.clear();
 
-            // 在 executor 线程中执行清理playwright
+        // 在 executor 线程中执行清理 playwright（短超时，避免被卡死任务拖死）
+        try {
             submitAndWait(() -> {
                 // 关闭浏览器
                 try {
@@ -436,20 +480,22 @@ public class BrowserInstance {
                     log.warn("Error closing playwright during cleanup", e);
                 }
                 return null;
-            });
-
-            // 关闭 executor
-            executor.shutdown();
-            try {
-                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                    executor.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                executor.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-            log.debug("BrowserInstance [{}] closed", browserId);
+            }, 10, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.warn("Timed out or failed while cleaning playwright for [{}], forcing executor shutdown", browserId, e);
         }
+
+        // 关闭 executor（先 shutdown，超时则 shutdownNow 强制中断残留任务）
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+        log.debug("BrowserInstance [{}] closed", browserId);
     }
 
     /**

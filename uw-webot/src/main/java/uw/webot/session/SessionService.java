@@ -18,6 +18,7 @@ public interface SessionService {
      *
      * @param sessionId 会话ID
      * @param session   会话对象
+     * @param ttl       存活时长（TTL），到期后由缓存自动清除
      */
     void setSession(String sessionId, WebotSession session, Duration ttl);
 

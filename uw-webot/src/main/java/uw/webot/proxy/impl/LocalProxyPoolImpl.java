@@ -49,15 +49,18 @@ public class LocalProxyPoolImpl implements ProxyService {
 
     public LocalProxyPoolImpl(ProxyConfig proxyConfig) {
         this.proxyConfig = proxyConfig;
-        // 初始化代理
+        // 初始化代理（防御 servers 为 null 或空，避免 LinkedBlockingQueue 容量为 0 抛 IllegalArgumentException）
         List<ProxyConfig.ProxyServer> servers = proxyConfig.getServers();
-        this.allProxies = new LinkedBlockingQueue<>(servers.size());
-        for (ProxyConfig.ProxyServer server : servers) {
-            ProxyInfo proxyInfo = new ProxyInfo(
-                    server,
-                    1 // 默认权重
-            );
-            allProxies.add(proxyInfo);
+        int initialCapacity = (servers == null || servers.isEmpty()) ? 1 : servers.size();
+        this.allProxies = new LinkedBlockingQueue<>(initialCapacity);
+        if (servers != null) {
+            for (ProxyConfig.ProxyServer server : servers) {
+                ProxyInfo proxyInfo = new ProxyInfo(
+                        server,
+                        1 // 默认权重
+                );
+                allProxies.add(proxyInfo);
+            }
         }
         // 如果没有配置代理，记录警告
         if (allProxies.isEmpty()) {
@@ -69,31 +72,39 @@ public class LocalProxyPoolImpl implements ProxyService {
 
     /**
      * 查找可用代理。
+     * <p>
+     * 采用轮询方式遍历代理池，选中的代理使用完毕后通过 {@link #releaseProxy(ProxyInfo)} 归还。
+     * 遍历过程中所有代理（无论是否命中）都会放回队列，避免代理被永久取出导致池耗尽。
+     * </p>
      */
     @Override
     public ProxyInfo getProxy(ProxyType proxyType) {
-        // 临时存储不匹配的代理，稍后放回
-        List<ProxyInfo> nonMatchingProxies = new ArrayList<>();
-
-        ProxyInfo foundProxy = null;
-
-        // 从队列中取出代理查找匹配的类型
-        while (!allProxies.isEmpty()) {
-            ProxyInfo proxy = allProxies.poll();
-            if (proxy != null) {
-                // 匹配类型
-                if (checkProxy(proxyType, proxy)) {
-                    foundProxy = proxy;
-                    break;
-                } else {
-                    nonMatchingProxies.add(proxy);
-                }
-            }
+        checkShutdown();
+        if (allProxies.isEmpty()) {
+            return null;
         }
 
-        // 将不匹配的代理放回队列
-        if (!nonMatchingProxies.isEmpty()) {
-            allProxies.addAll(nonMatchingProxies);
+        // 临时存储本轮遍历的代理，统一放回，保证不丢代理
+        List<ProxyInfo> polled = new ArrayList<>(allProxies.size());
+        ProxyInfo foundProxy = null;
+
+        // 至多遍历当前队列长度一轮
+        int initialSize = allProxies.size();
+        for (int i = 0; i < initialSize && !allProxies.isEmpty(); i++) {
+            ProxyInfo proxy = allProxies.poll();
+            if (proxy == null) {
+                break;
+            }
+            if (foundProxy == null && checkProxy(proxyType, proxy)) {
+                // 命中，记录但不立即返回，先把所有代理归还保证队列完整
+                foundProxy = proxy;
+            }
+            polled.add(proxy);
+        }
+
+        // 把所有取出的代理放回队列（命中的也放回，命中代理由 releaseProxy/releaseProxy 机制循环复用）
+        for (ProxyInfo proxy : polled) {
+            allProxies.offer(proxy);
         }
 
         return foundProxy;
@@ -127,21 +138,27 @@ public class LocalProxyPoolImpl implements ProxyService {
 
     /**
      * 释放代理。
+     * <p>
+     * 本实现的 {@link #getProxy(ProxyType)} 不会把代理从池中取出（命中的代理也会放回队列），
+     * 因此无需归还。此方法保留以兼容接口契约。
+     * </p>
      */
     @Override
     public void releaseProxy(ProxyInfo proxyInfo) {
-        // 代理不需要释放，直接使用循环队列机制
-        // 此方法保留以兼容接口，但不再执行任何操作
+        // 代理始终保留在队列中循环复用，无需归还
     }
 
 
     /**
-     * 标记代理失败。
+     * 标记代理失败，累加失败计数。
+     * 失败次数超过 {@code maxFailures} 的代理在后续健康检查阶段会被跳过，直到重新恢复健康。
      */
     @Override
     public void markProxyFailed(ProxyInfo proxyInfo) {
-        // 代理不需要释放，直接使用循环队列机制
-        // 此方法保留以兼容接口，但不再执行任何操作
+        if (proxyInfo == null) {
+            return;
+        }
+        proxyInfo.setHealthCheckResult(false);
     }
 
     @Override
@@ -168,15 +185,12 @@ public class LocalProxyPoolImpl implements ProxyService {
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
                 boolean healthy = response.statusCode() == 200;
-
-                // 更新健康检查状态
+                // 更新健康检查状态（内部已维护 failureCount，避免重复调用导致计数错乱）
                 proxyInfo.setHealthCheckResult(healthy);
 
                 if (healthy) {
-                    proxyInfo.setHealthCheckResult(true);
                     log.debug("Proxy [{}] health check passed", proxyInfo.toString());
                 } else {
-                    proxyInfo.setHealthCheckResult(false);
                     log.warn("Proxy [{}] health check failed with status: {}",
                             proxyInfo.toString(), response.statusCode());
                 }

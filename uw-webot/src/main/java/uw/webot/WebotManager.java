@@ -70,8 +70,13 @@ public class WebotManager {
 
     /**
      * 返回全局唯一实例。
+     * <p>
+     * 仅当 WebotAutoConfiguration 装配（{@code uw.webot.enabled=true}，默认开启）并完成
+     * WebotManager Bean 初始化后才可用，否则返回 {@code null}。在 {@code enabled=false} 的场景下
+     * 请勿调用本方法，应直接通过 Spring 依赖注入获取（或不依赖 WebotManager）。
+     * </p>
      *
-     * @return
+     * @return 全局唯一实例，未初始化时返回 {@code null}
      */
     public static WebotManager getInstance() {
         return INSTANCE;
@@ -104,32 +109,33 @@ public class WebotManager {
     }
 
     /**
-     * 获取浏览器页签（自动关联会话）。
+     * 获取浏览器页签（一次性 Context，不复用）。
      * <p>
-     * <strong>重要：</strong>返回的 BrowserTab 实现了 {@link AutoCloseable} 接口，
-     * 在获取时会自动关联所属的 BrowserBotPool。当调用 {@link BrowserTab#close()} 方法时，
-     * BrowserTab 会自动归还到 BrowserBotPool 中以便复用。
+     * <strong>注意：</strong>由于 Playwright Context 池化复用经实测不稳定，当前实现采用
+     * 一次性 Context 模式——每次调用都会创建新的 BrowserContext + Page，{@link BrowserTab#close()}
+     * 会彻底关闭并销毁该 Context/Page，<em>不会</em>归还到池中复用。Browser 进程级别仍然共享。
      * </p>
-     * <p>推荐使用 try-with-resources 语句：</p>
+     * <p>返回的 BrowserTab 实现了 {@link AutoCloseable} 接口，推荐使用 try-with-resources：</p>
      * <pre>
-     * try (BrowserTab page = webotManager.acquireBrowserTab(sessionId)) {
-     *     page.navigate("https://example.com");
+     * try (BrowserTab tab = webotManager.openBrowserTab(session)) {
+     *     tab.navigate("https://example.com");
      *     // 执行操作...
-     * } // 自动调用 close() 归还到 BrowserBotPool
+     * } // 自动调用 close() 释放 Context/Page
      * </pre>
      * <p>或者使用 {@link #execute(WebotSession, WebotFunction)} 方法自动管理资源：</p>
      * <pre>
-     * webotManager.execute(sessionId, page -> {
-     *     page.navigate("https://example.com");
+     * webotManager.execute(session, tab -> {
+     *     tab.navigate("https://example.com");
      *     // 自动释放资源
      * });
      * </pre>
+     * <p>若会话配置了 stealthConfigKey，本方法会在返回前通过 addInitScript 注册反检测脚本，
+     * 因此必须在 navigate 之前完成（本方法内部已按此顺序处理）。</p>
      *
      * @param webotSession 会话信息（必须有效）
      * @return BrowserTab 实例，实现了 AutoCloseable 接口
-     * @throws IllegalArgumentException sessionId 无效或已过期时抛出
-     * @throws InterruptedException     中断异常
-     * @throws TimeoutException         超时异常
+     * @throws IllegalArgumentException 会话无效或已过期时抛出
+     * @throws TimeoutException         无法在实例池中获得可用浏览器实例时抛出
      * @see BrowserTab#close()
      */
     public BrowserTab openBrowserTab(WebotSession webotSession) throws TimeoutException {

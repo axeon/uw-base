@@ -2,6 +2,7 @@ package uw.webot.stealth;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.JsonUtils;
 import uw.webot.core.BrowserTab;
 
 import java.util.ArrayList;
@@ -56,6 +57,11 @@ public class StealthService {
 
     /**
      * 应用反检测措施。
+     * <p>
+     * 通过 {@link BrowserTab#addInitScript(String)} 注册初始化脚本，使反检测逻辑在每个
+     * 新页面任何站点脚本执行之前运行。必须在 {@link BrowserTab#navigate(String)} 等页面操作之前调用，
+     * 否则首个页面的站点脚本可能在注入之前就已经读取到原始指纹。
+     * </p>
      *
      * @param browserTab 浏览器实例
      */
@@ -137,7 +143,7 @@ public class StealthService {
                 }
                 """;
 
-        instance.evaluate(script);
+        instance.addInitScript(script);
     }
 
     /**
@@ -145,44 +151,44 @@ public class StealthService {
      */
     private void spoofWebGL(BrowserTab instance) {
         WebGLFingerprint fingerprint = getRandomWebGLFingerprint();
-
-        String script = """
-                        (fingerprint) => {
-                            const getParameter = WebGLRenderingContext.prototype.getParameter;
-                            WebGLRenderingContext.prototype.getParameter = function(parameter) {
-                                if (parameter === 37445) {
-                                    return fingerprint.vendor;
-                                }
-                                if (parameter === 37446) {
-                                    return fingerprint.renderer;
-                                }
-                                if (parameter === 7937) {
-                                    return fingerprint.unmaskedVendor;
-                                }
-                                if (parameter === 7936) {
-                                    return fingerprint.unmaskedRenderer;
-                                }
-                                return getParameter(parameter);
-                            };
-
-                            // 覆盖getShaderPrecisionFormat
-                            const getShaderPrecisionFormat = WebGLRenderingContext.prototype.getShaderPrecisionFormat;
-                            WebGLRenderingContext.prototype.getShaderPrecisionFormat = function() {
-                                return {
-                                    precision: 23,
-                                    rangeMin: 127,
-                                    rangeMax: 127
-                                };
-                            };
-                        }
-                        """;
-
-        instance.evaluate(script, Map.of(
+        String fingerprintJson = JsonUtils.toString(Map.of(
                 "vendor", fingerprint.vendor,
                 "renderer", fingerprint.renderer,
                 "unmaskedVendor", fingerprint.unmaskedVendor,
                 "unmaskedRenderer", fingerprint.unmaskedRenderer
         ));
+
+        String script = """
+                        const fingerprint = %s;
+                        const getParameter = WebGLRenderingContext.prototype.getParameter;
+                        WebGLRenderingContext.prototype.getParameter = function(parameter) {
+                            if (parameter === 37445) {
+                                return fingerprint.vendor;
+                            }
+                            if (parameter === 37446) {
+                                return fingerprint.renderer;
+                            }
+                            if (parameter === 7937) {
+                                return fingerprint.unmaskedVendor;
+                            }
+                            if (parameter === 7936) {
+                                return fingerprint.unmaskedRenderer;
+                            }
+                            return getParameter(parameter);
+                        };
+
+                        // 覆盖getShaderPrecisionFormat
+                        const getShaderPrecisionFormat = WebGLRenderingContext.prototype.getShaderPrecisionFormat;
+                        WebGLRenderingContext.prototype.getShaderPrecisionFormat = function() {
+                            return {
+                                precision: 23,
+                                rangeMin: 127,
+                                rangeMax: 127
+                            };
+                        };
+                        """.formatted(fingerprintJson);
+
+        instance.addInitScript(script);
     }
 
     /**
@@ -197,80 +203,81 @@ public class StealthService {
         int width = Integer.parseInt(resParts[0]);
         int height = Integer.parseInt(resParts[1]);
 
-        String script = """
-                        (config) => {
-                            // 设置User-Agent
-                            Object.defineProperty(navigator, 'userAgent', {
-                                get: function() {
-                                    return config.userAgent;
-                                }
-                            });
-
-                            // 设置屏幕分辨率
-                            Object.defineProperty(screen, 'width', {
-                                get: function() {
-                                    return config.width;
-                                }
-                            });
-                            Object.defineProperty(screen, 'height', {
-                                get: function() {
-                                    return config.height;
-                                }
-                            });
-                            Object.defineProperty(screen, 'availWidth', {
-                                get: function() {
-                                    return config.width;
-                                }
-                            });
-                            Object.defineProperty(screen, 'availHeight', {
-                                get: function() {
-                                    return config.height - 40;
-                                }
-                            });
-                            Object.defineProperty(screen, 'colorDepth', {
-                                get: function() {
-                                    return 24;
-                                }
-                            });
-                            Object.defineProperty(screen, 'pixelDepth', {
-                                get: function() {
-                                    return 24;
-                                }
-                            });
-
-                            // 设置时区
-                            Intl.DateTimeFormat = function() {
-                                return {
-                                    resolvedOptions: function() {
-                                        return {
-                                            timeZone: config.timezone,
-                                            locale: 'zh-CN'
-                                        };
-                                    }
-                                };
-                            };
-
-                            // 覆盖Date
-                            const OriginalDate = Date;
-                            Date = function() {
-                                if (arguments.length === 0) {
-                                    return new OriginalDate();
-                                }
-                                return new OriginalDate(...arguments);
-                            };
-                            Date.prototype = OriginalDate.prototype;
-                            Date.now = OriginalDate.now;
-                            Date.parse = OriginalDate.parse;
-                            Date.UTC = OriginalDate.UTC;
-                        }
-                        """;
-
-        instance.evaluate(script, Map.of(
+        String configJson = JsonUtils.toString(Map.of(
                 "userAgent", userAgent,
                 "width", width,
                 "height", height,
-                "timezone", timezone
+                "timezone", timezone == null ? "" : timezone
         ));
+
+        String script = """
+                        const config = %s;
+                        // 设置User-Agent
+                        Object.defineProperty(navigator, 'userAgent', {
+                            get: function() {
+                                return config.userAgent;
+                            }
+                        });
+
+                        // 设置屏幕分辨率
+                        Object.defineProperty(screen, 'width', {
+                            get: function() {
+                                return config.width;
+                            }
+                        });
+                        Object.defineProperty(screen, 'height', {
+                            get: function() {
+                                return config.height;
+                            }
+                        });
+                        Object.defineProperty(screen, 'availWidth', {
+                            get: function() {
+                                return config.width;
+                            }
+                        });
+                        Object.defineProperty(screen, 'availHeight', {
+                            get: function() {
+                                return config.height - 40;
+                            }
+                        });
+                        Object.defineProperty(screen, 'colorDepth', {
+                            get: function() {
+                                return 24;
+                            }
+                        });
+                        Object.defineProperty(screen, 'pixelDepth', {
+                            get: function() {
+                                return 24;
+                            }
+                        });
+
+                        // 设置时区
+                        Intl.DateTimeFormat = function() {
+                            return {
+                                resolvedOptions: function() {
+                                    return {
+                                        timeZone: config.timezone,
+                                        locale: 'zh-CN'
+                                    };
+                                }
+                            };
+                        };
+
+                        // 覆盖Date
+                        const OriginalDate = Date;
+                        Date = function() {
+                            if (arguments.length === 0) {
+                                return new OriginalDate();
+                            }
+                            return new OriginalDate(...arguments);
+                        };
+                        Date.prototype = OriginalDate.prototype;
+                        Date.now = OriginalDate.now;
+                        Date.parse = OriginalDate.parse;
+                        Date.UTC = OriginalDate.UTC;
+                        """.formatted(configJson);
+
+        instance.addInitScript(script);
     }
 
     /**
@@ -329,7 +336,7 @@ public class StealthService {
                 }
                 """;
 
-        instance.evaluate(script);
+        instance.addInitScript(script);
     }
 
     /**
@@ -365,7 +372,7 @@ public class StealthService {
                 }
                 """;
 
-        instance.evaluate(script);
+        instance.addInitScript(script);
     }
 
     /**

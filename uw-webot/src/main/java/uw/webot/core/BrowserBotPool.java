@@ -13,17 +13,17 @@ import java.util.stream.Collectors;
 /**
  * 浏览器机器人池（Browser Bot Pool）。
  * <p>
- * 基于 Hybrid 混合模式实现，支持 Browser 级别复用和 Tab 级别隔离。
+ * 基于 Hybrid 混合模式实现：Browser 进程级别复用（同一 Browser 实例可承载多个 Tab），
+ * BrowserTab 级别的一次性 Context（每次新建、close 后销毁，不复用）。
  * 采用分层架构：BotPool -> BrowserGroup -> BrowserInstance -> BrowserTab
  * </p>
  * <p>
  * 主要特性：
  * <ul>
- *   <li>单例模式管理，确保全局唯一实例</li>
- *   <li>按浏览器类型分组管理（chromium、firefox、webkit）</li>
- *   <li>自动扩缩容，根据负载动态调整 Browser 数量</li>
- *   <li>健康监控，定期检查和恢复故障 Browser</li>
- *   <li>完整的统计信息收集和报告</li>
+ *   <li>按浏览器配置（类型/headless/可执行路径）分组管理</li>
+ *   <li>组内 {@link BrowserInstance} 轮询负载均衡，按需创建至 {@code maxBrowsersPerGroup} 上限</li>
+ *   <li>健康监控线程定期剔除失效实例</li>
+ *   <li>统计信息收集与报告</li>
  * </ul>
  * </p>
  *
@@ -91,8 +91,8 @@ public class BrowserBotPool {
     /**
      * 获取或创建 BrowserGroup。
      * <p>
-     * 根据浏览器类型获取已有的 Group，或创建新的 Group。
-     * 如果配置不匹配（如 headless 设置不同），会关闭旧的 Group 并创建新的。
+     * 按浏览器配置标签（{@link BrowserConfig#getBrowserGroupTag()}）获取已有 Group，或创建新 Group。
+     * 不同 headless / 可执行路径会生成不同标签，从而各自拥有独立 Group（每个 Group 拥有自己的 Browser 进程）。
      * </p>
      *
      * @param browserConfig 浏览器配置
@@ -174,8 +174,8 @@ public class BrowserBotPool {
     /**
      * 健康检查。
      * <p>
-     * 定期检查所有 BrowserGroup 的健康状态，
-     * 移除不活跃的 Group，下次请求时会自动创建新的。
+     * 定期遍历所有 BrowserGroup，移除已失效（{@code isActive()==false}）的 BrowserInstance，
+     * 以及不再活跃的 Group，避免失效资源长期占用。下次请求时会按需重建。
      * </p>
      */
     private void healthCheck() {
@@ -184,6 +184,13 @@ public class BrowserBotPool {
                 return;
             }
             log.debug("Starting health check");
+            for (BrowserGroup group : browserGroups.values()) {
+                try {
+                    group.evictInactiveInstances();
+                } catch (Exception ge) {
+                    log.warn("Error during health check for group [{}]", group.getBrowserGroupTag(), ge);
+                }
+            }
             log.debug("Health check completed, active groups: {}", browserGroups.size());
         } catch (Exception e) {
             log.error("Error during health check", e);

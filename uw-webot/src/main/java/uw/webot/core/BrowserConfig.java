@@ -234,7 +234,7 @@ public class BrowserConfig {
         private String locale;
         private String timezone;
         private List<String> args;
-        private boolean javaScriptEnabled;
+        private boolean javaScriptEnabled = DEFAULT_JAVASCRIPT_ENABLED;
 
         private Builder() {
         }

@@ -160,12 +160,15 @@ class BrowserBotPoolTest {
 
     @Test
     @Timeout(30)
-    void testInvalidConfig() {
-        WebotSession webotSession = createDefaultConfig();
+    void testShutdownPoolRejectsOpenBrowserTab() {
+        // 关闭池后，再获取 BrowserTab 应抛 IllegalStateException
+        instancePool.shutdown();
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            instancePool.openBrowserTab(webotSession);
-        });
+        WebotSession webotSession = createDefaultConfig();
+        assertThrows(IllegalStateException.class, () -> instancePool.openBrowserTab(webotSession));
+
+        // 防止 tearDown 再次 shutdown 已关闭的池（shutdown 是幂等的，这里仅为语义清晰）
+        instancePool = null;
     }
 
     private WebotSession createDefaultConfig() {

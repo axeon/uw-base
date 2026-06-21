@@ -99,14 +99,17 @@ public class BrowserGroup {
     }
 
     /**
-     * 获取 BrowserInstance（线程安全）。
+     * 获取 BrowserInstance（线程安全，轮询负载均衡）。
      * <p>
      * 此方法是线程安全的，使用 synchronized 确保以下操作的原子性：
      * <ol>
-     *   <li>选择可用的 BrowserInstance</li>
-     *   <li>如果没有则创建新的</li>
+     *   <li>轮询队列，选择一个活跃且未满载的 BrowserInstance</li>
+     *   <li>如果没有可用实例，则按需创建新的</li>
      *   <li>验证浏览器实例仍然活跃</li>
      * </ol>
+     * <p>
+     * 轮询策略：每次调用遍历当前队列一轮，对每个候选实例先放回队尾再判断，
+     * 选中第一个可用的返回。这样流量会均匀分布到所有实例上，而不是永远打到队首。
      *
      * @return BrowserInstance 实例
      * @throws TimeoutException 如果无法获取可用的浏览器实例
@@ -114,19 +117,28 @@ public class BrowserGroup {
     public synchronized BrowserInstance selectBrowserInstance() throws TimeoutException {
         checkActive();
 
-        // 使用轮询策略选择 Browser
-        BrowserInstance browserInstance = browserQueue.peek();
-        if (browserInstance != null && browserInstance.isActive()) {
-            return browserInstance;
+        // 轮询：把当前队列里的实例依次取出并放回队尾，选中第一个可用的
+        int size = browserQueue.size();
+        for (int i = 0; i < size; i++) {
+            BrowserInstance candidate = browserQueue.poll();
+            if (candidate == null) {
+                break;
+            }
+            // 无论是否选中，都先放回队尾，保证轮询公平
+            browserQueue.offer(candidate);
+            if (candidate.isActive() && candidate.getActiveTabCount() < maxTabsPerBrowser) {
+                return candidate;
+            }
         }
-        // 没有可用 Browser，尝试创建新的
+
+        // 队列中没有可用实例，尝试创建新的
         if (browserQueue.size() < maxBrowsersPerGroup) {
-            browserInstance = createBrowserInstance();
+            BrowserInstance created = createBrowserInstance();
+            if (created != null && created.isActive()) {
+                return created;
+            }
         }
-        if (browserInstance == null || !browserInstance.isActive()) {
-            throw new TimeoutException("No available browserInstance in group [" + browserGroupTag + "]");
-        }
-        return browserInstance;
+        throw new TimeoutException("No available browserInstance in group [" + browserGroupTag + "]");
     }
 
     /**
@@ -158,6 +170,23 @@ public class BrowserGroup {
      */
     protected synchronized void removeBrowserInstance(BrowserInstance browserInstance) {
         browserQueue.remove(browserInstance);
+    }
+
+    /**
+     * 健康检查辅助：剔除已失效（{@code isActive()==false}）的 BrowserInstance。
+     * <p>
+     * 由 {@link BrowserBotPool} 的健康监控线程定期调用。失效实例通常已在自身 close 流程中
+     * 从队列移除，此方法作为兜底，确保异常路径下残留的失效实例被清理。
+     * </p>
+     */
+    protected synchronized void evictInactiveInstances() {
+        browserQueue.removeIf(instance -> {
+            boolean inactive = !instance.isActive();
+            if (inactive) {
+                log.debug("Evicting inactive BrowserInstance [{}] from group [{}]", instance.getBrowserId(), browserGroupTag);
+            }
+            return inactive;
+        });
     }
 
     /**

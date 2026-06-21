@@ -249,6 +249,19 @@ long id = SnowflakeIdGenerator.getInstance().generateId();
 
 > ⚠️ Kryo 反序列化要求**具体实现类**，不能用接口类型（List/Map/Set 要用 ArrayList/LinkedHashMap/HashSet）。
 
+> ⚠️ **异常与对外报错安全（强制）**
+>
+> `KryoUtils` 的所有方法**不吞异常**：反序列化失败（字段错位、类型不符、数据损坏，如旧协议残留）时，kryo 直接抛 `KryoException` / `KryoBufferUnderflowException`，由**调用方**负责 catch。
+>
+> 此类异常的 message 携带序列化框架内部关键字（`kryo`、`Buffer underflow`、字段读取位置等），**禁止出现在对外响应**——否则会暴露服务端序列化实现与协议结构，构成信息泄露（攻击者可据此构造畸形 payload 探测/绕过鉴权）。规范如下：
+>
+> 1. **面向外部的边界（Controller / RPC / 对外响应）必须 catch**，不得让 `KryoException` 冒泡到全局异常处理器后原样回传客户端。
+> 2. **对外响应用固定文案**（如 `"token invalid or corrupted."`），**不要拼接 `e.getMessage()` / `e.toString()`**；详细原因只进服务端日志。
+> 3. **缓存 / MQ 等批量读取**（`GlobalHashSet` / `GlobalSortedSet` / `GlobalCache` 等）**逐条 catch 跳过**脏数据，单条损坏不得拖垮整个批量结果。
+> 4. 反面教材（禁止）：`return ResponseData.errorCode(UNAUTHORIZED, "failed: " + e.getMessage())` —— 会把 `Buffer underflow.` 直接回传客户端。
+>
+> 正确示例见 `KryoUtils` 类注释与 `MscTokenService.verifyAuthToken` / `loadAuthTokenData` 的兜底实现。
+
 ### 加密签名类
 
 | 类 | 核心方法 | 说明 |

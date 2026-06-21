@@ -143,6 +143,31 @@ import java.util.function.Function;
  *   <li>调用方如需记录，应在自己的 catch 块里 log，而非依赖工具方法内部。</li>
  * </ul>
  *
+ * <h2>对外报错安全方针（强制，所有调用方必须遵守）</h2>
+ * 本工具抛出的异常（{@code KryoException} 及其子类，如 {@code KryoBufferUnderflowException}）<b>携带序列化框架内部细节</b>
+ * （类名 {@code kryo}、异常短语 {@code Buffer underflow}、字段读取位置等）。这些关键字一旦出现在对外的
+ * HTTP/RPC 响应体或错误消息中，会暴露服务端使用的序列化实现与协议结构，成为攻击者构造畸形 payload 探测/绕过的信息泄露面。
+ * <ul>
+ *   <li><b>调用方在面向外部的边界（Controller/RPC/对外响应）必须 catch 此类异常</b>，不得让其冒泡到全局异常处理器后原样回传客户端。</li>
+ *   <li><b>对外响应消息用固定文案</b>（如 "token invalid or corrupted"），<b>不要拼接 {@code e.getMessage()} 或 {@code e.toString()}</b>；
+ *       详细原因（含 kryo 关键字）只写到<b>服务端日志</b>。</li>
+ *   <li><b>缓存/MQ 等批量读取场景</b>（如 {@code GlobalHashSet}/{@code GlobalSortedSet}/{@code GlobalCache}）应<b>逐条 catch 跳过</b>脏数据，
+ *       单条损坏不得导致整个批量结果失败；详见各调用点的兜底实现。</li>
+ *   <li><b>正确做法示例</b>：
+ *       <pre>
+ *       try {
+ *           AuthTokenData data = MscTokenSerializer.deserializeAuthTokenData(tokenData);
+ *       } catch (Exception e) {
+ *           // 详细原因只进日志（含 kryo 内部信息，用于排查）
+ *           log.error("token deserialize failed, err={}", e.toString());
+ *           // 对外用固定文案，不泄露 e.getMessage()
+ *           return ResponseData.errorCode(UNAUTHORIZED, "token invalid or corrupted.");
+ *       }</pre>
+ *   </li>
+ * </ul>
+ * 反面教材（禁止）：{@code return ResponseData.errorCode(UNAUTHORIZED, "decrypt failed: " + e.getMessage())}
+ * ——这会把 {@code Buffer underflow.} 直接回传给客户端，暴露内部实现细节，容易引发攻击。
+ *
  * @author axeon
  */
 public class KryoUtils {

@@ -139,7 +139,14 @@ public class GlobalHashSet {
         }
         HashSet<T> dataSet = new HashSet<T>((int) (byteSet.size() * 1.5f));
         for (byte[] item : byteSet) {
-            dataSet.add(KryoUtils.deserialize(item, itemClazz));
+            //逐条反序列化，脏数据（旧协议/损坏，KryoUtils直接抛KryoException）跳过并降级WARN，
+            //避免单条脏数据导致整个批量结果失败（遵循KryoUtils异常策略：由调用方catch处理，不泄露kryo细节对外）。
+            try {
+                dataSet.add(KryoUtils.deserialize(item, itemClazz));
+            } catch (Exception e) {
+                log.warn("!!![{}] GlobalHashSet.random deserialize failed, skipped (setName={}, len={}): {}",
+                        REDIS_PREFIX, setName, item.length, e.toString());
+            }
         }
         return dataSet;
     }
@@ -176,7 +183,14 @@ public class GlobalHashSet {
         }
         HashSet<T> dataSet = new HashSet<T>((int) (byteSet.size() * 1.5f));
         for (byte[] item : byteSet) {
-            dataSet.add(KryoUtils.deserialize(item, itemClazz));
+            //逐条反序列化，脏数据（旧协议/损坏，KryoUtils直接抛KryoException）跳过并降级WARN，
+            //避免单条脏数据导致整个批量结果失败（遵循KryoUtils异常策略：由调用方catch处理，不泄露kryo细节对外）。
+            try {
+                dataSet.add(KryoUtils.deserialize(item, itemClazz));
+            } catch (Exception e) {
+                log.warn("!!![{}] GlobalHashSet.pop deserialize failed, skipped (setName={}, len={}): {}",
+                        REDIS_PREFIX, setName, item.length, e.toString());
+            }
         }
         return dataSet;
     }
@@ -198,7 +212,14 @@ public class GlobalHashSet {
         }
         HashSet<T> dataSet = new HashSet<T>((int) (byteSet.size() * 1.5f));
         for (byte[] item : byteSet) {
-            dataSet.add(KryoUtils.deserialize(item, itemClazz));
+            //逐条反序列化，脏数据（旧协议/损坏，KryoUtils直接抛KryoException）跳过并降级WARN，
+            //避免单条脏数据导致整个批量结果失败（遵循KryoUtils异常策略：由调用方catch处理，不泄露kryo细节对外）。
+            try {
+                dataSet.add(KryoUtils.deserialize(item, itemClazz));
+            } catch (Exception e) {
+                log.warn("!!![{}] GlobalHashSet.list deserialize failed, skipped (setName={}, len={}): {}",
+                        REDIS_PREFIX, setName, item.length, e.toString());
+            }
         }
         return dataSet;
     }

@@ -158,7 +158,14 @@ public class GlobalCache {
         if (redisData == null) {
             return null;
         }
-        return (CacheValueWrapper<V>) KryoCacheUtils.deserializeValueWrapper(redisData, KryoUtils.type2Class(valueClass));
+        //兑现Javadoc"反序列化失败返回null"契约：脏数据（旧协议/损坏，表现为KryoBufferUnderflow等）降级为null并记日志，
+        //让上层按"缓存未命中"处理（通常回源重新加载），避免异常冒泡破坏调用流程。
+        try {
+            return (CacheValueWrapper<V>) KryoCacheUtils.deserializeValueWrapper(redisData, KryoUtils.type2Class(valueClass));
+        } catch (Exception e) {
+            logger.error("反序列化失败! cacheName=[{}], key=[{}]", cacheName, key, e);
+            return null;
+        }
     }
 
     /**

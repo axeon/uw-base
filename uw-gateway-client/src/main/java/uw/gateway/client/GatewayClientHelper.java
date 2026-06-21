@@ -10,8 +10,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import uw.common.response.ResponseData;
 import uw.gateway.client.conf.UwGatewayProperties;
-
-import java.util.Date;
+import uw.gateway.client.vo.SaasRateLimitParam;
 
 
 /**
@@ -59,43 +58,36 @@ public class GatewayClientHelper {
     /**
      * 设置（更新）指定运营商的网关限速策略。
      * <p>
-     * 通过 PUT 表单调用 gateway-center 的 {@code /rpc/service/updateSaasRateLimit} 接口。
-     * 参数在调用前做前置校验，任一必填项不合法直接返回 ERROR，不会发起 RPC：
-     * {@code saasId} 须大于 0、{@code expireDate} 与 {@code remark} 不可为 null（服务端要求必填）。
+     * 通过 PUT 调用 gateway-center 的 {@code /rpc/service/updateSaasRateLimit} 接口，请求体为 JSON。
+     * 限速维度由 {@link SaasRateLimitParam#getLimitType()} 决定（裸值，对应服务端 MscAclRateLimitType 的 value），
+     * {@code userType/userId} 仅在按用户维度限速时使用。参数在调用前做前置校验，任一必填项不合法
+     * 直接返回 ERROR，不会发起 RPC：{@code param} 不可为 null，其 {@code saasId} 须大于 0、
+     * {@code expireDate} 与 {@code remark} 不可为 null（服务端要求必填）。
      * RPC 调用阶段的任何异常（网络、序列化、HTTP 4xx/5xx）均被捕获并以 {@link ResponseData#errorMsg} 返回，
      * 不会向外抛出。
      *
-     * @param saasId        运营商 ID（须大于 0）
-     * @param limitSeconds  限速统计窗口（秒）
-     * @param limitRequests 窗口内最大请求数
-     * @param limitBytes    窗口内最大字节数
-     * @param expireDate    限速策略过期时间（必填，不可为 null）
-     * @param remark        备注信息（必填，不可为 null）
+     * @param param 限速策略参数（推荐通过 {@link SaasRateLimitParam#builder()} 构造）
      * @return 操作结果：SUCCESS=设置成功 / ERROR=参数非法或设置失败（含异常信息）
      */
-    public static ResponseData<Void> updateSaasRateLimit(long saasId, int limitSeconds, int limitRequests, int limitBytes, Date expireDate, String remark) {
-        if (saasId <= 0) {
+    public static ResponseData<Void> updateSaasRateLimit(SaasRateLimitParam param) {
+        if (param == null) {
+            return ResponseData.errorMsg("param不能为空！");
+        }
+        if (param.getSaasId() <= 0) {
             return ResponseData.errorMsg("saasId不能为空！");
         }
-        if (expireDate == null) {
+        if (param.getExpireDate() == null) {
             return ResponseData.errorMsg("expireDate不能为空！");
         }
-        if (remark == null) {
+        if (param.getRemark() == null) {
             return ResponseData.errorMsg("remark不能为空！");
         }
         String targetUrl = uwGatewayProperties.getGatewayCenterHost() + "/rpc/service/updateSaasRateLimit";
         try {
-            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-            formData.add("saasId", String.valueOf(saasId));
-            formData.add("limitSeconds", String.valueOf(limitSeconds));
-            formData.add("limitRequests", String.valueOf(limitRequests));
-            formData.add("limitBytes", String.valueOf(limitBytes));
-            formData.add("expireDate", String.valueOf(expireDate.getTime()));
-            formData.add("remark", remark);
             ResponseData<Void> result = authRestClient.put()
                     .uri(targetUrl)
-                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                    .body(formData)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(param)
                     .retrieve()
                     .body(new ParameterizedTypeReference<ResponseData<Void>>() {});
             if (result == null) {

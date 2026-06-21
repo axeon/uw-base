@@ -3,7 +3,9 @@ package uw.notify.client.conf;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * 配置类。
+ * uw-notify-client 连接配置。
+ * <p>
+ * 配置前缀：{@code uw.notify}。
  *
  * @author axeon
  */
@@ -11,7 +13,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class UwNotifyProperties {
 
     /**
-     * notify服务器
+     * notify-center 服务地址，默认指向服务发现名称 {@code http://uw-notify-center}。
+     * <p>
+     * 可通过配置项 {@code uw.notify.notify-center-host} 覆盖。
      */
     private String notifyCenterHost = "http://uw-notify-center";
 

@@ -1,7 +1,16 @@
 #!/bin/bash
 
-# 直接计算项目根目录
-BASE_DIR=$(dirname "$(dirname "$(readlink -f "$0")")")
+# 直接计算项目根目录（兼容 macOS 自带 readlink 与 GNU readlink）
+script_path="$0"
+if [ -L "$script_path" ]; then
+    link_dir=$(dirname "$script_path")
+    link_target=$(readlink "$script_path")
+    case "$link_target" in
+        /*) script_path="$link_target" ;;
+        *)  script_path="$link_dir/$link_target" ;;
+    esac
+fi
+BASE_DIR=$(cd "$(dirname "$script_path")/.." && pwd)
 cd "$BASE_DIR" || (echo "Error: Failed to switch to project root directory: $BASE_DIR" && exit 1)
 
 echo "INFO: BASE_DIR = $BASE_DIR"
@@ -53,7 +62,9 @@ fi
 
 # 构建deploy命令
 CMD_DEPLOY="mvn deploy -P release-uw -Dmaven.test.skip=true"
-CMD_CLEAN="mvn clean -P release-uw -q"
+# clean 不加 -q：一旦出错需要完整日志定位；clean 始终全量 reactor，不追加 -pl，
+# 避免只清理选中模块而残留其它模块的 .flattened-pom.xml
+CMD_CLEAN="mvn clean -P release-uw"
 
 if [ "$DEPLOY_ALL" = false ] && [ ${#MODULES_ARGS[@]} -gt 0 ]; then
     PL_PARAMS=""
@@ -76,7 +87,8 @@ eval "$CMD_CLEAN" || exit 1
 
 echo "2/2: Deploying..."
 if ! eval "$CMD_DEPLOY"; then
-    # deploy失败时清理flatten插件残留的.flattened-pom.xml（clean生命周期未触发flatten:clean）
+    # deploy 失败时清理本次 deploy 过程中新生成的 .flattened-pom.xml
+    # （clean 阶段已清过旧的；flatten goal 在 process-resources 阶段会重新生成，归因见上）
     find "$BASE_DIR" -name ".flattened-pom.xml" -type f -delete
     echo "ERROR: Deploy failed, cleaned up leftover .flattened-pom.xml files"
     exit 1

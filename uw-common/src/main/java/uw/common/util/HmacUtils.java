@@ -4,6 +4,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
@@ -44,6 +45,9 @@ public class HmacUtils {
             return false;
         }
         String expected = sign(message, secret);
-        return expected.equals(signature);
+        // 使用常量时间比较，避免时序攻击按字节推断签名。
+        return MessageDigest.isEqual(
+                expected.getBytes(StandardCharsets.UTF_8),
+                signature.getBytes(StandardCharsets.UTF_8));
     }
 }

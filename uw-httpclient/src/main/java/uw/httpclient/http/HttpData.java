@@ -1,6 +1,8 @@
 package uw.httpclient.http;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * HTTP 请求日志数据接口。
@@ -184,6 +186,73 @@ public interface HttpData {
      * @return Content-Type。
      */
     String getResponseType();
+
+    /**
+     * 获取完整的 HTTP 响应头（按出现顺序的多值视图）。
+     * <p>
+     * 实现应返回大小写不敏感（HTTP 头名本身大小写不敏感）的不可变视图，
+     * 值为同名头可能出现多次（如 {@code Set-Cookie}），故用 {@code List<String>}。
+     * 未设置或无响应时可能返回 null 或空 Map。
+     *
+     * @return 响应头多值 Map，可能为 null。
+     */
+    Map<String, List<String>> getResponseHeaders();
+
+    /**
+     * 设置完整的 HTTP 响应头。
+     *
+     * @param responseHeaders 响应头多值 Map。
+     */
+    void setResponseHeaders(Map<String, List<String>> responseHeaders);
+
+    /**
+     * 获取 HTTP 响应状态消息（reason phrase，如 "Not Found"）。
+     *
+     * @return 状态消息，可能为 null。
+     */
+    String getResponseMessage();
+
+    /**
+     * 设置 HTTP 响应状态消息。
+     *
+     * @param responseMessage 状态消息。
+     */
+    void setResponseMessage(String responseMessage);
+
+    /**
+     * 获取本次请求整体耗时（毫秒）。
+     * <p>
+     * 基于 OkHttp 的 {@code receivedResponseAtMillis - sentRequestAtMillis}，
+     * 已包含连接建立、重试与响应体传输耗时，比 {@code responseDate - requestDate} 更贴近实际网络耗时。
+     * -1 表示未设置。
+     *
+     * @return 耗时毫秒数，未设置时为 -1。
+     */
+    long getElapsedMillis();
+
+    /**
+     * 设置本次请求整体耗时（毫秒）。
+     *
+     * @param elapsedMillis 耗时毫秒数。
+     */
+    void setElapsedMillis(long elapsedMillis);
+
+    /**
+     * 获取本次请求的重试/重定向次数。
+     * <p>
+     * 定义为「除首次外的额外尝试次数」，包含连接失败重试与 follow-up（重定向、认证重试）。
+     * 由内部网络拦截器统计每次真实网络请求得到。{@code retryOnConnectionFailure=false} 时恒为 0。
+     *
+     * @return 重试次数，0 表示无重试。
+     */
+    int getRetryCount();
+
+    /**
+     * 设置本次请求的重试次数。
+     *
+     * @param retryCount 重试次数。
+     */
+    void setRetryCount(int retryCount);
 
     /**
      * 获取错误信息。

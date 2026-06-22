@@ -1,8 +1,15 @@
 package uw.httpclient.http;
 
+import okhttp3.CookieJar;
+import okhttp3.Interceptor;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * HTTP 客户端配置。
@@ -74,6 +81,26 @@ public class HttpConfig {
     private final HostnameVerifier hostnameVerifier;
 
     /**
+     * 默认请求头，对所有请求自动追加（业务侧传入的同名头会覆盖默认值）。可能为 null。
+     */
+    private final Map<String, String> defaultHeaders;
+
+    /**
+     * CookieJar，用于会话/Cookie 持久化，为 null 时使用 OkHttp 默认（不持久化）。可能为 null。
+     */
+    private final CookieJar cookieJar;
+
+    /**
+     * 应用拦截器链（在 OkHttp 重试/重定向前介入），不可为 null（无则为空列表）。
+     */
+    private final List<Interceptor> interceptors;
+
+    /**
+     * 网络拦截器链（在 OkHttp 重试/重定向后、真实网络请求前介入），不可为 null（无则为空列表）。
+     */
+    private final List<Interceptor> networkInterceptors;
+
+    /**
      * 全参构造器。
      *
      * @param connectTimeout          连接超时（毫秒）。
@@ -87,11 +114,38 @@ public class HttpConfig {
      * @param sslSocketFactory        SSLSocketFactory。
      * @param trustManager            X509TrustManager。
      * @param hostnameVerifier        HostnameVerifier。
-     * @deprecated 参数过多且位置易混淆，请使用 {@link #builder()} 或 {@link #builder(HttpConfig)}。
      */
-    @Deprecated
     public HttpConfig(long connectTimeout, long readTimeout, long writeTimeout, boolean retryOnConnectionFailure, int maxRequestsPerHost, int maxRequests, int maxIdleConnections
             , long keepAliveTimeout, SSLSocketFactory sslSocketFactory, X509TrustManager trustManager, HostnameVerifier hostnameVerifier) {
+        this(connectTimeout, readTimeout, writeTimeout, retryOnConnectionFailure,
+                maxRequestsPerHost, maxRequests, maxIdleConnections, keepAliveTimeout,
+                sslSocketFactory, trustManager, hostnameVerifier, null, null, null, null);
+    }
+
+    /**
+     * 全参构造器（含默认头/Cookie/拦截器）。
+     *
+     * @param connectTimeout          连接超时（毫秒）。
+     * @param readTimeout             读超时（毫秒）。
+     * @param writeTimeout            写超时（毫秒）。
+     * @param retryOnConnectionFailure 连接失败是否重试。
+     * @param maxRequestsPerHost      每主机最大并发请求数。
+     * @param maxRequests             全局最大并发请求数。
+     * @param maxIdleConnections      连接池最大空闲连接数。
+     * @param keepAliveTimeout        空闲连接存活时间（毫秒）。
+     * @param sslSocketFactory        SSLSocketFactory。
+     * @param trustManager            X509TrustManager。
+     * @param hostnameVerifier        HostnameVerifier。
+     * @param defaultHeaders          默认请求头（自动追加，业务传入同名头会覆盖），可为 null。
+     * @param cookieJar               CookieJar，可为 null。
+     * @param interceptors            应用拦截器链，可为 null。
+     * @param networkInterceptors     网络拦截器链，可为 null。
+     */
+    public HttpConfig(long connectTimeout, long readTimeout, long writeTimeout, boolean retryOnConnectionFailure,
+                      int maxRequestsPerHost, int maxRequests, int maxIdleConnections, long keepAliveTimeout,
+                      SSLSocketFactory sslSocketFactory, X509TrustManager trustManager, HostnameVerifier hostnameVerifier,
+                      Map<String, String> defaultHeaders, CookieJar cookieJar,
+                      List<Interceptor> interceptors, List<Interceptor> networkInterceptors) {
         this.connectTimeout = connectTimeout;
         this.readTimeout = readTimeout;
         this.writeTimeout = writeTimeout;
@@ -103,6 +157,10 @@ public class HttpConfig {
         this.sslSocketFactory = sslSocketFactory;
         this.trustManager = trustManager;
         this.hostnameVerifier = hostnameVerifier;
+        this.defaultHeaders = defaultHeaders == null ? null : Collections.unmodifiableMap(new java.util.LinkedHashMap<>(defaultHeaders));
+        this.cookieJar = cookieJar;
+        this.interceptors = interceptors == null ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(interceptors));
+        this.networkInterceptors = networkInterceptors == null ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(networkInterceptors));
     }
 
     private HttpConfig(Builder builder) {
@@ -117,6 +175,10 @@ public class HttpConfig {
         sslSocketFactory = builder.sslSocketFactory;
         trustManager = builder.trustManager;
         hostnameVerifier = builder.hostnameVerifier;
+        defaultHeaders = builder.defaultHeaders == null ? null : Collections.unmodifiableMap(new java.util.LinkedHashMap<>(builder.defaultHeaders));
+        cookieJar = builder.cookieJar;
+        interceptors = builder.interceptors == null ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(builder.interceptors));
+        networkInterceptors = builder.networkInterceptors == null ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(builder.networkInterceptors));
     }
 
     /**
@@ -147,6 +209,10 @@ public class HttpConfig {
         builder.sslSocketFactory = copy.getSslSocketFactory();
         builder.trustManager = copy.getTrustManager();
         builder.hostnameVerifier = copy.getHostnameVerifier();
+        builder.defaultHeaders = copy.getDefaultHeaders();
+        builder.cookieJar = copy.getCookieJar();
+        builder.interceptors = copy.getInterceptors();
+        builder.networkInterceptors = copy.getNetworkInterceptors();
         return builder;
     }
 
@@ -195,6 +261,42 @@ public class HttpConfig {
     }
 
     /**
+     * 获取默认请求头。
+     *
+     * @return 默认请求头 Map，可能为 null。
+     */
+    public Map<String, String> getDefaultHeaders() {
+        return defaultHeaders;
+    }
+
+    /**
+     * 获取 CookieJar。
+     *
+     * @return CookieJar，可能为 null。
+     */
+    public CookieJar getCookieJar() {
+        return cookieJar;
+    }
+
+    /**
+     * 获取应用拦截器链（不可变）。
+     *
+     * @return 应用拦截器列表，不会为 null（无则为空列表）。
+     */
+    public List<Interceptor> getInterceptors() {
+        return interceptors;
+    }
+
+    /**
+     * 获取网络拦截器链（不可变）。
+     *
+     * @return 网络拦截器列表，不会为 null（无则为空列表）。
+     */
+    public List<Interceptor> getNetworkInterceptors() {
+        return networkInterceptors;
+    }
+
+    /**
      * {@link HttpConfig} 的构建器，支持链式设置各配置项。
      */
     public static final class Builder {
@@ -209,6 +311,10 @@ public class HttpConfig {
         private SSLSocketFactory sslSocketFactory;
         private X509TrustManager trustManager;
         private HostnameVerifier hostnameVerifier;
+        private Map<String, String> defaultHeaders;
+        private CookieJar cookieJar;
+        private List<Interceptor> interceptors;
+        private List<Interceptor> networkInterceptors;
 
         private Builder() {
         }
@@ -265,6 +371,87 @@ public class HttpConfig {
 
         public Builder hostnameVerifier(HostnameVerifier hostnameVerifier) {
             this.hostnameVerifier = hostnameVerifier;
+            return this;
+        }
+
+        /**
+         * 设置默认请求头，对所有请求自动追加。
+         * <p>
+         * 业务侧调用时传入的同名头会覆盖默认值。多次调用会覆盖之前的默认头。
+         *
+         * @param defaultHeaders 默认请求头，可为 null。
+         * @return Builder。
+         */
+        public Builder defaultHeaders(Map<String, String> defaultHeaders) {
+            this.defaultHeaders = defaultHeaders;
+            return this;
+        }
+
+        /**
+         * 设置 CookieJar（会话/Cookie 持久化）。
+         *
+         * @param cookieJar CookieJar，可为 null。
+         * @return Builder。
+         */
+        public Builder cookieJar(CookieJar cookieJar) {
+            this.cookieJar = cookieJar;
+            return this;
+        }
+
+        /**
+         * 设置应用拦截器链（OkHttp 重试/重定向前介入）。
+         * <p>
+         * 注意：拦截器会注册到本实例派生出的 OkHttpClient 上，
+         * 由于实例间不共享 client，拦截器仅作用于本 {@code HttpInterface} 实例。
+         *
+         * @param interceptors 应用拦截器列表，可为 null。
+         * @return Builder。
+         */
+        public Builder interceptors(List<Interceptor> interceptors) {
+            this.interceptors = interceptors;
+            return this;
+        }
+
+        /**
+         * 追加单个应用拦截器。
+         *
+         * @param interceptor 应用拦截器。
+         * @return Builder。
+         */
+        public Builder addInterceptor(Interceptor interceptor) {
+            if (interceptor != null) {
+                if (this.interceptors == null) {
+                    this.interceptors = new ArrayList<>();
+                }
+                this.interceptors.add(interceptor);
+            }
+            return this;
+        }
+
+        /**
+         * 设置网络拦截器链（OkHttp 重试/重定向后、真实网络请求前介入）。
+         *
+         * @param networkInterceptors 网络拦截器列表，可为 null。
+         * @return Builder。
+         */
+        public Builder networkInterceptors(List<Interceptor> networkInterceptors) {
+            this.networkInterceptors = networkInterceptors;
+            return this;
+        }
+
+        /**
+         * 追加单个网络拦截器。
+         *
+         * @param interceptor 网络拦截器。
+         * @return Builder。
+         */
+        public Builder addNetworkInterceptor(Interceptor interceptor) {
+            if (interceptor != null) {
+                if (this.networkInterceptors == null) {
+                    this.networkInterceptors = new ArrayList<>();
+                }
+                this.networkInterceptors.add(interceptor);
+            }
             return this;
         }
 

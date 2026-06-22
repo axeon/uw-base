@@ -6,7 +6,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.io.Serializable;
 
 /**
- * 一般接口日志Vo
+ * 一般接口日志 VO 样本。
+ * <p>
+ * 演示自定义日志实体（可继承复用为 {@link uw.httpclient.http.HttpData} 的实现类），
+ * 提供链式 {@link #request(String)} / {@link #response(String, int)} 便于记录请求/响应。
+ * 字段涵盖接口类型、配置、商户、产品、请求/响应体、时间、状态等。
  *
  * @since 2018-04-25
  */

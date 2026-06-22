@@ -7,6 +7,7 @@ import uw.httpclient.xml.XmlInterfaceHelper;
 import uw.httpclient.xml.XmlObjectMapperImpl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
@@ -29,6 +30,21 @@ public class XmlInterfaceTest {
         vo.setSessionId("s-123");
         String xml = converter.toString(vo);
         assertEquals(true, xml != null && xml.length() > 0);
+    }
+
+    /**
+     * XML 序列化 → 反序列化 round-trip：sessionId 应能复原。
+     */
+    @Test
+    public void testConverterRoundTrip() {
+        uw.httpclient.http.xml.vo.SessionVo vo = new uw.httpclient.http.xml.vo.SessionVo();
+        vo.setSessionId("rt-456");
+        vo.setCode(200);
+        String xml = converter.toString(vo);
+        uw.httpclient.http.xml.vo.SessionVo parsed = converter.parse(xml, uw.httpclient.http.xml.vo.SessionVo.class);
+        assertNotNull(parsed);
+        assertEquals("rt-456", parsed.getSessionId());
+        assertEquals(200, parsed.getCode());
     }
 
     /**

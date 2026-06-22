@@ -12,8 +12,14 @@ import uw.httpclient.util.MediaTypes;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 
 /**
  * HTTP 请求方法的抽象实现。
@@ -66,6 +72,14 @@ public class HttpInterface {
      * 对象 Mapper，用于请求体序列化与响应体反序列化。
      */
     private final DataObjectMapper objectMapper;
+    /**
+     * 默认请求头（来自 HttpConfig，可能为 null），所有请求自动追加，业务传入同名头覆盖默认值。
+     */
+    private final java.util.Map<String, String> defaultHeaders;
+    /**
+     * 重试/重定向计数器（内部网络拦截器），统计每个 Call 的物理网络请求次数。
+     */
+    private final RetryCounter retryCounter;
 
 
     /**
@@ -94,6 +108,23 @@ public class HttpInterface {
             if (httpConfig.getMaxIdleConnections() > 0 && httpConfig.getKeepAliveTimeout() > 0) {
                 okHttpClientBuilder.connectionPool(new ConnectionPool(httpConfig.getMaxIdleConnections(), httpConfig.getKeepAliveTimeout(), TimeUnit.MILLISECONDS));
             }
+            // CookieJar：为 null 时 OkHttp 默认使用不持久化的 CookieJar.NO_COOKIES。
+            if (httpConfig.getCookieJar() != null) {
+                okHttpClientBuilder.cookieJar(httpConfig.getCookieJar());
+            }
+            // 拦截器：仅作用于本实例派生出的 client（实例间不共享 client）。
+            for (Interceptor interceptor : httpConfig.getInterceptors()) {
+                okHttpClientBuilder.addInterceptor(interceptor);
+            }
+            for (Interceptor interceptor : httpConfig.getNetworkInterceptors()) {
+                okHttpClientBuilder.addNetworkInterceptor(interceptor);
+            }
+            // 重试/重定向观测：无条件注入内部网络拦截器，按 Call 统计每次物理网络请求次数。
+            // retryCount = proceed 次数 - 1，含连接失败重试（retryOnConnectionFailure=true 时）与
+            // follow-up（重定向/认证挑战，由 OkHttp 内部 RetryAndFollowUpInterceptor 处理，
+            // 与 retryOnConnectionFailure 无关）。开销可忽略（一次 ConcurrentHashMap 原子操作）。
+            this.retryCounter = new RetryCounter();
+            okHttpClientBuilder.addNetworkInterceptor(this.retryCounter);
             // 使用独立的dispatcher，避免newBuilder()共享全局dispatcher导致并发放大配置互相串扰。
             Dispatcher dispatcher = new Dispatcher();
             if (httpConfig.getMaxRequestsPerHost() > 0) {
@@ -106,6 +137,9 @@ public class HttpInterface {
             this.okHttpClient = okHttpClientBuilder.build();
         } else {
             this.okHttpClient = globalOkHttpClient;
+            // 未配置 HttpConfig 时走全局共享 client，无法为其注入实例级拦截器，retryCount 恒为 0。
+            // （globalOkHttpClient 本身 retryOnConnectionFailure=false，但走全局兜底的场景一般也不需要诊断）
+            this.retryCounter = null;
         }
         this.httpDataCls = httpDataCls;
         if (httpDataLogLevel == null) {
@@ -124,6 +158,8 @@ public class HttpInterface {
         } else {
             this.mediaType = mediaType;
         }
+        // 默认请求头：HttpConfig 为 null 时无默认头。
+        this.defaultHeaders = (httpConfig == null) ? null : httpConfig.getDefaultHeaders();
     }
 
     /**
@@ -1609,9 +1645,7 @@ public class HttpInterface {
             this.httpDataProcessor.requestProcess(null, queryParam, headers);
         }
         Request.Builder requestBuilder = new Request.Builder().url(buildUrl(url, queryParam));
-        if (headers != null) {
-            requestBuilder.headers(Headers.of(headers));
-        }
+        applyHeaders(requestBuilder, headers);
         Request request = requestBuilder.get().build();
         D httpData = initHttpData();
         fillRequestMeta(httpData, request);
@@ -1634,9 +1668,7 @@ public class HttpInterface {
             this.httpDataProcessor.requestProcess(null, formData, headers);
         }
         Request.Builder requestBuilder = new Request.Builder().url(url);
-        if (headers != null) {
-            requestBuilder.headers(Headers.of(headers));
-        }
+        applyHeaders(requestBuilder, headers);
         FormBody.Builder formBodyBuilder = new FormBody.Builder();
         //表单数据。
         if (formData != null) {
@@ -1672,9 +1704,7 @@ public class HttpInterface {
             this.httpDataProcessor.requestProcess(null, formData, headers);
         }
         Request.Builder requestBuilder = new Request.Builder().url(url);
-        if (headers != null) {
-            requestBuilder.headers(Headers.of(headers));
-        }
+        applyHeaders(requestBuilder, headers);
         MultipartBody.Builder formBodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
         // 添加表单数据
         if (formData != null) {
@@ -1754,9 +1784,7 @@ public class HttpInterface {
             this.httpDataProcessor.requestProcess(null, formData, headers);
         }
         Request.Builder requestBuilder = new Request.Builder().url(url);
-        if (headers != null) {
-            requestBuilder.headers(Headers.of(headers));
-        }
+        applyHeaders(requestBuilder, headers);
         FormBody.Builder formBodyBuilder = new FormBody.Builder();
         if (formData != null) {
             //表单数据。
@@ -1819,9 +1847,7 @@ public class HttpInterface {
             this.httpDataProcessor.requestProcess(null, formData, headers);
         }
         Request.Builder requestBuilder = new Request.Builder().url(url);
-        if (headers != null) {
-            requestBuilder.headers(Headers.of(headers));
-        }
+        applyHeaders(requestBuilder, headers);
         FormBody.Builder formBodyBuilder = new FormBody.Builder();
         if (formData != null) {
             //表单数据。
@@ -1884,9 +1910,7 @@ public class HttpInterface {
             this.httpDataProcessor.requestProcess(null, queryParam, headers);
         }
         Request.Builder requestBuilder = new Request.Builder().url(buildUrl(url, queryParam));
-        if (headers != null) {
-            requestBuilder.headers(Headers.of(headers));
-        }
+        applyHeaders(requestBuilder, headers);
         Request request = requestBuilder.delete().build();
         D httpData = initHttpData();
         fillRequestMeta(httpData, request);
@@ -1916,6 +1940,32 @@ public class HttpInterface {
             httpUrl = urlBuilder.build();
         }
         return httpUrl;
+    }
+
+    /**
+     * 向 Request.Builder 应用请求头：先追加默认头，再用业务传入的头覆盖同名项。
+     * <p>
+     * OkHttp 的 {@code headers(Headers)} 会整体替换，故采用逐个 {@code header(name, value)} 叠加，
+     * 同名头以业务传入值为准（后 set 覆盖先 add）。null 头均跳过。
+     *
+     * @param requestBuilder OkHttp Request.Builder。
+     * @param headers        业务传入的请求头，可为 null。
+     */
+    private void applyHeaders(Request.Builder requestBuilder, Map<String, String> headers) {
+        if (defaultHeaders != null) {
+            for (Map.Entry<String, String> e : defaultHeaders.entrySet()) {
+                if (e.getKey() != null && e.getValue() != null) {
+                    requestBuilder.header(e.getKey(), e.getValue());
+                }
+            }
+        }
+        if (headers != null) {
+            for (Map.Entry<String, String> e : headers.entrySet()) {
+                if (e.getKey() != null && e.getValue() != null) {
+                    requestBuilder.header(e.getKey(), e.getValue());
+                }
+            }
+        }
     }
 
     /**
@@ -1951,21 +2001,88 @@ public class HttpInterface {
      * @param request OkHttp Request。
      */
     private void fillResponse(HttpData httpData, Request request) {
-        try (Response response = okHttpClient.newCall(request).execute()) {
-            httpData.setResponseDate(SystemClock.nowDate());
-            httpData.setStatusCode(response.code());
-            httpData.setResponseType(response.header("Content-Type"));
-            byte[] bytes = readBytes(response);
-            httpData.setResponseBytes(bytes);
-            if (bytes != null) {
-                httpData.setResponseSize(bytes.length);
-            }
-            if (this.httpDataProcessor != null) {
-                invokeResponseProcess(httpData, response.headers());
+        // 在真正发请求前，将构建完成的 Request（含已合并的业务头与 defaultHeaders、最终 URL，
+        // 但不含 OkHttp 网络层注入的 Host/Content-Length/Cookie 等）交给 Processor，
+        // 用于签名/验签/链路追踪等。默认实现为空，不影响现有行为。
+        // Processor 抛出的 DataMapperException（RuntimeException，TaskDataException 体系）直接冒泡，
+        // 交由 uw-task 框架按其异常分类策略处理（重试/告警），不在此吞掉或改写异常类型。
+        if (this.httpDataProcessor != null) {
+            @SuppressWarnings({"rawtypes", "unchecked"})
+            HttpDataProcessor processor = (HttpDataProcessor) this.httpDataProcessor;
+            processor.requestProcess(request);
+        }
+        okhttp3.Call call = okHttpClient.newCall(request);
+        try {
+            try (Response response = call.execute()) {
+                httpData.setResponseDate(SystemClock.nowDate());
+                httpData.setStatusCode(response.code());
+                httpData.setResponseType(response.header("Content-Type"));
+                httpData.setResponseMessage(response.message());
+                httpData.setElapsedMillis(response.receivedResponseAtMillis() - response.sentRequestAtMillis());
+                fillResponseHeaders(httpData, response.headers());
+                byte[] bytes = readBytes(response);
+                httpData.setResponseBytes(bytes);
+                if (bytes != null) {
+                    httpData.setResponseSize(bytes.length);
+                }
+                if (this.httpDataProcessor != null) {
+                    invokeResponseProcess(httpData, response.headers());
+                }
             }
         } catch (IOException e) {
             throw new HttpRequestException(e.getMessage(), e);
+        } finally {
+            // 记录本次 Call 的重试/重定向次数（网络拦截器在每次 proceed 时递增），事后清理。
+            httpData.setRetryCount(retryCountOf(call));
         }
+    }
+
+    /**
+     * 取一个 Call 的重试/重定向次数（proceed 次数 - 1），并清理计数器条目。
+     * <p>
+     * retryCounter 为 null（走全局 client 的兜底场景）时返回 0。
+     * 请求抛 IOException 时网络拦截器仍可能已记录部分 proceed，finally 中也会清理，避免泄漏。
+     *
+     * @param call OkHttp Call。
+     * @return 重试次数，0 表示无重试。
+     */
+    private int retryCountOf(okhttp3.Call call) {
+        if (this.retryCounter == null) {
+            return 0;
+        }
+        return this.retryCounter.consumeRetryCount(call);
+    }
+
+    /**
+     * 将 OkHttp 响应头转为大小写不敏感的多值 Map 快照并写入 HttpData。
+     * <p>
+     * 对所有 {@link HttpData} 实现（默认或自定义）走同一条转换路径，无特判：
+     * {@code okhttp3.Headers} → 不可变 {@code Map<String, List<String>>}（TreeMap 大小写不敏感）。
+     * OkHttp 类型知识收敛在此方法内部，不泄漏到 {@link HttpData} / {@link HttpDefaultData}。
+     *
+     * @param httpData HttpData。
+     * @param headers  OkHttp 响应头。
+     */
+    private void fillResponseHeaders(HttpData httpData, okhttp3.Headers headers) {
+        httpData.setResponseHeaders(toHeaderMultimap(headers));
+    }
+
+    /**
+     * 将 OkHttp {@code Headers} 转为大小写不敏感、不可变的多值 Map 快照。
+     *
+     * @param headers OkHttp 响应头，为 null 或空时返回空 Map。
+     * @return 多值 Map，键大小写不敏感。
+     */
+    private static Map<String, List<String>> toHeaderMultimap(okhttp3.Headers headers) {
+        if (headers == null || headers.size() == 0) {
+            return Collections.emptyMap();
+        }
+        // TreeMap + CASE_INSENSITIVE_ORDER 保证 get(name) 大小写不敏感。
+        Map<String, List<String>> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        for (String name : headers.names()) {
+            map.put(name, headers.values(name));
+        }
+        return Collections.unmodifiableMap(map);
     }
 
     /**
@@ -2049,5 +2166,48 @@ public class HttpInterface {
             httpLog = new HttpDefaultData();
         }
         return (D) httpLog;
+    }
+
+    /**
+     * 重试/重定向计数器：作为内部网络拦截器注入 OkHttpClient，
+     * 按每个 {@link okhttp3.Call} 统计物理网络请求次数（含连接失败重试与 follow-up）。
+     * <p>
+     * <b>计数语义</b>：网络拦截器在每次真实网络请求（含重试与重定向后的 follow-up）时进入一次，
+     * 故对一次 Call 的 {@code proceed} 次数即物理网络请求次数，重试/重定向次数 = proceed 次数 - 1。
+     * <p>
+     * <b>线程模型</b>：以 {@code Call} 实例为 key（OkHttp 单次调用全程复用同一 Call 实例），
+     * 用 {@link ConcurrentHashMap} + {@link AtomicInteger} 保证并发安全；
+     * {@link #consumeRetryCount(okhttp3.Call)} 在请求结束后取出次数并删除条目，避免泄漏。
+     * <p>
+     * 包级可见以便单元测试（模拟多次 proceed 验证计数与清理）。
+     */
+    static final class RetryCounter implements Interceptor {
+
+        private final ConcurrentHashMap<okhttp3.Call, AtomicInteger> counts =
+                new ConcurrentHashMap<>();
+
+        @Override
+        public Response intercept(Chain chain) throws IOException {
+            okhttp3.Call call = chain.call();
+            // proceed 前先递增：本次 proceed 计为该 Call 的第 N 次物理网络请求。
+            counts.computeIfAbsent(call, k -> new AtomicInteger()).incrementAndGet();
+            return chain.proceed(chain.request());
+        }
+
+        /**
+         * 取出指定 Call 的重试/重定向次数（proceed 次数 - 1），并删除计数条目。
+         * <p>
+         * min(0) 防御异常情况下计数缺失（如拦截器未触发即返回）时出现负数。
+         *
+         * @param call OkHttp Call。
+         * @return 重试/重定向次数，0 表示无重试。
+         */
+        int consumeRetryCount(okhttp3.Call call) {
+            AtomicInteger n = counts.remove(call);
+            if (n == null) {
+                return 0;
+            }
+            return Math.max(0, n.get() - 1);
+        }
     }
 }

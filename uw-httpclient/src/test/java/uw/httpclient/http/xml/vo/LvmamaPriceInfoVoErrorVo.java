@@ -8,9 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Lvmama的库存和价格信息Vo[带错误节点]
+ * Lvmama（驴妈妈）的库存和价格信息 VO 样本[带错误节点]。
+ * <p>
+ * 与 {@link LvmamaPriceInfoVo} 的差异在于包含错误处理节点（{@code SubErrors}/{@code SubError}），
+ * 作为含错误分支的复杂 XML 反序列化样本保留。当前无测试直接引用。
  *
  * @since 2017/12/13
+ * @see LvmamaPriceInfoVo
  */
 @JacksonXmlRootElement(localName = "response")
 public class LvmamaPriceInfoVoErrorVo {

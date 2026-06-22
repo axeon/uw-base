@@ -1,6 +1,7 @@
 package uw.httpclient.http;
 
 import okhttp3.Headers;
+import okhttp3.Request;
 import uw.httpclient.exception.DataMapperException;
 
 import java.util.Map;
@@ -27,6 +28,27 @@ public interface HttpDataProcessor<D extends HttpData, T> {
      * @throws DataMapperException 处理过程中发生数据映射错误时抛出。
      */
     void requestProcess(String requestBody, Map<String, String> formData, Map<String, String> headers) throws DataMapperException;
+
+    /**
+     * 请求前置处理器（完整 Request 版本）。
+     * <p>
+     * 在实际发送请求之前（{@code newCall} 之前）调用，可拿到构建完成的原生 OkHttp {@link Request}，
+     * 包括最终解析出的 {@code HttpUrl}、method、已合并的业务头与 {@code HttpConfig.defaultHeaders}、
+     * 请求体引用等，便于做签名/验签/链路追踪。
+     * <p>
+     * <b>注意</b>：此处拿到的 Request 尚未经过 OkHttp 网络层，故<b>不含</b> OkHttp 在实际传输时
+     * 才注入的头（{@code Host}、{@code Connection}、{@code Content-Length}、{@code Accept-Encoding}、
+     * {@code User-Agent}、{@code Cookie} 等）。这些头由 OkHttp 在网络层（含 CookieJar、BridgeInterceptor）
+     * 注入，只有在<b>网络拦截器</b>里才能看到完整集合。
+     * <p>
+     * 默认实现为空，子类按需覆写；与 {@link #requestProcess(String, Map, Map)} 互补——
+     * 后者只能拿到业务侧传入的原始参数（requestBody/formData/headers），拿不到最终 Request。
+     *
+     * @param request 构建完成的 OkHttp Request（含已合并的头与最终 URL，不含网络层注入头）。
+     * @throws DataMapperException 处理过程中发生数据映射错误时抛出（会直接冒泡，不包装）。
+     */
+    default void requestProcess(Request request) throws DataMapperException {
+    }
 
     /**
      * 响应处理器。

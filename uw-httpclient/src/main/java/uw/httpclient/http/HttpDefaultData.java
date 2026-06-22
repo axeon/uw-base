@@ -5,6 +5,8 @@ import uw.common.util.JsonUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * {@link HttpData} 的默认实现。
@@ -83,6 +85,26 @@ public class HttpDefaultData implements HttpData {
      * 错误信息。
      */
     private String errorInfo;
+
+    /**
+     * 响应头多值视图（大小写不敏感）。
+     */
+    private Map<String, List<String>> responseHeaders;
+
+    /**
+     * HTTP 响应状态消息（reason phrase）。
+     */
+    private String responseMessage;
+
+    /**
+     * 本次请求整体耗时（毫秒），-1 表示未设置。
+     */
+    private long elapsedMillis = -1L;
+
+    /**
+     * 重试/重定向次数，0 表示无重试。
+     */
+    private int retryCount = 0;
 
     /**
      * 将本对象序列化为 JSON 字符串，便于日志输出。
@@ -236,5 +258,66 @@ public class HttpDefaultData implements HttpData {
     @Override
     public void setErrorInfo(String errorInfo) {
         this.errorInfo = errorInfo;
+    }
+
+    @Override
+    public Map<String, List<String>> getResponseHeaders() {
+        return responseHeaders;
+    }
+
+    @Override
+    public void setResponseHeaders(Map<String, List<String>> responseHeaders) {
+        this.responseHeaders = responseHeaders;
+    }
+
+    /**
+     * 按名称便捷取单个响应头值（首个），大小写不敏感。
+     * <p>
+     * 用于业务侧取 {@code X-Trace-Id}、{@code Location} 等单值头；
+     * 取同名多值头（如 {@code Set-Cookie}）请直接用 {@link #getResponseHeaders()}。
+     *
+     * @param name 响应头名称，大小写不敏感。
+     * @return 首个值，不存在或无响应头时返回 null。
+     */
+    @JsonIgnore
+    public String getResponseHeader(String name) {
+        if (responseHeaders == null || name == null) {
+            return null;
+        }
+        List<String> values = responseHeaders.get(name); // Map 为大小写不敏感视图
+        if (values == null || values.isEmpty()) {
+            return null;
+        }
+        return values.get(0);
+    }
+
+    @Override
+    public String getResponseMessage() {
+        return responseMessage;
+    }
+
+    @Override
+    public void setResponseMessage(String responseMessage) {
+        this.responseMessage = responseMessage;
+    }
+
+    @Override
+    public long getElapsedMillis() {
+        return elapsedMillis;
+    }
+
+    @Override
+    public void setElapsedMillis(long elapsedMillis) {
+        this.elapsedMillis = elapsedMillis;
+    }
+
+    @Override
+    public int getRetryCount() {
+        return retryCount;
+    }
+
+    @Override
+    public void setRetryCount(int retryCount) {
+        this.retryCount = retryCount;
     }
 }

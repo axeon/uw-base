@@ -14,18 +14,37 @@ import uw.task.exception.TaskPartnerException;
  */
 public class HttpRequestException extends TaskPartnerException {
 
+    /**
+     * 构造一个不带消息和原因的 HTTP 请求异常。
+     */
     public HttpRequestException() {
         super();
     }
 
+    /**
+     * 构造一个带消息的 HTTP 请求异常。
+     *
+     * @param msg 异常消息（如底层 IOException 的信息）。
+     */
     public HttpRequestException(String msg) {
         super(msg);
     }
 
+    /**
+     * 构造一个带原因的 HTTP 请求异常。
+     *
+     * @param nestedThrowable 原始异常（通常是 IOException）。
+     */
     public HttpRequestException(Throwable nestedThrowable) {
         super(nestedThrowable);
     }
 
+    /**
+     * 构造一个带消息和原因的 HTTP 请求异常。
+     *
+     * @param msg             异常消息。
+     * @param nestedThrowable 原始异常。
+     */
     public HttpRequestException(String msg, Throwable nestedThrowable) {
         super(msg, nestedThrowable);
     }

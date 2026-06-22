@@ -13,18 +13,37 @@ import uw.task.exception.TaskDataException;
  */
 public class DataMapperException extends TaskDataException {
 
+    /**
+     * 构造一个不带消息和原因的数据映射异常。
+     */
     public DataMapperException() {
         super();
     }
 
+    /**
+     * 构造一个带消息的数据映射异常。
+     *
+     * @param msg 异常消息（通常会附带原始内容便于排查）。
+     */
     public DataMapperException(String msg) {
         super(msg);
     }
 
+    /**
+     * 构造一个带原因的数据映射异常。
+     *
+     * @param nestedThrowable 原始异常（通常是 Jackson 的 JsonProcessingException）。
+     */
     public DataMapperException(Throwable nestedThrowable) {
         super(nestedThrowable);
     }
 
+    /**
+     * 构造一个带消息和原因的数据映射异常。
+     *
+     * @param msg             异常消息。
+     * @param nestedThrowable 原始异常。
+     */
     public DataMapperException(String msg, Throwable nestedThrowable) {
         super(msg, nestedThrowable);
     }

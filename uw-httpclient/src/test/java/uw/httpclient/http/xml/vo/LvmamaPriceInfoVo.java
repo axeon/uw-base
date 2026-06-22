@@ -8,7 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Lvmama的库存和价格信息Vo[不带错误节点]
+ * Lvmama（驴妈妈）的库存和价格信息 VO 样本[不带错误节点]。
+ * <p>
+ * 作为复杂嵌套 XML（含多级列表、属性、命名空间）的反序列化样本保留，字段注释为原始示例值。
+ * 当前无测试直接引用，保留用于后续 XML 反序列化回归或手工验证。
  *
  * @since 2017/7/31
  */

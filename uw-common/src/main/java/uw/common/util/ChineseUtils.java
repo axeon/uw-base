@@ -6,9 +6,6 @@ import com.github.stuxuhai.jpinyin.PinyinHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * 汉字工具类。
  *
@@ -67,7 +64,7 @@ public class ChineseUtils {
 
     /**
      * 基于ngram的相似度计算，返回0-10000。
-     * 用一维数组优化空间复杂度从O(mn)降到O(n)。
+     * 算法实现见 {@link StringTools#ngramSimilarity}。
      *
      * @param strA 字符串A
      * @param strB 字符串B
@@ -79,123 +76,30 @@ public class ChineseUtils {
 
     /**
      * 基于LCS(最长公共子序列)的相似度计算，返回0-10000。
-     * 用一维数组优化空间复杂度从O(mn)降到O(n)。
+     * 算法实现见 {@link StringTools#lcsSimilarity}。
      *
      * @param strA 字符串A
      * @param strB 字符串B
      * @return 相似度，范围0-10000
      */
     public static int lcsSimilarDegree(String strA, String strB) {
-        int maxLen = Math.max(strA.length(), strB.length());
-        if (maxLen == 0) {
-            return 10000;
-        }
-        // 确保内层循环用较短的字符串，减少空间
-        if (strA.length() < strB.length()) {
-            String tmp = strA;
-            strA = strB;
-            strB = tmp;
-        }
-        char[] a = strA.toCharArray();
-        char[] b = strB.toCharArray();
-        int m = a.length;
-        int n = b.length;
-        int[] prev = new int[n + 1];
-        int[] curr = new int[n + 1];
-        for (int i = 1; i <= m; i++) {
-            for (int j = 1; j <= n; j++) {
-                if (a[i - 1] == b[j - 1]) {
-                    curr[j] = prev[j - 1] + 1;
-                } else {
-                    curr[j] = Math.max(curr[j - 1], prev[j]);
-                }
-            }
-            int[] t = prev;
-            prev = curr;
-            curr = t;
-        }
-        return Math.round(prev[n] * 10000.0f / maxLen);
+        return (int) Math.round(StringTools.lcsSimilarity(strA, strB) * 10000);
     }
 
     /**
      * 基于N-gram余弦相似度的计算，返回0-10000。
      * 将字符串拆为二元组(bigram)，通过向量夹角余弦衡量相似度。
      * 相比LCS，对少量字符差异更敏感，更适合区分"名称高度相似但实际不同"的景区。
+     * 算法实现见 {@link StringTools#ngramSimilarity}。
      *
      * @param strA 字符串A
      * @param strB 字符串B
      * @return 相似度，范围0-10000
      */
     public static int ngramSimilarDegree(String strA, String strB) {
-        if (strA.equals(strB)) {
-            return 10000;
-        }
-        int maxLen = Math.max(strA.length(), strB.length());
-        if (maxLen <= 1) {
-            return strA.equals(strB) ? 10000 : 0;
-        }
-        Map<String, int[]> bigrams = new HashMap<>();
-        // 统计strA的bigram频率
-        for (int i = 0; i < strA.length() - 1; i++) {
-            String gram = strA.substring(i, i + 2);
-            bigrams.computeIfAbsent(gram, k -> new int[2])[0]++;
-        }
-        // 统计strB的bigram频率
-        for (int i = 0; i < strB.length() - 1; i++) {
-            String gram = strB.substring(i, i + 2);
-            bigrams.computeIfAbsent(gram, k -> new int[2])[1]++;
-        }
-        // 计算余弦相似度
-        long dotProduct = 0, normA = 0, normB = 0;
-        for (int[] freq : bigrams.values()) {
-            dotProduct += (long) freq[0] * freq[1];
-            normA += (long) freq[0] * freq[0];
-            normB += (long) freq[1] * freq[1];
-        }
-        if (normA == 0 || normB == 0) {
-            return 0;
-        }
-        double cosine = dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-        return (int) Math.round(cosine * 10000);
+        return (int) Math.round(StringTools.ngramSimilarity(strA, strB) * 10000);
     }
 
-    /**
-     * 半角转全角
-     *
-     * @param input String.
-     * @return 全角字符串.
-     */
-    public static String toSBC(String input) {
-        char[] c = input.toCharArray();
-        for (int i = 0; i < c.length; i++) {
-            if (c[i] == ' ') {
-                c[i] = '\u3000';
-            } else if (c[i] < '\177') {
-                c[i] = (char) (c[i] + 65248);
-
-            }
-        }
-        return new String(c);
-    }
-
-    /**
-     * 全角转半角
-     *
-     * @param input String.
-     * @return 半角字符串
-     */
-    public static String toDBC(String input) {
-        char[] c = input.toCharArray();
-        for (int i = 0; i < c.length; i++) {
-            if (c[i] == '\u3000') {
-                c[i] = ' ';
-            } else if (c[i] > '\uFF00' && c[i] < '\uFF5F') {
-                c[i] = (char) (c[i] - 65248);
-
-            }
-        }
-        return new String(c);
-    }
 
 //    public static void main(String[] args) {
 //        String[][] cases = {

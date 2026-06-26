@@ -48,7 +48,7 @@ import uw.auth.service.conf.AuthServiceAutoConfiguration;
 import uw.auth.service.log.AuthCriticalLogStorage;
 import uw.common.app.constant.CommonConstants;
 import uw.common.app.service.SysCritLogStorageService;
-import uw.common.util.DateUtils;
+import uw.common.util.DateTools;
 
 import java.io.IOException;
 import java.util.Date;
@@ -216,13 +216,13 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
     }
 
     /**
-     * 注册 String→Date 转换器（基于 {@link DateUtils#stringToDate}）。
+     * 注册 String→Date 转换器（基于 {@link DateTools#stringToDate}）。
      *
      * @param registry 格式化注册器
      */
     @Override
     public void addFormatters(FormatterRegistry registry) {
-        registry.addConverter(String.class, Date.class, DateUtils::stringToDate);
+        registry.addConverter(String.class, Date.class, DateTools::stringToDate);
     }
 
     /**
@@ -246,7 +246,7 @@ public class CommonAppAutoConfiguration implements WebMvcConfigurer {
             @Override
             public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
                 String dateString = jsonParser.getText();
-                return DateUtils.stringToDate(dateString);
+                return DateTools.stringToDate(dateString);
             }
         });
         // 不设置日期序列化的原因，是为了使用系统设置。

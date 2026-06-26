@@ -64,7 +64,7 @@ UW-Base 提供了以下核心能力：
 - **主要功能**：
     - `ResponseData<T>`：统一响应数据封装，支持函数式链式调用
     - `BitConfigUtils`：位运算配置工具，支持32/64位开关存储
-    - `DateUtils`：灵活的日期处理工具
+    - `DateTools`：灵活的日期处理工具
     - `JsonUtils`：JSON序列化/反序列化工具
     - `AESUtils/RSAUtils/DigestUtils`：加密解密与签名工具
     - `SnowflakeIdGenerator`：分布式雪花ID生成器
@@ -345,7 +345,7 @@ MyDB服务客户端，用于访问MyDB数据服务。
 <parent>
   <groupId>com.umtone</groupId>
   <artifactId>uw-base</artifactId>
-  <version>2026.0601.0008</version>
+  <version>2026.0601.0009</version>
   <relativePath/>
 </parent>
 

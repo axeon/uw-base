@@ -316,13 +316,13 @@ public class JsonUtils {
             @Override
             public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
                 String dateString = jsonParser.getText();
-                return DateUtils.stringToDate(dateString);
+                return DateTools.stringToDate(dateString);
             }
         });
         dateUtilModule.addSerializer(Date.class, new JsonSerializer<Date>() {
             @Override
             public void serialize(Date date, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JacksonException {
-                jsonGenerator.writeString(DateUtils.dateToString(date, DateUtils.DATE_MILLIS_ISO));
+                jsonGenerator.writeString(DateTools.dateToString(date, DateTools.DATE_MILLIS_ISO));
             }
         });
         jsonMapper.registerModule(dateUtilModule);

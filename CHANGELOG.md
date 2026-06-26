@@ -1,3 +1,7 @@
+# 2026.0601.0009版本升级说明
+1. uw-common: 新增StringTools解决大量字符串操作相关问题。
+2. uw-common: DateUtils更名DateTools，解决ai经常import报错反复修复的问题。
+
 # 2026.0601.0006版本升级说明
 这是一个巨大的版本升级，和2026之前的版本不兼容，需要执行升级脚本script/migrate-202605.py。
 
@@ -146,7 +150,7 @@
 
 # 2025.0501.1028版本升级说明
 
-1. uw-common: DateUtils 新增stringToDate()新增自动高效解析时间戳格式。
+1. uw-common: DateTools 新增stringToDate()新增自动高效解析时间戳格式。
 2. uw-log-es: 移除重复的@PreDestory指令。
 3. uw-log-back: 增强JMXBean功能。
 

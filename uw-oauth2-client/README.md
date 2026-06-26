@@ -752,7 +752,7 @@ public class MscAuthHelper {
         tokenResponse = MscTokenService.genAllTokenResponse(mscUser, tokenDataResponse.getData());
         //设置双登提示。
         if (doubleTokenData != null) {
-            tokenResponse.setLoginNotice(String.format(AuthCenterResponseCode.LOGIN_DOUBLE_WARN.getMessage(), doubleTokenData.getUserIp(), DateUtils.dateToString(new Date(doubleTokenData.getCreateAt()), DateUtils.DATE_TIME)));
+            tokenResponse.setLoginNotice(String.format(AuthCenterResponseCode.LOGIN_DOUBLE_WARN.getMessage(), doubleTokenData.getUserIp(), DateTools.dateToString(new Date(doubleTokenData.getCreateAt()), DateTools.DATE_TIME)));
         }
         OAuthTokenResponse authTokenResponse = new OAuthTokenResponse(oauthInfo, tokenResponse);
 

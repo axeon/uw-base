@@ -217,7 +217,7 @@ long r = MoneyUtils.of(10000).multiply(3).multiplyRate("0.85").add(500).cent(); 
 long id = SnowflakeIdGenerator.getInstance().generateId();
 ```
 
-### DateUtils — 日期工具
+### DateTools — 日期工具
 
 提供丰富日期格式常量（`DATE_TIME` / `DATE` / `TIME` / `DATE_SIMPLE` 等）与日期运算。
 
@@ -339,5 +339,5 @@ long id = SnowflakeIdGenerator.getInstance().generateId();
 ## 命名约定
 
 - 工具类统一 `XxxUtils` 后缀，`final class` + 私有构造（部分早期类未加 final）。
-- `null` 输入约定：`ValidateUtils` 返回 false，`MaskUtils` 返回 null，`JsonUtils`/`DateUtils` 行为见各方法注释。
+- `null` 输入约定：`ValidateUtils` 返回 false，`MaskUtils` 返回 null，`JsonUtils`/`DateTools` 行为见各方法注释。
 - 中国特有方法以 `China` 前缀命名（`ValidateUtils.isChinaMobile` / `MaskUtils.maskChinaMobile`），保持跨类一致。

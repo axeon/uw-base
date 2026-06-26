@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 /**
  * 日期工具类
  */
-public class DateUtils {
+public class DateTools {
 
     /**
      * 时区格式：ZZ
@@ -224,7 +224,7 @@ public class DateUtils {
         }
     };
 
-    private static final Logger logger = LoggerFactory.getLogger(DateUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(DateTools.class);
 
 
     //-------------------------------------------------------------------日期格式转换---------------------------------------------------------------

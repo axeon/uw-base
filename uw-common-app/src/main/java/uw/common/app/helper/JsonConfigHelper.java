@@ -9,7 +9,7 @@ import uw.common.app.vo.JsonConfigBox;
 import uw.common.app.vo.JsonConfigParam;
 import uw.common.app.vo.ValidateResult;
 import uw.common.response.ResponseData;
-import uw.common.util.DateUtils;
+import uw.common.util.DateTools;
 import uw.common.util.JsonUtils;
 
 import java.util.*;
@@ -161,15 +161,15 @@ public class JsonConfigHelper {
                 return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.DATA_FORMAT_ERROR, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.DATE) {
-            if (DateUtils.stringToDate(paramValue) == null) {
+            if (DateTools.stringToDate(paramValue) == null) {
                 return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.DATA_FORMAT_ERROR, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.TIME) {
-            if (DateUtils.stringToDate(paramValue) == null) {
+            if (DateTools.stringToDate(paramValue) == null) {
                 return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.DATA_FORMAT_ERROR, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.DATETIME) {
-            if (DateUtils.stringToDate(paramValue) == null) {
+            if (DateTools.stringToDate(paramValue) == null) {
                 return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.DATA_FORMAT_ERROR, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.ENUM) {

@@ -54,7 +54,7 @@ public class ValidateResult {
     public ValidateResult(String name, String title, ResponseCode responseCode, String refData) {
         this.name = name;
         this.title = title;
-        this.errorCode = responseCode.getFullCode();
+        this.errorCode = responseCode.getCode();
         this.errorMsg = responseCode.getLocalizedMessage();
         this.refData = refData;
     }

@@ -1714,7 +1714,7 @@ public class DaoManager {
         if (DaoConfigManager.isProdProfile()) {
             return ResponseData.error(data, DaoResponseCode.TRANSACTION_ERROR);
         } else {
-            return ResponseData.error(data, DaoResponseCode.TRANSACTION_ERROR.getFullCode(), DaoResponseCode.TRANSACTION_ERROR.getLocalizedMessage() + e.getMessage());
+            return ResponseData.error(data, DaoResponseCode.TRANSACTION_ERROR.getCode(), DaoResponseCode.TRANSACTION_ERROR.getLocalizedMessage() + e.getMessage());
         }
     }
 

@@ -1,23 +1,35 @@
 package uw.common.app.vo;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.annotation.*;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.context.support.ResourceBundleMessageSource;
+import uw.common.response.ResponseCode;
+import uw.common.util.EnumUtils;
+
+import java.util.Locale;
 
 /**
  * JSON 配置参数定义接口。
  * <p>
- * 通常以枚举形式实现，每个枚举常量描述一个配置项的 key、类型、默认值、描述与校验正则。
- * 配合 {@link JsonConfigHelper} 构建 {@link JsonConfigBox} 进行结构化读取与校验。
+ * 通常以枚举形式实现，每个枚举常量描述一个配置项的类型、默认值、标题与校验正则。
+ * 配合 {@link uw.common.app.helper.JsonConfigHelper} 构建 {@link JsonConfigBox} 进行结构化读取与校验。
+ * </p>
+ * <p>
+ * 实现类只需提供 {@link #getParamData()}（返回 {@link ParamData} 元数据载体），{@link #getKey()} 由枚举名自动派生，
+ * {@link #getType}/{@link #getValue}/{@link #getTitle}/{@link #getRegex} 由接口 default 委托 {@link #getParamData()}。
+ * 其中 {@link #getTitle()} 为原始标题（标注 {@code @JsonIgnore} 不参与序列化），对外输出的标题字段走
+ * {@link #getLocalizedTitle()}（标注 {@code @JsonProperty("title")}），默认按当前请求 {@link Locale} 国际化：
+ * 实现类覆写 {@link #configPrefix()} 指定 i18n 资源前缀后，标题即按 {@link #getKey()} 为资源 key 解析本地化文案，
+ * 未命中时回退到 {@link #getTitle()} 原始值。
  * </p>
  */
 @Schema(title = "Json配置参数定义", description = "Json配置参数定义")
 public interface JsonConfigParam {
 
     /**
-     * 获取配置参数数据（由实现类提供元数据载体）。
+     * 获取配置参数数据载体（由实现类提供元数据）。
      *
      * @return 参数数据
      */
@@ -26,16 +38,20 @@ public interface JsonConfigParam {
 
     /**
      * 获取配置参数名（key）。
+     * <p>
+     * 由枚举常量名按 {@code 大写转小写、下划线转点} 规范自动派生（如 {@code MAX_TOKENS} → {@code max.tokens}），
+     * 通过将 {@code this} 强转为 {@link Enum} 访问 {@link Enum#name()}，因此实现类必须是枚举。
+     * </p>
      *
      * @return 配置 key
      */
     @Schema(title = "配置名", description = "配置名")
     default String getKey() {
-        return getParamData().getKey();
+        return EnumUtils.enumNameToDotCase(((Enum<?>) this).name());
     }
 
     /**
-     * 获取配置类型（数值/字符串/布尔/日期/枚举等，详见 {@link ParamType}）。
+     * 获取配置类型（数值/字符串/布尔/日期/枚举等，详见 {@link ParamType}），委托 {@link #getParamData()}。
      *
      * @return 配置类型
      */
@@ -45,7 +61,7 @@ public interface JsonConfigParam {
     }
 
     /**
-     * 获取配置默认值（未提供实际值时使用；ENUM 类型时也可承载可选值集合）。
+     * 获取配置默认值（未提供实际值时使用；ENUM 类型时也可承载可选值集合），委托 {@link #getParamData()}。
      *
      * @return 默认值
      */
@@ -55,17 +71,36 @@ public interface JsonConfigParam {
     }
 
     /**
-     * 获取配置描述。
+     * 获取原始配置标题（兜底文案，不经 i18n 解析），委托 {@link #getParamData()}。
+     * <p>
+     * 作为 {@link #getLocalizedTitle()} 与 {@link #getLocalizedTitle(Locale)} 在 i18n 资源缺失时的回退值。
+     * 标注 {@code @JsonIgnore} 以禁止输出到 JSON：对外暴露的标题固定走 {@link #getLocalizedTitle()}（已按 Locale 国际化），
+     * 杜绝原始中文因实现类误覆写 i18n 出口而泄漏。
+     * </p>
      *
-     * @return 描述文本
+     * @return 原始标题文本
      */
-    @Schema(title = "配置描述", description = "配置描述")
-    default String getDesc() {
-        return getParamData().getDesc();
+    @JsonIgnore
+    default String getTitle() {
+        return getParamData().getTitle();
     }
 
     /**
-     * 获取校验正则表达式（无则为 null）。
+     * 获取配置标题（自动按当前请求 {@link Locale} 国际化），作为 JSON 输出的标题字段。
+     * <p>
+     * 序列化输出字段名固定为 {@code title}（由 {@link JsonProperty} 指定，与方法名解耦）。
+     * 未配置 {@link #configPrefix()}、资源缺失或 Locale 为 null 时，自动回退到 {@link #getTitle()} 原始值。
+     * </p>
+     *
+     * @return 标题文本（已按当前 Locale 解析；无 i18n 配置时返回原始值）
+     */
+    @JsonProperty("title")
+    default String getLocalizedTitle() {
+        return getLocalizedTitle(LocaleContextHolder.getLocale());
+    }
+
+    /**
+     * 获取校验正则表达式（无则为 null），委托 {@link #getParamData()}。
      *
      * @return 正则表达式
      */
@@ -75,30 +110,95 @@ public interface JsonConfigParam {
     }
 
     /**
+     * 获取配置 i18n 资源前缀（逻辑前缀，非完整 basename）。
+     * <p>
+     * 默认返回 null（不启用 i18n，{@link #getLocalizedTitle()} 自动回退到原始值）。
+     * 实现方返回前缀后，{@link #messageSource()} 即按规范推导 basename 并加载、缓存 {@link ResourceBundleMessageSource}：
+     * basename 约定为 {@code i18n/config/<前缀点转下划线>}（如前缀 {@code openai.config} → {@code i18n/config/openai_config}），
+     * 与 {@link ResponseCode#codePrefix()} 的推导规则对称（后者走 {@code i18n/messages/} 目录）。
+     * </p>
+     * <p>
+     * {@link #getLocalizedTitle(Locale)} 据此按资源 key（约定为 {@link #getKey()}）与 Locale 解析本地化文案，未命中时回退原始值。
+     * </p>
+     *
+     * @return 配置 i18n 资源前缀；null 表示不启用 i18n
+     */
+    @JsonIgnore
+    default String configPrefix() {
+        return null;
+    }
+
+    /**
+     * 获取国际化消息源，用于按 {@link Locale} 解析本地化标题。
+     * <p>
+     * 默认按 {@link #configPrefix()} 自动加载并缓存 {@link ResourceBundleMessageSource}（UTF-8，复用
+     * {@link ResponseCode#MESSAGE_SOURCE_CACHE} 缓存）。前缀为 null 时不加载，返回 null。
+     * 实现方若有特殊需求（如自定义 basename 解析逻辑），可覆写本方法。
+     * </p>
+     *
+     * @return 消息源；configPrefix 为 null 时返回 null
+     */
+    @JsonIgnore
+    default MessageSource messageSource() {
+        String prefix = configPrefix();
+        if (prefix == null || prefix.isEmpty()) {
+            return null;
+        }
+        String basename = "i18n/config/" + prefix.replace('.', '_');
+        return ResponseCode.MESSAGE_SOURCE_CACHE.computeIfAbsent(basename, name -> {
+            ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+            source.setBasename(name);
+            source.setDefaultEncoding("UTF-8");
+            return source;
+        });
+    }
+
+    /**
+     * 获取配置标题的本地化文案。
+     * <p>
+     * 若 {@link #messageSource()} 返回非 null（即配置了 {@link #configPrefix()}），则按 {@code locale}
+     * 以 {@link #getKey()} 为资源 key 解析；解析失败、资源缺失、未配置 basename 或 locale 为 null 时回退到
+     * {@link #getTitle()} 原始值。
+     * </p>
+     *
+     * @param locale 语言环境；为 null 时回退到原始值
+     * @return 本地化标题
+     */
+    @JsonIgnore
+    default String getLocalizedTitle(Locale locale) {
+        String title = getTitle();
+        MessageSource source = messageSource();
+        if (source == null || locale == null) {
+            return title;
+        }
+        // 以兜底文案作为 defaultMessage，缺失资源 key 时直接返回兜底，避免依赖异常控制流。
+        String localized = source.getMessage(getKey(), null, title, locale);
+        return localized != null ? localized : title;
+    }
+
+    /**
      * 配置参数数据载体（不可变）。
+     * <p>
+     * 实现类通过 {@link #getParamData()} 返回本类的实例，承载 type/value/title/regex 四项元数据。
+     * key 不在此载体中——由接口 {@link #getKey()} 从枚举名自动派生，避免实现类手写 {@code enumNameToDotCase(name())}。
+     * </p>
      */
     class ParamData {
 
         /**
-         * 配置类型。 数值，字符串，布尔值，浮点数，浮点数，日期，时间，日期时间,枚举.
-         * 详见ConfigParamType。
+         * 配置类型。详见 {@link ParamType}。
          */
         private final ParamType type;
 
         /**
-         * 配置key。
-         */
-        private final String key;
-
-        /**
-         * 配置默认值。
+         * 配置默认值（ENUM 类型时也可承载可选值集合）。
          */
         private final String value;
 
         /**
-         * 配置描述。
+         * 配置标题（i18n 兜底文案）。
          */
-        private final String desc;
+        private final String title;
 
         /**
          * 校验正则表达式。
@@ -108,17 +208,15 @@ public interface JsonConfigParam {
         /**
          * 构造参数数据。
          *
-         * @param key   配置 key
          * @param type  配置类型
          * @param value 默认值（ENUM 类型时也可承载可选值集合）
-         * @param desc  描述文本
+         * @param title 标题文本（i18n 兜底文案）
          * @param regex 校验正则表达式（无则传 null）
          */
-        public ParamData(String key, ParamType type, String value, String desc, String regex) {
-            this.key = key;
+        public ParamData(ParamType type, String value, String title, String regex) {
             this.type = type;
             this.value = value;
-            this.desc = desc;
+            this.title = title;
             this.regex = regex;
         }
 
@@ -130,13 +228,6 @@ public interface JsonConfigParam {
         }
 
         /**
-         * @return 配置 key
-         */
-        public String getKey() {
-            return key;
-        }
-
-        /**
          * @return 默认值
          */
         public String getValue() {
@@ -144,10 +235,10 @@ public interface JsonConfigParam {
         }
 
         /**
-         * @return 描述文本
+         * @return 标题文本
          */
-        public String getDesc() {
-            return desc;
+        public String getTitle() {
+            return title;
         }
 
         /**
@@ -157,7 +248,6 @@ public interface JsonConfigParam {
             return regex;
         }
     }
-
 
     /**
      * JSON配置数据类型

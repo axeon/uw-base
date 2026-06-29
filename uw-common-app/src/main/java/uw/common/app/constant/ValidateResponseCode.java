@@ -1,17 +1,15 @@
 package uw.common.app.constant;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 import uw.common.response.ResponseCode;
-import uw.common.util.EnumUtils;
 
 /**
  * Schema 数据校验返回代码。
  * <p>
  * 实现 {@link ResponseCode} 接口，codePrefix 为 {@code uw.validate}，对应完整响应码形如 {@code uw.validate.not.null}。
- * 国际化资源位于 {@code i18n/messages/uw_validate}，由 {@link uw.common.app.helper.SchemaValidateHelper} 与
- * {@link uw.common.app.helper.JsonConfigHelper} 在校验失败时引用。序列化为 JSON 时以对象形态输出。
+ * 国际化资源位于 {@code i18n/messages/uw_validate}（basename 由 codePrefix 按 {@code 点转下划线} 规范自动推导），
+ * 由 {@link uw.common.app.helper.SchemaValidateHelper} 与 {@link uw.common.app.helper.JsonConfigHelper} 在校验失败时引用。
+ * 序列化为 JSON 时以对象形态输出。
  * </p>
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
@@ -35,19 +33,6 @@ public enum ValidateResponseCode implements ResponseCode {
     ;
 
     /**
-     * 国际化信息 MESSAGE_SOURCE。
-     * 基于 {@code i18n/messages/uw_validate} 资源包，UTF-8 编码，默认开启缓存。
-     */
-    private static final ResourceBundleMessageSource MESSAGE_SOURCE = new ResourceBundleMessageSource() {{
-        setBasename("i18n/messages/uw_validate");
-        setDefaultEncoding("UTF-8");
-    }};
-
-    /**
-     * 响应码（由枚举名转换为点分小写形式，如 {@code not.null}）。
-     */
-    private final String code;
-    /**
      * 默认错误信息（未命中 i18n 时的兜底文案）。
      */
     private final String message;
@@ -58,22 +43,14 @@ public enum ValidateResponseCode implements ResponseCode {
      * @param message 默认错误信息
      */
     ValidateResponseCode(String message) {
-        this.code = EnumUtils.enumNameToDotCase(this.name());
         this.message = message;
     }
 
     /**
-     * 获取响应码（点分小写形式）。
-     *
-     * @return 响应码
-     */
-    @Override
-    public String getCode() {
-        return code;
-    }
-
-    /**
-     * 获取默认错误信息（未命中 i18n 时使用）。
+     * 获取默认错误信息（兜底文案，未经 i18n 解析）。
+     * <p>
+     * 供 {@link ResponseCode#getLocalizedMessage(Object...)} 作为兜底使用。
+     * </p>
      *
      * @return 默认错误信息
      */
@@ -83,17 +60,8 @@ public enum ValidateResponseCode implements ResponseCode {
     }
 
     /**
-     * 获取国际化消息源，用于按 Locale 解析本地化文案。
-     *
-     * @return 消息源
-     */
-    @Override
-    public MessageSource messageSource() {
-        return MESSAGE_SOURCE;
-    }
-
-    /**
-     * 获取响应码前缀，固定为 {@code uw.validate}，与 code 拼接构成完整响应码。
+     * 获取响应码前缀，固定为 {@code uw.validate}，与短码拼接构成完整响应码，
+     * 同时作为 i18n basename（{@code i18n/messages/uw_validate}）的推导依据。
      *
      * @return 响应码前缀
      */

@@ -1,14 +1,12 @@
 package uw.mfa.constant;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import org.springframework.context.support.ResourceBundleMessageSource;
 import uw.common.response.ResponseCode;
-import uw.common.util.EnumUtils;
 
 /**
  * MFA模块响应码枚举。
  * <p>涵盖IP限制、Captcha、设备验证码、TOTP四类业务场景的错误码，</p>
- * <p>codePrefix为 {@code uw.mfa}，i18n资源文件为 {@code i18n/messages/uw_mfa}。</p>
+ * <p>codePrefix为 {@code uw.mfa}，i18n资源文件为 {@code i18n/messages/uw_mfa}（basename 由 codePrefix 自动推导）。</p>
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum MfaResponseCode implements ResponseCode {
@@ -62,52 +60,18 @@ public enum MfaResponseCode implements ResponseCode {
     TOTP_VERIFY_LIMIT_ERROR("您的用户ID[%s]已经在[%s]分钟内连续[%s]次验证错误! 请[%s]分钟后再试! "),
 
     ;
-    /**
-     * 国际化信息MESSAGE_SOURCE，读取 {@code i18n/messages/uw_mfa} 多语言资源。
-     */
-    private static final ResourceBundleMessageSource MESSAGE_SOURCE = new ResourceBundleMessageSource() {{
-        setBasename("i18n/messages/uw_mfa");
-        setDefaultEncoding("UTF-8");
-        setCacheSeconds(0);
-    }};
 
     /**
-     * 响应码（由枚举名转换为点分小写形式，如 {@code ip.limit.error}）。
-     */
-    private final String code;
-
-    /**
-     * 默认错误信息（支持 {@code %s} 占位符，由 {@code errorCode(code, params)} 格式化）。
+     * 默认错误信息（支持 {@code %s} 占位符，由 {@code getMessage(params)} 格式化）。
      */
     private final String message;
 
     MfaResponseCode(String message) {
-        this.code = EnumUtils.enumNameToDotCase(this.name());
         this.message = message;
     }
 
     /**
-     * 获取响应码前缀，固定为 {@code uw.mfa}。
-     *
-     * @return 响应码前缀
-     */
-    @Override
-    public String codePrefix() {
-        return "uw.mfa";
-    }
-
-    /**
-     * 获取响应码（不含前缀，完整码由 {@code codePrefix + getCode} 拼接）。
-     *
-     * @return 响应码
-     */
-    @Override
-    public String getCode() {
-        return code;
-    }
-
-    /**
-     * 获取默认响应消息（未经过i18n与参数格式化）。
+     * 获取兜底响应消息（未经 i18n 与参数格式化）。
      *
      * @return 默认消息
      */
@@ -117,14 +81,12 @@ public enum MfaResponseCode implements ResponseCode {
     }
 
     /**
-     * 获取i18n消息源。
+     * 获取响应码前缀，固定为 {@code uw.mfa}，同时作为 i18n basename（{@code i18n/messages/uw_mfa}）的推导依据。
      *
-     * @return 消息源
+     * @return 响应码前缀
      */
     @Override
-    public ResourceBundleMessageSource messageSource() {
-        return MESSAGE_SOURCE;
+    public String codePrefix() {
+        return "uw.mfa";
     }
-
-
 }

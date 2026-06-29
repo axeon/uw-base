@@ -1,14 +1,12 @@
 package uw.oauth2.client.constant;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import org.springframework.context.support.ResourceBundleMessageSource;
 import uw.common.response.ResponseCode;
-import uw.common.util.EnumUtils;
 
 /**
  * OAuth2错误码枚举，定义清晰的错误码体系。
  * <p>
- * 支持国际化（资源文件位于 i18n/messages/uw_oauth2_client*.properties），
+ * 支持国际化（资源文件位于 i18n/messages/uw_oauth2_client*.properties，basename 由 codePrefix 自动推导），
  * 序列化为JSON时输出为对象形态（含code与message）。
  *
  * @author axeon
@@ -56,19 +54,6 @@ public enum OAuth2ClientResponseCode implements ResponseCode {
     UNKNOWN_ERROR("Unknown error");
 
     /**
-     * 国际化信息MESSAGE_SOURCE。
-     */
-    private static final ResourceBundleMessageSource MESSAGE_SOURCE = new ResourceBundleMessageSource() {{
-        setBasename("i18n/messages/uw_oauth2_client");
-        setDefaultEncoding("UTF-8");
-        setCacheSeconds(0);
-    }};
-    /**
-     * 响应码。
-     */
-    private final String code;
-
-    /**
      * 错误信息。
      */
     private final String message;
@@ -80,34 +65,13 @@ public enum OAuth2ClientResponseCode implements ResponseCode {
      * @param message 错误信息
      */
     OAuth2ClientResponseCode(String message) {
-        this.code = EnumUtils.enumNameToDotCase(this.name());
         this.message = message;
     }
 
     /**
-     * 获取配置前缀.
+     * 获取兜底响应消息（未经 i18n 解析）。
      *
-     * @return
-     */
-    @Override
-    public String codePrefix() {
-        return "uw.oauth2.client";
-    }
-
-    /**
-     * 获取响应码
-     *
-     * @return
-     */
-    @Override
-    public String getCode() {
-        return code;
-    }
-
-    /**
-     * 获取响应消息.
-     *
-     * @return
+     * @return 错误信息
      */
     @Override
     public String getMessage() {
@@ -115,13 +79,14 @@ public enum OAuth2ClientResponseCode implements ResponseCode {
     }
 
     /**
-     * 获取消息源.
+     * 获取响应码前缀，固定为 {@code uw.oauth2.client}，同时作为 i18n basename
+     * （{@code i18n/messages/uw_oauth2_client}）的推导依据。
      *
-     * @return
+     * @return 响应码前缀
      */
     @Override
-    public ResourceBundleMessageSource messageSource() {
-        return MESSAGE_SOURCE;
+    public String codePrefix() {
+        return "uw.oauth2.client";
     }
 
 }

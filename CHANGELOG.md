@@ -1,3 +1,31 @@
+# 2026.0601.0010版本升级说明
+重构 ResponseCode / JsonConfigParam 的 i18n 机制，将样板代码内化到接口，涉及公共接口签名变更。
+
+## uw-common
+1. ResponseCode 改为自带 i18n 的双方法模式：`getMessage()` 抽象兜底文案（`@JsonIgnore`），`getLocalizedMessage()` default i18n 出口（`@JsonProperty("message")`，按当前 Locale 解析，缺失回退 `getMessage()`）。
+2. `code`/`getCode()` 由接口从枚举名自动派生；`messageSource()` 按 `codePrefix()` 自动推导 basename（`i18n/messages/<点转下划线>`）并缓存，实现类无需手写 `ResourceBundleMessageSource`。
+3. 删除 `getFullCode()` 系列与旧 `getLocalizedMessage()` 重载。ResponseData / ResponseCodeUtils 调用方同步迁移。
+
+## uw-common-app
+1. JsonConfigParam 精简实现样板：`getParamData()` 为唯一抽象方法，`getType/getValue/getTitle/getRegex` 改为 default 委托 `getParamData()`，`getKey()` 由枚举名自动派生；`ParamData` 载体去掉 `key` 字段（实现类构造器少传一个参数，不再手写 `enumNameToDotCase(name())`）。
+2. `desc` 更名为 `title`，采用与 ResponseCode 同构的 i18n 双方法模式：`getTitle()`（`@JsonIgnore`）+ `getLocalizedTitle()`（`@JsonProperty("title")`）；i18n 资源走 `configPrefix()` 推导的 `i18n/config/` 目录。
+3. JsonConfigHelper 删除两个 String 重载（`JsonConfigParam` 是接口，Jackson 无法反序列化，原为死代码）。
+4. ValidateResponseCode / CommonResponseCode 精简为 `getMessage()` + `codePrefix()`。
+
+## uw-dao / uw-mfa / uw-oauth2-client
+DaoResponseCode / MfaResponseCode / OAuth2ClientResponseCode 同步精简为 `getMessage()` + `codePrefix()`。
+
+## uw-auth-center / uw-gateway-center
+1. AuthCenterResponseCode 的 codePrefix 由 `auth.center` 调整为 `uw.auth.center`（跟随包名命名），i18n 资源文件 `auth_center*.properties` 同步改名为 `uw_auth_center*.properties`。
+2. GatewayCenterResponseCode 的 codePrefix 由 `auth.center` 调整为 `uw.gateway.center`（不再与 AuthCenter 共用响应码空间），新建独立的 `uw_gateway_center*.properties` 资源文件（13 语种）。
+
+## ⚠️ 不兼容变更
+1. ResponseCode 实现类：`@Override message()` → `getMessage()`；删除 `getCode()`/`messageSource()` 覆写（已由接口自动派生/加载）。
+2. ResponseCode 调用方：`getFullCode()` → `getCode()`；取对外消息改用 `getLocalizedMessage()`（`getMessage()` 现为原始兜底文案，不经 i18n）。
+3. JsonConfigParam 实现类：`ParamData` 构造器从 5 参 `(key,type,value,desc,regex)` 改为 4 参 `(type,value,title,regex)`（`key` 由接口派生，`desc`→`title`）；只需提供 `getParamData()`，4 个 getter 由接口 default 委托。
+4. 前端：JsonConfigParam 序列化字段 `desc` → `title`。
+5. 前端：AuthCenter 响应码 fullCode 前缀 `auth.center.*` → `uw.auth.center.*`（涉及 ops-web / root-web 的 login、password、userInfo 等页面共 58 处 `res.code === 'auth.center.xxx'` 判断，需同步改为 `uw.auth.center.xxx`，否则登录双登/多用户/MFA/密码分支判断会失效）。
+
 # 2026.0601.0009版本升级说明
 1. uw-common: 新增StringTools解决大量字符串操作相关问题。
 2. uw-common: DateUtils更名DateTools，解决ai经常import报错反复修复的问题。

@@ -78,35 +78,6 @@ public class JsonConfigHelper {
     }
 
     /**
-     * 构建配置参数盒子。
-     *
-     * @param configParamJson 配置参数定义 JSON 字符串（可为空）
-     * @param configDataJson  配置数据 JSON 字符串（可为空）
-     * @return 携带 {@link JsonConfigBox} 的响应数据；参数解析失败时 data 为 null
-     */
-    public static ResponseData<JsonConfigBox> buildParamBox(String configParamJson, String configDataJson) {
-        List<JsonConfigParam> configParams = null;
-        Map<String, String> configDataMap = null;
-        if (StringUtils.isNotBlank(configParamJson)) {
-            try {
-                configParams = Arrays.asList(JsonUtils.parse(configParamJson, JsonConfigParam[].class));
-            } catch (Exception e) {
-                logger.error("配置参数解析失败！{}", e.getMessage(), e);
-                return ResponseData.error(null, "", "配置参数解析失败！" + e.getMessage());
-            }
-        }
-        if (StringUtils.isNotBlank(configDataJson)) {
-            try {
-                configDataMap = JsonUtils.parse(configDataJson, new TypeReference<Map<String, String>>() {
-                });
-            } catch (Exception e) {
-                logger.error("配置数据解析失败！{}", e.getMessage(), e);
-            }
-        }
-        return buildParamBox(configParams, configDataMap);
-    }
-
-    /**
      * 校验单个配置参数值（按类型与正则）。
      *
      * @param configParam 配置参数定义
@@ -114,63 +85,65 @@ public class JsonConfigHelper {
      * @return 校验失败结果；通过时返回 null
      */
     private static ValidateResult validateParam(JsonConfigParam configParam, String paramValue) {
+        // 自动按当前 Locale 解析标题；未配置 i18n 时回退到原始值。
+        String title = configParam.getLocalizedTitle();
         if (paramValue == null) {
-            return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.NOT_NULL, null);
+            return new ValidateResult(configParam.getKey(), title, ValidateResponseCode.NOT_NULL, null);
         }
         // 直接比较枚举类型，无需调用getValue()
         if (configParam.getType() == JsonConfigParam.ParamType.STRING) {
             if (StringUtils.isBlank(paramValue)) {
-                return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.NOT_EMPTY, null);
+                return new ValidateResult(configParam.getKey(), title, ValidateResponseCode.NOT_EMPTY, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.TEXT) {
             if (StringUtils.isBlank(paramValue)) {
-                return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.NOT_EMPTY, null);
+                return new ValidateResult(configParam.getKey(), title, ValidateResponseCode.NOT_EMPTY, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.TEXT_RICH) {
             if (StringUtils.isBlank(paramValue)) {
-                return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.NOT_EMPTY, null);
+                return new ValidateResult(configParam.getKey(), title, ValidateResponseCode.NOT_EMPTY, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.INT) {
             try {
                 Integer.parseInt(paramValue);
             } catch (Exception e) {
-                return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.DATA_FORMAT_ERROR, null);
+                return new ValidateResult(configParam.getKey(), title, ValidateResponseCode.DATA_FORMAT_ERROR, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.LONG) {
             try {
                 Long.parseLong(paramValue);
             } catch (Exception e) {
-                return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.DATA_FORMAT_ERROR, null);
+                return new ValidateResult(configParam.getKey(), title, ValidateResponseCode.DATA_FORMAT_ERROR, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.FLOAT) {
             try {
                 Float.parseFloat(paramValue);
             } catch (Exception e) {
-                return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.DATA_FORMAT_ERROR, null);
+                return new ValidateResult(configParam.getKey(), title, ValidateResponseCode.DATA_FORMAT_ERROR, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.DOUBLE) {
             try {
                 Double.parseDouble(paramValue);
             } catch (Exception e) {
-                return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.DATA_FORMAT_ERROR, null);
+                return new ValidateResult(configParam.getKey(), title, ValidateResponseCode.DATA_FORMAT_ERROR, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.BOOLEAN) {
             try {
                 Boolean.parseBoolean(paramValue);
             } catch (Exception e) {
-                return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.DATA_FORMAT_ERROR, null);
+                return new ValidateResult(configParam.getKey(), title, ValidateResponseCode.DATA_FORMAT_ERROR, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.DATE) {
             if (DateTools.stringToDate(paramValue) == null) {
-                return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.DATA_FORMAT_ERROR, null);
+                return new ValidateResult(configParam.getKey(), title, ValidateResponseCode.DATA_FORMAT_ERROR, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.TIME) {
             if (DateTools.stringToDate(paramValue) == null) {
-                return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.DATA_FORMAT_ERROR, null);
+                return new ValidateResult(configParam.getKey(), title, ValidateResponseCode.DATA_FORMAT_ERROR, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.DATETIME) {
             if (DateTools.stringToDate(paramValue) == null) {
-                return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.DATA_FORMAT_ERROR, null);
+                return new ValidateResult(configParam.getKey(), title, ValidateResponseCode.DATA_FORMAT_ERROR, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.ENUM) {
             // ENUM 的可选值集合约定存放在 getValue() 中（JSON 数组形式）。
@@ -185,14 +158,14 @@ public class JsonConfigHelper {
                 }
             }
             if (enumSet != null && !enumSet.isEmpty() && !enumSet.contains(paramValue)) {
-                return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.DATA_FORMAT_ERROR, null);
+                return new ValidateResult(configParam.getKey(), title, ValidateResponseCode.DATA_FORMAT_ERROR, null);
             }
         } else if (configParam.getType() == JsonConfigParam.ParamType.MAP) {
             try {
                 Map<String, String> map = JsonUtils.parse(paramValue, new TypeReference<>() {
                 });
             } catch (Exception e) {
-                return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.DATA_FORMAT_ERROR, null);
+                return new ValidateResult(configParam.getKey(), title, ValidateResponseCode.DATA_FORMAT_ERROR, null);
             }
         }
 
@@ -201,7 +174,7 @@ public class JsonConfigHelper {
         if (StringUtils.isNotBlank(regex) && StringUtils.isNotBlank(paramValue)) {
             try {
                 if (!paramValue.matches(regex)) {
-                    return new ValidateResult(configParam.getKey(), configParam.getDesc(), ValidateResponseCode.REGEX_FORMAT_ERROR, null);
+                    return new ValidateResult(configParam.getKey(), title, ValidateResponseCode.REGEX_FORMAT_ERROR, null);
                 }
             } catch (PatternSyntaxException e) {
                 logger.error("正则表达式格式错误: {}", regex, e);
@@ -248,36 +221,6 @@ public class JsonConfigHelper {
      */
     public static ResponseData<List<ValidateResult>> validateConfigData(List<JsonConfigParam> configParamList, String configDataJson) {
         Map<String, String> configDataMap = null;
-        if (StringUtils.isNotBlank(configDataJson)) {
-            try {
-                configDataMap = JsonUtils.parse(configDataJson, new TypeReference<Map<String, String>>() {
-                });
-            } catch (Exception e) {
-                logger.error("配置数据解析失败！{}", e.getMessage(), e);
-            }
-        }
-        return validateConfigData(configParamList, configDataMap);
-
-    }
-
-    /**
-     * 校验配置数据。
-     *
-     * @param configParamJson 配置参数定义 JSON 字符串（可为空）
-     * @param configDataJson  配置数据 JSON 字符串（可为空）
-     * @return 校验通过返回成功；失败时 data 为校验结果列表
-     */
-    public static ResponseData<List<ValidateResult>> validateConfigData(String configParamJson, String configDataJson) {
-        Map<String, String> configDataMap = null;
-        List<JsonConfigParam> configParamList = null;
-        if (StringUtils.isNotBlank(configParamJson)) {
-            try {
-                configParamList = JsonUtils.parse(configParamJson, new TypeReference<List<JsonConfigParam>>() {
-                });
-            } catch (Exception e) {
-                logger.error("配置参数解析失败！{}", e.getMessage(), e);
-            }
-        }
         if (StringUtils.isNotBlank(configDataJson)) {
             try {
                 configDataMap = JsonUtils.parse(configDataJson, new TypeReference<Map<String, String>>() {

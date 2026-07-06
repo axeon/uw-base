@@ -819,35 +819,37 @@ public class AuthServiceHelper {
         if (!UserType.checkTypeValid(userType)) {
             return ResponseData.errorCode(AuthServiceConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token UserType invalid. Token: " + token);
         }
+        AuthTokenData authTokenData = null;
         if (userType == UserType.ANY.getValue()) {
-            return ResponseData.success(parseAnonymousToken(token.substring(typeSeparator + 1)));
-        }
-        //检查是否非法token请求，如果确认非法，则直接抛异常，引导用户重新登录。
-        String invalidNotice = invalidTokenCache.getIfPresent(token);
-        if (StringUtils.isNotBlank(invalidNotice)) {
-            return ResponseData.errorCode(AuthServiceConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token[" + token + "] Invalid. Msg: " + invalidNotice);
-        }
-        //检查缓存中的token。
-        AuthTokenData authTokenData = loadCachedTokenData(userType, token);
-        //服务器端拉取缓存。
-        if (authTokenData == null) {
-            ResponseData<AuthTokenData> verifyResponse = authServiceRpc.verifyToken(token);
-            if (verifyResponse.isSuccess()) {
-                authTokenData = verifyResponse.getData();
-                putContextToken(ip, userType, token, authTokenData);
-            } else {
-                //仅当认证中心明确判定token失效（401/498等）时才入负缓存，防止有人乱试。
-                //若为503等服务异常，不缓存，避免auth-center短暂故障把合法token误判为非法长达20分钟。
-                if (shouldCacheInvalid(verifyResponse.getCode())) {
-                    invalidTokenCache.put(token, verifyResponse.getMsg());
-                }
-                return verifyResponse;
+            authTokenData = parseAnonymousToken(token.substring(typeSeparator + 1));
+        } else {
+            //检查是否非法token请求，如果确认非法，则直接抛异常，引导用户重新登录。
+            String invalidNotice = invalidTokenCache.getIfPresent(token);
+            if (StringUtils.isNotBlank(invalidNotice)) {
+                return ResponseData.errorCode(AuthServiceConstants.HTTP_UNAUTHORIZED_CODE, "!!!Server Token[" + token + "] Invalid. Msg: " + invalidNotice);
             }
-        }
-        // 检查过期
-        if (authTokenData.isExpired()) {
-            invalidContextToken(userType, token);
-            return ResponseData.errorCode(AuthServiceConstants.HTTP_TOKEN_EXPIRED_CODE, "!Server AccessToken expired. Token: " + token);
+            //检查缓存中的token。
+            authTokenData = loadCachedTokenData(userType, token);
+            //服务器端拉取缓存。
+            if (authTokenData == null) {
+                ResponseData<AuthTokenData> verifyResponse = authServiceRpc.verifyToken(token);
+                if (verifyResponse.isSuccess()) {
+                    authTokenData = verifyResponse.getData();
+                    putContextToken(ip, userType, token, authTokenData);
+                } else {
+                    //仅当认证中心明确判定token失效（401/498等）时才入负缓存，防止有人乱试。
+                    //若为503等服务异常，不缓存，避免auth-center短暂故障把合法token误判为非法长达20分钟。
+                    if (shouldCacheInvalid(verifyResponse.getCode())) {
+                        invalidTokenCache.put(token, verifyResponse.getMsg());
+                    }
+                    return verifyResponse;
+                }
+            }
+            // 检查过期
+            if (authTokenData.isExpired()) {
+                invalidContextToken(userType, token);
+                return ResponseData.errorCode(AuthServiceConstants.HTTP_TOKEN_EXPIRED_CODE, "!Server AccessToken expired. Token: " + token);
+            }
         }
         // 设定当前线程tokenData
         AuthServiceHelper.setContextToken(authTokenData);

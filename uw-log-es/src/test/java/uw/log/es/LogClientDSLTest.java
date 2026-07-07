@@ -70,7 +70,7 @@ public class LogClientDSLTest {
 
     @Test
     public void testScroll() throws Exception {
-        String dsl = logService.translateSqlToDsl("select * from \\\"saas-hotel-task_20191217\\\"", 0, 10, true);
+        String dsl = logService.translateSqlToDsl("select * from \"saas-hotel-task_20191217\"", 0, 10, true);
         ScrollResponse<TaskRunnerLog> taskRunnerLogScrollResponse = logClient.scrollQueryOpen(TaskRunnerLog.class, "uw.auth.server.vo.msc_action_log_20191217", 60, dsl);
         System.out.println(taskRunnerLogScrollResponse);
     }

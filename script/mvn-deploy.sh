@@ -16,15 +16,17 @@ cd "$BASE_DIR" || (echo "Error: Failed to switch to project root directory: $BAS
 echo "INFO: BASE_DIR = $BASE_DIR"
 
 usage() {
-    echo "Usage: $0 -a|--all | [--skip-parent] module1 [module2 ...]"
+    echo "Usage: $0 -a|--all | -p|--parent-only | [--skip-parent] module1 [module2 ...]"
     echo ""
     echo "Options:"
     echo "  -a, --all          全量发布所有模块"
+    echo "  -p, --parent-only  仅发布 uw-base parent（依赖更新后只发 parent 时使用，等价 mvn -N）"
     echo "  --skip-parent      跳过uw-base parent发布（补发模块时使用）"
     echo "  -h, --help         显示帮助信息"
     echo ""
     echo "Example:"
     echo "  Deploy all:        $0 -a"
+    echo "  Parent only:       $0 -p"
     echo "  Deploy modules:    $0 uw-auth-client uw-common"
     echo "  Redeploy modules:  $0 --skip-parent uw-common-app uw-httpclient"
     exit 0
@@ -36,6 +38,7 @@ usage() {
 # 初始化
 SKIP_PARENT=false
 DEPLOY_ALL=false
+PARENT_ONLY=false
 MODULES_ARGS=()
 
 # 解析参数
@@ -43,6 +46,7 @@ for arg in "$@"; do
     case "$arg" in
         -h|--help) usage ;;
         -a|--all) DEPLOY_ALL=true ;;
+        -p|--parent-only) PARENT_ONLY=true ;;
         --skip-parent) SKIP_PARENT=true ;;
         *) MODULES_ARGS+=("$arg") ;;
     esac
@@ -60,13 +64,27 @@ if [ "$DEPLOY_ALL" = true ] && [ "$SKIP_PARENT" = true ]; then
     exit 1
 fi
 
+# -p和其它模式不能同时指定（它是独立的"仅发 parent"模式）
+if [ "$PARENT_ONLY" = true ]; then
+    if [ "$DEPLOY_ALL" = true ] || [ "$SKIP_PARENT" = true ] || [ ${#MODULES_ARGS[@]} -gt 0 ]; then
+        echo "Error: -p/--parent-only cannot be used with -a/--all, --skip-parent or module names"
+        exit 1
+    fi
+fi
+
 # 构建deploy命令
 CMD_DEPLOY="mvn deploy -P release-uw -Dmaven.test.skip=true"
 # clean 不加 -q：一旦出错需要完整日志定位；clean 始终全量 reactor，不追加 -pl，
 # 避免只清理选中模块而残留其它模块的 .flattened-pom.xml
 CMD_CLEAN="mvn clean -P release-uw"
 
-if [ "$DEPLOY_ALL" = false ] && [ ${#MODULES_ARGS[@]} -gt 0 ]; then
+# 仅发布 parent：non-recursive，只构建并发布 reactor 根（uw-base parent POM）
+if [ "$PARENT_ONLY" = true ]; then
+    CMD_DEPLOY+=" -N"
+    CMD_CLEAN+=" -N"
+fi
+
+if [ "$DEPLOY_ALL" = false ] && [ "$PARENT_ONLY" = false ] && [ ${#MODULES_ARGS[@]} -gt 0 ]; then
     PL_PARAMS=""
     if [ "$SKIP_PARENT" = false ]; then
         PL_PARAMS=":uw-base"

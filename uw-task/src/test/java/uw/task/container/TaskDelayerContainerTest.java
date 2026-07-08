@@ -18,7 +18,7 @@ import static org.mockito.Mockito.mock;
  * 本类聚焦可单测的纯逻辑（configKey 三元组、构造）；核心流程的端到端验证见
  * plan 的集成验证步骤（真实 Redis + demo TaskDelayer）。</p>
  */
-class DelayTaskContainerTest {
+class TaskDelayerContainerTest {
 
     /**
      * configKey 三元组拼接：taskClass#taskTag$runTarget，null 维度作空串。

@@ -65,9 +65,9 @@ public class TaskFactory {
      */
     private final ExecutorService taskQueueService;
     /**
-     * 延迟任务容器（submitDelay 委派给它）。
+     * 延迟任务容器（delayTask 委派给它）。
      */
-    private final TaskDelayerContainer delayTaskContainer;
+    private final TaskDelayerContainer taskDelayerContainer;
 
     /**
      * 构造 TaskFactory 并初始化两个内置线程池，同时设置全局单例。
@@ -81,12 +81,12 @@ public class TaskFactory {
      * @param taskMetaInfoManager 任务元信息管理器（runner 实例与配置索引）
      */
     public TaskFactory(TaskProperties taskProperties, RabbitTemplate rabbitTemplate, TaskRunnerContainer taskRunnerContainer, TaskSequenceManager taskSequenceManager,
-                       TaskMetaInfoManager taskMetaInfoManager, TaskDelayerContainer delayTaskContainer) {
+                       TaskMetaInfoManager taskMetaInfoManager, TaskDelayerContainer taskDelayerContainer) {
         this.rabbitTemplate = rabbitTemplate;
         this.taskRunnerContainer = taskRunnerContainer;
         this.taskSequenceManager = taskSequenceManager;
         this.taskMetaInfoManager = taskMetaInfoManager;
-        this.delayTaskContainer = delayTaskContainer;
+        this.taskDelayerContainer = taskDelayerContainer;
         taskRpcService = new ThreadPoolExecutor(taskProperties.getTaskRpcThreadMinNum(), taskProperties.getTaskRpcThreadMaxNum(), 20L, TimeUnit.SECONDS,
                 new SynchronousQueue<>(), new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskRpc-%d").build(), new ThreadPoolExecutor.CallerRunsPolicy());
         taskQueueService = new ThreadPoolExecutor(taskProperties.getTaskLocalThreadMinNum(), taskProperties.getTaskLocalThreadMaxNum(), 20L, TimeUnit.SECONDS,
@@ -111,8 +111,11 @@ public class TaskFactory {
      *
      * @param taskData 延迟任务数据（taskClass/taskDelay/taskParam 必填）
      */
-    public void submitDelay(final TaskData<?, ?> taskData) {
-        delayTaskContainer.submit(taskData);
+    public void delayTask(final TaskData<?, ?> taskData) {
+        if (taskData == null) {
+            throw new TaskRuntimeException("taskData must not be null");
+        }
+        taskDelayerContainer.submit(taskData);
     }
 
     /**
@@ -141,6 +144,10 @@ public class TaskFactory {
                 return;
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
             }
         }
         throw new TaskRuntimeException("The channelMax limit is reached!");
@@ -213,6 +220,10 @@ public class TaskFactory {
                     throw new TaskRuntimeException("RPC call timed out: " + queue);
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
+                    if (e instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
             }
             throw new TaskRuntimeException("The channelMax limit is reached!");
@@ -302,6 +313,10 @@ public class TaskFactory {
                         throw new TaskRuntimeException("RPC call timed out: " + queue);
                     } catch (Exception e) {
                         log.error(e.getMessage(), e);
+                        if (e instanceof InterruptedException) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
                     }
                 }
                 throw new TaskRuntimeException("The channelMax limit is reached!");

@@ -230,7 +230,7 @@ public class OrderTimeoutCloseTask extends TaskDelayer<OrderTimeoutParam, Void> 
 
 ### 投递延迟任务
 
-通过 `TaskFactory.submitDelay(taskData)` 投递——与 `sendToQueue` 对称，完全异步、无返回值。`taskDelay` 为延迟毫秒数，框架据此计算 zset 的到期 score（= `queueDate + taskDelay`）：
+通过 `TaskFactory.delayTask(taskData)` 投递——与 `sendToQueue` 对称，完全异步、无返回值。`taskDelay` 为延迟毫秒数，框架据此计算 zset 的到期 score（= `queueDate + taskDelay`）：
 
 ```java
 @Autowired
@@ -243,7 +243,7 @@ public void submitOrderTimeout(long orderId) {
         .taskDelay(30 * 60 * 1000L)         // 30 分钟后执行
         .refId(orderId)
         .build();
-    taskFactory.submitDelay(taskData);
+    taskFactory.delayTask(taskData);
 }
 ```
 
@@ -265,7 +265,7 @@ public void submitOrderTimeout(long orderId) {
 
 ### 执行机制
 
-- **载体**：Redis zset，key = `uw-task-delay:` + configKey（`taskClass + taskTag + runTarget`），score = 到期时间戳，member = Kryo 序列化的 `TaskData`。**不依赖 RabbitMQ、不入内存队列**。
+- **载体**：Redis zset，key = `uw-task-delayer:` + configKey（`taskClass + taskTag + runTarget`），score = 到期时间戳，member = Kryo 序列化的 `TaskData`。**不依赖 RabbitMQ、不入内存队列**。
 - **到期取出**：每个 uw-task 实例独立 poll 同一 zset，通过 Lua 脚本原子地 `ZRANGEBYSCORE + ZREM` 取出到期任务（多实例竞争消费，天然分布式、无重复执行）。
 - **即取即执行**：取出后立即提交虚拟线程执行（无内存队列缓冲）；并发许可耗尽时本次跳过 poll、任务留 zset，worker 空闲后再取（反压，不撑爆内存）。
 - **崩溃窗口**：仅在途 + 单次 poll 批量级别（≤ consumerNum），重启后 zset 存量任务照常到期执行，不丢任务。
@@ -299,7 +299,7 @@ private TaskFactory taskFactory;
 
 完全异步，无返回值。任务投递到 RabbitMQ 队列，由具备匹配 runner 的远端主机消费。
 
-> 延迟任务请改用 `submitDelay(taskData)`（投递到 Redis zset，不经 MQ），详见「延迟任务（TaskDelayer）」章节。
+> 延迟任务请改用 `delayTask(taskData)`（投递到 Redis zset，不经 MQ），详见「延迟任务（TaskDelayer）」章节。
 
 ### 2. `runQueue(taskData)` — 本地队列优先
 
@@ -380,7 +380,7 @@ TaskData<MyParam, MyResult> data = TaskData.<MyParam, MyResult>builder(DemoTask.
 | `taskTag` | 调用方 | 任务标签，用于多实例区分 |
 | `runTarget` | 调用方 | 运行目标，默认 default |
 | `rateLimitTag` | 调用方 | 限速 TAG（推荐设为接口配置 ID） |
-| `taskDelay` | 调用方 | 延迟毫秒数：`submitDelay` 据此计算 Redis zset 到期 score（TaskDelayer）；队列任务配 `delayType=TYPE_DELAY_ON` 时走 MQ 延时 |
+| `taskDelay` | 调用方 | 延迟毫秒数：`delayTask` 据此计算 Redis zset 到期 score（TaskDelayer）；队列任务配 `delayType=TYPE_DELAY_ON` 时走 MQ 延时 |
 | `refId`/`refSubId`/`refTag` | 调用方 | 关联信息，用于第三方统计 |
 | `refObject` | 调用方 | 关联对象，不入库，可通过 Listener 访问 |
 | `id`/`queueDate`/`consumeDate`/`runDate`/`finishDate`/`runType`/`ranTimes`/`state`/`errorInfo`/`resultData` | 框架 | 由框架自动设置 |
@@ -457,6 +457,40 @@ TaskData<MyParam, MyResult> data = TaskData.<MyParam, MyResult>builder(DemoTask.
 - Leader 任期 90 秒，续期间隔 60 秒；Leader 掉线后最长 90 秒由其他主机接管。
 - Redis 短暂抖动期间，原 Leader 按本地快照继续执行（接受极小概率的双跑）。**关键业务需配合幂等**。
 
+## center 不可用降级与恢复
+
+uw-task 客户端在 uw-task-center 不可用时，三套任务（TaskCroner / TaskRunner / TaskDelayer）均可用 `initConfig` 本地默认配置继续运行；center 恢复后自动同步服务端动态配置。
+
+### 降级触发（lazy，非启动即降级）
+
+客户端启动后 `updateConfig` 首次拉取 center 配置（0s 延迟）：
+
+- **拉取成功** → 用 center 配置启动任务，**不降级**（零浪费，不在启动阶段叠加重建）
+- **拉取失败 + 首次（firstRun）** → 用 `initConfig` 本地默认配置启动（降级模式）
+
+判定依据是「是否曾成功拉取过配置」（firstRun），**不是失败次数**。一旦成功过，运行中再故障走 fail-fast（保留上次 center 配置继续跑），不重新降级。
+
+### center 恢复同步
+
+center 恢复后，`updateConfig`（每 60s）拉取成功 → 用 center 配置覆盖降级配置：
+
+- **TaskCroner / TaskDelayer**：按 configKey 覆盖（停旧调度/handle + 启新），不清内存 map
+- **TaskRunner**：销毁降级 listener（MQ 未 ack 消息自动重新入队）+ 用 center 配置重建 listener
+
+### 不丢任务 / 不丢数据保障
+
+| 任务 | 切换方式 | 保障 |
+|---|---|---|
+| TaskCroner | `stopTask` 用 `cancel(false)` 不中断在途 | 正在执行的 croner 跑完，新调度接管 |
+| TaskRunner | 销毁 listener → 重建 | RabbitMQ 未 ack 消息重新入队（broker 持久化） |
+| TaskDelayer | `handle.stop` drain（等在途 worker，30s 超时 shutdownNow 兜底） | 任务在 Redis zset 持久化；poll 线程已 pop 未投递的写回 zset |
+
+> **TaskCroner.runTask 需幂等**：配置覆盖/降级切换用 `cancel(false)` 让上一次执行跑完 + 新调度接管。若 cron 间隔 < 单次执行时长，old 与 new 可能短暂重叠并发执行——runTask 必须幂等（定时任务本应如此）。
+
+### enableRegistry 与降级
+
+`enable-registry=false` 的主机（仅任务调用方）不执行任务、不参与降级启动。三套任务对此**对称**——TaskDelayer 也遵循 enableRegistry（与 TaskRunner/TaskCroner 一致）。
+
 ## 常见问题
 
 **任务不能注册，无法启动任务。**
@@ -471,7 +505,7 @@ TaskData<MyParam, MyResult> data = TaskData.<MyParam, MyResult>builder(DemoTask.
 
 **关于 uw-task 的延时队列任务**
 
-uw-task 现提供专用的延迟任务类型 `TaskDelayer`（基于 Redis zset 多实例竞争 poll，到期即取即执行，无队头阻塞、长延时不阻塞短延时、重启不丢存量），**推荐优先使用** `TaskFactory.submitDelay()` 投递延迟任务，详见「延迟任务（TaskDelayer）」章节。
+uw-task 现提供专用的延迟任务类型 `TaskDelayer`（基于 Redis zset 多实例竞争 poll，到期即取即执行，无队头阻塞、长延时不阻塞短延时、重启不丢存量），**推荐优先使用** `TaskFactory.delayTask()` 投递延迟任务，详见「延迟任务（TaskDelayer）」章节。
 
 TaskRunner 的 MQ 延时队列（`delayType=TYPE_DELAY_ON`，基于 RabbitMQ TTL + 死信）仍保留兼容，但存在**长延时任务阻塞短延时任务**的固有问题，仅建议在短延时（如 ≤ 60 秒）且量小的场景使用。延迟任务请用 TaskDelayer，小负载场景也可直接轮询数据库，均可有效降低资源消耗。
 

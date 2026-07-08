@@ -165,6 +165,17 @@ public class LimitedVirtualThreadExecutor {
     }
 
     /**
+     * 立即关闭执行器：尝试中断正在运行的虚拟线程，返回尚未开始的任务。
+     * <p>用于容器 stop 超时仍有 worker 卡死的强制关闭场景（对齐 ThreadPoolExecutor.shutdownNow 语义）。
+     * 虚拟线程的中断会传播给任务，任务需响应中断才能及时退出。</p>
+     *
+     * @return 内部 executor 尚未开始执行的任务列表（threadPerTask 模式下通常为空）
+     */
+    public java.util.List<Runnable> shutdownNow() {
+        return executor.shutdownNow();
+    }
+
+    /**
      * 判断执行器是否已关闭。
      */
     public boolean isShutdown() {

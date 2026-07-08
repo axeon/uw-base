@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 任务服务注册器：负责与 task-center 交互，拉取/上传 runner、croner、delayer 三类任务的动态配置，
@@ -38,8 +39,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@link #updateConfig} 编排三类配置的拉取与刷新，分别委托给三个独立方法——
  * {@link #updateTaskRunnerConfig}（基于 {@link #runnerLastUpdateTime} 增量拉取 runner 配置，首次上传本地默认配置并注册队列监听）、
  * {@link #updateTaskCronerConfig}（基于 {@link #cronerLastUpdateTime} 增量拉取 croner 配置，首次上传本地默认配置并配置调度）、
- * {@link #updateTaskDelayerConfig}（基于 {@link #delayerLastUpdateTime} 独立拉取 delay 配置）。
- * 三者各自维护独立的时间戳与 fail-fast，互不影响：runner/croner 拉取失败保留上次配置不更新，delay 拉取失败仅 warn。
+ * {@link #updateTaskDelayerConfig}（基于 {@link #delayerLastUpdateTime} 独立拉取 delayer 配置）。
+ * 三者各自维护独立的时间戳与 fail-fast，互不影响：runner/croner 拉取失败保留上次配置不更新，delayer 拉取失败仅 warn。
  * {@link #reportHostInfo} 上报 JVM/线程/统计/队列积压等信息。</p>
  *
  * @author axeon
@@ -109,8 +110,8 @@ public class TaskServiceRegistrar {
     private volatile long cronerLastUpdateTime = 0;
 
     /**
-     * 延迟任务增量拉取独立时间戳：仅 delay 拉取成功时推进，与 runner/croner 的 lastUpdateTime 解耦，
-     * 避免 runner/croner 成功推进后 delay 拉取失败 导致 delay 配置变更丢窗。
+     * 延迟任务增量拉取独立时间戳：仅 delayer 拉取成功时推进，与 runner/croner 的 lastUpdateTime 解耦，
+     * 避免 runner/croner 成功推进后 delayer 拉取失败 导致 delayer 配置变更丢窗。
      */
     private volatile long delayerLastUpdateTime = 0;
 
@@ -130,9 +131,30 @@ public class TaskServiceRegistrar {
     private boolean delayerFirstRun = true;
 
     /**
+     * 三类任务是否处于本地降级模式（center 不可用时用 initConfig 默认配置启动）。
+     * 拉取失败+首次进入降级；拉取成功退出降级（center 配置覆盖/重建）。各自独立，互不影响。
+     */
+    private volatile boolean runnerDegraded = false;
+    private volatile boolean cronerDegraded = false;
+    private volatile boolean delayerDegraded = false;
+
+    /**
      * 上次报告结果。
      */
     private HostReportResponse reportResponse;
+
+    /**
+     * 主机是否被服务端禁用（HostReportResponse.state=0）。禁用时停所有任务容器（保留底层线程池）、updateConfig 跳过；
+     * 解除禁用(state=1)后清标志并重置增量时间戳，下次 updateConfig 全量拉取重新注册所有任务，自动恢复。
+     */
+    private volatile boolean hostDisabled = false;
+
+    /**
+     * 配置更新与主机禁用/启用的互斥锁：保护 updateConfig 与 reportHostInfo 的停机/恢复段，
+     * 防止并发踩踏（stopAll 与 registerQueueListener/configureTask 交错致被禁主机残留资源）。
+     * 可重入：reportHostInfo 恢复段持锁后内嵌调 updateConfig（同线程重入），不阻塞自己。
+     */
+    private final ReentrantLock configLock = new ReentrantLock();
 
     /**
      * 默认构造器。
@@ -175,9 +197,17 @@ public class TaskServiceRegistrar {
      * 各类配置使用独立的时间戳与 fail-fast，互不影响。</p>
      */
     public void updateConfig() {
-        updateTaskRunnerConfig();
-        updateTaskCronerConfig();
-        updateTaskDelayerConfig();
+        configLock.lock();
+        try {
+            if (hostDisabled) {
+                return;
+            }
+            updateTaskRunnerConfig();
+            updateTaskCronerConfig();
+            updateTaskDelayerConfig();
+        } finally {
+            configLock.unlock();
+        }
     }
 
     /**
@@ -191,6 +221,12 @@ public class TaskServiceRegistrar {
         // 优先拉取runnerConfig，因为是否注册任务，都要更新系统队列。
         ConcurrentHashMap<String, TaskRunnerConfig> updatedRunnerConfigMap = updateRunnerConfig();
         if (updatedRunnerConfigMap == null) {
+            // 注册主机 + 首次拉取失败（从未拿到配置）+ 未降级 → 本地降级启动（initConfig 默认配置注册 listener）
+            if (taskProperties.isEnableRegistry() && runnerFirstRun && !runnerDegraded) {
+                log.warn("!拉取TaskRunner配置失败，启用本地降级模式（initConfig 默认配置）！");
+                startRunnersLocal();
+                runnerDegraded = true;
+            }
             log.warn("!拉取TaskRunner服务器配置失败, 进入Fail-Fast模式!");
             return;
         }
@@ -199,7 +235,15 @@ public class TaskServiceRegistrar {
         }
         //非后台任务主机，此时可以退出了。
         if (!taskProperties.isEnableRegistry()) {
+            // 非注册主机也推进时间戳，避免每周期从 0 全量重拉（仍需 runner 配置用于 getFitQueue 路由）
+            runnerLastUpdateTime = startUpdateTimeMills - 5000;
             return;
+        }
+        // 降级 → 恢复切换：清降级 listener（unacked 消息 RabbitMQ 重新入队不丢），主循环用 center 配置重建
+        if (runnerDegraded) {
+            log.warn("!TaskRunner center 恢复，从降级模式切换到 center 配置！");
+            stopAllTaskRunner();
+            runnerDegraded = false;
         }
         // 第一次执行初始化操作
         if (runnerFirstRun) {
@@ -281,6 +325,11 @@ public class TaskServiceRegistrar {
         // 取得有变化的croner配置列表
         ConcurrentHashMap<String, TaskCronerConfig> updatedCronerConfigMap = updateCronerConfig();
         if (updatedCronerConfigMap == null) {
+            if (taskProperties.isEnableRegistry() && cronerFirstRun && !cronerDegraded) {
+                log.warn("!拉取TaskCroner配置失败，启用本地降级模式（initConfig 默认配置）！");
+                startCronersLocal();
+                cronerDegraded = true;
+            }
             log.warn("!拉取TaskCroner服务器配置失败, 进入Fail-Fast模式!");
             return;
         }
@@ -289,7 +338,14 @@ public class TaskServiceRegistrar {
         }
         //非后台任务主机，此时可以退出了。
         if (!taskProperties.isEnableRegistry()) {
+            // 非注册主机也推进时间戳，避免每周期从 0 全量重拉
+            cronerLastUpdateTime = startUpdateTimeMills - 5000;
             return;
+        }
+        // 降级 → 恢复切换：Croner configKey 覆盖（主循环 configureTask 内 stopTask cancel(false) 让在途跑完 + schedule new），不清 map
+        if (cronerDegraded) {
+            log.warn("!TaskCroner center 恢复，从降级模式切换到 center 配置！");
+            cronerDegraded = false;
         }
         // 第一次执行初始化操作
         if (cronerFirstRun) {
@@ -371,7 +427,7 @@ public class TaskServiceRegistrar {
 
     /**
      * 更新延迟任务配置：拉取服务端配置、首次上传本地默认配置、过滤后启动。
-     * <p>独立于 runner/croner 的 fail-fast：delay 拉取失败仅 warn，不影响主流程。</p>
+     * <p>独立于 runner/croner 的 fail-fast：delayer 拉取失败仅 warn，不影响主流程。</p>
      */
     private void updateTaskDelayerConfig() {
         if (taskDelayerContainer == null) {
@@ -381,12 +437,24 @@ public class TaskServiceRegistrar {
         ResponseData<List<TaskDelayerConfig>> response = taskApiClient.getTaskDelayerConfigList(taskProperties.getRunTarget(), taskProperties.getTaskProject(), delayerLastUpdateTime);
         List<TaskDelayerConfig> serverConfigs = response != null && response.isSuccess() ? response.getData() : null;
         if (serverConfigs == null) {
-            log.warn("!拉取DelayTask服务器配置失败!");
+            if (taskProperties.isEnableRegistry() && delayerFirstRun && !delayerDegraded) {
+                log.warn("!拉取TaskDelayer配置失败，启用本地降级模式（initConfig 默认配置）！");
+                taskDelayerContainer.start();
+                delayerDegraded = true;
+            }
+            log.warn("!拉取TaskDelayer服务器配置失败!");
             return;
         }
         // 非后台任务主机，此时可以退出了。
         if (!taskProperties.isEnableRegistry()) {
+            // 非注册主机也推进时间戳，避免每周期从 0 全量重拉
+            delayerLastUpdateTime = startUpdateTimeMills - 5000;
             return;
+        }
+        // 降级 → 恢复切换：Delayer configKey 覆盖（主循环 configureTaskDelayer 内 stop old handle drain + new），不清 map
+        if (delayerDegraded) {
+            log.warn("!TaskDelayer center 恢复，从降级模式切换到 center 配置！");
+            delayerDegraded = false;
         }
         // 首次启动：上传本地 delayer 的默认配置与联系人
         if (delayerFirstRun) {
@@ -421,7 +489,7 @@ public class TaskServiceRegistrar {
             }
             taskDelayerContainer.configureTaskDelayer(config);
         }
-        // 仅 delay 拉取成功才推进 delay 专属时间戳（与 runner/croner 解耦；失败不推进则下周期重查同窗口，不丢窗）
+        // 仅 delayer 拉取成功才推进 delayer 专属时间戳（与 runner/croner 解耦；失败不推进则下周期重查同窗口，不丢窗）
         delayerLastUpdateTime = startUpdateTimeMills - 5000;
     }
 
@@ -434,6 +502,57 @@ public class TaskServiceRegistrar {
             // shutdown() 是彻底关闭、stop() 是优雅停止；先 shutdown 后 stop 状态会异常。
             // SimpleMessageListenerContainer 的 destroy() 按 Spring 生命周期顺序处理关闭，最为稳妥。
             container.destroy();
+        }
+        // 清空 map：禁用主机解除后，updateConfig 主循环 registerQueueListener 才会重新创建 listener（否则 map 残留已 destroy 的容器导致跳过）
+        queueListenerMap.clear();
+    }
+
+    /**
+     * 本地降级启动所有 Croner（center 不可用时用 initConfig 默认配置调度）。
+     * <p>center 恢复后 updateTaskCronerConfig 主循环用 center 配置覆盖（configKey 相同，
+     * configureTask 内 stopTask cancel(false) 让在途跑完 + schedule new，不丢不中断）。</p>
+     */
+    private void startCronersLocal() {
+        for (Map.Entry<String, TaskCroner> kv : taskMetaInfoManager.getCronerInstanceMap().entrySet()) {
+            try {
+                TaskCroner taskCroner = kv.getValue();
+                String taskClass = kv.getKey();
+                TaskCronerConfig localConfig = taskCroner.initConfig();
+                if (localConfig == null) {
+                    continue;
+                }
+                localConfig.setTaskClass(taskClass);
+                localConfig.setRunTarget(taskProperties.getRunTarget());
+                taskCronerContainer.configureTask(taskCroner, localConfig);
+            } catch (Exception e) {
+                log.error("Croner 本地降级启动失败[{}]: {}", kv.getKey(), e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
+     * 本地降级启动所有 Runner 的 MQ listener（center 不可用时用 initConfig 默认配置注册）。
+     * <p>center 恢复后 updateTaskRunnerConfig 检测到 degraded → stopAllTaskRunner 清降级 listener
+     *（unacked 消息 RabbitMQ 重新入队不丢）→ 主循环 registerQueueListener 用 center 配置重建。</p>
+     */
+    @SuppressWarnings("rawtypes")
+    private void startRunnersLocal() {
+        for (Map.Entry<String, TaskRunner> kv : taskMetaInfoManager.getRunnerInstanceMap().entrySet()) {
+            try {
+                TaskRunner taskRunner = kv.getValue();
+                String taskClass = kv.getKey();
+                TaskRunnerConfig localConfig = taskRunner.initConfig();
+                if (localConfig == null) {
+                    continue;
+                }
+                localConfig.setTaskClass(taskClass);
+                localConfig.setRunTarget(taskProperties.getRunTarget());
+                // 降级期间也必须填充 runnerConfigMap：否则同 JVM 业务调 sendToQueue→getFitQueue 找不到配置抛异常（与 Delayer 的 configureTaskDelayer 内 setDelayerConfig 对称）
+                taskMetaInfoManager.setRunnerConfig(taskMetaInfoManager.getRunnerConfigKey(localConfig), localConfig);
+                registerQueueListener(localConfig);
+            } catch (Exception e) {
+                log.error("Runner 本地降级启动失败[{}]: {}", kv.getKey(), e.getMessage(), e);
+            }
         }
     }
 
@@ -461,7 +580,7 @@ public class TaskServiceRegistrar {
         hostStats.setRunTarget(taskProperties.getRunTarget());
         hostStats.setCronerNum(taskMetaInfoManager.getCronerInstanceMap().size());
         hostStats.setRunnerNum(taskMetaInfoManager.getRunnerInstanceMap().size());
-        hostStats.setDelayNum(taskDelayerContainer != null ? taskMetaInfoManager.getDelayerInstanceMap().size() : 0);
+        hostStats.setDelayerNum(taskDelayerContainer != null ? taskMetaInfoManager.getDelayerInstanceMap().size() : 0);
         //设置内存和线程信息。
         Runtime runtime = Runtime.getRuntime();
         hostStats.setJvmMemMax(runtime.maxMemory());
@@ -475,12 +594,12 @@ public class TaskServiceRegistrar {
         //保存任务统计信息。
         hostStats.setTaskCronerStatsList(TaskStatsService.getCronerStats());
         hostStats.setTaskRunnerStatsList(TaskStatsService.getRunnerStats());
-        java.util.List<TaskDelayerStats> delayStatsList = TaskStatsService.getDelayerStats();
+        java.util.List<TaskDelayerStats> delayerStatsList = TaskStatsService.getDelayerStats();
         // 填充 zset 积压数与执行线程数（被动查询，stats 本身只累计计数/耗时）
         if (taskDelayerContainer != null) {
-            taskDelayerContainer.fillDelayerStats(delayStatsList);
+            taskDelayerContainer.fillDelayerStats(delayerStatsList);
         }
-        hostStats.setTaskDelayStatsList(delayStatsList);
+        hostStats.setTaskDelayerStatsList(delayerStatsList);
         //查询队列信息。
         List<TaskRunnerStats> taskRunnerStatsList = hostStats.getTaskRunnerStatsList();
         // 预先构建 taskId -> queueName 索引，避免对每个 stats 遍历全部 config（O(n*m)）。
@@ -502,6 +621,43 @@ public class TaskServiceRegistrar {
         }
         ResponseData<HostReportResponse> reportResult = taskApiClient.reportHostInfo(hostStats);
         reportResponse = reportResult != null && reportResult.isSuccess() ? reportResult.getData() : null;
+        // 主机禁用/启用处理：服务端 HostReportResponse.state=0 表示 OPS 禁用本机。
+        // configLock 与 updateConfig 互斥：防止停机 stopAll 与并发的 updateConfig 注册（registerQueueListener/configureTask）踩踏，
+        // 导致被禁主机残留 listener/future/handle（clear 与 computeIfAbsent/put 交错）。
+        configLock.lock();
+        try {
+            if (reportResponse != null) {
+                if (reportResponse.getState() == 0 && !hostDisabled) {
+                    hostDisabled = true;
+                    log.warn("!本主机被服务端禁用(state=0)，停止所有任务容器（runner/croner/delayer），保留底层线程池以便恢复！");
+                    // runner: destroy listener + 清 map；croner: suspend（cancel future + 清 map，不关 executorService）；
+                    // delayer: stop handle + 清 map。三者均不清底层线程池/连接，解除禁用后可恢复。
+                    stopAllTaskRunner();
+                    taskCronerContainer.suspendAllCroners();
+                    if (taskDelayerContainer != null) {
+                        taskDelayerContainer.stopAllTaskDelayer();
+                    }
+                    // 重置降级/首次标志：禁用=全新停机，恢复时按全新启动（fetch 成功用 center 配置，fetch 失败则降级 start），
+                    // 避免 degraded 残留导致解除禁用后 fetch 仍失败时降级条件(!degraded)不满足、任务不重启。
+                    runnerDegraded = false;
+                    cronerDegraded = false;
+                    delayerDegraded = false;
+                    runnerFirstRun = true;
+                    cronerFirstRun = true;
+                    delayerFirstRun = true;
+                } else if (reportResponse.getState() != 0 && hostDisabled) {
+                    hostDisabled = false;
+                    log.warn("!本主机已解除禁用，重置增量时间戳并立即全量拉取重新注册所有任务！");
+                    // 重置三类增量时间戳为 0，强制 updateConfig 全量拉取；各容器 map 已在禁用时清空，主循环会重建 listener/调度/handle
+                    runnerLastUpdateTime = 0;
+                    cronerLastUpdateTime = 0;
+                    delayerLastUpdateTime = 0;
+                    updateConfig();
+                }
+            }
+        } finally {
+            configLock.unlock();
+        }
         //最后提交主机状态报告。
         if (log.isDebugEnabled()) {
             log.debug("完成提交主机状态报告...");

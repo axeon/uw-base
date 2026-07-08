@@ -43,7 +43,7 @@ public class TaskStatsService {
     private static final ConcurrentHashMap<Long, TaskRunnerStats> RUNNER_STATS_MAP = new ConcurrentHashMap<>();
 
     /**
-     * delay数据存储map。
+     * delayer数据存储map。
      */
     private static final ConcurrentHashMap<Long, TaskDelayerStats> DELAYER_STATS_MAP = new ConcurrentHashMap<>();
 
@@ -118,7 +118,7 @@ public class TaskStatsService {
 
 
     /**
-     * 更新DelayMetrics。
+     * 更新DelayerMetrics。
      *
      * @param taskId          任务配置 id
      * @param numAll          执行总计数
@@ -140,7 +140,7 @@ public class TaskStatsService {
     }
 
     /**
-     * 获取DelayStats列表，同时清空map。
+     * 获取DelayerStats列表，同时清空map。
      *
      * @return 快照列表
      */

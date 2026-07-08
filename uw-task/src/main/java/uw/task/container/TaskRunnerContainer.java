@@ -118,10 +118,30 @@ public class TaskRunnerContainer {
         // 获取任务实例
         TaskRunner<?, ?> taskRunner = taskMetaInfoManager.getRunnerInstance(taskData.getTaskClass());
         if (taskRunner == null) {
-            log.error("未找到TaskRunner实例: {}", taskData.getTaskClass());
+            // 列出该 taskClass 已注册的 runner configKey 候选，便于排查：候选空=taskClass 未注册(类型错投/拼写错)，候选非空=配置有但本机未部署 runner bean(部署不一致)
+            String taskClassPrefix = taskData.getTaskClass() + "#";
+            List<String> registeredKeys = taskMetaInfoManager.getRunnerConfigMap().keySet().stream()
+                    .filter(k -> k.startsWith(taskClassPrefix))
+                    .toList();
+            log.error("未找到TaskRunner实例: taskClass={}, runType={}, runTarget={}, refId={}, refTag={}, 该taskClass已注册配置={}",
+                    taskData.getTaskClass(), taskData.getRunType(), taskData.getRunTarget(), taskData.getRefId(), taskData.getRefTag(), registeredKeys);
             taskData.setState(TaskData.STATE_FAIL_PROGRAM);
             taskData.setErrorInfo("TaskRunner not found: " + taskData.getTaskClass());
             taskData.setFinishDate(SystemClock.nowDate());
+            // 错投/未注册：强制写一条 ES 日志让可观测；明确不重试（不调用 sendToQueue/runTaskLocal）。
+            long taskId = 0;
+            try {
+                TaskRunnerConfig cfg = taskMetaInfoManager.getRunnerConfigByData(taskData);
+                if (cfg != null) {
+                    taskId = cfg.getId();
+                }
+            } catch (Exception ignore) {
+                // 未注册配置（实例/配置同进退），taskId 保持 0
+            }
+            TaskRunnerLog runnerLog = new TaskRunnerLog(taskData);
+            runnerLog.setTaskId(taskId);
+            runnerLog.setLogLevel(TaskRunnerConfig.TASK_LOG_TYPE_RECORD);
+            taskApiClient.sendTaskRunnerLog(runnerLog);
             return taskData;
         }
         // 获取任务设置数据

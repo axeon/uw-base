@@ -284,7 +284,7 @@ public class TaskMetaInfoManager {
             return config.getDelayType() == TaskRunnerConfig.TYPE_DELAY_ON && data.getRunType() == TaskData.RUN_TYPE_GLOBAL && data.getTaskDelay() > 0 ?
                     getTTLQueueName(queueName) : queueName;
         } else {
-            throw new RuntimeException("找不到合适的任务配置: taskClass = " + data.getTaskClass());
+            throw new RuntimeException("No matching task config: taskClass = " + data.getTaskClass());
         }
     }
 
@@ -313,7 +313,7 @@ public class TaskMetaInfoManager {
                 return config;
             }
         }
-        throw new RuntimeException("找不到任务配置: taskClass = " + data.getTaskClass());
+        throw new RuntimeException("No matching task config: taskClass = " + data.getTaskClass());
     }
 
 

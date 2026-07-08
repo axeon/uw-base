@@ -22,6 +22,7 @@ import uw.task.entity.TaskDelayerStats;
 import uw.task.entity.TaskRunnerConfig;
 import uw.task.exception.TaskDataException;
 import uw.task.exception.TaskPartnerException;
+import uw.task.exception.TaskRuntimeException;
 import uw.task.util.TaskGlobalRateLimiter;
 import uw.task.util.TaskLocalRateLimiter;
 import uw.task.util.TaskRateLimitHelper;
@@ -49,10 +50,10 @@ import java.util.concurrent.atomic.AtomicLong;
  *       延迟任务 run 多为 IO 密集，虚拟线程不阻塞载体线程；</li>
  *   <li><b>动态批量</b>：单次 pop = min(prefetchNum, 可用许可数)，绝不取超过当前空闲并发数，取到即 submit 即执行，无内存队列缓冲；</li>
  *   <li><b>反压</b>：并发许可耗尽时跳过本次 poll（任务留 zset 不进内存），poll 线程睡 {@value #BACKPRESSURE_BACKOFF_MS}ms 后重试，不阻塞不丢数据；</li>
- *   <li><b>限速不阻塞</b>：复用 TaskLocal/GlobalRateLimiter，但<b>不在 worker 内 sleep 等待</b>——超限直接
- *       resubmit 回 zset（runAt=now+需等待毫秒），worker 立即释放并发许可；限速等待通过 zset 延迟实现，
- *       不占线程。连续超 retryTimesByOverrated 标记 STATE_FAIL_CONFIG 防死循环；</li>
- *   <li><b>重试</b>：业务失败（Partner/Program）按 retryTimes resubmit，线性退避；</li>
+ *   <li><b>限速</b>：复用 TaskLocal/GlobalRateLimiter，在 worker 虚拟线程内等待配额（LOCAL 系 Guava tryAcquire、
+ *       GLOBAL 系循环 sleep 等窗口滚动），等待期间占用一个并发许可；超过 rateLimitWait 仍未获配额则 resubmit 回 zset
+ *       （runAt=now+rateLimitWait），连续超 retryTimesByOverrated 标记 STATE_FAIL_CONFIG 防死循环；</li>
+ *   <li><b>重试</b>：业务失败（Partner/Program）按 retryTimes resubmit，指数退避（1s/2s/4s…封顶 60s）；</li>
  *   <li><b>统计/日志</b>：每次执行 updateDelayerStats（聚合上报），按 logLevel 写 ES。</li>
  * </ul>
  *
@@ -65,7 +66,7 @@ public class TaskDelayerContainer {
     /**
      * zset key 前缀。
      */
-    private static final String ZSET_PREFIX = "uw-task-delay:";
+    private static final String ZSET_PREFIX = "uw-task-delayer:";
 
     /**
      * Lua 原子 pop 脚本：ZRANGEBYSCORE 取出到期成员并 ZREM 删除，避免多实例重复取与查删竞态。
@@ -93,9 +94,12 @@ public class TaskDelayerContainer {
     private final RedisTemplate<String, byte[]> redisTemplate;
 
     /**
-     * taskId -> 运行句柄（poll 线程 + 虚拟线程执行器），按服务端配置 id 索引（对齐 Croner cronerTasks 按 id）。
+     * configKey -> 运行句柄（poll 线程 + 虚拟线程执行器），按 configKey 索引。
+     * <p>用 configKey 而非 config.getId()：本地默认配置首次上传前 id=0，多个 Delayer 启动期按 id 入表会互相覆盖碰撞；
+     * configKey（taskClass#taskTag$runTarget）天然区分多实例，且与 delayerConfigMap 一致，
+     * 服务端下发真实 id 后按同一 configKey 热更新，handle 生命周期连续。</p>
      */
-    private final Map<Long, TaskDelayerRunHandle> runHandleMap = new ConcurrentHashMap<>();
+    private final Map<String, TaskDelayerRunHandle> runHandleMap = new ConcurrentHashMap<>();
 
     /**
      * 反压跳过累计（可观测）。
@@ -138,7 +142,9 @@ public class TaskDelayerContainer {
 
     /**
      * 启动：从 TaskMetaInfoManager 取已注册的 TaskDelayer 实例，用 initConfig() 默认配置注册并开始 poll。
-     * 无 TaskDelayer bean 时实例 Map 为空，不启动任何 poll 线程、零资源占用（与 TaskRunner/TaskCroner 一致，故无需启用开关）。
+     * 无 TaskDelayer bean 时实例 Map 为空，不启动任何 poll 线程、零资源占用。
+     * <p>本方法本身不检查 enableRegistry（由调用方 TaskServiceRegistrar.updateTaskDelayerConfig 的降级分支决定）；
+     * Delayer 启动现已与 TaskRunner/TaskCroner 对称——仅 enable-registry=true 的执行主机才启动任务。</p>
      */
     @SuppressWarnings("rawtypes")
     public void start() {
@@ -178,10 +184,10 @@ public class TaskDelayerContainer {
         // state<1（暂停/删除）：remove 配置缓存 + stop handle，不缓存废弃配置（对齐 Runner updateRunnerConfig 的 state<1 remove）
         if (config.getState() < 1) {
             taskMetaInfoManager.removeDelayerConfig(configKey);
-            TaskDelayerRunHandle existingHandle = runHandleMap.get(config.getId());
+            TaskDelayerRunHandle existingHandle = runHandleMap.get(configKey);
             if (existingHandle != null) {
                 existingHandle.stop();
-                runHandleMap.remove(config.getId());
+                runHandleMap.remove(configKey);
             }
             log.info("TaskDelayer[{}]已暂停/删除", configKey);
             return;
@@ -189,7 +195,7 @@ public class TaskDelayerContainer {
         TaskDelayerConfig oldConfig = taskMetaInfoManager.getDelayerConfigMap().get(configKey);
         // delayerConfigMap（MetaInfoManager 统一管理）总是更新：rateLimit/retry/log/pollInterval/prefetchNum 等靠 RunHandle.config(volatile) 即时生效
         taskMetaInfoManager.setDelayerConfig(configKey, config);
-        TaskDelayerRunHandle existing = runHandleMap.get(config.getId());
+        TaskDelayerRunHandle existing = runHandleMap.get(configKey);
         // 仅 consumerNum(workerPool 并发数) 变化才需重建 handle；其余字段走 volatile 即时更新
         boolean needRebuild = existing == null
                 || oldConfig == null
@@ -203,14 +209,14 @@ public class TaskDelayerContainer {
         }
         if (existing != null) {
             existing.stop();
-            runHandleMap.remove(config.getId());
+            runHandleMap.remove(configKey);
         }
         if (taskMetaInfoManager.getDelayerInstance(config.getTaskClass()) == null) {
             log.warn("TaskDelayer[{}]未找到匹配 runner，跳过启动", config.getTaskClass());
             return;
         }
         TaskDelayerRunHandle handle = new TaskDelayerRunHandle(config, configKey);
-        runHandleMap.put(config.getId(), handle);
+        runHandleMap.put(configKey, handle);
         handle.start();
         log.info("TaskDelayer[{}]已启动: consumerNum={}, pollInterval={}s, prefetchNum={}", configKey, config.getConsumerNum(), config.getPollInterval(), config.getPrefetchNum());
     }
@@ -230,6 +236,20 @@ public class TaskDelayerContainer {
             task.setRunTarget(taskProperties.getRunTarget());
         }
         task.setRetryType(TaskData.RETRY_TYPE_AUTO);
+        // 错投防御：校验 (taskClass, taskTag, runTarget) 在服务端 delayerConfigMap 有对应配置，
+        // 否则任务会落无 poll handle 的 zset 永久滞留。合法跨机投递（本机无 bean 但别机 poll）
+        // 由服务端配置存在性保证——查配置表而非本机实例表。
+        String configKey = TaskMetaInfoManager.getConfigKey(task.getTaskClass(), task.getTaskTag(), task.getRunTarget());
+        if (!taskMetaInfoManager.getDelayerConfigMap().containsKey(configKey)) {
+            // 列出该 taskClass 已注册的 configKey 候选，便于排查：候选空=类型错投(taskClass 非 delayer)，候选非空但无精确 key=taskTag/runTarget 错配
+            String taskClassPrefix = task.getTaskClass() + "#";
+            List<String> registeredKeys = taskMetaInfoManager.getDelayerConfigMap().keySet().stream()
+                    .filter(k -> k.startsWith(taskClassPrefix))
+                    .toList();
+            log.error("TaskDelayer投递被拒: configKey={} 未在服务端delayerConfigMap注册, taskClass={}, taskTag={}, runTarget={}, 该taskClass已注册配置={}",
+                    configKey, task.getTaskClass(), task.getTaskTag(), task.getRunTarget(), registeredKeys);
+            throw new TaskRuntimeException("TaskDelayer not registered or taskTag/runTarget mismatch.");
+        }
         addTask(task);
     }
 
@@ -316,16 +336,23 @@ public class TaskDelayerContainer {
 
         /**
          * 停止 poll 线程与 workerPool：设置 running=false、中断 poll 线程、shutdown workerPool，
-         * 最多等待 5 秒让在途虚拟线程任务完成，超时后强制关闭并告警。
+         * drain 模式等待最多 30 秒让在途虚拟线程任务完成（降级切换/关闭不丢任务），超时 shutdownNow 兜底。
          */
         void stop() {
             running = false;
             if (pollThread != null) {
                 pollThread.interrupt();
+                try {
+                    // 等 poll 线程退出：让它完成当前 batch 的 submit（或 submit 失败时写回 zset），
+                    // 避免 workerPool.shutdown 后 poll 线程继续 submit 抛 IllegalStateException 导致已 pop 的任务丢失
+                    pollThread.join(5000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
             workerPool.shutdown();
-            // 有限等待在途虚拟线程（IO 任务），避免进程关闭丢任务
-            long deadline = SystemClock.now() + 5000;
+            // drain：等待在途虚拟线程任务完成（IO 任务），降级切换/关闭不丢任务
+            long deadline = SystemClock.now() + 30000;
             while (workerPool.getActiveCount() > 0 && SystemClock.now() < deadline) {
                 try {
                     Thread.sleep(100);
@@ -335,7 +362,8 @@ public class TaskDelayerContainer {
                 }
             }
             if (workerPool.getActiveCount() > 0) {
-                log.warn("TaskDelayer[{}]workerPool 仍有 {} 个任务未完成，强制关闭", config.getTaskClass(), workerPool.getActiveCount());
+                log.warn("TaskDelayer[{}]workerPool 仍有 {} 个任务未完成，调用 shutdownNow 强制中断", config.getTaskClass(), workerPool.getActiveCount());
+                workerPool.shutdownNow();
             }
         }
 
@@ -399,7 +427,13 @@ public class TaskDelayerContainer {
                     continue;
                 }
                 task.setConsumeDate(SystemClock.nowDate());
-                workerPool.submit(() -> execute(task, config));
+                try {
+                    workerPool.submit(() -> execute(task, config));
+                } catch (Exception e) {
+                    // workerPool 已关闭（stop/降级切换）：把已 pop 的任务写回 zset，避免丢失（他机或本机恢复后重新 poll）
+                    log.warn("TaskDelayer[{}]workerPool 提交失败,任务写回zset: {}", config.getTaskClass(), e.toString());
+                    addTask(task);
+                }
             }
             return 1;
         }
@@ -453,11 +487,11 @@ public class TaskDelayerContainer {
                 startRun > 0 ? TaskStatsService.toIntClamped(task.getFinishDate().getTime() - startRun) : 0);
         // 日志（先于重试落盘：resubmit 失败不丢统计/日志，对齐 TaskRunner.process 顺序）
         if (config.getLogLevel() > TaskRunnerConfig.TASK_LOG_TYPE_NONE) {
-            TaskDelayerLog delayLog = new TaskDelayerLog(task);
-            delayLog.setLogLevel(config.getLogLevel());
-            delayLog.setLogLimitSize(config.getLogLimitSize());
-            delayLog.setTaskId(config.getId());
-            taskApiClient.sendTaskDelayerLog(delayLog);
+            TaskDelayerLog delayerLog = new TaskDelayerLog(task);
+            delayerLog.setLogLevel(config.getLogLevel());
+            delayerLog.setLogLimitSize(config.getLogLimitSize());
+            delayerLog.setTaskId(config.getId());
+            taskApiClient.sendTaskDelayerLog(delayerLog);
         }
         // 重试决策（统计/日志已落盘）：PARTNER/PROGRAM 指数退避，CONFIG(限速) 用 rateLimitWait 让配额恢复
         if (task.getRetryType() == TaskData.RETRY_TYPE_AUTO && task.getState() > TaskData.STATE_SUCCESS) {

@@ -153,7 +153,7 @@ public class TaskApiClient {
                     .body(new ParameterizedTypeReference<ResponseData<List<TaskRunnerConfig>>>() {});
             return warnOnFailure(result, "getTaskRunnerConfigList");
         } catch (Exception e) {
-            log.error("TaskApiClient.getTaskRunnerConfigList()服务端主机状态更新异常: {}", e.getMessage());
+            log.error("TaskApiClient.getTaskRunnerConfigList()拉取队列任务配置列表异常: {}", e.getMessage());
         }
         return null;
     }
@@ -175,7 +175,7 @@ public class TaskApiClient {
                     .body(new ParameterizedTypeReference<ResponseData<List<TaskCronerConfig>>>() {});
             return warnOnFailure(result, "getTaskCronerConfigList");
         } catch (Exception e) {
-            log.error("TaskApiClient.getTaskCronerConfigList()服务端主机状态更新异常: {}", e.getMessage());
+            log.error("TaskApiClient.getTaskCronerConfigList()拉取定时任务配置列表异常: {}", e.getMessage());
         }
         return null;
     }
@@ -206,8 +206,8 @@ public class TaskApiClient {
                     .uri(taskProperties.getTaskCenterHost() + "/rpc/task/croner/tick?id={id}&nextDate={nextDate}", taskId, nextDate.getTime())
                     .retrieve()
                     .toBodilessEntity();
-        } catch (Throwable e) {
-            log.error("TaskApiClient.sendTaskCronerLog()服务端主机状态更新异常: {}", e.getMessage());
+        } catch (Exception e) {
+            log.error("TaskApiClient.sendTaskCronerLog()发送定时任务日志/心跳异常: {}", e.getMessage());
         }
     }
 
@@ -254,7 +254,7 @@ public class TaskApiClient {
     }
 
     /**
-     * 异步写入延迟任务执行日志到 ES（索引 uw.task.delay.log，不经服务端）。
+     * 异步写入延迟任务执行日志到 ES（索引 uw.task.delayer.log，不经服务端）。
      *
      * @param log 延迟任务执行日志
      */

@@ -11,6 +11,7 @@ import uw.task.TaskCroner;
 import uw.task.TaskData;
 import uw.task.TaskListenerManager;
 import uw.task.api.TaskApiClient;
+import uw.task.conf.TaskMetaInfoManager;
 import uw.task.conf.TaskProperties;
 import uw.task.entity.TaskCronerConfig;
 import uw.task.entity.TaskRunnerConfig;
@@ -50,7 +51,7 @@ public class TaskCronerContainer {
     /**
      * cronerTask任务索引。
      */
-    private final Map<Long, ScheduledFuture<?>> cronerTasks = new ConcurrentHashMap<>(128);
+    private final Map<String, ScheduledFuture<?>> cronerTasks = new ConcurrentHashMap<>(128);
 
     /**
      * 任务调度器。
@@ -82,6 +83,11 @@ public class TaskCronerContainer {
     private final TaskProperties taskProperties;
 
     /**
+     * 任务元信息管理器
+     */
+    private final TaskMetaInfoManager taskMetaInfoManager;
+
+    /**
      * 构造定时任务容器并初始化调度线程池。
      * <p>若 {@code enableRegistry=false}（非后台任务主机），croner 线程数按 1 计以节省资源；
      * 不回写 taskProperties 避免篡改共享配置对象影响其他读取方。</p>
@@ -93,12 +99,13 @@ public class TaskCronerContainer {
      * @param taskGlobalLocker     全局 Leader 锁（SINGLETON 任务用）
      */
     public TaskCronerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskSequenceManager taskSequenceManager, TaskListenerManager taskListenerManager,
-                               TaskGlobalLocker taskGlobalLocker) {
+                               TaskGlobalLocker taskGlobalLocker, TaskMetaInfoManager taskMetaInfoManager) {
         this.taskGlobalLocker = taskGlobalLocker;
         this.taskApiClient = taskApiClient;
         this.taskListenerManager = taskListenerManager;
         this.taskSequenceManager = taskSequenceManager;
         this.taskProperties = taskProperties;
+        this.taskMetaInfoManager = taskMetaInfoManager;
         // 如果禁用任务注册，则croner线程数按 1 计，节省资源。
         // 注意：不回写 taskProperties，避免篡改共享配置对象影响其他读取方。
         int cronerThreadNum = taskProperties.isEnableRegistry() ? taskProperties.getCronerThreadNum() : 1;
@@ -128,8 +135,10 @@ public class TaskCronerContainer {
             log.warn("CRONER线程数设置异常，无法启动!");
             return false;
         }
-        //尝试关闭已有任务
-        stopTask(taskCronerConfig.getId());
+        // configKey 索引（taskClass#taskParam$runTarget）：本地降级(id=0)与 center(真实id)同 configKey，覆盖时 stop old + new 不错位
+        String configKey = taskMetaInfoManager.getCronerConfigKey(taskCronerConfig);
+        //尝试关闭已有任务（cancel(false)：不中断正在执行的 croner，当前跑完、new 接管未来调度——切换不丢在途）
+        stopTask(configKey);
         // 标记删除的，直接返回了。
         if (taskCronerConfig.getState() < 1) {
             log.warn("定时任务状态不符，无法启动！ID:{}, CRONER:{}, CRON:{}.", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron());
@@ -235,25 +244,41 @@ public class TaskCronerContainer {
             }
             return nextExec;
         });
-        this.cronerTasks.put(taskCronerConfig.getId(), future);
+        this.cronerTasks.put(configKey, future);
         return true;
     }
 
     /**
-     * 停止一个定时任务：cancel(true) 中断正在执行的任务，并从 {@link #cronerTasks} map 中移除，
-     * 避免已取消的 future 残留在 map 中干扰后续重新注册。
+     * 停止一个定时任务：cancel(false) 不中断正在执行的任务（配置覆盖/降级切换让在途跑完，不丢），
+     * 仅取消未来调度，并从 {@link #cronerTasks} map 中移除。
+     * <p>注意：主机级停机用 {@link #suspendAllCroners()}（cancel(true) 立即停），与本方法 cancel(false) 区分。</p>
      *
-     * @param id 任务配置编号
+     * @param configKey 配置键（见 {@link TaskMetaInfoManager#getCronerConfigKey(TaskCronerConfig)}）
      * @return 成功取消返回 true；map 中无对应调度返回 false
      */
-    public boolean stopTask(long id) {
-        ScheduledFuture<?> future = this.cronerTasks.get(id);
+    public boolean stopTask(String configKey) {
+        ScheduledFuture<?> future = this.cronerTasks.get(configKey);
         if (future == null) {
             return false;
         }
-        future.cancel(true);
-        this.cronerTasks.remove(id);
+        // cancel(false)：不中断正在执行的 croner（配置覆盖/降级切换时让在途跑完），仅取消未来调度
+        future.cancel(false);
+        this.cronerTasks.remove(configKey);
         return true;
+    }
+
+    /**
+     * 暂停所有定时任务（cancel future + 清空 cronerTasks），但<b>不关闭调度线程池</b>。
+     * <p>用于主机被禁用(state=0)时停任务却保留 executorService/taskScheduler，
+     * 以便解除禁用后 {@link #configureTask} 能重新调度。区别于 {@link #stopAllTaskCroner}
+     *（后者 shutdownNow 线程池，仅供 @PreDestroy 应用关闭时使用）。</p>
+     */
+    public void suspendAllCroners() {
+        log.info("All TaskCroner Suspended....");
+        for (Entry<String, ScheduledFuture<?>> kv : this.cronerTasks.entrySet()) {
+            kv.getValue().cancel(true);
+        }
+        this.cronerTasks.clear();
     }
 
     /**
@@ -261,7 +286,7 @@ public class TaskCronerContainer {
      */
     public void stopAllTaskCroner() {
         log.info("All TaskCroner Destroy....");
-        for (Entry<Long, ScheduledFuture<?>> kv : this.cronerTasks.entrySet()) {
+        for (Entry<String, ScheduledFuture<?>> kv : this.cronerTasks.entrySet()) {
             // 任务停止
             kv.getValue().cancel(true);
         }

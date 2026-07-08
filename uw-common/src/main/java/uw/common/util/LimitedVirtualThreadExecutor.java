@@ -4,6 +4,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -43,27 +44,36 @@ public class LimitedVirtualThreadExecutor {
     private final AtomicInteger rejectedCount = new AtomicInteger(0);
 
     /**
-     * 构造函数
+     * 构造函数。
+     * <p>
+     * 虚拟线程使用 {@code threadNamePrefix + 序号} 命名（如 "my-task-0"），便于在 JMC/JFR、
+     * 线程堆栈与日志中区分不同执行器实例发起的任务。建议前缀以分隔符（如 "-"）结尾。
      *
-     * @param maxConcurrency 最大并发数
-     * @param callPolicy     调用策略
+     * @param threadNamePrefix 线程名前缀（不可为 null 或空）
+     * @param maxConcurrency   最大并发数
+     * @param callPolicy       调用策略
      */
-    public LimitedVirtualThreadExecutor(int maxConcurrency, CallPolicy callPolicy) {
+    public LimitedVirtualThreadExecutor(String threadNamePrefix, int maxConcurrency, CallPolicy callPolicy) {
+        if (threadNamePrefix == null || threadNamePrefix.isEmpty()) {
+            throw new IllegalArgumentException("threadNamePrefix must not be null or empty");
+        }
         if (maxConcurrency <= 0) {
             throw new IllegalArgumentException("maxConcurrency must be positive");
         }
         this.semaphore = new Semaphore(maxConcurrency);
-        this.executor = Executors.newVirtualThreadPerTaskExecutor();
+        ThreadFactory factory = Thread.ofVirtual().name(threadNamePrefix, 0).factory();
+        this.executor = Executors.newThreadPerTaskExecutor(factory);
         this.callPolicy = callPolicy != null ? callPolicy : new BlockPolicy();
     }
 
     /**
-     * 构造函数
+     * 构造函数（默认阻塞等待策略）。
      *
-     * @param maxConcurrency
+     * @param threadNamePrefix 线程名前缀（不可为 null 或空）
+     * @param maxConcurrency   最大并发数
      */
-    public LimitedVirtualThreadExecutor(int maxConcurrency) {
-        this(maxConcurrency, new BlockPolicy());
+    public LimitedVirtualThreadExecutor(String threadNamePrefix, int maxConcurrency) {
+        this(threadNamePrefix, maxConcurrency, new BlockPolicy());
     }
 
     /**
@@ -234,4 +244,3 @@ public class LimitedVirtualThreadExecutor {
         }
     }
 }
-

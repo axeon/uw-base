@@ -284,7 +284,7 @@ long id = SnowflakeIdGenerator.getInstance().generateId();
 | `CurrencyUtils` | `getCurrency(code)` / `getAvailableCurrencies()` / `CURRENCY_DEFAULT`(CNY) | 币种工具 |
 | `ExceptionUtils` | `exceptionToString(Throwable)` | 过滤框架堆栈的异常格式化 |
 | `ResponseCodeUtils` | `toProperties(Class)` / `toPropertyString(Class)` | ResponseCode 枚举导出为 i18n Properties |
-| `LimitedVirtualThreadExecutor` | `new LimitedVirtualThreadExecutor(maxConcurrency)` / `submit(Runnable)` | 限流虚拟线程执行器（Semaphore 背压，支持 Block/FailFast/CallerRuns/Discard 策略） |
+| `LimitedVirtualThreadExecutor` | `new LimitedVirtualThreadExecutor(threadNamePrefix, maxConcurrency)` / `submit(Runnable)` | 限流虚拟线程执行器（Semaphore 背压，支持 Block/FailFast/CallerRuns/Discard 策略，虚拟线程带自定义名前缀便于 JMC/JFR 监控） |
 
 ### StringTools — 字符串处理
 

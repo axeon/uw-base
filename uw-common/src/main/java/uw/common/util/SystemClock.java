@@ -144,4 +144,16 @@ public class SystemClock {
         return endTime - startTime;
     }
 
+    /**
+     * 关闭时钟监控线程（clock.monitor / clock.system）。
+     * <p>SystemClock 用 static ScheduledExecutorService（daemon 线程），不归 Spring context 管，
+     * context.close 后线程仍存活，触发 WebappClassLoader memory leak warn。测试场景（如 JMH）结束时显式调本方法关闭。</p>
+     */
+    public static void shutdown() {
+        monitorScheduler.shutdownNow();
+        if (updateScheduler != null) {
+            updateScheduler.shutdownNow();
+        }
+    }
+
 }

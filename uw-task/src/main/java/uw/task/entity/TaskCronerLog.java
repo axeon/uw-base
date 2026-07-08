@@ -142,10 +142,23 @@ public class TaskCronerLog extends LogBaseVo implements Serializable {
         this.taskClass = taskClass;
     }
 
+    /**
+     * 获取任务参数，并按 logLevel 决定是否输出、是否截断。
+     * <p>记录规则：
+     * <ul>
+     *   <li>任务执行失败（state != STATE_SUCCESS）时始终输出参数，便于排查；</li>
+     *   <li>任务成功时仅在 logLevel 为 {@link TaskCronerConfig#TASK_LOG_TYPE_RECORD_ALL}
+     *       或 {@link TaskCronerConfig#TASK_LOG_TYPE_RECORD_TASK_PARAM} 时输出；</li>
+     *   <li>logLimitSize > 0 且参数长度超限时，截断为前 logLimitSize 个字符。</li>
+     * </ul>
+     * 不满足输出条件或参数为空时返回 null。</p>
+     *
+     * @return 按 logLevel 过滤并截断后的任务参数，不记录时返回 null
+     */
     public String getTaskParam() {
         if (taskParam != null) {
             if (state != TaskData.STATE_SUCCESS || logLevel == TaskCronerConfig.TASK_LOG_TYPE_RECORD_ALL ||
-                    logLevel == TaskCronerConfig.TASK_LOG_TYPE_RECORD_RESULT_DATA) {
+                    logLevel == TaskCronerConfig.TASK_LOG_TYPE_RECORD_TASK_PARAM) {
                 if (logLimitSize > 0 && taskParam.length() > logLimitSize) {
                     return taskParam.substring(0, logLimitSize);
                 }
@@ -215,6 +228,19 @@ public class TaskCronerLog extends LogBaseVo implements Serializable {
         this.nextDate = nextDate;
     }
 
+    /**
+     * 获取执行结果数据，并按 logLevel 决定是否输出、是否截断。
+     * <p>记录规则（与 {@link #getTaskParam} 对称，仅 logLevel 常量不同）：
+     * <ul>
+     *   <li>任务执行失败（state != STATE_SUCCESS）时始终输出结果（含异常堆栈），便于排查；</li>
+     *   <li>任务成功时仅在 logLevel 为 {@link TaskCronerConfig#TASK_LOG_TYPE_RECORD_ALL}
+     *       或 {@link TaskCronerConfig#TASK_LOG_TYPE_RECORD_RESULT_DATA} 时输出；</li>
+     *   <li>logLimitSize > 0 且结果长度超限时，截断为前 logLimitSize 个字符。</li>
+     * </ul>
+     * 不满足输出条件或结果为空时返回 null。</p>
+     *
+     * @return 按 logLevel 过滤并截断后的结果数据，不记录时返回 null
+     */
     public String getResultData() {
         if (resultData != null) {
             if (state != TaskData.STATE_SUCCESS || logLevel == TaskCronerConfig.TASK_LOG_TYPE_RECORD_ALL ||

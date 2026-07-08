@@ -1,5 +1,7 @@
 package uw.task.util;
 
+import uw.task.TaskData;
+import uw.task.entity.TaskDelayerStats;
 import uw.task.entity.TaskCronerStats;
 import uw.task.entity.TaskRunnerStats;
 
@@ -39,6 +41,11 @@ public class TaskStatsService {
      * runner数据存储map。
      */
     private static final ConcurrentHashMap<Long, TaskRunnerStats> RUNNER_STATS_MAP = new ConcurrentHashMap<>();
+
+    /**
+     * delay数据存储map。
+     */
+    private static final ConcurrentHashMap<Long, TaskDelayerStats> DELAYER_STATS_MAP = new ConcurrentHashMap<>();
 
 
     /**
@@ -107,6 +114,65 @@ public class TaskStatsService {
         List<TaskRunnerStats> list = new ArrayList<>(RUNNER_STATS_MAP.values());
         RUNNER_STATS_MAP.clear();
         return list;
+    }
+
+
+    /**
+     * 更新DelayMetrics。
+     *
+     * @param taskId          任务配置 id
+     * @param numAll          执行总计数
+     * @param numFailProgram  程序失败计数
+     * @param numFailConfig   配置失败计数（如连续限速超限放弃）
+     * @param numFailData     数据失败计数
+     * @param numFailPartner  对方失败计数
+     * @param timeWaitDelay   实际延迟等待耗时（runAt→consumeDate，毫秒）
+     * @param timeRun         运行耗时（毫秒）
+     */
+    public static void updateDelayerStats(long taskId, int numAll, int numFailProgram, int numFailConfig, int numFailData, int numFailPartner, int timeWaitDelay, int timeRun) {
+        DELAYER_STATS_MAP.compute(taskId, (k, v) -> {
+            if (v != null) {
+                return v.addMetrics(numAll, numFailProgram, numFailConfig, numFailData, numFailPartner, timeWaitDelay, timeRun);
+            } else {
+                return new TaskDelayerStats(k).addMetrics(numAll, numFailProgram, numFailConfig, numFailData, numFailPartner, timeWaitDelay, timeRun);
+            }
+        });
+    }
+
+    /**
+     * 获取DelayStats列表，同时清空map。
+     *
+     * @return 快照列表
+     */
+    public static List<TaskDelayerStats> getDelayerStats() {
+        List<TaskDelayerStats> list = new ArrayList<>(DELAYER_STATS_MAP.values());
+        DELAYER_STATS_MAP.clear();
+        return list;
+    }
+
+    /**
+     * 将任务状态映射为 4 元失败计数数组：[program, config, data, partner]。
+     *
+     * @param state 任务状态（TaskData.STATE_FAIL_*）
+     * @return 长度 4 的 int 数组，对应位置为 1（命中）或 0
+     */
+    public static int[] toFailCounters(int state) {
+        return new int[]{
+                state == TaskData.STATE_FAIL_PROGRAM ? 1 : 0,
+                state == TaskData.STATE_FAIL_CONFIG ? 1 : 0,
+                state == TaskData.STATE_FAIL_DATA ? 1 : 0,
+                state == TaskData.STATE_FAIL_PARTNER ? 1 : 0
+        };
+    }
+
+    /**
+     * 将 long 安全转为 int：负值截 0，超 Integer.MAX_VALUE 截 MAX_VALUE。
+     *
+     * @param value 原始 long 值
+     * @return 安全的 int 值
+     */
+    public static int toIntClamped(long value) {
+        return Math.clamp(value, 0, Integer.MAX_VALUE);
     }
 
 }

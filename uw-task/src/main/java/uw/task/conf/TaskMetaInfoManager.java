@@ -3,8 +3,10 @@ package uw.task.conf;
 import org.springframework.context.ApplicationContext;
 import uw.task.TaskCroner;
 import uw.task.TaskData;
+import uw.task.TaskDelayer;
 import uw.task.TaskRunner;
 import uw.task.entity.TaskCronerConfig;
+import uw.task.entity.TaskDelayerConfig;
 import uw.task.entity.TaskRunnerConfig;
 
 import java.util.Map;
@@ -26,6 +28,16 @@ public class TaskMetaInfoManager {
      * Cron任务实例缓存。
      */
     private final Map<String, TaskCroner> cronerInstanceMap = new ConcurrentHashMap<>();
+
+    /**
+     * Delayer任务实例缓存。
+     */
+    private final Map<String, TaskDelayer<?, ?>> delayerInstanceMap = new ConcurrentHashMap<>();
+
+    /**
+     * Delayer任务配置缓存。
+     */
+    private final ConcurrentHashMap<String, TaskDelayerConfig> delayerConfigMap = new ConcurrentHashMap<>();
 
     /**
      * Runner任务配置缓存
@@ -82,6 +94,15 @@ public class TaskMetaInfoManager {
     }
 
     /**
+     * 移除定时任务配置。
+     *
+     * @param cronerConfigKey 配置键（见 {@link #getCronerConfigKey}）
+     */
+    public void removeCronerConfig(String cronerConfigKey) {
+        cronerConfigMap.remove(cronerConfigKey);
+    }
+
+    /**
      * 获取队列任务实例 Map（key 为 taskClass 全限定名）。
      *
      * @return 队列任务实例 Map
@@ -120,6 +141,53 @@ public class TaskMetaInfoManager {
     }
 
     /**
+     * 获取延迟任务实例 Map（key 为 taskClass 全限定名）。
+     *
+     * @return 延迟任务实例 Map
+     */
+    public Map<String, TaskDelayer<?, ?>> getDelayerInstanceMap() {
+        return delayerInstanceMap;
+    }
+
+    /**
+     * 获取指定 taskClass 的延迟任务实例。
+     *
+     * @param delayerCls taskClass 全限定名
+     * @return 任务实例，无匹配时返回 null
+     */
+    public TaskDelayer<?, ?> getDelayerInstance(String delayerCls) {
+        return delayerInstanceMap.get(delayerCls);
+    }
+
+    /**
+     * 设置延迟任务配置。
+     *
+     * @param delayerConfigKey 配置键（见 {@link #getConfigKey}）
+     * @param config           延迟任务配置
+     */
+    public void setDelayerConfig(String delayerConfigKey, TaskDelayerConfig config) {
+        delayerConfigMap.put(delayerConfigKey, config);
+    }
+
+    /**
+     * 移除延迟任务配置。
+     *
+     * @param delayerConfigKey 配置键（见 {@link #getConfigKey}）
+     */
+    public void removeDelayerConfig(String delayerConfigKey) {
+        delayerConfigMap.remove(delayerConfigKey);
+    }
+
+    /**
+     * 获取延迟任务配置 Map（key 为配置键，见 {@link #getConfigKey}）。
+     *
+     * @return 延迟任务配置 Map
+     */
+    public ConcurrentHashMap<String, TaskDelayerConfig> getDelayerConfigMap() {
+        return delayerConfigMap;
+    }
+
+    /**
      * 获取队列任务配置 Map（key 为配置键，见 {@link #getRunnerConfigKey}）。
      *
      * @return 队列任务配置 Map
@@ -142,7 +210,7 @@ public class TaskMetaInfoManager {
      * <p>从 Spring 容器扫描所有 {@link TaskCroner} / {@link TaskRunner} Bean，按 taskClass 全限定名建立索引。</p>
      */
     public void init() {
-        // 设置当前主机上所有的TaskCroner
+        // 设置当前主机上所有的TaskRunner
         Map<String, TaskCroner> cronerMap = context.getBeansOfType(TaskCroner.class);
         for (Map.Entry<String, TaskCroner> kv : cronerMap.entrySet()) {
             // 拿到任务类名
@@ -150,13 +218,20 @@ public class TaskMetaInfoManager {
             String taskClass = taskCroner.getClass().getName();
             cronerInstanceMap.put(taskClass, taskCroner);
         }
-        // 设置当前主机上所有的TaskCroner
+        // 设置当前主机上所有的TaskRunner
         Map<String, TaskRunner> runnerMap = context.getBeansOfType(TaskRunner.class);
         for (Map.Entry<String, TaskRunner> kv : runnerMap.entrySet()) {
             // 拿到任务类名
             TaskRunner taskRunner = kv.getValue();
             String taskClass = taskRunner.getClass().getName();
             runnerInstanceMap.put(taskClass, taskRunner);
+        }
+        // 设置当前主机上所有的TaskDelayer
+        Map<String, TaskDelayer> delayerMap = context.getBeansOfType(TaskDelayer.class);
+        for (Map.Entry<String, TaskDelayer> kv : delayerMap.entrySet()) {
+            TaskDelayer taskDelayer = kv.getValue();
+            String taskClass = taskDelayer.getClass().getName();
+            delayerInstanceMap.put(taskClass, taskDelayer);
         }
     }
 
@@ -300,6 +375,19 @@ public class TaskMetaInfoManager {
             sb.append(data.getRunTarget());
         }
         return sb.toString();
+    }
+
+    /**
+     * 通用配置键：taskClass#taskTag$runTarget（null 维度当空串）。
+     * <p>供以 taskTag 作为多实例维度的任务（Runner / Delayer）复用，避免各容器各自拼接。</p>
+     *
+     * @param taskClass 任务类全限定名
+     * @param taskTag   任务标签（多实例区分，可空）
+     * @param runTarget 运行目标（可空）
+     * @return 配置键 taskClass#taskTag$runTarget
+     */
+    public static String getConfigKey(String taskClass, String taskTag, String runTarget) {
+        return taskClass + "#" + (taskTag == null ? "" : taskTag) + "$" + (runTarget == null ? "" : runTarget);
     }
 
 

@@ -2,6 +2,7 @@ package uw.task;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.rabbitmq.client.AMQP;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
@@ -11,6 +12,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import uw.common.util.SystemClock;
 import uw.task.conf.TaskMetaInfoManager;
 import uw.task.conf.TaskProperties;
+import uw.task.container.TaskDelayerContainer;
 import uw.task.container.TaskQueueLocalExecutor;
 import uw.task.container.TaskRunnerContainer;
 import uw.task.exception.TaskRuntimeException;
@@ -62,13 +64,29 @@ public class TaskFactory {
      * 任务本地运行线程池。
      */
     private final ExecutorService taskQueueService;
+    /**
+     * 延迟任务容器（submitDelay 委派给它）。
+     */
+    private final TaskDelayerContainer delayTaskContainer;
 
+    /**
+     * 构造 TaskFactory 并初始化两个内置线程池，同时设置全局单例。
+     * <p>线程池均为 SynchronousQueue + CallerRunsPolicy 派生策略：无缓冲队列，任务提交时若无空闲线程则由调用线程
+     * 或投递策略自身处理（taskQueueService 使用 {@code SendToQueuePolicy} 在满时回退投递 MQ）。</p>
+     *
+     * @param taskProperties      任务全局配置（提供线程数上下限等参数）
+     * @param rabbitTemplate      RabbitMQ 操作模板
+     * @param taskRunnerContainer 队列任务执行容器（本地/RPC 模式实际执行入口）
+     * @param taskSequenceManager 全局发号器（生成 TaskRunnerLog id）
+     * @param taskMetaInfoManager 任务元信息管理器（runner 实例与配置索引）
+     */
     public TaskFactory(TaskProperties taskProperties, RabbitTemplate rabbitTemplate, TaskRunnerContainer taskRunnerContainer, TaskSequenceManager taskSequenceManager,
-                       TaskMetaInfoManager taskMetaInfoManager) {
+                       TaskMetaInfoManager taskMetaInfoManager, TaskDelayerContainer delayTaskContainer) {
         this.rabbitTemplate = rabbitTemplate;
         this.taskRunnerContainer = taskRunnerContainer;
         this.taskSequenceManager = taskSequenceManager;
         this.taskMetaInfoManager = taskMetaInfoManager;
+        this.delayTaskContainer = delayTaskContainer;
         taskRpcService = new ThreadPoolExecutor(taskProperties.getTaskRpcThreadMinNum(), taskProperties.getTaskRpcThreadMaxNum(), 20L, TimeUnit.SECONDS,
                 new SynchronousQueue<>(), new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskRpc-%d").build(), new ThreadPoolExecutor.CallerRunsPolicy());
         taskQueueService = new ThreadPoolExecutor(taskProperties.getTaskLocalThreadMinNum(), taskProperties.getTaskLocalThreadMaxNum(), 20L, TimeUnit.SECONDS,
@@ -83,6 +101,18 @@ public class TaskFactory {
      */
     public static TaskFactory getInstance() {
         return INSTANCE;
+    }
+
+    /**
+     * 提交延迟任务到 Redis zset，到点后由本机 TaskDelayer 容器 poll 执行。
+     * <p>与 {@link #sendToQueue} 对称：以 {@link TaskData} 为载体，调用方用 builder 设置
+     * taskClass（TaskDelayer 实现类）、taskDelay（延迟毫秒）、taskParam（业务参数），
+     * 可选 taskTag/rateLimitTag/refId/refTag 等。完全异步、无返回值。</p>
+     *
+     * @param taskData 延迟任务数据（taskClass/taskDelay/taskParam 必填）
+     */
+    public void submitDelay(final TaskData<?, ?> taskData) {
+        delayTaskContainer.submit(taskData);
     }
 
     /**
@@ -331,4 +361,34 @@ public class TaskFactory {
         }
     }
 
+    /**
+     * 容器销毁时优雅关闭 RPC 线程池与本地队列线程池。
+     * <p>委托 {@link #shutdownQuietly(ExecutorService)} 逐个关闭：先 shutdown 阻止新任务，
+     * 最多等待 5 秒让在途任务完成，超时后 shutdownNow 强制中断。</p>
+     */
+    @PreDestroy
+    public void destroy() {
+        shutdownQuietly(taskRpcService);
+        shutdownQuietly(taskQueueService);
+    }
+    /**
+     * 优雅关闭线程池：shutdown → awaitTermination(5s) → shutdownNow。
+     * <p>三段式关闭保证在途任务尽量自然结束，超时才强制中断；中断后恢复线程中断状态。</p>
+     *
+     * @param pool 待关闭的线程池，为 null 时直接返回
+     */
+    private static void shutdownQuietly(ExecutorService pool) {
+        if (pool == null) {
+            return;
+        }
+        pool.shutdown();
+        try {
+            if (!pool.awaitTermination(5, TimeUnit.SECONDS)) {
+                pool.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            pool.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+    }
 }

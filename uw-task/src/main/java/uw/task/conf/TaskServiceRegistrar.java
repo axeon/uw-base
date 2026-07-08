@@ -14,6 +14,8 @@ import uw.common.util.SystemClock;
 import uw.task.TaskCroner;
 import uw.task.TaskRunner;
 import uw.task.api.TaskApiClient;
+import uw.task.TaskDelayer;
+import uw.task.container.TaskDelayerContainer;
 import uw.task.container.TaskCronerContainer;
 import uw.task.container.TaskRunnerContainer;
 import uw.task.converter.TaskMessageConverter;
@@ -29,7 +31,16 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 任务服务注册器。
+ * 任务服务注册器：负责与 task-center 交互，拉取/上传 runner、croner、delayer 三类任务的动态配置，
+ * 并驱动各自容器的启动、热更新与暂停。
+ *
+ * <p>由 {@link TaskAutoConfiguration} 的调度线程池周期性调用（默认 60s）：
+ * {@link #updateConfig} 编排三类配置的拉取与刷新，分别委托给三个独立方法——
+ * {@link #updateTaskRunnerConfig}（基于 {@link #runnerLastUpdateTime} 增量拉取 runner 配置，首次上传本地默认配置并注册队列监听）、
+ * {@link #updateTaskCronerConfig}（基于 {@link #cronerLastUpdateTime} 增量拉取 croner 配置，首次上传本地默认配置并配置调度）、
+ * {@link #updateTaskDelayerConfig}（基于 {@link #delayerLastUpdateTime} 独立拉取 delay 配置）。
+ * 三者各自维护独立的时间戳与 fail-fast，互不影响：runner/croner 拉取失败保留上次配置不更新，delay 拉取失败仅 warn。
+ * {@link #reportHostInfo} 上报 JVM/线程/统计/队列积压等信息。</p>
  *
  * @author axeon
  */
@@ -49,6 +60,11 @@ public class TaskServiceRegistrar {
      * 队列任务容器。
      */
     private final TaskRunnerContainer taskRunnerContainer;
+
+    /**
+     * 延迟任务容器。
+     */
+    private final TaskDelayerContainer taskDelayerContainer;
 
     /**
      * 定时任务容器。
@@ -81,19 +97,37 @@ public class TaskServiceRegistrar {
     private final ConcurrentHashMap<String, SimpleMessageListenerContainer> queueListenerMap = new ConcurrentHashMap<>();
 
     /**
-     * 上次更新配置时间，初始值必须=0，用于标识整体加载。
+     * runner 配置增量拉取时间戳：仅 runner 拉取成功时推进，与 croner/delayer 解耦。
+     * 初始值必须=0，用于标识整体加载。
      */
-    private volatile long lastUpdateTime = 0;
+    private volatile long runnerLastUpdateTime = 0;
 
     /**
-     * 从服务器端拉取数据是否成功。
+     * croner 配置增量拉取时间戳：仅 croner 拉取成功时推进，与 runner/delayer 解耦。
+     * 初始值必须=0，用于标识整体加载。
      */
-    private volatile boolean updateFlag = true;
+    private volatile long cronerLastUpdateTime = 0;
 
     /**
-     * 是否首次启动
+     * 延迟任务增量拉取独立时间戳：仅 delay 拉取成功时推进，与 runner/croner 的 lastUpdateTime 解耦，
+     * 避免 runner/croner 成功推进后 delay 拉取失败 导致 delay 配置变更丢窗。
      */
-    private boolean isFirstRun = true;
+    private volatile long delayerLastUpdateTime = 0;
+
+    /**
+     * runner 首次启动标志：首次拉取配置成功后上传本地默认配置。
+     */
+    private boolean runnerFirstRun = true;
+
+    /**
+     * croner 首次启动标志：首次拉取配置成功后上传本地默认配置。
+     */
+    private boolean cronerFirstRun = true;
+
+    /**
+     * 延迟任务配置首次上传标志。
+     */
+    private boolean delayerFirstRun = true;
 
     /**
      * 上次报告结果。
@@ -112,12 +146,14 @@ public class TaskServiceRegistrar {
      * @param taskMetaInfoManager    任务元信息管理器
      */
     public TaskServiceRegistrar(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskRunnerContainer taskRunnerContainer, TaskCronerContainer taskCronerContainer,
+                                TaskDelayerContainer taskDelayerContainer,
                                 ConnectionFactory taskRabbitConnectionFactory,
                                 RabbitAdmin rabbitAdmin, TaskMetaInfoManager taskMetaInfoManager) {
         this.taskProperties = taskProperties;
         this.taskConnectionFactory = taskRabbitConnectionFactory;
         this.taskRunnerContainer = taskRunnerContainer;
         this.taskCronerContainer = taskCronerContainer;
+        this.taskDelayerContainer = taskDelayerContainer;
         this.taskApiClient = taskApiClient;
         this.rabbitAdmin = rabbitAdmin;
         this.taskMetaInfoManager = taskMetaInfoManager;
@@ -135,70 +171,39 @@ public class TaskServiceRegistrar {
 
     /**
      * 注册并刷新当前主机的任务配置。
-     * <p>由调度器每分钟调用：从 task-center 拉取 runner/croner 配置增量，首次启动时上传本地默认配置，
-     * 随后按 taskProject+runTarget 过滤、配置并启动 croner 调度与 runner 队列监听。
-     * 拉取失败时进入 fail-fast，保留上次配置不更新。</p>
+     * <p>由调度器每分钟调用：编排 runner/croner/delayer 三类任务配置的拉取与刷新。
+     * 各类配置使用独立的时间戳与 fail-fast，互不影响。</p>
      */
     public void updateConfig() {
+        updateTaskRunnerConfig();
+        updateTaskCronerConfig();
+        updateTaskDelayerConfig();
+    }
+
+    /**
+     * 拉取并应用 TaskRunner 配置增量。
+     * <p>从 task-center 拉取 runner 配置增量，首次启动时上传本地默认配置，
+     * 随后按 taskProject+runTarget 过滤、注册并启动 runner 队列监听。
+     * 拉取失败时进入 fail-fast，保留上次配置不更新。</p>
+     */
+    private void updateTaskRunnerConfig() {
         long startUpdateTimeMills = SystemClock.now();
         // 优先拉取runnerConfig，因为是否注册任务，都要更新系统队列。
         ConcurrentHashMap<String, TaskRunnerConfig> updatedRunnerConfigMap = updateRunnerConfig();
-        if (!updateFlag) {
+        if (updatedRunnerConfigMap == null) {
             log.warn("!拉取TaskRunner服务器配置失败, 进入Fail-Fast模式!");
             return;
         }
         if (log.isDebugEnabled()) {
             log.debug("发现服务器端拉取的[{}]个更新的TaskRunner配置...", updatedRunnerConfigMap.size());
         }
-        // 取得有变化的croner配置列表
-        ConcurrentHashMap<String, TaskCronerConfig> updatedCronerConfigMap = updateCronerConfig();
-        if (!updateFlag) {
-            log.warn("!拉取TaskCroner服务器配置失败, 进入Fail-Fast模式!");
-            return;
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("发现服务器端拉取的[{}]个更新的TaskCroner配置...", updatedCronerConfigMap.size());
-        }
         //非后台任务主机，此时可以退出了。
         if (!taskProperties.isEnableRegistry()) {
             return;
         }
         // 第一次执行初始化操作
-        if (isFirstRun) {
-            isFirstRun = false;
-            // 初始化croner和runner
-            for (Entry<String, TaskCroner> kv : taskMetaInfoManager.getCronerInstanceMap().entrySet()) {
-                try {
-                    // 拿到任务类名
-                    TaskCroner taskCroner = kv.getValue();
-                    String taskClass = taskCroner.getClass().getName();
-                    if (log.isDebugEnabled()) {
-                        log.debug("正在初始化TaskCroner: [{}].", taskClass);
-                    }
-                    TaskCronerConfig localConfig = taskCroner.initConfig();
-                    TaskContact contact = taskCroner.initContact();
-                    if (localConfig == null || contact == null) {
-                        log.warn("!TaskCroner: [{}]默认配置或联系人信息为空，无法启动！", taskClass);
-                        continue;
-                    }
-                    // 防止有人瞎胡搞，任务参数强制设死。
-                    localConfig.setTaskClass(taskClass);
-                    localConfig.setRunTarget(taskProperties.getRunTarget());
-                    contact.setTaskClass(taskClass);
-                    String configKey = taskMetaInfoManager.getCronerConfigKey(localConfig);
-                    TaskCronerConfig serverConfig = updatedCronerConfigMap.get(configKey);
-                    // 上传配置
-                    if (serverConfig == null) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("TaskCroner: [{}]未找到服务器端配置，上传默认配置...", taskClass);
-                        }
-                        serverConfig = uploadCronerInfo(localConfig, contact);
-                    }
-                } catch (Exception e) {
-                    log.error(e.getMessage(), e);
-                }
-            }
-
+        if (runnerFirstRun) {
+            runnerFirstRun = false;
             // 获取当前主机上所有的TaskRunner
             for (Entry<String, TaskRunner> kv : taskMetaInfoManager.getRunnerInstanceMap().entrySet()) {
                 try {
@@ -231,83 +236,193 @@ public class TaskServiceRegistrar {
                     log.error(e.getMessage(), e);
                 }
             }
-            // 当未连接服务器的时候，必须用configMap。
-            updatedCronerConfigMap = taskMetaInfoManager.getCronerConfigMap();
-            updatedRunnerConfigMap = taskMetaInfoManager.getRunnerConfigMap();
         }
 
-        // 此时执行更新操作
-        if (updatedCronerConfigMap != null) {
-            for (TaskCronerConfig taskCronerConfig : updatedCronerConfigMap.values()) {
-                //必须是本项目任务，否则跳过
-                if (!taskCronerConfig.getTaskClass().startsWith(taskProperties.getTaskProject())) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("因为TaskProject不匹配，跳过配置ID: [{}], CRONER:[{}], CRON:[{}].", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(),
-                                taskCronerConfig.getTaskCron());
-                    }
-                    continue;
-                }
-                //必须是同一个runTarget项目，否则跳过
-                if (!taskCronerConfig.getRunTarget().equals(taskProperties.getRunTarget())) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("因为RunTarget不匹配，跳过配置ID: [{}], CRONER:[{}], CRON:[{}].", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(),
-                                taskCronerConfig.getTaskCron());
-                    }
-                    continue;
-                }
-                if (log.isDebugEnabled()) {
-                    log.debug("正在加载ID: [{}], CRONER:[{}], CRON:[{}].", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron());
-                }
-                TaskCroner taskCroner = taskMetaInfoManager.getCronerInstance(taskCronerConfig.getTaskClass());
-                if (taskCroner != null) {
-                    try {
-                        if (log.isDebugEnabled()) {
-                            log.debug("正在配置ID: [{}], CRONER:[{}], CRON:[{}].", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron());
-                        }
-                        boolean runFlag = taskCronerContainer.configureTask(taskCroner, taskCronerConfig);
-                    } catch (Exception e) {
-                        log.error(e.getMessage(), e);
-                    }
-                } else {
-                    log.warn("!未找到匹配的任务类，未能启动配置ID: [{}], CRONER:[{}], CRON:[{}].", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron());
-                }
-            }
-        }
         // 改Runner配置，逐一循环并配置。
-        if (updatedRunnerConfigMap != null) {
-            for (TaskRunnerConfig taskRunnerConfig : updatedRunnerConfigMap.values()) {
-                //必须是本项目任务，否则跳过
-                if (!taskRunnerConfig.getTaskClass().startsWith(taskProperties.getTaskProject())) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("因为TaskProject不匹配，跳过配置ID: [{}], RUNNER: [{}].", taskRunnerConfig.getId(), taskRunnerConfig.getTaskClass());
-                    }
-                    continue;
-                }
-                //必须是同一个runTarget项目，否则跳过
-                if (!taskRunnerConfig.getRunTarget().equals(taskProperties.getRunTarget())) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("因为RunTarget不匹配，跳过配置ID: [{}], RUNNER: [{}].", taskRunnerConfig.getId(), taskRunnerConfig.getTaskClass());
-                    }
-                    continue;
-                }
+        for (TaskRunnerConfig taskRunnerConfig : taskMetaInfoManager.getRunnerConfigMap().values()) {
+            //必须是本项目任务，否则跳过
+            if (!taskRunnerConfig.getTaskClass().startsWith(taskProperties.getTaskProject())) {
                 if (log.isDebugEnabled()) {
-                    log.debug("正在加载ID: [{}], RUNNER: [{}].", taskRunnerConfig.getId(), taskRunnerConfig.getTaskClass());
+                    log.debug("因为TaskProject不匹配，跳过配置ID: [{}], RUNNER: [{}].", taskRunnerConfig.getId(), taskRunnerConfig.getTaskClass());
                 }
-                if (taskMetaInfoManager.getRunnerInstance(taskRunnerConfig.getTaskClass()) != null) {
-                    // 启动任务
-                    registerQueueListener(taskRunnerConfig);
-                } else {
-                    log.warn("!未找到匹配的任务类，未能启动配置ID: [{}], RUNNER: [{}].", taskRunnerConfig.getId(), taskRunnerConfig.getTaskClass());
+                continue;
+            }
+            //必须是同一个runTarget项目，否则跳过
+            if (!taskRunnerConfig.getRunTarget().equals(taskProperties.getRunTarget())) {
+                if (log.isDebugEnabled()) {
+                    log.debug("因为RunTarget不匹配，跳过配置ID: [{}], RUNNER: [{}].", taskRunnerConfig.getId(), taskRunnerConfig.getTaskClass());
                 }
+                continue;
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("正在加载ID: [{}], RUNNER: [{}].", taskRunnerConfig.getId(), taskRunnerConfig.getTaskClass());
+            }
+            if (taskMetaInfoManager.getRunnerInstance(taskRunnerConfig.getTaskClass()) != null) {
+                // 启动任务
+                registerQueueListener(taskRunnerConfig);
+            } else {
+                log.warn("!未找到匹配的任务类，未能启动配置ID: [{}], RUNNER: [{}].", taskRunnerConfig.getId(), taskRunnerConfig.getTaskClass());
             }
         }
 
         // 执行成功才会更新时间戳
-        if (updateFlag) {
-            // 比对数据库的时候，因为数据库缺少ms值，所以减去5000，提高匹配度。
-            lastUpdateTime = startUpdateTimeMills - 5000;
+        // 比对数据库的时候，因为数据库缺少ms值，所以减去5000，提高匹配度。
+        runnerLastUpdateTime = startUpdateTimeMills - 5000;
+    }
+
+    /**
+     * 拉取并应用 TaskCroner 配置增量。
+     * <p>从 task-center 拉取 croner 配置增量，首次启动时上传本地默认配置，
+     * 随后按 taskProject+runTarget 过滤、配置并启动 croner 调度。
+     * 拉取失败时进入 fail-fast，保留上次配置不更新。</p>
+     */
+    private void updateTaskCronerConfig() {
+        long startUpdateTimeMills = SystemClock.now();
+        // 取得有变化的croner配置列表
+        ConcurrentHashMap<String, TaskCronerConfig> updatedCronerConfigMap = updateCronerConfig();
+        if (updatedCronerConfigMap == null) {
+            log.warn("!拉取TaskCroner服务器配置失败, 进入Fail-Fast模式!");
+            return;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("发现服务器端拉取的[{}]个更新的TaskCroner配置...", updatedCronerConfigMap.size());
+        }
+        //非后台任务主机，此时可以退出了。
+        if (!taskProperties.isEnableRegistry()) {
+            return;
+        }
+        // 第一次执行初始化操作
+        if (cronerFirstRun) {
+            cronerFirstRun = false;
+            // 初始化croner
+            for (Entry<String, TaskCroner> kv : taskMetaInfoManager.getCronerInstanceMap().entrySet()) {
+                try {
+                    // 拿到任务类名
+                    TaskCroner taskCroner = kv.getValue();
+                    String taskClass = taskCroner.getClass().getName();
+                    if (log.isDebugEnabled()) {
+                        log.debug("正在初始化TaskCroner: [{}].", taskClass);
+                    }
+                    TaskCronerConfig localConfig = taskCroner.initConfig();
+                    TaskContact contact = taskCroner.initContact();
+                    if (localConfig == null || contact == null) {
+                        log.warn("!TaskCroner: [{}]默认配置或联系人信息为空，无法启动！", taskClass);
+                        continue;
+                    }
+                    // 防止有人瞎胡搞，任务参数强制设死。
+                    localConfig.setTaskClass(taskClass);
+                    localConfig.setRunTarget(taskProperties.getRunTarget());
+                    contact.setTaskClass(taskClass);
+                    String configKey = taskMetaInfoManager.getCronerConfigKey(localConfig);
+                    TaskCronerConfig serverConfig = updatedCronerConfigMap.get(configKey);
+                    // 上传配置
+                    if (serverConfig == null) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("TaskCroner: [{}]未找到服务器端配置，上传默认配置...", taskClass);
+                        }
+                        serverConfig = uploadCronerInfo(localConfig, contact);
+                    }
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
         }
 
+        // 此时执行更新操作
+        for (TaskCronerConfig taskCronerConfig : taskMetaInfoManager.getCronerConfigMap().values()) {
+            //必须是本项目任务，否则跳过
+            if (!taskCronerConfig.getTaskClass().startsWith(taskProperties.getTaskProject())) {
+                if (log.isDebugEnabled()) {
+                    log.debug("因为TaskProject不匹配，跳过配置ID: [{}], CRONER:[{}], CRON:[{}].", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(),
+                            taskCronerConfig.getTaskCron());
+                }
+                continue;
+            }
+            //必须是同一个runTarget项目，否则跳过
+            if (!taskCronerConfig.getRunTarget().equals(taskProperties.getRunTarget())) {
+                if (log.isDebugEnabled()) {
+                    log.debug("因为RunTarget不匹配，跳过配置ID: [{}], CRONER:[{}], CRON:[{}].", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(),
+                            taskCronerConfig.getTaskCron());
+                }
+                continue;
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("正在加载ID: [{}], CRONER:[{}], CRON:[{}].", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron());
+            }
+            TaskCroner taskCroner = taskMetaInfoManager.getCronerInstance(taskCronerConfig.getTaskClass());
+            if (taskCroner != null) {
+                try {
+                    if (log.isDebugEnabled()) {
+                        log.debug("正在配置ID: [{}], CRONER:[{}], CRON:[{}].", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron());
+                    }
+                    boolean runFlag = taskCronerContainer.configureTask(taskCroner, taskCronerConfig);
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
+            } else {
+                log.warn("!未找到匹配的任务类，未能启动配置ID: [{}], CRONER:[{}], CRON:[{}].", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron());
+            }
+        }
+
+        // 执行成功才会更新时间戳
+        // 比对数据库的时候，因为数据库缺少ms值，所以减去5000，提高匹配度。
+        cronerLastUpdateTime = startUpdateTimeMills - 5000;
+    }
+
+    /**
+     * 更新延迟任务配置：拉取服务端配置、首次上传本地默认配置、过滤后启动。
+     * <p>独立于 runner/croner 的 fail-fast：delay 拉取失败仅 warn，不影响主流程。</p>
+     */
+    private void updateTaskDelayerConfig() {
+        if (taskDelayerContainer == null) {
+            return;
+        }
+        long startUpdateTimeMills = SystemClock.now();
+        ResponseData<List<TaskDelayerConfig>> response = taskApiClient.getTaskDelayerConfigList(taskProperties.getRunTarget(), taskProperties.getTaskProject(), delayerLastUpdateTime);
+        List<TaskDelayerConfig> serverConfigs = response != null && response.isSuccess() ? response.getData() : null;
+        if (serverConfigs == null) {
+            log.warn("!拉取DelayTask服务器配置失败!");
+            return;
+        }
+        // 非后台任务主机，此时可以退出了。
+        if (!taskProperties.isEnableRegistry()) {
+            return;
+        }
+        // 首次启动：上传本地 delayer 的默认配置与联系人
+        if (delayerFirstRun) {
+            delayerFirstRun = false;
+            for (Map.Entry<String, TaskDelayer<?, ?>> entry : taskMetaInfoManager.getDelayerInstanceMap().entrySet()) {
+                try {
+                    TaskDelayer<?, ?> runner = entry.getValue();
+                    TaskDelayerConfig localConfig = runner.initConfig();
+                    if (localConfig == null) {
+                        continue;
+                    }
+                    localConfig.setTaskClass(entry.getKey());
+                    localConfig.setRunTarget(taskProperties.getRunTarget());
+                    taskApiClient.initTaskDelayerConfig(localConfig);
+                    TaskContact contact = runner.initContact();
+                    if (contact != null) {
+                        contact.setTaskClass(entry.getKey());
+                        taskApiClient.initTaskContact(contact);
+                    }
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+        }
+        // 过滤本项目+本 runTarget 的配置，交由容器启动（服务端动态配置覆盖本地默认）
+        for (TaskDelayerConfig config : serverConfigs) {
+            if (!config.getTaskClass().startsWith(taskProperties.getTaskProject())) {
+                continue;
+            }
+            if (!config.getRunTarget().equals(taskProperties.getRunTarget())) {
+                continue;
+            }
+            taskDelayerContainer.configureTaskDelayer(config);
+        }
+        // 仅 delay 拉取成功才推进 delay 专属时间戳（与 runner/croner 解耦；失败不推进则下周期重查同窗口，不丢窗）
+        delayerLastUpdateTime = startUpdateTimeMills - 5000;
     }
 
     /**
@@ -346,6 +461,7 @@ public class TaskServiceRegistrar {
         hostStats.setRunTarget(taskProperties.getRunTarget());
         hostStats.setCronerNum(taskMetaInfoManager.getCronerInstanceMap().size());
         hostStats.setRunnerNum(taskMetaInfoManager.getRunnerInstanceMap().size());
+        hostStats.setDelayNum(taskDelayerContainer != null ? taskMetaInfoManager.getDelayerInstanceMap().size() : 0);
         //设置内存和线程信息。
         Runtime runtime = Runtime.getRuntime();
         hostStats.setJvmMemMax(runtime.maxMemory());
@@ -359,6 +475,12 @@ public class TaskServiceRegistrar {
         //保存任务统计信息。
         hostStats.setTaskCronerStatsList(TaskStatsService.getCronerStats());
         hostStats.setTaskRunnerStatsList(TaskStatsService.getRunnerStats());
+        java.util.List<TaskDelayerStats> delayStatsList = TaskStatsService.getDelayerStats();
+        // 填充 zset 积压数与执行线程数（被动查询，stats 本身只累计计数/耗时）
+        if (taskDelayerContainer != null) {
+            taskDelayerContainer.fillDelayerStats(delayStatsList);
+        }
+        hostStats.setTaskDelayStatsList(delayStatsList);
         //查询队列信息。
         List<TaskRunnerStats> taskRunnerStatsList = hostStats.getTaskRunnerStatsList();
         // 预先构建 taskId -> queueName 索引，避免对每个 stats 遍历全部 config（O(n*m)）。
@@ -389,35 +511,39 @@ public class TaskServiceRegistrar {
     }
 
     /**
-     * 更新所有Croner的配置
+     * 从 task-center 增量拉取 croner 配置（基于 cronerLastUpdateTime），同步写入本地 metaInfo 缓存。
+     * <p>拉取失败时返回 null，触发 {@link #updateTaskCronerConfig} 的 fail-fast（保留上次配置不更新）。</p>
      *
-     * @return
+     * @return 本次拉取到的配置 map（configKey -> config）；拉取失败时返回 null
      */
     private ConcurrentHashMap<String, TaskCronerConfig> updateCronerConfig() {
         ConcurrentHashMap<String, TaskCronerConfig> map = new ConcurrentHashMap<>();
-        ResponseData<List<TaskCronerConfig>> response = taskApiClient.getTaskCronerConfigList(taskProperties.getRunTarget(), taskProperties.getTaskProject(), lastUpdateTime);
+        ResponseData<List<TaskCronerConfig>> response = taskApiClient.getTaskCronerConfigList(taskProperties.getRunTarget(), taskProperties.getTaskProject(), cronerLastUpdateTime);
         List<TaskCronerConfig> list = response != null && response.isSuccess() ? response.getData() : null;
         if (list != null) {
             for (TaskCronerConfig config : list) {
                 String key = taskMetaInfoManager.getCronerConfigKey(config);
                 map.put(key, config);
-                taskMetaInfoManager.getCronerConfigMap().put(key, config);
+                if (config.getState() < 1) {
+                    taskMetaInfoManager.removeCronerConfig(key);
+                } else {
+                    taskMetaInfoManager.setCronerConfig(key, config);
+                }
             }
-            updateFlag = true;
-        } else {
-            updateFlag = false;
+            return map;
         }
-        return map;
+        return null;
     }
 
     /**
-     * 更新所有Runner的配置
+     * 从 task-center 增量拉取 runner 配置（基于 runnerLastUpdateTime），同步更新本地 metaInfo 缓存
+     * （含 state&lt;1 的删除处理）。拉取失败时返回 null，触发 fail-fast。
      *
-     * @return
+     * @return 本次拉取到的配置 map（configKey -> config）；拉取失败时返回 null
      */
     private ConcurrentHashMap<String, TaskRunnerConfig> updateRunnerConfig() {
         ConcurrentHashMap<String, TaskRunnerConfig> map = new ConcurrentHashMap<>();
-        ResponseData<List<TaskRunnerConfig>> response = taskApiClient.getTaskRunnerConfigList(taskProperties.getRunTarget(), taskProperties.getTaskProject(), lastUpdateTime);
+        ResponseData<List<TaskRunnerConfig>> response = taskApiClient.getTaskRunnerConfigList(taskProperties.getRunTarget(), taskProperties.getTaskProject(), runnerLastUpdateTime);
         List<TaskRunnerConfig> list = response != null && response.isSuccess() ? response.getData() : null;
         if (list != null) {
             for (TaskRunnerConfig config : list) {
@@ -429,18 +555,17 @@ public class TaskServiceRegistrar {
                 }
                 map.put(key, config);
             }
-            updateFlag = true;
-        } else {
-            updateFlag = false;
+            return map;
         }
-        return map;
+        return null;
     }
 
     /**
-     * 上传Runner信息。
+     * 首次上传 runner 默认配置与联系人信息到 task-center，并将服务端返回的 config 写入本地缓存。
      *
-     * @param config
-     * @param contact
+     * @param config  本地默认配置
+     * @param contact 联系人信息
+     * @return 服务端确认后的配置（含分配的 id）
      */
     private TaskRunnerConfig uploadRunnerInfo(TaskRunnerConfig config, TaskContact contact) {
         ResponseData<TaskRunnerConfig> response = taskApiClient.initTaskRunnerConfig(config);
@@ -453,10 +578,11 @@ public class TaskServiceRegistrar {
     }
 
     /**
-     * 上传Croner信息。
+     * 首次上传 croner 默认配置与联系人信息到 task-center，并将服务端返回的 config 写入本地缓存。
      *
-     * @param config
-     * @param contact
+     * @param config  本地默认配置
+     * @param contact 联系人信息
+     * @return 服务端确认后的配置（含分配的 id）
      */
     private TaskCronerConfig uploadCronerInfo(TaskCronerConfig config, TaskContact contact) {
         ResponseData<TaskCronerConfig> response = taskApiClient.initTaskCronerConfig(config);
@@ -469,9 +595,10 @@ public class TaskServiceRegistrar {
     }
 
     /**
-     * 注册队列监听。
+     * 注册/更新 RabbitMQ 队列监听容器：首次按配置声明队列/交换机/绑定并启动监听，
+     * 后续周期按 state/consumerNum/prefetchNum 动态调整或销毁。
      *
-     * @param runnerConfig
+     * @param runnerConfig runner 配置信息
      */
     private void registerQueueListener(TaskRunnerConfig runnerConfig) {
         String queueName = taskMetaInfoManager.getQueueNameByConfig(runnerConfig);
@@ -527,9 +654,9 @@ public class TaskServiceRegistrar {
     }
 
     /**
-     * 声明管理
+     * 通过 RabbitAdmin 声明队列、直连交换机及其绑定关系（三者同名，routing key = 队列名）。
      *
-     * @param queue 队列
+     * @param queue 队列定义
      */
     private void declareManage(Queue queue) {
         // 交换机
@@ -554,7 +681,10 @@ public class TaskServiceRegistrar {
     private SimpleMessageListenerContainer bindMessageListenerContainer(TaskRunnerConfig runnerConfig, String queueName) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
         container.setAutoStartup(false);
-        container.setTaskExecutor(new SimpleAsyncTaskExecutor(queueName));
+        // 消费者线程虚拟化：basicConsume 长连接等待 + process 内的 IO/限速 sleep 都 park 在虚拟线程上，不占平台载体
+        SimpleAsyncTaskExecutor taskExecutor = new SimpleAsyncTaskExecutor(queueName);
+        taskExecutor.setVirtualThreads(true);
+        container.setTaskExecutor(taskExecutor);
         // 提高启动consumer速度。
         container.setStartConsumerMinInterval(100);
         container.setConsecutiveActiveTrigger(1);

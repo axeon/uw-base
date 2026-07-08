@@ -13,6 +13,7 @@ import uw.task.TaskListenerManager;
 import uw.task.api.TaskApiClient;
 import uw.task.conf.TaskProperties;
 import uw.task.entity.TaskCronerConfig;
+import uw.task.entity.TaskRunnerConfig;
 import uw.task.entity.TaskCronerLog;
 import uw.task.exception.TaskDataException;
 import uw.task.exception.TaskPartnerException;
@@ -32,7 +33,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
 /**
- * 跑TaskCroner的容器。
+ * 定时任务容器：基于 Spring {@link org.springframework.scheduling.TaskScheduler} + {@link CronTrigger} 调度 {@link TaskCroner}。
+ *
+ * <p>每个 TaskCronerConfig 对应一个 {@link ScheduledFuture}，缓存在 {@link #cronerTasks} 中。
+ * {@code RUN_TYPE_SINGLETON} 的任务仅在 Leader 实例上执行（通过 {@link TaskGlobalLocker#isLeader()} 判定）。
+ * 执行结果、统计、下次计划时间在 TriggerTask 回调中统一落库。</p>
  *
  * @author axeon
  */
@@ -76,6 +81,17 @@ public class TaskCronerContainer {
      */
     private final TaskProperties taskProperties;
 
+    /**
+     * 构造定时任务容器并初始化调度线程池。
+     * <p>若 {@code enableRegistry=false}（非后台任务主机），croner 线程数按 1 计以节省资源；
+     * 不回写 taskProperties 避免篡改共享配置对象影响其他读取方。</p>
+     *
+     * @param taskProperties       任务全局配置
+     * @param taskApiClient        服务端任务 API 客户端
+     * @param taskSequenceManager  全局发号器（生成 TaskCronerLog id）
+     * @param taskListenerManager  任务监听管理器（pre/postExecute 回调）
+     * @param taskGlobalLocker     全局 Leader 锁（SINGLETON 任务用）
+     */
     public TaskCronerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskSequenceManager taskSequenceManager, TaskListenerManager taskListenerManager,
                                TaskGlobalLocker taskGlobalLocker) {
         this.taskGlobalLocker = taskGlobalLocker;
@@ -160,13 +176,13 @@ public class TaskCronerContainer {
             try {
                 resultData = taskCroner.runTask(taskCronerLog);
                 taskCronerLog.setState(TaskData.STATE_SUCCESS);
-            } catch (TaskPartnerException e) {
-                // 出现TaskPartnerException，说明是合作方的错误。
-                taskCronerLog.setState(TaskData.STATE_FAIL_PARTNER);
-                resultData = ExceptionUtils.exceptionToString(e);
             } catch (TaskDataException e) {
                 // 出现TaskDataException，说明是数据错误。
                 taskCronerLog.setState(TaskData.STATE_FAIL_DATA);
+                resultData = ExceptionUtils.exceptionToString(e);
+            } catch (TaskPartnerException e) {
+                // 出现TaskPartnerException，说明是合作方的错误。
+                taskCronerLog.setState(TaskData.STATE_FAIL_PARTNER);
                 resultData = ExceptionUtils.exceptionToString(e);
             } catch (Throwable e) {
                 resultData = ExceptionUtils.exceptionToString(e);
@@ -205,19 +221,17 @@ public class TaskCronerContainer {
                 }
                 int timeWait = 0, timeRun = 0;
                 if (taskCronerLog.getScheduleDate() != null) {
-                    timeWait = (int) (taskCronerLog.getRunDate().getTime() - taskCronerLog.getScheduleDate().getTime());
-                    //特定情况下，time wait<0，我认为是计算误差，在此进行修正。
-                    if (timeWait < 0) {
-                        timeWait = 0;
-                    }
+                    // 特定情况下 timeWait<0 为时钟误差，统一 Math.max(0,...) 兜底；Math.min 防溢出（对齐 Delayer/Runner）
+                    timeWait = TaskStatsService.toIntClamped(taskCronerLog.getRunDate().getTime() - taskCronerLog.getScheduleDate().getTime());
                 }
-                timeRun = (int) (taskCronerLog.getFinishDate().getTime() - taskCronerLog.getRunDate().getTime());
+                timeRun = TaskStatsService.toIntClamped(taskCronerLog.getFinishDate().getTime() - taskCronerLog.getRunDate().getTime());
                 //开始输出统计数据。
-                TaskStatsService.updateCronerStats(taskCronerConfig.getId(), 1, taskCronerLog.getState() == TaskData.STATE_FAIL_PROGRAM ? 1 : 0,
-                        taskCronerLog.getState() == TaskData.STATE_FAIL_CONFIG ? 1 : 0, taskCronerLog.getState() == TaskData.STATE_FAIL_DATA ? 1 : 0,
-                        taskCronerLog.getState() == TaskData.STATE_FAIL_PARTNER ? 1 : 0, timeWait, timeRun);
-                // 入库
-                taskApiClient.sendTaskCronerLog(taskCronerConfig.getId(), taskCronerLog);
+                int[] failCounters = TaskStatsService.toFailCounters(taskCronerLog.getState());
+                TaskStatsService.updateCronerStats(taskCronerConfig.getId(), 1, failCounters[0], failCounters[1], failCounters[2], failCounters[3], timeWait, timeRun);
+                // 入库（对齐 Runner/Delayer：logLevel > NONE 才发日志）
+                if (taskCronerConfig.getLogLevel() > TaskRunnerConfig.TASK_LOG_TYPE_NONE) {
+                    taskApiClient.sendTaskCronerLog(taskCronerConfig.getId(), taskCronerLog);
+                }
             }
             return nextExec;
         });
@@ -226,9 +240,11 @@ public class TaskCronerContainer {
     }
 
     /**
-     * 停止一个任务。
+     * 停止一个定时任务：cancel(true) 中断正在执行的任务，并从 {@link #cronerTasks} map 中移除，
+     * 避免已取消的 future 残留在 map 中干扰后续重新注册。
      *
-     * @param id 任务编号
+     * @param id 任务配置编号
+     * @return 成功取消返回 true；map 中无对应调度返回 false
      */
     public boolean stopTask(long id) {
         ScheduledFuture<?> future = this.cronerTasks.get(id);
@@ -236,11 +252,12 @@ public class TaskCronerContainer {
             return false;
         }
         future.cancel(true);
+        this.cronerTasks.remove(id);
         return true;
     }
 
     /**
-     * 销毁所有的task
+     * 停止所有定时任务并关闭调度线程池：逐个 cancel(true) 已注册的 future，再 shutdownNow 线程池。
      */
     public void stopAllTaskCroner() {
         log.info("All TaskCroner Destroy....");

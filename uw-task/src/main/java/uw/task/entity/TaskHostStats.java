@@ -60,6 +60,11 @@ public class TaskHostStats implements Serializable {
     private int runnerNum;
 
     /**
+     * 延迟任务数量
+     */
+    private int delayerNum;
+
+    /**
      * jvm内存总数
      */
     private long jvmMemMax;
@@ -104,6 +109,11 @@ public class TaskHostStats implements Serializable {
      * runner运行统计信息。
      */
     private List<TaskRunnerStats> taskRunnerStatsList;
+
+    /**
+     * delay运行统计信息。
+     */
+    private List<TaskDelayerStats> taskDelayerStatsList;
 
     public long getId() {
         return id;
@@ -177,6 +187,14 @@ public class TaskHostStats implements Serializable {
         this.runnerNum = runnerNum;
     }
 
+    public int getDelayNum() {
+        return delayerNum;
+    }
+
+    public void setDelayNum(int delayNum) {
+        this.delayerNum = delayNum;
+    }
+
     public long getJvmMemMax() {
         return jvmMemMax;
     }
@@ -247,5 +265,13 @@ public class TaskHostStats implements Serializable {
 
     public void setTaskRunnerStatsList(List<TaskRunnerStats> taskRunnerStatsList) {
         this.taskRunnerStatsList = taskRunnerStatsList;
+    }
+
+    public List<TaskDelayerStats> getTaskDelayStatsList() {
+        return taskDelayerStatsList;
+    }
+
+    public void setTaskDelayStatsList(List<TaskDelayerStats> taskDelayStatsList) {
+        this.taskDelayerStatsList = taskDelayStatsList;
     }
 }

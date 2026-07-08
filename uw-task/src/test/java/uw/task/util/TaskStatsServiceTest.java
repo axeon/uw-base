@@ -33,7 +33,7 @@ class TaskStatsServiceTest {
         assertEquals(15, stats.getNumAll());
         assertEquals(1, stats.getNumFailProgram());
         assertEquals(3, stats.getNumFailConfig());
-        assertEquals(1, stats.getNumFailPartner());
+        assertEquals(4, stats.getNumFailPartner()); // 第一次传 3 + 第二次传 1，累加为 4
         assertEquals(150, stats.getTimeWaitQueue());
         assertEquals(260, stats.getTimeWaitDelay());
         assertEquals(370, stats.getTimeRun());

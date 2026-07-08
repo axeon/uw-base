@@ -17,7 +17,8 @@ import java.nio.charset.StandardCharsets;
  * 序列化/反序列化委托给 {@link KryoUtils}。当前场景下消息体固定为 {@link TaskData}，
  * 故两端类型已知，用 {@link KryoUtils#serialize(Object)} / {@link KryoUtils#deserialize(byte[], Class)}
  * （不带外层类信息），比 writeClassAndObject 更省体积。
- * TaskData 内部的泛型/Object 字段（taskParam、resultData、refObject）仍按需自带类信息（由 kryo 处理）。
+ * TaskData 实现 {@link com.esotericsoftware.kryo.KryoSerializable} 自写原语字段，
+ * refObject 不参与序列化（内存态字段），taskParam/resultData 用 writeClassAndObject 携带类型。
  *
  * @author axeon
  */
@@ -30,7 +31,7 @@ public class TaskMessageConverter implements MessageConverter {
      * <p>
      * 序列化时写入消息头，反序列化时据此判断是否本转换器处理的消息；非此类型的消息会被忽略并告警。
      */
-    private static final String CONTENT_TYPE_TASK_DATA = "UT_DATA";
+    private static final String CONTENT_TYPE_TASK_DATA = "UT_DATA:1.0";
 
     /**
      * 默认构造器。

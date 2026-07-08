@@ -1,7 +1,12 @@
 package uw.task;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -11,7 +16,7 @@ import java.util.Date;
  *
  * @author axeon
  */
-public class TaskData<TP, RD> implements Serializable {
+public class TaskData<TP, RD> implements Serializable, KryoSerializable {
 
     /**
      * 任务状态:未设置
@@ -61,10 +66,7 @@ public class TaskData<TP, RD> implements Serializable {
      * 用户手工重试
      */
     public static final int RETRY_TYPE_MANUAL = 1;
-    /**
-     * serialVersionUID
-     */
-    private static final long serialVersionUID = 1333167065535557828L;
+
     /**
      * id，此序列值由框架自动生成，无需手工设置。
      */
@@ -310,6 +312,20 @@ public class TaskData<TP, RD> implements Serializable {
         taskData.setRanTimes(this.ranTimes);
         taskData.setState(this.state);
         return taskData;
+    }
+
+    /**
+     * 为重试清场运行期字段：清 consumeDate/runDate/finishDate/resultData/errorInfo，state 置 UNKNOWN。
+     * <p>不清 id/taskClass/taskTag/taskParam/queueDate/taskDelay/retryType（重试仍需要）。
+     * 也不清 refObject（内存态字段，由调用方按需清理）。
+     */
+    public void cleanForRetry() {
+        this.consumeDate = null;
+        this.runDate = null;
+        this.finishDate = null;
+        this.resultData = null;
+        this.errorInfo = null;
+        this.state = STATE_UNKNOWN;
     }
 
     /**
@@ -592,6 +608,83 @@ public class TaskData<TP, RD> implements Serializable {
      */
     public void setState(int status) {
         this.state = status;
+    }
+
+    /**
+     * Kryo 手工序列化：按固定顺序写原语字段（实现 {@link KryoSerializable}）。
+     * <p>
+     * 相比 FieldSerializer 反射，省去类名/字段名开销，体积更小、速度更快（参考 {@code KryoUtils} JMH 实测）。
+     * <b>refObject 刻意不写入</b>：它是内存态关联对象（{@code @JsonIgnore}、注释"不存入数据库"），
+     * 不应跨 MQ 传输——任意 Object 跨网络会带来体积不可控、序列化失败（抛 KryoException 中断投递）、潜在信息泄露。
+     * taskParam/resultData 为任意类型，用 {@code kryo.writeClassAndObject} 携带类型信息。
+     * <p>
+     * <b>读写顺序必须严格一致</b>，错位会导致反序列化数据损坏。
+     *
+     * @param kryo   kryo 实例（用于 writeClassAndObject 写嵌套对象）
+     * @param output kryo 输出流
+     */
+    @Override
+    public void write(Kryo kryo, Output output) {
+        output.writeVarLong(id, true);
+        output.writeString(refTag == null ? "" : refTag);
+        output.writeVarLong(refId, true);
+        output.writeVarLong(refSubId, true);
+        // refObject 刻意不写（内存态字段，不跨 MQ 传输）
+        output.writeString(rateLimitTag == null ? "" : rateLimitTag);
+        output.writeString(taskClass == null ? "" : taskClass);
+        output.writeString(taskTag == null ? "" : taskTag);
+        output.writeVarLong(taskDelay, true);
+        kryo.writeClassAndObject(output, taskParam);
+        output.writeVarInt(runType, true);
+        output.writeVarInt(retryType, true);
+        output.writeString(runTarget == null ? "" : runTarget);
+        output.writeVarLong(queueDate == null ? 0L : queueDate.getTime(), true);
+        output.writeVarLong(consumeDate == null ? 0L : consumeDate.getTime(), true);
+        output.writeVarLong(runDate == null ? 0L : runDate.getTime(), true);
+        output.writeVarLong(finishDate == null ? 0L : finishDate.getTime(), true);
+        kryo.writeClassAndObject(output, resultData);
+        output.writeString(errorInfo == null ? "" : errorInfo);
+        output.writeVarInt(ranTimes, true);
+        output.writeVarInt(state, true);
+    }
+
+    /**
+     * Kryo 手工反序列化：按 {@link #write} 的相同顺序读取填充字段。
+     * <p>
+     * taskParam/resultData 用 {@code kryo.readClassAndObject} 还原，泛型擦除下为 Object，按需强转。
+     * Date 以 0 为 null 哨兵（业务不会出现 1970-01-01 时间戳）。
+     *
+     * @param kryo  kryo 实例
+     * @param input kryo 输入流
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public void read(Kryo kryo, Input input) {
+        id = input.readVarLong(true);
+        refTag = input.readString();
+        refId = input.readVarLong(true);
+        refSubId = input.readVarLong(true);
+        rateLimitTag = input.readString();
+        taskClass = input.readString();
+        taskTag = input.readString();
+        taskDelay = input.readVarLong(true);
+        taskParam = (TP) kryo.readClassAndObject(input);
+        runType = input.readVarInt(true);
+        retryType = input.readVarInt(true);
+        runTarget = input.readString();
+        long v;
+        v = input.readVarLong(true);
+        queueDate = v == 0L ? null : new Date(v);
+        v = input.readVarLong(true);
+        consumeDate = v == 0L ? null : new Date(v);
+        v = input.readVarLong(true);
+        runDate = v == 0L ? null : new Date(v);
+        v = input.readVarLong(true);
+        finishDate = v == 0L ? null : new Date(v);
+        resultData = (RD) kryo.readClassAndObject(input);
+        errorInfo = input.readString();
+        ranTimes = input.readVarInt(true);
+        state = input.readVarInt(true);
     }
 
 

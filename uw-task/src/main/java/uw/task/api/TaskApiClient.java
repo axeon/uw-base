@@ -212,6 +212,57 @@ public class TaskApiClient {
     }
 
     /**
+     * 初始化延迟任务配置到服务端（首次注册时上传默认配置，服务端按三元组幂等去重）。
+     *
+     * @param config 延迟任务配置
+     * @return 服务端响应（含已分配的 id）；网络失败返回 null
+     */
+    public ResponseData<TaskDelayerConfig> initTaskDelayerConfig(TaskDelayerConfig config) {
+        try {
+            ResponseData<TaskDelayerConfig> result = authRestClient.post()
+                    .uri(taskProperties.getTaskCenterHost() + "/rpc/task/delayer/init")
+                    .body(config)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<ResponseData<TaskDelayerConfig>>() {});
+            return warnOnFailure(result, "initTaskDelayerConfig");
+        } catch (Exception e) {
+            log.error("TaskApiClient.initTaskDelayerConfig()上传延迟任务配置到服务端异常: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * 拉取指定 runTarget 与 taskProject 下、lastUpdateTime 之后变更的延迟任务配置列表。
+     *
+     * @param runTarget      运行目标
+     * @param taskProject    任务项目（包名前缀）
+     * @param lastUpdateTime 上次更新时间戳（毫秒），仅拉取此时间之后的增量
+     * @return 服务端响应（配置列表）；网络失败返回 null
+     */
+    public ResponseData<List<TaskDelayerConfig>> getTaskDelayerConfigList(String runTarget, String taskProject, long lastUpdateTime) {
+        try {
+            ResponseData<List<TaskDelayerConfig>> result = authRestClient.get()
+                    .uri(taskProperties.getTaskCenterHost() + "/rpc/task/delayer/list?runTarget={runTarget}&taskProject={taskProject}&lastUpdateTime={lastUpdateTime}",
+                            runTarget, taskProject, lastUpdateTime)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<ResponseData<List<TaskDelayerConfig>>>() {});
+            return warnOnFailure(result, "getTaskDelayerConfigList");
+        } catch (Exception e) {
+            log.error("TaskApiClient.getTaskDelayerConfigList()拉取延迟任务配置异常: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * 异步写入延迟任务执行日志到 ES（索引 uw.task.delay.log，不经服务端）。
+     *
+     * @param log 延迟任务执行日志
+     */
+    public void sendTaskDelayerLog(TaskDelayerLog log) {
+        logClient.log(log);
+    }
+
+    /**
      * 当服务端返回非成功状态时记录 warn 日志，便于排查；原样返回响应供上层判断。
      *
      * @param response 服务端响应

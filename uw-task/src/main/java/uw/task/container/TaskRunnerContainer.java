@@ -18,12 +18,17 @@ import uw.task.exception.TaskPartnerException;
 import uw.task.listener.RunnerTaskListener;
 import uw.task.util.TaskGlobalRateLimiter;
 import uw.task.util.TaskLocalRateLimiter;
+import uw.task.util.TaskRateLimitHelper;
 import uw.task.util.TaskStatsService;
 
 import java.util.List;
 
 /**
- * 在此处接受MQ信息，并进行处理。
+ * 队列任务执行容器：MQ 消费端 / 本地执行 / RPC 服务端的统一执行入口。
+ *
+ * <p>由 {@link TaskFactory} 的各个 run* 方法或 RabbitMQ MessageListenerAdapter 调用 {@link #process}，
+ * 统一处理限速、延时、异常分类、监听器回调、统计与日志、失败重试。支持三种 runType：
+ * {@code RUN_TYPE_GLOBAL}（MQ 消费）、{@code RUN_TYPE_LOCAL}（本地同步）、{@code RUN_TYPE_GLOBAL_RPC}（RPC 同步）。</p>
  *
  * @author axeon
  */
@@ -65,11 +70,12 @@ public class TaskRunnerContainer {
     /**
      * 默认构造器。
      *
-     * @param taskProperties
-     * @param taskApiClient
-     * @param taskLocalRateLimiter
-     * @param taskGlobalRateLimiter
-     * @param taskListenerManager
+     * @param taskProperties       任务全局配置
+     * @param taskApiClient        服务端任务 API 客户端（发送日志等）
+     * @param taskLocalRateLimiter 进程内限速器（LOCAL 系列限速）
+     * @param taskGlobalRateLimiter 全局限速器（GLOBAL 系列限速，基于 Redis）
+     * @param taskListenerManager  任务监听管理器（pre/postExecute 回调）
+     * @param taskMetaInfoManager  任务元信息管理器（runner 实例与配置索引）
      */
     public TaskRunnerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskLocalRateLimiter taskLocalRateLimiter,
                                TaskGlobalRateLimiter taskGlobalRateLimiter, TaskListenerManager taskListenerManager, TaskMetaInfoManager taskMetaInfoManager) {
@@ -143,46 +149,16 @@ public class TaskRunnerContainer {
                     boolean flag = taskLocalRateLimiter.tryAcquire(locker, taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), taskConfig.getRateLimitWait(), 1);
                     noLimitFlag = flag ? 0 : -1;
                 } else {
-                    // 限流 key 拼接规则：
-                    // - GLOBAL_TASK* 系列（TASK/TASK_TAG/TASK_HOST/TASK_TAG_HOST）：key 含 taskClass 前缀，
-                    //   即"按任务隔离"配额。
-                    // - GLOBAL_TAG / GLOBAL_HOST / GLOBAL_TAG_HOST：key 不含 taskClass，
-                    //   即"跨任务共享"配额——多个不同 task 只要 tag/host 相同即共享同一限流池。
-                    //   这是限流的常见场景（如多个任务都对接同一第三方接口，需共享 QPS 上限）。
-                    int rateLimitType = taskConfig.getRateLimitType();
-                    boolean taskScoped = rateLimitType == TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK
-                            || rateLimitType == TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_TAG
-                            || rateLimitType == TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_HOST
-                            || rateLimitType == TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_TAG_HOST;
-                    StringBuilder locker = new StringBuilder(50);
-                    if (taskScoped) {
-                        locker.append(taskData.getTaskClass());
-                    }
-                    switch (rateLimitType) {
-                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TAG:
-                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_TAG:
-                            locker.append("$").append(taskData.getRateLimitTag());
-                            break;
-                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_HOST:
-                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_HOST:
-                            locker.append("$@").append(taskProperties.getAppHost());
-                            break;
-                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK:
-                            locker.append("$");
-                            break;
-                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TAG_HOST:
-                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_TAG_HOST:
-                            locker.append("$").append(taskData.getRateLimitTag()).append("@").append(taskProperties.getAppHost());
-                            break;
-                        default:
-                            break;
-                    }
+                    // GLOBAL 系列：限流 key 拼接规则见 TaskRateLimitHelper.buildGlobalLocker。
+                    String locker = TaskRateLimitHelper.buildGlobalLocker(
+                            taskConfig.getRateLimitType(), taskData.getTaskClass(), taskData.getRateLimitTag(), taskProperties.getAppHost());
                     // 全局流量限制
                     // 检查是否超过流量限制
                     // 开始进行延时等待
-                    long end = SystemClock.now() + taskConfig.getRateLimitWait() * 1000;
+                    // rateLimitWait 为 int（秒），乘 1000L 转毫秒时必须用 long 字面量，避免 int 溢出
+                    long end = SystemClock.now() + taskConfig.getRateLimitWait() * 1000L;
                     while (SystemClock.now() <= end) {
-                        noLimitFlag = taskGlobalRateLimiter.tryAcquire(locker.toString(), taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), 1);
+                        noLimitFlag = taskGlobalRateLimiter.tryAcquire(locker, taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), 1);
                         if (noLimitFlag == 0) {
                             break;
                         }
@@ -252,14 +228,11 @@ public class TaskRunnerContainer {
         // 不管如何，都给设定结束日期。
         taskData.setFinishDate(SystemClock.nowDate());
         //开始输出统计数据。
-        TaskStatsService.updateRunnerStats(taskConfig.getId(), 1,
-                taskData.getState() == TaskData.STATE_FAIL_PROGRAM ? 1 : 0,
-                taskData.getState() == TaskData.STATE_FAIL_CONFIG ? 1 : 0,
-                taskData.getState() == TaskData.STATE_FAIL_DATA ? 1 : 0,
-                taskData.getState() == TaskData.STATE_FAIL_PARTNER ? 1 : 0,
-                (int) (taskData.getConsumeDate().getTime() - (taskData.getQueueDate() != null ? taskData.getQueueDate().getTime() : taskData.getConsumeDate().getTime())),
-                (int) (taskData.getRunDate().getTime() - taskData.getConsumeDate().getTime()),
-                (int) (taskData.getFinishDate().getTime() - taskData.getRunDate().getTime()));
+        int[] failCounters = TaskStatsService.toFailCounters(taskData.getState());
+        TaskStatsService.updateRunnerStats(taskConfig.getId(), 1, failCounters[0], failCounters[1], failCounters[2], failCounters[3],
+                TaskStatsService.toIntClamped(taskData.getConsumeDate().getTime() - (taskData.getQueueDate() != null ? taskData.getQueueDate().getTime() : taskData.getConsumeDate().getTime())),
+                TaskStatsService.toIntClamped(taskData.getRunDate().getTime() - taskData.getConsumeDate().getTime()),
+                TaskStatsService.toIntClamped(taskData.getFinishDate().getTime() - taskData.getRunDate().getTime()));
         // 保存日志与统计信息
         int logLevel = taskConfig.getLogLevel();
         if (logLevel > TaskRunnerConfig.TASK_LOG_TYPE_NONE) {
@@ -321,12 +294,7 @@ public class TaskRunnerContainer {
         TaskData taskData = srcData.copy();
         //先清除一些任务信息。
         taskData.setRefObject(null);
-        taskData.setConsumeDate(null);
-        taskData.setRunDate(null);
-        taskData.setFinishDate(null);
-        taskData.setResultData(null);
-        taskData.setErrorInfo(null);
-        taskData.setState(TaskData.STATE_UNKNOWN);
+        taskData.cleanForRetry();
         return taskData;
     }
 

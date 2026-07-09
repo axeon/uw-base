@@ -233,13 +233,15 @@ public class TaskAutoConfiguration {
         // 以下组件仅在 taskFactory Bean 内部初始化；若该 Bean 因依赖缺失等原因未创建，
         // 这些字段为 null，直接调用会 NPE 并掩盖真正的关闭异常，故先判空。
         if (taskServiceRegistrar != null) {
-            taskServiceRegistrar.stopAllTaskRunner();
-        }
-        if (taskCronerContainer != null) {
-            taskCronerContainer.stopAllTaskCroner();
-        }
-        if (taskDelayerContainer != null) {
-            taskDelayerContainer.stopAllTaskDelayer();
+            // 持 configLock 停所有任务（与在途 updateConfig/reportHostInfo 互斥，避免 stopAll 的 clear 与 registerQueueListener/configureTask 交错）
+            taskServiceRegistrar.shutdownAllTasks();
+        } else {
+            if (taskCronerContainer != null) {
+                taskCronerContainer.stopAllTaskCroner();
+            }
+            if (taskDelayerContainer != null) {
+                taskDelayerContainer.stopAllTaskDelayer();
+            }
         }
         // 关闭任务专用 RabbitMQ / Redis 连接工厂：二者均为 taskFactory Bean 内手工 new 的 DisposableBean，
         // 非 Spring 管理，Spring 不会代为销毁，优雅关闭场景下不关会残留连接。

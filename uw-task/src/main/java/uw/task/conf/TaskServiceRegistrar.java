@@ -469,6 +469,9 @@ public class TaskServiceRegistrar {
                     localConfig.setTaskClass(entry.getKey());
                     localConfig.setRunTarget(taskProperties.getRunTarget());
                     taskApiClient.initTaskDelayerConfig(localConfig);
+                    // 与降级路径对称：首次上传后立即用本地默认配置填 delayerConfigMap + 启动 poll handle，
+                    // 否则 center 回显前(~60s) submit() 找不到配置抛异常 + 无 handle 消费
+                    taskDelayerContainer.configureTaskDelayer(localConfig);
                     TaskContact contact = runner.initContact();
                     if (contact != null) {
                         contact.setTaskClass(entry.getKey());
@@ -505,6 +508,23 @@ public class TaskServiceRegistrar {
         }
         // 清空 map：禁用主机解除后，updateConfig 主循环 registerQueueListener 才会重新创建 listener（否则 map 残留已 destroy 的容器导致跳过）
         queueListenerMap.clear();
+    }
+
+    /**
+     * 应用关闭(@PreDestroy)时停所有任务，持 configLock 与在途 updateConfig/reportHostInfo 互斥，
+     * 避免 stopAll 的 clear/destroy 与并发的 registerQueueListener/configureTask 交错（listener 泄漏或写入已销毁容器）。
+     */
+    public void shutdownAllTasks() {
+        configLock.lock();
+        try {
+            stopAllTaskRunner();
+            taskCronerContainer.stopAllTaskCroner();
+            if (taskDelayerContainer != null) {
+                taskDelayerContainer.stopAllTaskDelayer();
+            }
+        } finally {
+            configLock.unlock();
+        }
     }
 
     /**
@@ -682,6 +702,8 @@ public class TaskServiceRegistrar {
                 map.put(key, config);
                 if (config.getState() < 1) {
                     taskMetaInfoManager.removeCronerConfig(key);
+                    // 停掉孤儿 future：center 删除/禁用(state<1)后，已调度的 cron 不应再触发（否则持续跑已废止的业务，直到重启）
+                    taskCronerContainer.stopTask(key);
                 } else {
                     taskMetaInfoManager.setCronerConfig(key, config);
                 }
@@ -706,6 +728,8 @@ public class TaskServiceRegistrar {
                 String key = taskMetaInfoManager.getRunnerConfigKey(config);
                 if (config.getState() < 1) {
                     taskMetaInfoManager.removeRunnerConfig(key);
+                    // 销毁残留 listener：center 删除/禁用(state<1)后，已注册的 MQ listener 不应继续占用连接/消费
+                    registerQueueListener(config);
                 } else {
                     taskMetaInfoManager.setRunnerConfig(key, config);
                 }

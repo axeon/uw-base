@@ -163,7 +163,13 @@ public class TaskCronerContainer {
             // 任务逻辑
             TaskCronerLog taskCronerLog = new TaskCronerLog(taskCronerConfig.getLogLevel(), taskCronerConfig.getLogLimitSize());
             logHolder[0] = taskCronerLog;
-            taskCronerLog.setId(taskSequenceManager.nextId("TaskCronerLog"));
+            try {
+                taskCronerLog.setId(taskSequenceManager.nextId("TaskCronerLog"));
+            } catch (Exception e) {
+                // Redis 故障致 nextId 失败：id 保持 0，trigger 回调的 id>0 守门会跳过日志/统计落库；
+                // 此处 WARN 让运维可见（不抛出，runTask 仍执行，避免 Redis 抖动静默吞掉整轮调度且无任何痕迹）
+                log.warn("Croner[{}] nextId 失败,本轮跳过日志/统计: {}", taskCronerConfig.getTaskClass(), e.getMessage());
+            }
             taskCronerLog.setTaskClass(taskCronerConfig.getTaskClass());
             taskCronerLog.setTaskParam(taskCronerConfig.getTaskParam());
             taskCronerLog.setTaskCron(taskCronerConfig.getTaskCron());

@@ -113,6 +113,23 @@ public class TaskRunnerContainer {
             log.warn("正在处理的TaskData为NULL，请检查日志.");
             return null;
         }
+        try {
+            return processInternal(taskData);
+        } catch (Throwable e) {
+            // 兜底守护：未守护路径（getRunnerConfigByData 找不到配置 / 限速 tryAcquire Redis 故障 / 重试 sendToQueue MQ 故障等）
+            // 抛异常会逃逸到 MessageListenerAdapter，配合 defaultRequeueRejected(false) 会直接丢消息——
+            // 此处 catch 保证消息 ack（不丢），映射失败状态 + errorInfo 让统计/日志可观测。
+            taskData.setState(TaskData.STATE_FAIL_PROGRAM);
+            taskData.setErrorInfo(ExceptionUtils.exceptionToString(e));
+            if (taskData.getFinishDate() == null) {
+                taskData.setFinishDate(SystemClock.nowDate());
+            }
+            log.error("TaskRunner process 未预期异常(已捕获防丢消息),taskClass={}: {}", taskData.getTaskClass(), e.getMessage(), e);
+            return taskData;
+        }
+    }
+
+    private TaskData processInternal(TaskData taskData) {
         // 设置开始消费时间
         taskData.setConsumeDate(SystemClock.nowDate());
         // 获取任务实例

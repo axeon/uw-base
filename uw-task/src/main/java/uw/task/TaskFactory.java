@@ -140,7 +140,7 @@ public class TaskFactory {
         for (int i = 0; i < MAX_RETRY_TIMES; i++) {
             try {
                 if (i > 0) {
-                    Thread.sleep(i * 500);
+                    Thread.sleep(i * 100);
                 }
                 rabbitTemplate.send(queue, queue, message);
                 return;

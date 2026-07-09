@@ -174,8 +174,13 @@ public class TaskDelayerContainer {
 
     /**
      * 注册/更新一个延迟任务配置：按 state 启动或暂停对应的 poll+worker。
+     * <p>线程安全：本方法及 {@link #stop}、{@link #suspendAll}、{@link #destroyAll} 的所有生产调用路径都在
+     * {@code TaskServiceRegistrar.configLock} 内串行执行（updateConfig / reportHostInfo 禁用分支 / shutdownAllTasks 持锁调用），
+     * {@code runHandleMap} 为 ConcurrentHashMap（{@link #fillDelayerStats} 在锁外并发读亦安全），故无需 synchronized。
+     * 注意：handle.stop(30000) 的 drain 仍在 configLock 持有期间执行，会阻塞竞争同一锁的 suspendAll/destroyAll
+     *（仅 consumerNum 变更触发重建时 drain，罕见，通常 &lt;1s）。</p>
      */
-    public synchronized void configureTaskDelayer(TaskDelayerConfig config) {
+    public void configureTaskDelayer(TaskDelayerConfig config) {
         // 配置兜底：防止 0/负值导致 busy poll(pollInterval=0)、永不取数(prefetchNum=0)、并发0
         if (config.getPollInterval() < 1) {
             config.setPollInterval(1);
@@ -296,12 +301,12 @@ public class TaskDelayerContainer {
     /**
      * 停止指定 configKey 的 delayer handle（drain 30s 等在途完成），并从 runHandleMap 移除。
      * <p>对齐 TaskCronerContainer.stop(String)：单一职责只管运行句柄，配置缓存移除由调用方负责。
-     * 与 configureTaskDelayer 同监视器（this），从其内部调用为同线程重入，无自锁。</p>
+     * 线程安全由 TaskServiceRegistrar.configLock 保证（与 configureTaskDelayer 同在 configLock 内串行调用，从其内部调用为同线程重入）。</p>
      *
      * @param configKey 配置键 taskClass#taskTag$runTarget
      * @return 是否存在并停止了 handle
      */
-    public synchronized boolean stop(String configKey) {
+    public boolean stop(String configKey) {
         TaskDelayerRunHandle handle = runHandleMap.get(configKey);
         if (handle != null) {
             handle.stop(30000);
@@ -315,7 +320,7 @@ public class TaskDelayerContainer {
     /**
      * 暂停所有延迟任务（host 禁用）：drain 30s 等在途完成，不丢任务。
      */
-    public synchronized void suspendAll() {
+    public void suspendAll() {
         log.info("All TaskDelayer Suspended....");
         for (TaskDelayerRunHandle handle : runHandleMap.values()) {
             handle.stop(30000);
@@ -327,7 +332,7 @@ public class TaskDelayerContainer {
     /**
      * 销毁所有延迟任务（@PreDestroy）：drain 5s + shutdownNow 兜底，不阻塞应用关闭太久。
      */
-    public synchronized void destroyAll() {
+    public void destroyAll() {
         log.info("All TaskDelayer Destroy....");
         for (TaskDelayerRunHandle handle : runHandleMap.values()) {
             handle.stop(5000);

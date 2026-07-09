@@ -1,7 +1,14 @@
 package uw.task.container;
 
+import com.rabbitmq.client.AMQP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import uw.common.util.ExceptionUtils;
 import uw.common.util.SystemClock;
 import uw.task.TaskData;
@@ -11,17 +18,20 @@ import uw.task.TaskRunner;
 import uw.task.api.TaskApiClient;
 import uw.task.conf.TaskMetaInfoManager;
 import uw.task.conf.TaskProperties;
+import uw.task.converter.TaskMessageConverter;
 import uw.task.entity.TaskRunnerConfig;
 import uw.task.entity.TaskRunnerLog;
-import uw.task.exception.TaskDataException;
-import uw.task.exception.TaskPartnerException;
-import uw.task.listener.RunnerTaskListener;
+import uw.task.entity.TaskRunnerStats;
+import uw.task.listener.TaskRunnerListener;
 import uw.task.util.TaskGlobalRateLimiter;
 import uw.task.util.TaskLocalRateLimiter;
 import uw.task.util.TaskRateLimitHelper;
 import uw.task.util.TaskStatsService;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 队列任务执行容器：MQ 消费端 / 本地执行 / RPC 服务端的统一执行入口。
@@ -68,6 +78,21 @@ public class TaskRunnerContainer {
     private final TaskListenerManager taskListenerManager;
 
     /**
+     * RabbitMQ 管理器（声明队列/交换机/绑定 + 查询队列积压）。
+     */
+    private final RabbitAdmin rabbitAdmin;
+
+    /**
+     * 任务专用的 RabbitMQ 连接工厂（用于队列监听容器）。
+     */
+    private final ConnectionFactory taskConnectionFactory;
+
+    /**
+     * container缓存。key=队列名,value=container。
+     */
+    private final ConcurrentHashMap<String, SimpleMessageListenerContainer> queueListenerMap = new ConcurrentHashMap<>();
+
+    /**
      * 默认构造器。
      *
      * @param taskProperties        任务全局配置
@@ -76,15 +101,20 @@ public class TaskRunnerContainer {
      * @param taskLocalRateLimiter  进程内限速器（LOCAL 系列限速）
      * @param taskGlobalRateLimiter 全局限速器（GLOBAL 系列限速，基于 Redis）
      * @param taskListenerManager   任务监听管理器（pre/postExecute 回调）
+     * @param rabbitAdmin           RabbitMQ 管理器（声明队列/交换机/绑定 + 查询积压）
+     * @param taskConnectionFactory 任务专用 RabbitMQ 连接工厂（队列监听容器用）
      */
     public TaskRunnerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskMetaInfoManager taskMetaInfoManager,
-                               TaskLocalRateLimiter taskLocalRateLimiter, TaskGlobalRateLimiter taskGlobalRateLimiter, TaskListenerManager taskListenerManager) {
+                               TaskLocalRateLimiter taskLocalRateLimiter, TaskGlobalRateLimiter taskGlobalRateLimiter, TaskListenerManager taskListenerManager,
+                               RabbitAdmin rabbitAdmin, ConnectionFactory taskConnectionFactory) {
         this.taskProperties = taskProperties;
         this.taskApiClient = taskApiClient;
         this.taskMetaInfoManager = taskMetaInfoManager;
         this.taskLocalRateLimiter = taskLocalRateLimiter;
         this.taskGlobalRateLimiter = taskGlobalRateLimiter;
         this.taskListenerManager = taskListenerManager;
+        this.rabbitAdmin = rabbitAdmin;
+        this.taskConnectionFactory = taskConnectionFactory;
     }
 
 
@@ -181,49 +211,29 @@ public class TaskRunnerContainer {
         // 增加执行信息
         taskData.setRanTimes(taskData.getRanTimes() + 1);
 
-        // 限制标记，0时说明无限制
-        long noLimitFlag = 0;
+        // 限速是否通过：true=通过可执行；RPC/LOCAL 模式与无限制时默认通过。
+        boolean rateLimitPassed = true;
         // 对于RPC调用和本地调用来说，不受任何流控限制。
         if (taskData.getRunType() != TaskData.RUN_TYPE_GLOBAL_RPC && taskData.getRunType() != TaskData.RUN_TYPE_LOCAL) {
-            if (taskConfig.getRateLimitType() != TaskRunnerConfig.RATE_LIMIT_NONE) {
-                if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_LOCAL) {
-                    // 进程内限制
-                    boolean flag = taskLocalRateLimiter.tryAcquire("", taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), taskConfig.getRateLimitWait(), 1);
-                    noLimitFlag = flag ? 0 : -1;
-                } else if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_LOCAL_TASK) {
-                    // 进程内+任务名限制
-                    boolean flag = taskLocalRateLimiter.tryAcquire(taskData.getTaskClass(), taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(),
-                            taskConfig.getRateLimitWait(), 1);
-                    noLimitFlag = flag ? 0 : -1;
-                } else if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_LOCAL_TASK_TAG) {
-                    // 进程内+任务名限制
-                    String locker = taskData.getTaskClass() + "$" + taskData.getRateLimitTag();
-                    boolean flag = taskLocalRateLimiter.tryAcquire(locker, taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), taskConfig.getRateLimitWait(), 1);
-                    noLimitFlag = flag ? 0 : -1;
+            int rateLimitType = taskConfig.getRateLimitType();
+            if (rateLimitType != TaskRunnerConfig.RATE_LIMIT_NONE) {
+                int rateLimitValue = taskConfig.getRateLimitValue();
+                int rateLimitTime = taskConfig.getRateLimitTime();
+                int rateLimitWait = taskConfig.getRateLimitWait();
+                String taskClass = taskData.getTaskClass();
+                String rateLimitTag = taskData.getRateLimitTag();
+                if (rateLimitType == TaskRunnerConfig.RATE_LIMIT_LOCAL
+                        || rateLimitType == TaskRunnerConfig.RATE_LIMIT_LOCAL_TASK
+                        || rateLimitType == TaskRunnerConfig.RATE_LIMIT_LOCAL_TASK_TAG) {
+                    // 进程内限速：限流 key 拼接见 TaskRateLimitHelper.buildLocalLocker
+                    String locker = TaskRateLimitHelper.buildLocalLocker(rateLimitType, taskClass, rateLimitTag);
+                    rateLimitPassed = taskLocalRateLimiter.tryAcquire(locker, rateLimitValue, rateLimitTime, rateLimitWait, 1);
                 } else {
-                    // GLOBAL 系列：限流 key 拼接规则见 TaskRateLimitHelper.buildGlobalLocker。
-                    String locker = TaskRateLimitHelper.buildGlobalLocker(
-                            taskConfig.getRateLimitType(), taskData.getTaskClass(), taskData.getRateLimitTag(), taskProperties.getAppHost());
-                    // 全局流量限制
-                    // 检查是否超过流量限制
-                    // 开始进行延时等待
-                    // rateLimitWait 为 int（秒），乘 1000L 转毫秒时必须用 long 字面量，避免 int 溢出
-                    long end = SystemClock.now() + taskConfig.getRateLimitWait() * 1000L;
-                    while (SystemClock.now() <= end) {
-                        noLimitFlag = taskGlobalRateLimiter.tryAcquire(locker, taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), 1);
-                        if (noLimitFlag == 0) {
-                            break;
-                        }
-                        try {
-                            Thread.sleep(noLimitFlag);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            break;
-                        }
-                    }
+                    // GLOBAL 系列：限流 key 见 buildGlobalLocker，等待循环见 acquireGlobalWithWait
+                    String locker = TaskRateLimitHelper.buildGlobalLocker(rateLimitType, taskClass, rateLimitTag, taskProperties.getAppHost());
+                    rateLimitPassed = TaskRateLimitHelper.acquireGlobalWithWait(taskGlobalRateLimiter, locker, rateLimitValue, rateLimitTime, rateLimitWait);
                 }
             }
-
         }
         // 执行任务延时设定，必须是无延时队列功能，才会执行线程延时。
         if (taskConfig.getDelayType() == TaskRunnerConfig.TYPE_DELAY_OFF && taskData.getTaskDelay() > 0 && taskData.getQueueDate() != null) {
@@ -239,31 +249,26 @@ public class TaskRunnerContainer {
         // 设置开始执行时间
         taskData.setRunDate(SystemClock.nowDate());
         // 如果允许，则开始执行。
-        if (noLimitFlag == 0) {
-            List<RunnerTaskListener> runnerListenerList = taskListenerManager.getRunnerListenerList();
+        if (rateLimitPassed) {
+            List<TaskRunnerListener> runnerListenerList = taskListenerManager.getRunnerListenerList();
             try {
                 // 执行任务
                 taskData.setResultData(taskRunner.runTask(taskData));
                 taskData.setState(TaskData.STATE_SUCCESS);
-            } catch (TaskDataException e) {
-                // 出现TaskDataException，说明是数据错误。
-                taskData.setState(TaskData.STATE_FAIL_DATA);
-                taskData.setErrorInfo(ExceptionUtils.exceptionToString(e));
-            } catch (TaskPartnerException e) {
-                // 出现TaskPartnerException，说明是合作方的错误。
-                taskData.setState(TaskData.STATE_FAIL_PARTNER);
-                taskData.setErrorInfo(ExceptionUtils.exceptionToString(e));
             } catch (Throwable e) {
-                // 设置异常状态
-                taskData.setState(TaskData.STATE_FAIL_PROGRAM);
+                // 异常分类：TaskDataException→DATA / TaskPartnerException→PARTNER / 其余→PROGRAM
+                int failState = TaskStatsService.mapFailureState(e);
+                taskData.setState(failState);
                 // 设置异常信息，自动屏蔽spring自己的输出。
                 taskData.setErrorInfo(ExceptionUtils.exceptionToString(e));
-                log.error(e.getMessage(), e);
+                if (failState == TaskData.STATE_FAIL_PROGRAM) {
+                    log.error(e.getMessage(), e);
+                }
             }
             // 执行监听器操作
             if (runnerListenerList != null && runnerListenerList.size() > 0) {
                 try {
-                    for (RunnerTaskListener listener : runnerListenerList) {
+                    for (TaskRunnerListener listener : runnerListenerList) {
                         listener.onPostExecute(taskData);
                     }
                 } catch (Throwable e) {
@@ -299,7 +304,7 @@ public class TaskRunnerContainer {
             // 如果异常，根据任务设置，重新跑
             if (taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO) {
                 if (taskData.getState() > TaskData.STATE_SUCCESS) {
-                    //设置任务延时，原计划使用Math.pow(2,x)的，后来决定不用了
+                    //设置任务延时
                     taskData.setTaskDelay(taskData.getRanTimes() * taskProperties.getTaskRpcRetryDelay());
                     if (taskData.getState() == TaskData.STATE_FAIL_CONFIG) {
                         // 重试判定用 <=：ranTimes 含本次执行，N 次额外重试意味着 ranTimes 可达 N+1。
@@ -319,7 +324,7 @@ public class TaskRunnerContainer {
             // 如果异常，根据任务设置，重新跑
             if (taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO) {
                 if (taskData.getState() > TaskData.STATE_SUCCESS) {
-                    //设置任务延时，原计划使用Math.pow(2,x)的，后来决定不用了
+                    //设置任务延时
                     taskData.setTaskDelay(taskData.getRanTimes() * taskProperties.getTaskQueueRetryDelay());
                     if (taskData.getState() == TaskData.STATE_FAIL_CONFIG) {
                         // 重试判定用 <=：ranTimes 含本次执行，N 次额外重试意味着 ranTimes 可达 N+1。
@@ -348,6 +353,213 @@ public class TaskRunnerContainer {
         taskData.setRefObject(null);
         taskData.cleanForRetry();
         return taskData;
+    }
+
+    /**
+     * 注册/更新 RabbitMQ 队列监听容器：首次按配置声明队列/交换机/绑定并启动监听，
+     * 后续周期按 state/consumerNum/prefetchNum 动态调整或销毁。
+     *
+     * @param runnerConfig runner 配置信息
+     */
+    public void registerQueueListener(TaskRunnerConfig runnerConfig) {
+        String queueName = taskMetaInfoManager.getQueueNameByConfig(runnerConfig);
+        SimpleMessageListenerContainer sysContainer = queueListenerMap.computeIfAbsent(queueName, key -> {
+            if (runnerConfig.getState() != 1) {
+                log.warn("!TaskRunner: [{}]状态为暂停，不进行注册。。。", queueName);
+                return null;
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("TaskRunner: [{}]正在注册并启动监听...", queueName);
+            }
+            try {
+                Queue queue = QueueBuilder.durable(queueName).build();
+                // 声明处理
+                declareManage(queue);
+                // 启动任务监听器
+                SimpleMessageListenerContainer container = bindMessageListenerContainer(runnerConfig, queueName);
+                if (runnerConfig.getDelayType() == TaskRunnerConfig.TYPE_DELAY_ON) {
+                    // 建立TTL队列，需要设置名称
+                    Queue ttlQueue =
+                            QueueBuilder.durable(taskMetaInfoManager.getTTLQueueName(queueName))
+                                    .withArgument("x-dead-letter-exchange", queueName)
+                                    .withArgument("x-dead-letter-routing-key", queueName)
+                                    .build();
+                    // 声明处理
+                    declareManage(ttlQueue);
+                }
+                return container;
+            } catch (Exception e) {
+                // 此处每分钟（updateConfig 周期）会重试，为避免大堆栈刷屏仅打 message；
+                // 配置持续失败（如 MQ 不可用）会在后续周期自动重试恢复。
+                log.warn("任务队列创建失败, 将持续重试: queue=[{}], msg={}", queueName, e.getMessage());
+            }
+            return null;
+        });
+        if (sysContainer != null) {
+            if (runnerConfig.getState() == 1) {
+                try {
+                    //只有runner的queueType才可以在线设置。对于配置了死信队列，此处消费者配置为配置死信队列消费
+                    if (runnerConfig.getQueueType() == TaskRunnerConfig.TYPE_QUEUE_TASK) {
+                        sysContainer.setMaxConcurrentConsumers(runnerConfig.getConsumerNum());
+                        sysContainer.setConcurrentConsumers((int) Math.ceil(runnerConfig.getConsumerNum() * 0.1f));
+                        sysContainer.setPrefetchCount(runnerConfig.getPrefetchNum());
+                    }
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
+            } else {
+                // state<1：GROUP/PROJECT 队列共享，销毁前检查是否仍有其他活跃配置映射到同一 queueName，避免误销毁共享 listener（致同包其他 runner 消费中断）
+                boolean stillInUse = taskMetaInfoManager.getRunnerConfigMap().values().stream()
+                        .anyMatch(c -> queueName.equals(taskMetaInfoManager.getQueueNameByConfig(c)));
+                if (!stillInUse) {
+                    queueListenerMap.remove(queueName);
+                    sysContainer.destroy();
+                } else if (log.isDebugEnabled()) {
+                    log.debug("TaskRunner[{}]仍有活跃配置共享此队列，跳过 destroy", queueName);
+                }
+            }
+        }
+    }
+
+    /**
+     * 通过 RabbitAdmin 声明队列、直连交换机及其绑定关系（三者同名，routing key = 队列名）。
+     *
+     * @param queue 队列定义
+     */
+    public void declareManage(Queue queue) {
+        // 交换机
+        Exchange exchange = ExchangeBuilder.directExchange(queue.getName()).durable(true).build();
+        // 队列和交换机绑定
+        Binding binding = BindingBuilder.bind(queue).to(exchange).with(queue.getName()).noargs();
+        // 定义队列
+        rabbitAdmin.declareQueue(queue);
+        // 定义交换机
+        rabbitAdmin.declareExchange(exchange);
+        // 队列和交换机绑定
+        rabbitAdmin.declareBinding(binding);
+    }
+
+    /**
+     * 绑定队列监听器容器
+     *
+     * @param runnerConfig runner配置信息
+     * @param queueName    队列名称
+     * @return SimpleMessageListenerContainer 监听器容器
+     */
+    public SimpleMessageListenerContainer bindMessageListenerContainer(TaskRunnerConfig runnerConfig, String queueName) {
+        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
+        container.setAutoStartup(false);
+        // 消费者线程虚拟化：basicConsume 长连接等待 + process 内的 IO/限速 sleep 都 park 在虚拟线程上，不占平台载体
+        SimpleAsyncTaskExecutor taskExecutor = new SimpleAsyncTaskExecutor(queueName);
+        taskExecutor.setVirtualThreads(true);
+        container.setTaskExecutor(taskExecutor);
+        // 提高启动consumer速度。
+        container.setStartConsumerMinInterval(100);
+        container.setConsecutiveActiveTrigger(1);
+        container.setStopConsumerMinInterval(20000);
+        container.setConsecutiveIdleTrigger(3);
+        switch (runnerConfig.getQueueType()) {
+            case TaskRunnerConfig.TYPE_QUEUE_TASK:
+                container.setMaxConcurrentConsumers(runnerConfig.getConsumerNum());
+                container.setConcurrentConsumers((int) Math.ceil(runnerConfig.getConsumerNum() * 0.1f));
+                container.setPrefetchCount(runnerConfig.getPrefetchNum());
+                break;
+            case TaskRunnerConfig.TYPE_QUEUE_GROUP_PRIORITY:
+                container.setMaxConcurrentConsumers(taskProperties.getQueueGroupPriorityThreadMaxNum());
+                container.setConcurrentConsumers(taskProperties.getQueueGroupPriorityThreadMinNum());
+                container.setPrefetchCount(taskProperties.getQueueGroupPriorityPrefetchNum());
+                break;
+            case TaskRunnerConfig.TYPE_QUEUE_GROUP:
+                container.setMaxConcurrentConsumers(taskProperties.getQueueGroupDefaultThreadMaxNum());
+                container.setConcurrentConsumers(taskProperties.getQueueGroupDefaultThreadMinNum());
+                container.setPrefetchCount(taskProperties.getQueueGroupDefaultPrefetchNum());
+                break;
+            case TaskRunnerConfig.TYPE_QUEUE_PROJECT_PRIORITY:
+                container.setMaxConcurrentConsumers(taskProperties.getQueueProjectPriorityThreadMaxNum());
+                container.setConcurrentConsumers(taskProperties.getQueueProjectPriorityThreadMinNum());
+                container.setPrefetchCount(taskProperties.getQueueProjectPriorityPrefetchNum());
+                break;
+            default:
+                container.setMaxConcurrentConsumers(taskProperties.getQueueProjectDefaultThreadMaxNum());
+                container.setConcurrentConsumers(taskProperties.getQueueProjectDefaultThreadMinNum());
+                container.setPrefetchCount(taskProperties.getQueueProjectDefaultPrefetchNum());
+        }
+        container.setConnectionFactory(taskConnectionFactory);
+        container.setAcknowledgeMode(AcknowledgeMode.AUTO);
+        container.setQueueNames(queueName);
+        MessageListenerAdapter listenerAdapter = new MessageListenerAdapter(this, "process");
+        listenerAdapter.setMessageConverter(new TaskMessageConverter());
+        container.setMessageListener(listenerAdapter);
+        // 如果发生错误不再重新排队，我们自己catch异常处理
+        container.setDefaultRequeueRejected(false);
+        container.setAutoStartup(true);
+        container.afterPropertiesSet();
+        container.start();
+        return container;
+    }
+
+    /**
+     * 暂停所有队列监听容器（destroy listener + 清 map），保留底层 connectionFactory 以便恢复。
+     * <p>用于主机被禁用(state=0)或降级恢复切换时停 listener 却保留连接，解除禁用后可重新注册。</p>
+     */
+    public void suspendAll() {
+        log.info("All TaskRunner Suspended....");
+        for (SimpleMessageListenerContainer container : queueListenerMap.values()) {
+            try {
+                // shutdown() 是彻底关闭、stop() 是优雅停止；先 shutdown 后 stop 状态会异常。
+                // SimpleMessageListenerContainer 的 destroy() 按 Spring 生命周期顺序处理关闭，最为稳妥。
+                container.destroy();
+            } catch (Throwable e) {
+                // 单个 listener destroy 失败不阻断其余 listener 停机 + clear（host-disable 是运维关键操作，须保证后续 croner/delayer 也被停）
+                log.error("TaskRunner listener destroy 失败: {}", e.getMessage(), e);
+            }
+        }
+        // 清空 map：禁用主机解除后，updateConfig 主循环 registerQueueListener 才会重新创建 listener（否则 map 残留已 destroy 的容器导致跳过）
+        queueListenerMap.clear();
+    }
+
+    /**
+     * 销毁所有队列监听容器（@PreDestroy 场景）：Runner 的 suspend=destroy（listener destroy 停消费，connectionFactory 由 TaskAutoConfiguration 关）。
+     */
+    public void destroyAll() {
+        log.info("All TaskRunner Destroy....");
+        suspendAll();
+    }
+
+    /**
+     * 填充 runner stats 的 queueSize（队列积压数）与 consumerNum（消费者数）。
+     * <p>reportHostInfo 上报前调用，按 stats.taskId 反查 configMap 得到 queueName，用 queueDeclarePassive 查询积压。</p>
+     *
+     * @param taskRunnerStatsList runner 统计列表（原地填充 queueSize/consumerNum）
+     */
+    public void fillQueueBacklog(List<TaskRunnerStats> taskRunnerStatsList) {
+        if (taskRunnerStatsList == null || taskRunnerStatsList.isEmpty()) {
+            return;
+        }
+        // 预先构建 taskId -> queueName 索引，避免对每个 stats 遍历全部 config（O(n*m)）。
+        Map<Long, String> queueNameByTaskId = new HashMap<>(taskMetaInfoManager.getRunnerConfigMap().size());
+        for (TaskRunnerConfig taskRunnerConfig : taskMetaInfoManager.getRunnerConfigMap().values()) {
+            queueNameByTaskId.put(taskRunnerConfig.getId(), taskMetaInfoManager.getQueueNameByConfig(taskRunnerConfig));
+        }
+        //查询缓存，应对公用队列的情况，防止重复查询。key:队列名。
+        Map<String, AMQP.Queue.DeclareOk> queueInfoMap = new HashMap<>();
+        for (TaskRunnerStats stats : taskRunnerStatsList) {
+            String queueName = queueNameByTaskId.get(stats.getTaskId());
+            if (queueName == null) {
+                continue;
+            }
+            AMQP.Queue.DeclareOk declareOk;
+            try {
+                declareOk = queueInfoMap.computeIfAbsent(queueName,
+                        (Key) -> rabbitAdmin.getRabbitTemplate().execute(channel -> channel.queueDeclarePassive(queueName)));
+            } catch (Exception e) {
+                // 单个队列查询失败（队列不存在/MQ 瞬时故障）不阻断其他队列 + 后续 hostInfo 上报/hostDisabled 检查
+                log.warn("查询队列积压失败,queueName={}: {}", queueName, e.getMessage());
+                continue;
+            }
+            stats.setQueueSize(declareOk.getMessageCount());
+            stats.setConsumerNum(declareOk.getConsumerCount());
+        }
     }
 
 }

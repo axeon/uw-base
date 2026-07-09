@@ -13,7 +13,7 @@ import uw.common.util.SystemClock;
 import uw.task.conf.TaskMetaInfoManager;
 import uw.task.conf.TaskProperties;
 import uw.task.container.TaskDelayerContainer;
-import uw.task.container.TaskQueueLocalExecutor;
+import uw.task.container.TaskRunnerLocalExecutor;
 import uw.task.container.TaskRunnerContainer;
 import uw.task.exception.TaskRuntimeException;
 import uw.task.util.TaskSequenceManager;
@@ -92,7 +92,7 @@ public class TaskFactory {
         taskRpcService = new ThreadPoolExecutor(taskProperties.getTaskRpcThreadMinNum(), taskProperties.getTaskRpcThreadMaxNum(), 20L, TimeUnit.SECONDS,
                 new SynchronousQueue<>(), new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskRpc-%d").build(), new ThreadPoolExecutor.CallerRunsPolicy());
         taskQueueService = new ThreadPoolExecutor(taskProperties.getTaskLocalThreadMinNum(), taskProperties.getTaskLocalThreadMaxNum(), 20L, TimeUnit.SECONDS,
-                new SynchronousQueue<>(), new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskQueue-%d").build(), new TaskQueueLocalExecutor.SendToQueuePolicy());
+                new SynchronousQueue<>(), new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskQueue-%d").build(), new TaskRunnerLocalExecutor.SendToQueuePolicy());
         INSTANCE = this;
     }
 
@@ -167,7 +167,7 @@ public class TaskFactory {
         if (taskData.getTaskDelay() > 0) {
             this.sendToQueue(taskData);
         } else {
-            taskQueueService.submit(new TaskQueueLocalExecutor(this, taskMetaInfoManager, taskData));
+            taskQueueService.submit(new TaskRunnerLocalExecutor(this, taskMetaInfoManager, taskData));
         }
     }
 
@@ -201,41 +201,10 @@ public class TaskFactory {
             return taskData;
         } else {
             taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
-            //加入优先级信息。
-            MessageProperties messageProperties = new MessageProperties();
-            messageProperties.setPriority(10);
-            messageProperties.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
-            messageProperties.setExpiration("180000");
-            Message message = rabbitTemplate.getMessageConverter().toMessage(taskData, messageProperties);
             // 全局运行模式
+            Message message = buildRpcMessage(taskData);
             String queue = taskMetaInfoManager.getFitQueue(taskData);
-            //此处可能出现The channelMax limit is reached.报错，所以进行重试。
-            //注：仅对 channelMax 类 AmqpException 重试；RPC 超时(retMessage==null)不重试（重试只阻塞调用方+可能重复执行）。
-            String rpcTimeoutQueue = null;
-            for (int i = 0; i < MAX_RETRY_TIMES; i++) {
-                try {
-                    if (i > 0) {
-                        Thread.sleep(i * 500);
-                    }
-                    Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
-                    if (retMessage != null) {
-                        return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
-                    }
-                    // RPC 超时（对方没回）：立即失败，不重试
-                    rpcTimeoutQueue = queue;
-                    break;
-                } catch (Exception e) {
-                    log.error(e.getMessage(), e);
-                    if (e instanceof InterruptedException) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
-            }
-            if (rpcTimeoutQueue != null) {
-                throw new TaskRuntimeException("RPC call timed out: " + rpcTimeoutQueue);
-            }
-            throw new TaskRuntimeException("The channelMax limit is reached!");
+            return doRpcCall(queue, message);
         }
     }
 
@@ -301,43 +270,68 @@ public class TaskFactory {
         } else {
             // 全局运行模式
             taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
-            //加入优先级信息。
-            MessageProperties messageProperties = new MessageProperties();
-            messageProperties.setPriority(10);
-            messageProperties.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
-            messageProperties.setExpiration("180000");
-            Message message = rabbitTemplate.getMessageConverter().toMessage(taskData, messageProperties);
+            Message message = buildRpcMessage(taskData);
             String queue = taskMetaInfoManager.getFitQueue(taskData);
-            return taskRpcService.submit(() -> {
-                //此处可能出现The channelMax limit is reached.报错，所以进行重试。
-                //注：仅对 channelMax 类 AmqpException 重试；RPC 超时(retMessage==null)不重试（重试只阻塞调用方+可能重复执行）。
-                String rpcTimeoutQueue = null;
-                for (int i = 0; i < MAX_RETRY_TIMES; i++) {
-                    try {
-                        if (i > 0) {
-                            Thread.sleep(i * 500);
-                        }
-                        Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
-                        if (retMessage != null) {
-                            return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
-                        }
-                        // RPC 超时（对方没回）：立即失败，不重试
-                        rpcTimeoutQueue = queue;
-                        break;
-                    } catch (Exception e) {
-                        log.error(e.getMessage(), e);
-                        if (e instanceof InterruptedException) {
-                            Thread.currentThread().interrupt();
-                            break;
-                        }
-                    }
-                }
-                if (rpcTimeoutQueue != null) {
-                    throw new TaskRuntimeException("RPC call timed out: " + rpcTimeoutQueue);
-                }
-                throw new TaskRuntimeException("The channelMax limit is reached!");
-            });
+            return taskRpcService.submit(() -> doRpcCall(queue, message));
         }
+    }
+
+    /**
+     * 构造 RPC 调用消息：高优先级(10)、非持久化、180s 过期。
+     *
+     * @param taskData 任务数据
+     * @return AMQP 消息
+     */
+    private Message buildRpcMessage(TaskData<?, ?> taskData) {
+        //加入优先级信息。
+        MessageProperties messageProperties = new MessageProperties();
+        messageProperties.setPriority(10);
+        messageProperties.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
+        messageProperties.setExpiration("180000");
+        return rabbitTemplate.getMessageConverter().toMessage(taskData, messageProperties);
+    }
+
+    /**
+     * 执行全局 RPC 调用并处理 channelMax 重试与超时判定。
+     * <p>仅对 channelMax 类异常重试（最多 {@value #MAX_RETRY_TIMES} 次，退避递增）；RPC 超时(对方无响应 retMessage==null)
+     * 立即失败不重试（重试只会阻塞调用方且可能重复执行）；InterruptedException 中断后立即返回不重试。</p>
+     *
+     * @param queue   目标队列
+     * @param message 已构造的 RPC 消息
+     * @param <TP>    任务参数类型
+     * @param <RD>    返回结果类型
+     * @return 携带执行结果的 taskData
+     * @throws TaskRuntimeException RPC 超时或 channelMax 重试耗尽时抛出
+     */
+    @SuppressWarnings("unchecked")
+    private <TP, RD> TaskData<TP, RD> doRpcCall(String queue, Message message) {
+        //此处可能出现The channelMax limit is reached.报错，所以进行重试。
+        //注：仅对 channelMax 类 AmqpException 重试；RPC 超时(retMessage==null)不重试（重试只阻塞调用方+可能重复执行）。
+        String rpcTimeoutQueue = null;
+        for (int i = 0; i < MAX_RETRY_TIMES; i++) {
+            try {
+                if (i > 0) {
+                    Thread.sleep(i * 500);
+                }
+                Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
+                if (retMessage != null) {
+                    return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
+                }
+                // RPC 超时（对方没回）：立即失败，不重试
+                rpcTimeoutQueue = queue;
+                break;
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+        if (rpcTimeoutQueue != null) {
+            throw new TaskRuntimeException("RPC call timed out: " + rpcTimeoutQueue);
+        }
+        throw new TaskRuntimeException("The channelMax limit is reached!");
     }
 
     /**

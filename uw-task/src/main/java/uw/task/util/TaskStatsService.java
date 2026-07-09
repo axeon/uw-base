@@ -4,6 +4,8 @@ import uw.task.TaskData;
 import uw.task.entity.TaskDelayerStats;
 import uw.task.entity.TaskCronerStats;
 import uw.task.entity.TaskRunnerStats;
+import uw.task.exception.TaskDataException;
+import uw.task.exception.TaskPartnerException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -163,6 +165,25 @@ public class TaskStatsService {
                 state == TaskData.STATE_FAIL_DATA ? 1 : 0,
                 state == TaskData.STATE_FAIL_PARTNER ? 1 : 0
         };
+    }
+
+    /**
+     * 将执行异常映射为任务失败状态。
+     * <p>统一 TaskRunner / TaskCroner / TaskDelayer 三处 catch 链的异常分类逻辑：
+     * {@link TaskDataException}→DATA、{@link TaskPartnerException}→PARTNER、其余→PROGRAM。
+     * 调用方据此 setState，并用 {@code ExceptionUtils.exceptionToString(e)} 写入 errorInfo / resultData。</p>
+     *
+     * @param e 任务执行抛出的异常
+     * @return 对应的 STATE_FAIL_* 常量
+     */
+    public static int mapFailureState(Throwable e) {
+        if (e instanceof TaskDataException) {
+            return TaskData.STATE_FAIL_DATA;
+        } else if (e instanceof TaskPartnerException) {
+            return TaskData.STATE_FAIL_PARTNER;
+        } else {
+            return TaskData.STATE_FAIL_PROGRAM;
+        }
     }
 
     /**

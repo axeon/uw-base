@@ -18,7 +18,7 @@ import uw.task.entity.TaskRunnerConfig;
 import uw.task.entity.TaskCronerLog;
 import uw.task.exception.TaskDataException;
 import uw.task.exception.TaskPartnerException;
-import uw.task.listener.CronerTaskListener;
+import uw.task.listener.TaskCronerListener;
 import uw.task.util.TaskGlobalLocker;
 import uw.task.util.TaskSequenceManager;
 import uw.task.util.TaskStatsService;
@@ -178,8 +178,8 @@ public class TaskCronerContainer {
             taskCronerLog.setTaskId(taskCronerConfig.getId());
             taskCronerLog.setRunDate(SystemClock.nowDate());
             // 执行监听器操作
-            List<CronerTaskListener> cronerListenerList = taskListenerManager.getCronerListenerList();
-            for (CronerTaskListener listener : cronerListenerList) {
+            List<TaskCronerListener> cronerListenerList = taskListenerManager.getCronerListenerList();
+            for (TaskCronerListener listener : cronerListenerList) {
                 try {
                     listener.onPreExecute(taskCronerLog);
                 } catch (Throwable e) {
@@ -205,7 +205,7 @@ public class TaskCronerContainer {
                 log.error(e.getMessage(), e);
             }
             // 执行监听器操作
-            for (CronerTaskListener listener : cronerListenerList) {
+            for (TaskCronerListener listener : cronerListenerList) {
                 try {
                     listener.onPostExecute(taskCronerLog);
                 } catch (Throwable e) {
@@ -292,13 +292,23 @@ public class TaskCronerContainer {
      */
     public void stopAllTaskCroner() {
         log.info("All TaskCroner Destroy....");
-        for (Entry<String, ScheduledFuture<?>> kv : this.cronerTasks.entrySet()) {
-            // 任务停止
-            kv.getValue().cancel(true);
-        }
-        if (this.executorService != null) {
-            this.executorService.shutdownNow();
-        }
+        suspendAllCroners();
+        executorService.shutdownNow();
+    }
+
+    /**
+     * 暂停所有定时任务（禁用，保池）：cancel future + 清空 cronerTasks，不关闭调度线程池。
+     * <p>用于主机被禁用(state=0)时停任务却保留 executorService/taskScheduler，以便解除禁用后重新调度。</p>
+     */
+    public void suspendAll() {
+        suspendAllCroners();
+    }
+
+    /**
+     * 销毁所有定时任务（@PreDestroy，关池）：委托 {@link #stopAllTaskCroner}。
+     */
+    public void destroyAll() {
+        stopAllTaskCroner();
     }
 
 }

@@ -167,7 +167,7 @@ public class TaskAutoConfiguration {
             // 动态调 channelCacheSize：按 runner（队列）数 × 系数（每队列 publisher+listener channel+余量），下限 10。
             // 避免 CachingConnectionFactory 默认 1 的性能陷阱：sendToQueue+listener 抢 channel 频繁创建/close，
             // 每次关 channel 丢进 spring-rabbit-deferred-pool（newCachedThreadPool 无上限）致线程暴涨 + 吞吐腰斩。
-            // 必须在 listener 启动（下方 updateConfig→bindMessageListenerContainer）前设，否则 connection 已按默认 1 创建。
+            // 必须在 listener 启动（下方 updateConfig→taskRunnerContainer.registerQueueListener）前设，否则 connection 已按默认 1 创建。
             if (taskRabbitConnectionFactory != null) {
                 int runnerCount = taskMetaInfoManager.getRunnerInstanceMap().size();
                 int channelCacheSize = Math.max(runnerCount * CHANNEL_CACHE_COEFFICIENT, DEFAULT_MIN_CHANNEL_CACHE);
@@ -233,14 +233,18 @@ public class TaskAutoConfiguration {
         // 以下组件仅在 taskFactory Bean 内部初始化；若该 Bean 因依赖缺失等原因未创建，
         // 这些字段为 null，直接调用会 NPE 并掩盖真正的关闭异常，故先判空。
         if (taskServiceRegistrar != null) {
-            // 持 configLock 停所有任务（与在途 updateConfig/reportHostInfo 互斥，避免 stopAll 的 clear 与 registerQueueListener/configureTask 交错）
+            // 持 configLock 停所有任务（与在途 updateConfig/reportHostInfo 互斥，避免 destroyAll 与 registerQueueListener/configureTask 交错）
             taskServiceRegistrar.shutdownAllTasks();
         } else {
+            // taskFactory Bean 部分失败（container 已创建但 registrar 未创建）时，独立关已创建的 container
+            if (taskRunnerContainer != null) {
+                taskRunnerContainer.destroyAll();
+            }
             if (taskCronerContainer != null) {
-                taskCronerContainer.stopAllTaskCroner();
+                taskCronerContainer.destroyAll();
             }
             if (taskDelayerContainer != null) {
-                taskDelayerContainer.stopAllTaskDelayer();
+                taskDelayerContainer.destroyAll();
             }
         }
         // 关闭任务专用 RabbitMQ / Redis 连接工厂：二者均为 taskFactory Bean 内手工 new 的 DisposableBean，
@@ -427,14 +431,13 @@ public class TaskAutoConfiguration {
         // 任务信息管理器。
         taskMetaInfoManager = new TaskMetaInfoManager(context, taskProperties);
         // 队列任务容器。
-        taskRunnerContainer = new TaskRunnerContainer(taskProperties, taskApiClient, taskMetaInfoManager, taskLocalRateLimiter, taskGlobalRateLimiter, taskListenerManager);
+        taskRunnerContainer = new TaskRunnerContainer(taskProperties, taskApiClient, taskMetaInfoManager, taskLocalRateLimiter, taskGlobalRateLimiter, taskListenerManager, rabbitAdmin, taskRabbitConnectionFactory);
         // 延迟任务容器：多实例竞争 zset poll，本地模式自启动（扫描 TaskDelayer + initConfig）
-        taskDelayerContainer = new TaskDelayerContainer(taskProperties, taskApiClient, taskMetaInfoManager, taskLocalRateLimiter, taskGlobalRateLimiter, taskSequenceManager, taskRedisConnectionFactory);
+        taskDelayerContainer = new TaskDelayerContainer(taskProperties, taskApiClient, taskMetaInfoManager, taskLocalRateLimiter, taskGlobalRateLimiter, taskSequenceManager, taskRedisConnectionFactory, taskListenerManager);
         // 定时任务容器。
         taskCronerContainer = new TaskCronerContainer(taskProperties, taskApiClient, taskMetaInfoManager, taskSequenceManager, taskGlobalLocker, taskListenerManager);
         // 初始化TaskServerConfig
-        taskServiceRegistrar = new TaskServiceRegistrar(taskProperties, taskApiClient, taskRunnerContainer, taskCronerContainer, taskDelayerContainer, taskRabbitConnectionFactory, rabbitAdmin,
-                taskMetaInfoManager);
+        taskServiceRegistrar = new TaskServiceRegistrar(taskProperties, taskApiClient, taskRunnerContainer, taskCronerContainer, taskDelayerContainer, taskMetaInfoManager);
         // 返回TaskScheduler
         TaskFactory taskFactory = new TaskFactory(taskProperties, rabbitTemplate, taskRunnerContainer, taskSequenceManager, taskMetaInfoManager, taskDelayerContainer);
         return taskFactory;

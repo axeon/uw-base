@@ -20,9 +20,9 @@ import java.util.concurrent.ThreadPoolExecutor;
  *
  * @author axeon
  */
-public class TaskQueueLocalExecutor implements Runnable {
+public class TaskRunnerLocalExecutor implements Runnable {
 
-    private static final Logger log = LoggerFactory.getLogger(TaskQueueLocalExecutor.class);
+    private static final Logger log = LoggerFactory.getLogger(TaskRunnerLocalExecutor.class);
 
     /**
      * TaskFactory，用于本地执行与降级入队。
@@ -39,7 +39,7 @@ public class TaskQueueLocalExecutor implements Runnable {
      */
     private final TaskData<?, ?> taskData;
 
-    public TaskQueueLocalExecutor(TaskFactory taskFactory, TaskMetaInfoManager taskMetaInfoManager, TaskData<?, ?> taskData) {
+    public TaskRunnerLocalExecutor(TaskFactory taskFactory, TaskMetaInfoManager taskMetaInfoManager, TaskData<?, ?> taskData) {
         this.taskFactory = taskFactory;
         this.taskMetaInfoManager = taskMetaInfoManager;
         this.taskData = taskData;
@@ -85,7 +85,7 @@ public class TaskQueueLocalExecutor implements Runnable {
          */
         @Override
         public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-            if (r instanceof TaskQueueLocalExecutor e) {
+            if (r instanceof TaskRunnerLocalExecutor e) {
                 e.sendToQueue();
             }
         }

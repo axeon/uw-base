@@ -1,15 +1,8 @@
 package uw.task.conf;
 
-import com.rabbitmq.client.AMQP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.response.ResponseData;
-import org.springframework.amqp.core.*;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
-import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
-import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import uw.common.util.SystemClock;
 import uw.task.TaskCroner;
 import uw.task.TaskRunner;
@@ -18,13 +11,11 @@ import uw.task.TaskDelayer;
 import uw.task.container.TaskDelayerContainer;
 import uw.task.container.TaskCronerContainer;
 import uw.task.container.TaskRunnerContainer;
-import uw.task.converter.TaskMessageConverter;
 import uw.task.entity.*;
 import uw.task.util.TaskStatsService;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -39,7 +30,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * {@link #updateConfig} 编排三类配置的拉取与刷新，分别委托给三个独立方法——
  * {@link #updateTaskRunnerConfig}（基于 {@link #runnerLastUpdateTime} 增量拉取 runner 配置，首次上传本地默认配置并注册队列监听）、
  * {@link #updateTaskCronerConfig}（基于 {@link #cronerLastUpdateTime} 增量拉取 croner 配置，首次上传本地默认配置并配置调度）、
- * {@link #updateTaskDelayerConfig}（基于 {@link #delayerLastUpdateTime} 独立拉取 delayer 配置）。
+ * {@link #updateTaskDelayerConfig}（基于 {@link #delayerLastUpdateTime} 增量拉取 delayer 配置，首次上传本地默认配置并启动 poll handle）。
  * 三者各自维护独立的时间戳与 fail-fast，互不影响：runner/croner 拉取失败保留上次配置不更新，delayer 拉取失败仅 warn。
  * {@link #reportHostInfo} 上报 JVM/线程/统计/队列积压等信息。</p>
  *
@@ -51,11 +42,6 @@ public class TaskServiceRegistrar {
      * 日志器。
      */
     private static final Logger log = LoggerFactory.getLogger(TaskServiceRegistrar.class);
-
-    /**
-     * 任务专用的 RabbitMQ 连接工厂（用于队列监听容器）。
-     */
-    private final ConnectionFactory taskConnectionFactory;
 
     /**
      * 队列任务容器。
@@ -83,19 +69,9 @@ public class TaskServiceRegistrar {
     private final TaskApiClient taskApiClient;
 
     /**
-     * RabbitMQ 管理器（声明队列/交换机/绑定）。
-     */
-    private final RabbitAdmin rabbitAdmin;
-
-    /**
      * 任务meta信息管理器。
      */
     private final TaskMetaInfoManager taskMetaInfoManager;
-
-    /**
-     * container缓存。key=队列名,value=container。
-     */
-    private final ConcurrentHashMap<String, SimpleMessageListenerContainer> queueListenerMap = new ConcurrentHashMap<>();
 
     /**
      * runner 配置增量拉取时间戳：仅 runner 拉取成功时推进，与 croner/delayer 解耦。
@@ -151,7 +127,7 @@ public class TaskServiceRegistrar {
 
     /**
      * 配置更新与主机禁用/启用的互斥锁：保护 updateConfig 与 reportHostInfo 的停机/恢复段，
-     * 防止并发踩踏（stopAll 与 registerQueueListener/configureTask 交错致被禁主机残留资源）。
+     * 防止并发踩踏（suspendAll/destroyAll 与 registerQueueListener/configureTask 交错致被禁主机残留资源）。
      * 可重入：reportHostInfo 恢复段持锁后内嵌调 updateConfig（同线程重入），不阻塞自己。
      */
     private final ReentrantLock configLock = new ReentrantLock();
@@ -159,26 +135,20 @@ public class TaskServiceRegistrar {
     /**
      * 默认构造器。
      *
-     * @param taskProperties         任务配置
-     * @param taskApiClient          任务中心 API 客户端
-     * @param taskRunnerContainer    队列任务容器
-     * @param taskCronerContainer    定时任务容器
-     * @param taskDelayerContainer   延迟任务容器
-     * @param taskRabbitConnectionFactory 任务专用 RabbitMQ 连接工厂
-     * @param rabbitAdmin            RabbitMQ 管理器
-     * @param taskMetaInfoManager    任务元信息管理器
+     * @param taskProperties       任务配置
+     * @param taskApiClient        任务中心 API 客户端
+     * @param taskRunnerContainer  队列任务容器
+     * @param taskCronerContainer  定时任务容器
+     * @param taskDelayerContainer 延迟任务容器
+     * @param taskMetaInfoManager  任务元信息管理器
      */
     public TaskServiceRegistrar(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskRunnerContainer taskRunnerContainer, TaskCronerContainer taskCronerContainer,
-                                TaskDelayerContainer taskDelayerContainer,
-                                ConnectionFactory taskRabbitConnectionFactory,
-                                RabbitAdmin rabbitAdmin, TaskMetaInfoManager taskMetaInfoManager) {
+                                TaskDelayerContainer taskDelayerContainer, TaskMetaInfoManager taskMetaInfoManager) {
         this.taskProperties = taskProperties;
-        this.taskConnectionFactory = taskRabbitConnectionFactory;
         this.taskRunnerContainer = taskRunnerContainer;
         this.taskCronerContainer = taskCronerContainer;
         this.taskDelayerContainer = taskDelayerContainer;
         this.taskApiClient = taskApiClient;
-        this.rabbitAdmin = rabbitAdmin;
         this.taskMetaInfoManager = taskMetaInfoManager;
     }
 
@@ -220,7 +190,7 @@ public class TaskServiceRegistrar {
     private void updateTaskRunnerConfig() {
         long startUpdateTimeMills = SystemClock.now();
         // 优先拉取runnerConfig，因为是否注册任务，都要更新系统队列。
-        ConcurrentHashMap<String, TaskRunnerConfig> updatedRunnerConfigMap = updateRunnerConfig();
+        ConcurrentHashMap<String, TaskRunnerConfig> updatedRunnerConfigMap = fetchRunnerConfig();
         if (updatedRunnerConfigMap == null) {
             // 注册主机 + 首次拉取失败（从未拿到配置）+ 未降级 → 本地降级启动（initConfig 默认配置注册 listener）
             if (taskProperties.isEnableRegistry() && runnerFirstRun && !runnerDegraded) {
@@ -243,7 +213,7 @@ public class TaskServiceRegistrar {
         // 降级 → 恢复切换：清降级 listener（unacked 消息 RabbitMQ 重新入队不丢），主循环用 center 配置重建
         if (runnerDegraded) {
             log.warn("!TaskRunner center 恢复，从降级模式切换到 center 配置！");
-            stopAllTaskRunner();
+            taskRunnerContainer.suspendAll();
             runnerDegraded = false;
         }
         // 第一次执行初始化操作
@@ -304,7 +274,7 @@ public class TaskServiceRegistrar {
             }
             if (taskMetaInfoManager.getRunnerInstance(taskRunnerConfig.getTaskClass()) != null) {
                 // 启动任务
-                registerQueueListener(taskRunnerConfig);
+                taskRunnerContainer.registerQueueListener(taskRunnerConfig);
             } else {
                 log.warn("!未找到匹配的任务类，未能启动配置ID: [{}], RUNNER: [{}].", taskRunnerConfig.getId(), taskRunnerConfig.getTaskClass());
             }
@@ -324,7 +294,7 @@ public class TaskServiceRegistrar {
     private void updateTaskCronerConfig() {
         long startUpdateTimeMills = SystemClock.now();
         // 取得有变化的croner配置列表
-        ConcurrentHashMap<String, TaskCronerConfig> updatedCronerConfigMap = updateCronerConfig();
+        ConcurrentHashMap<String, TaskCronerConfig> updatedCronerConfigMap = fetchCronerConfig();
         if (updatedCronerConfigMap == null) {
             if (taskProperties.isEnableRegistry() && cronerFirstRun && !cronerDegraded) {
                 log.warn("!拉取TaskCroner配置失败，启用本地降级模式（initConfig 默认配置）！");
@@ -427,109 +397,119 @@ public class TaskServiceRegistrar {
     }
 
     /**
-     * 更新延迟任务配置：拉取服务端配置、首次上传本地默认配置、过滤后启动。
-     * <p>独立于 runner/croner 的 fail-fast：delayer 拉取失败仅 warn，不影响主流程。</p>
+     * 拉取并应用 TaskDelayer 配置增量。
+     * <p>从 task-center 拉取 delayer 配置增量，首次启动时上传本地默认配置，
+     * 随后按 taskProject+runTarget 过滤、配置并启动 delayer poll handle。
+     * 独立于 runner/croner 的 fail-fast：delayer 拉取失败仅 warn，不影响主流程。</p>
      */
     private void updateTaskDelayerConfig() {
-        if (taskDelayerContainer == null) {
-            return;
-        }
         long startUpdateTimeMills = SystemClock.now();
-        ResponseData<List<TaskDelayerConfig>> response = taskApiClient.getTaskDelayerConfigList(taskProperties.getRunTarget(), taskProperties.getTaskProject(), delayerLastUpdateTime);
-        List<TaskDelayerConfig> serverConfigs = response != null && response.isSuccess() ? response.getData() : null;
-        if (serverConfigs == null) {
+        // 取得有变化的delayer配置列表（增量已合并进 delayerConfigMap，state<1 已 remove + stopDelayer）
+        ConcurrentHashMap<String, TaskDelayerConfig> updatedDelayerConfigMap = fetchDelayerConfig();
+        if (updatedDelayerConfigMap == null) {
+            // 注册主机 + 首次拉取失败（从未拿到配置）+ 未降级 → 本地降级启动（initConfig 默认配置）
             if (taskProperties.isEnableRegistry() && delayerFirstRun && !delayerDegraded) {
                 log.warn("!拉取TaskDelayer配置失败，启用本地降级模式（initConfig 默认配置）！");
-                taskDelayerContainer.start();
+                startDelayersLocal();
                 delayerDegraded = true;
             }
             log.warn("!拉取TaskDelayer服务器配置失败!");
             return;
         }
-        // 非后台任务主机，此时可以退出了。
+        if (log.isDebugEnabled()) {
+            log.debug("发现服务器端拉取的[{}]个更新的TaskDelayer配置...", updatedDelayerConfigMap.size());
+        }
+        //非后台任务主机，此时可以退出了。
         if (!taskProperties.isEnableRegistry()) {
             // 非注册主机也推进时间戳，避免每周期从 0 全量重拉
             delayerLastUpdateTime = startUpdateTimeMills - 5000;
             return;
         }
-        // 降级 → 恢复切换：Delayer configKey 覆盖（主循环 configureTaskDelayer 内 stop old handle drain + new），不清 map
+        // 降级 → 恢复切换：Delayer configKey 覆盖（主循环 configureTaskDelayer 内 consumerNum 同则热更新、异则 stop old handle drain + new），不清 map
         if (delayerDegraded) {
             log.warn("!TaskDelayer center 恢复，从降级模式切换到 center 配置！");
             delayerDegraded = false;
         }
-        // 首次启动：上传本地 delayer 的默认配置与联系人
+        // 第一次执行初始化操作
         if (delayerFirstRun) {
             delayerFirstRun = false;
+            // 初始化delayer
             for (Map.Entry<String, TaskDelayer<?, ?>> entry : taskMetaInfoManager.getDelayerInstanceMap().entrySet()) {
                 try {
-                    TaskDelayer<?, ?> runner = entry.getValue();
-                    TaskDelayerConfig localConfig = runner.initConfig();
+                    TaskDelayer<?, ?> delayer = entry.getValue();
+                    String taskClass = entry.getKey();
+                    if (log.isDebugEnabled()) {
+                        log.debug("正在初始化TaskDelayer: [{}].", taskClass);
+                    }
+                    TaskDelayerConfig localConfig = delayer.initConfig();
                     if (localConfig == null) {
+                        log.warn("!TaskDelayer: [{}]默认配置为空，无法启动！", taskClass);
                         continue;
                     }
-                    localConfig.setTaskClass(entry.getKey());
+                    // 防止有人瞎胡搞，任务参数强制设死。
+                    localConfig.setTaskClass(taskClass);
                     localConfig.setRunTarget(taskProperties.getRunTarget());
-                    // 与 Runner/Croner 对称：捕获服务端响应拿 real id（否则 id=0 窗口致统计/日志串扰、fillDelayerStats 错配）
-                    ResponseData<TaskDelayerConfig> delayerResp = taskApiClient.initTaskDelayerConfig(localConfig);
-                    TaskDelayerConfig configToUse = (delayerResp != null && delayerResp.isSuccess() && delayerResp.getData() != null)
-                            ? delayerResp.getData() : localConfig;
-                    // 首次上传后立即填 delayerConfigMap + 启动 poll handle（与降级路径对称），否则 center 回显前(~60s) submit() 抛异常 + 无 handle 消费
-                    taskDelayerContainer.configureTaskDelayer(configToUse);
-                    TaskContact contact = runner.initContact();
+                    TaskContact contact = delayer.initContact();
                     if (contact != null) {
-                        contact.setTaskClass(entry.getKey());
-                        taskApiClient.initTaskContact(contact);
+                        contact.setTaskClass(taskClass);
+                    }
+                    String configKey = taskMetaInfoManager.getDelayerConfigKey(localConfig);
+                    TaskDelayerConfig serverConfig = updatedDelayerConfigMap.get(configKey);
+                    // 上传配置：center 已有则跳过（对齐 runner/croner 条件首传；服务端按三元组幂等去重）
+                    if (serverConfig == null) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("TaskDelayer: [{}]未找到服务器端配置，上传默认配置...", taskClass);
+                        }
+                        uploadDelayerInfo(localConfig, contact);
                     }
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
                 }
             }
         }
-        // 过滤本项目+本 runTarget 的配置，交由容器启动（服务端动态配置覆盖本地默认）
-        for (TaskDelayerConfig config : serverConfigs) {
-            if (!config.getTaskClass().startsWith(taskProperties.getTaskProject())) {
+
+        // 此时执行更新操作：遍历全量缓存（增量已由 fetchDelayerConfig 合并进 delayerConfigMap），过滤本项目+本 runTarget
+        for (TaskDelayerConfig taskDelayerConfig : taskMetaInfoManager.getDelayerConfigMap().values()) {
+            //必须是本项目任务，否则跳过
+            if (!taskDelayerConfig.getTaskClass().startsWith(taskProperties.getTaskProject())) {
+                if (log.isDebugEnabled()) {
+                    log.debug("因为TaskProject不匹配，跳过配置ID: [{}], DELAYER: [{}].", taskDelayerConfig.getId(), taskDelayerConfig.getTaskClass());
+                }
                 continue;
             }
-            if (!config.getRunTarget().equals(taskProperties.getRunTarget())) {
+            //必须是同一个runTarget项目，否则跳过
+            if (!taskDelayerConfig.getRunTarget().equals(taskProperties.getRunTarget())) {
+                if (log.isDebugEnabled()) {
+                    log.debug("因为RunTarget不匹配，跳过配置ID: [{}], DELAYER: [{}].", taskDelayerConfig.getId(), taskDelayerConfig.getTaskClass());
+                }
                 continue;
             }
-            taskDelayerContainer.configureTaskDelayer(config);
+            if (log.isDebugEnabled()) {
+                log.debug("正在加载ID: [{}], DELAYER: [{}].", taskDelayerConfig.getId(), taskDelayerConfig.getTaskClass());
+            }
+            if (taskMetaInfoManager.getDelayerInstance(taskDelayerConfig.getTaskClass()) != null) {
+                // 启动/热更新任务（configureTaskDelayer 幂等：consumerNum 不变则热更新，变则重建）
+                taskDelayerContainer.configureTaskDelayer(taskDelayerConfig);
+            } else {
+                log.warn("!未找到匹配的任务类，未能启动配置ID: [{}], DELAYER: [{}].", taskDelayerConfig.getId(), taskDelayerConfig.getTaskClass());
+            }
         }
-        // 仅 delayer 拉取成功才推进 delayer 专属时间戳（与 runner/croner 解耦；失败不推进则下周期重查同窗口，不丢窗）
+
+        // 执行成功才会更新时间戳
+        // 比对数据库的时候，因为数据库缺少ms值，所以减去5000，提高匹配度。
         delayerLastUpdateTime = startUpdateTimeMills - 5000;
     }
 
     /**
-     * 停止所有的任务。
-     */
-    public void stopAllTaskRunner() {
-        log.info("All TaskRunner Destroy....");
-        for (SimpleMessageListenerContainer container : queueListenerMap.values()) {
-            try {
-                // shutdown() 是彻底关闭、stop() 是优雅停止；先 shutdown 后 stop 状态会异常。
-                // SimpleMessageListenerContainer 的 destroy() 按 Spring 生命周期顺序处理关闭，最为稳妥。
-                container.destroy();
-            } catch (Throwable e) {
-                // 单个 listener destroy 失败不阻断其余 listener 停机 + clear（host-disable 是运维关键操作，须保证后续 croner/delayer 也被停）
-                log.error("TaskRunner listener destroy 失败: {}", e.getMessage(), e);
-            }
-        }
-        // 清空 map：禁用主机解除后，updateConfig 主循环 registerQueueListener 才会重新创建 listener（否则 map 残留已 destroy 的容器导致跳过）
-        queueListenerMap.clear();
-    }
-
-    /**
      * 应用关闭(@PreDestroy)时停所有任务，持 configLock 与在途 updateConfig/reportHostInfo 互斥，
-     * 避免 stopAll 的 clear/destroy 与并发的 registerQueueListener/configureTask 交错（listener 泄漏或写入已销毁容器）。
+     * 避免 destroyAll 的 clear/destroy 与并发的 registerQueueListener/configureTask 交错（listener 泄漏或写入已销毁容器）。
      */
     public void shutdownAllTasks() {
         configLock.lock();
         try {
-            stopAllTaskRunner();
-            taskCronerContainer.stopAllTaskCroner();
-            if (taskDelayerContainer != null) {
-                taskDelayerContainer.stopAllTaskDelayer();
-            }
+            taskRunnerContainer.destroyAll();
+            taskCronerContainer.destroyAll();
+            taskDelayerContainer.destroyAll();
         } finally {
             configLock.unlock();
         }
@@ -560,8 +540,8 @@ public class TaskServiceRegistrar {
 
     /**
      * 本地降级启动所有 Runner 的 MQ listener（center 不可用时用 initConfig 默认配置注册）。
-     * <p>center 恢复后 updateTaskRunnerConfig 检测到 degraded → stopAllTaskRunner 清降级 listener
-     *（unacked 消息 RabbitMQ 重新入队不丢）→ 主循环 registerQueueListener 用 center 配置重建。</p>
+     * <p>center 恢复后 updateTaskRunnerConfig 检测到 degraded → taskRunnerContainer.suspendAll() 清降级 listener
+     *（unacked 消息 RabbitMQ 重新入队不丢）→ 主循环 taskRunnerContainer.registerQueueListener 用 center 配置重建。</p>
      */
     @SuppressWarnings("rawtypes")
     private void startRunnersLocal() {
@@ -577,11 +557,22 @@ public class TaskServiceRegistrar {
                 localConfig.setRunTarget(taskProperties.getRunTarget());
                 // 降级期间也必须填充 runnerConfigMap：否则同 JVM 业务调 sendToQueue→getFitQueue 找不到配置抛异常（与 Delayer 的 configureTaskDelayer 内 setDelayerConfig 对称）
                 taskMetaInfoManager.setRunnerConfig(taskMetaInfoManager.getRunnerConfigKey(localConfig), localConfig);
-                registerQueueListener(localConfig);
+                taskRunnerContainer.registerQueueListener(localConfig);
             } catch (Exception e) {
                 log.error("Runner 本地降级启动失败[{}]: {}", kv.getKey(), e.getMessage(), e);
             }
         }
+    }
+
+    /**
+     * 本地降级启动所有 Delayer（center 不可用时用 initConfig 默认配置启动 poll）。
+     * <p>实现下沉到 {@link TaskDelayerContainer#start()}（遍历实例 initConfig + configureTaskDelayer），
+     * 本方法仅为与 {@link #startRunnersLocal}/{@link #startCronersLocal} 命名对称。
+     * center 恢复后 updateTaskDelayerConfig 检测到 degraded→false，主循环用 center 配置按 configKey 原地覆盖
+     *（consumerNum 同则热更新、异则 stop old handle drain + 重建）。</p>
+     */
+    private void startDelayersLocal() {
+        taskDelayerContainer.start();
     }
 
     /**
@@ -617,7 +608,7 @@ public class TaskServiceRegistrar {
         hostStats.setRunTarget(taskProperties.getRunTarget());
         hostStats.setCronerNum(taskMetaInfoManager.getCronerInstanceMap().size());
         hostStats.setRunnerNum(taskMetaInfoManager.getRunnerInstanceMap().size());
-        hostStats.setDelayerNum(taskDelayerContainer != null ? taskMetaInfoManager.getDelayerInstanceMap().size() : 0);
+        hostStats.setDelayerNum(taskMetaInfoManager.getDelayerInstanceMap().size());
         //设置内存和线程信息。
         Runtime runtime = Runtime.getRuntime();
         hostStats.setJvmMemMax(runtime.maxMemory());
@@ -633,40 +624,14 @@ public class TaskServiceRegistrar {
         hostStats.setTaskRunnerStatsList(TaskStatsService.getRunnerStats());
         java.util.List<TaskDelayerStats> delayerStatsList = TaskStatsService.getDelayerStats();
         // 填充 zset 积压数与执行线程数（被动查询，stats 本身只累计计数/耗时）
-        if (taskDelayerContainer != null) {
-            taskDelayerContainer.fillDelayerStats(delayerStatsList);
-        }
+        taskDelayerContainer.fillDelayerStats(delayerStatsList);
         hostStats.setTaskDelayerStatsList(delayerStatsList);
-        //查询队列信息。
-        List<TaskRunnerStats> taskRunnerStatsList = hostStats.getTaskRunnerStatsList();
-        // 预先构建 taskId -> queueName 索引，避免对每个 stats 遍历全部 config（O(n*m)）。
-        Map<Long, String> queueNameByTaskId = new HashMap<>(taskMetaInfoManager.getRunnerConfigMap().size());
-        for (TaskRunnerConfig taskRunnerConfig : taskMetaInfoManager.getRunnerConfigMap().values()) {
-            queueNameByTaskId.put(taskRunnerConfig.getId(), taskMetaInfoManager.getQueueNameByConfig(taskRunnerConfig));
-        }
-        //查询缓存，应对公用队列的情况，防止重复查询。key:队列名。
-        Map<String, AMQP.Queue.DeclareOk> queueInfoMap = new HashMap<>();
-        for (TaskRunnerStats stats : taskRunnerStatsList) {
-            String queueName = queueNameByTaskId.get(stats.getTaskId());
-            if (queueName == null) {
-                continue;
-            }
-            AMQP.Queue.DeclareOk declareOk;
-            try {
-                declareOk = queueInfoMap.computeIfAbsent(queueName,
-                        (Key) -> rabbitAdmin.getRabbitTemplate().execute(channel -> channel.queueDeclarePassive(queueName)));
-            } catch (Exception e) {
-                // 单个队列查询失败（队列不存在/MQ 瞬时故障）不阻断其他队列 + 后续 hostInfo 上报/hostDisabled 检查
-                log.warn("查询队列积压失败,queueName={}: {}", queueName, e.getMessage());
-                continue;
-            }
-            stats.setQueueSize(declareOk.getMessageCount());
-            stats.setConsumerNum(declareOk.getConsumerCount());
-        }
+        // 查询队列积压信息（queueName 反查 + queueDeclarePassive），委托 TaskRunnerContainer。
+        taskRunnerContainer.fillQueueBacklog(hostStats.getTaskRunnerStatsList());
         ResponseData<HostReportResponse> reportResult = taskApiClient.reportHostInfo(hostStats);
         reportResponse = reportResult != null && reportResult.isSuccess() ? reportResult.getData() : null;
         // 主机禁用/启用处理：服务端 HostReportResponse.state=0 表示 OPS 禁用本机。
-        // configLock 与 updateConfig 互斥：防止停机 stopAll 与并发的 updateConfig 注册（registerQueueListener/configureTask）踩踏，
+        // configLock 与 updateConfig 互斥：防止停机 suspendAll 与并发的 updateConfig 注册（registerQueueListener/configureTask）踩踏，
         // 导致被禁主机残留 listener/future/handle（clear 与 computeIfAbsent/put 交错）。
         configLock.lock();
         try {
@@ -674,13 +639,11 @@ public class TaskServiceRegistrar {
                 if (reportResponse.getState() == 0 && !hostDisabled) {
                     hostDisabled = true;
                     log.warn("!本主机被服务端禁用(state=0)，停止所有任务容器（runner/croner/delayer），保留底层线程池以便恢复！");
-                    // runner: destroy listener + 清 map；croner: suspend（cancel future + 清 map，不关 executorService）；
-                    // delayer: stop handle + 清 map。三者均不清底层线程池/连接，解除禁用后可恢复。
-                    stopAllTaskRunner();
-                    taskCronerContainer.suspendAllCroners();
-                    if (taskDelayerContainer != null) {
-                        taskDelayerContainer.stopAllTaskDelayer();
-                    }
+                    // 三容器统一 suspendAll（禁用，保池）：runner destroy listener + 清 map；croner cancel future + 清 map；
+                    // delayer stop handle + 清 map。三者均不清底层线程池/连接，解除禁用后可恢复。
+                    taskRunnerContainer.suspendAll();
+                    taskCronerContainer.suspendAll();
+                    taskDelayerContainer.suspendAll();
                     // 重置降级/首次标志：禁用=全新停机，恢复时按全新启动（fetch 成功用 center 配置，fetch 失败则降级 start），
                     // 避免 degraded 残留导致解除禁用后 fetch 仍失败时降级条件(!degraded)不满足、任务不重启。
                     runnerDegraded = false;
@@ -716,7 +679,7 @@ public class TaskServiceRegistrar {
      *
      * @return 本次拉取到的配置 map（configKey -> config）；拉取失败时返回 null
      */
-    private ConcurrentHashMap<String, TaskCronerConfig> updateCronerConfig() {
+    private ConcurrentHashMap<String, TaskCronerConfig> fetchCronerConfig() {
         ConcurrentHashMap<String, TaskCronerConfig> map = new ConcurrentHashMap<>();
         ResponseData<List<TaskCronerConfig>> response = taskApiClient.getTaskCronerConfigList(taskProperties.getRunTarget(), taskProperties.getTaskProject(), cronerLastUpdateTime);
         List<TaskCronerConfig> list = response != null && response.isSuccess() ? response.getData() : null;
@@ -743,7 +706,7 @@ public class TaskServiceRegistrar {
      *
      * @return 本次拉取到的配置 map（configKey -> config）；拉取失败时返回 null
      */
-    private ConcurrentHashMap<String, TaskRunnerConfig> updateRunnerConfig() {
+    private ConcurrentHashMap<String, TaskRunnerConfig> fetchRunnerConfig() {
         ConcurrentHashMap<String, TaskRunnerConfig> map = new ConcurrentHashMap<>();
         ResponseData<List<TaskRunnerConfig>> response = taskApiClient.getTaskRunnerConfigList(taskProperties.getRunTarget(), taskProperties.getTaskProject(), runnerLastUpdateTime);
         List<TaskRunnerConfig> list = response != null && response.isSuccess() ? response.getData() : null;
@@ -753,9 +716,37 @@ public class TaskServiceRegistrar {
                 if (config.getState() < 1) {
                     taskMetaInfoManager.removeRunnerConfig(key);
                     // 销毁残留 listener：center 删除/禁用(state<1)后，已注册的 MQ listener 不应继续占用连接/消费
-                    registerQueueListener(config);
+                    taskRunnerContainer.registerQueueListener(config);
                 } else {
                     taskMetaInfoManager.setRunnerConfig(key, config);
+                }
+                map.put(key, config);
+            }
+            return map;
+        }
+        return null;
+    }
+
+    /**
+     * 从 task-center 增量拉取 delayer 配置（基于 delayerLastUpdateTime），同步更新本地 metaInfo 缓存
+     *（含 state&lt;1 的删除处理：removeDelayerConfig + stopDelayer 停止孤儿 handle）。
+     * 拉取失败时返回 null，触发降级/warn（delayer 独立于 runner/croner 的 fail-fast，仅 warn 不影响主流程）。
+     *
+     * @return 本次拉取到的配置 map（configKey -&gt; config）；拉取失败时返回 null
+     */
+    private ConcurrentHashMap<String, TaskDelayerConfig> fetchDelayerConfig() {
+        ConcurrentHashMap<String, TaskDelayerConfig> map = new ConcurrentHashMap<>();
+        ResponseData<List<TaskDelayerConfig>> response = taskApiClient.getTaskDelayerConfigList(taskProperties.getRunTarget(), taskProperties.getTaskProject(), delayerLastUpdateTime);
+        List<TaskDelayerConfig> list = response != null && response.isSuccess() ? response.getData() : null;
+        if (list != null) {
+            for (TaskDelayerConfig config : list) {
+                String key = taskMetaInfoManager.getDelayerConfigKey(config);
+                if (config.getState() < 1) {
+                    taskMetaInfoManager.removeDelayerConfig(key);
+                    // 停掉孤儿 handle：center 删除/禁用(state<1)后，已 poll 的 handle 不应继续消费（对齐 fetchCronerConfig 的 stopTask）
+                    taskDelayerContainer.stopDelayer(key);
+                } else {
+                    taskMetaInfoManager.setDelayerConfig(key, config);
                 }
                 map.put(key, config);
             }
@@ -799,146 +790,25 @@ public class TaskServiceRegistrar {
     }
 
     /**
-     * 注册/更新 RabbitMQ 队列监听容器：首次按配置声明队列/交换机/绑定并启动监听，
-     * 后续周期按 state/consumerNum/prefetchNum 动态调整或销毁。
+     * 首次上传 delayer 默认配置与联系人信息到 task-center，并将服务端返回的 config 写入本地缓存。
+     * <p>与 {@link #uploadRunnerInfo}/{@link #uploadCronerInfo} 对称：只写缓存、不启动任务——
+     * handle 启动由同周期主循环（遍历 delayerConfigMap）完成。submit() 校验的是 delayerConfigMap.containsKey，
+     * setDelayerConfig 已满足，故首传与主循环之间不存在"submit 抛异常"窗口。</p>
      *
-     * @param runnerConfig runner 配置信息
+     * @param config  本地默认配置
+     * @param contact 联系人信息（可空，delayer 不强制）
+     * @return 服务端确认后的配置（含分配的 id）
      */
-    private void registerQueueListener(TaskRunnerConfig runnerConfig) {
-        String queueName = taskMetaInfoManager.getQueueNameByConfig(runnerConfig);
-        SimpleMessageListenerContainer sysContainer = queueListenerMap.computeIfAbsent(queueName, key -> {
-            if (runnerConfig.getState() != 1) {
-                log.warn("!TaskRunner: [{}]状态为暂停，不进行注册。。。", queueName);
-                return null;
-            }
-            if (log.isDebugEnabled()) {
-                log.debug("TaskRunner: [{}]正在注册并启动监听...", queueName);
-            }
-            try {
-                Queue queue = QueueBuilder.durable(queueName).build();
-                // 声明处理
-                declareManage(queue);
-                // 启动任务监听器
-                SimpleMessageListenerContainer container = bindMessageListenerContainer(runnerConfig, queueName);
-                if (runnerConfig.getDelayType() == TaskRunnerConfig.TYPE_DELAY_ON) {
-                    // 建立TTL队列，需要设置名称
-                    Queue ttlQueue =
-                            QueueBuilder.durable(taskMetaInfoManager.getTTLQueueName(queueName))
-                                    .withArgument("x-dead-letter-exchange", queueName)
-                                    .withArgument("x-dead-letter-routing-key", queueName)
-                                    .build();
-                    // 声明处理
-                    declareManage(ttlQueue);
-                }
-                return container;
-            } catch (Exception e) {
-                // 此处每分钟（updateConfig 周期）会重试，为避免大堆栈刷屏仅打 message；
-                // 配置持续失败（如 MQ 不可用）会在后续周期自动重试恢复。
-                log.warn("任务队列创建失败, 将持续重试: queue=[{}], msg={}", queueName, e.getMessage());
-            }
-            return null;
-        });
-        if (sysContainer != null) {
-            if (runnerConfig.getState() == 1) {
-                try {
-                    //只有runner的queueType才可以在线设置。对于配置了死信队列，此处消费者配置为配置死信队列消费
-                    if (runnerConfig.getQueueType() == TaskRunnerConfig.TYPE_QUEUE_TASK) {
-                        sysContainer.setMaxConcurrentConsumers(runnerConfig.getConsumerNum());
-                        sysContainer.setConcurrentConsumers((int) Math.ceil(runnerConfig.getConsumerNum() * 0.1f));
-                        sysContainer.setPrefetchCount(runnerConfig.getPrefetchNum());
-                    }
-                } catch (Exception e) {
-                    log.error(e.getMessage(), e);
-                }
-            } else {
-                // state<1：GROUP/PROJECT 队列共享，销毁前检查是否仍有其他活跃配置映射到同一 queueName，避免误销毁共享 listener（致同包其他 runner 消费中断）
-                boolean stillInUse = taskMetaInfoManager.getRunnerConfigMap().values().stream()
-                        .anyMatch(c -> queueName.equals(taskMetaInfoManager.getQueueNameByConfig(c)));
-                if (!stillInUse) {
-                    queueListenerMap.remove(queueName);
-                    sysContainer.destroy();
-                } else if (log.isDebugEnabled()) {
-                    log.debug("TaskRunner[{}]仍有活跃配置共享此队列，跳过 destroy", queueName);
-                }
-            }
+    private TaskDelayerConfig uploadDelayerInfo(TaskDelayerConfig config, TaskContact contact) {
+        ResponseData<TaskDelayerConfig> response = taskApiClient.initTaskDelayerConfig(config);
+        if (response != null && response.isSuccess() && response.getData() != null) {
+            config = response.getData();
         }
-    }
-
-    /**
-     * 通过 RabbitAdmin 声明队列、直连交换机及其绑定关系（三者同名，routing key = 队列名）。
-     *
-     * @param queue 队列定义
-     */
-    private void declareManage(Queue queue) {
-        // 交换机
-        Exchange exchange = ExchangeBuilder.directExchange(queue.getName()).durable(true).build();
-        // 队列和交换机绑定
-        Binding binding = BindingBuilder.bind(queue).to(exchange).with(queue.getName()).noargs();
-        // 定义队列
-        rabbitAdmin.declareQueue(queue);
-        // 定义交换机
-        rabbitAdmin.declareExchange(exchange);
-        // 队列和交换机绑定
-        rabbitAdmin.declareBinding(binding);
-    }
-
-    /**
-     * 绑定队列监听器容器
-     *
-     * @param runnerConfig runner配置信息
-     * @param queueName    队列名称
-     * @return SimpleMessageListenerContainer 监听器容器
-     */
-    private SimpleMessageListenerContainer bindMessageListenerContainer(TaskRunnerConfig runnerConfig, String queueName) {
-        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
-        container.setAutoStartup(false);
-        // 消费者线程虚拟化：basicConsume 长连接等待 + process 内的 IO/限速 sleep 都 park 在虚拟线程上，不占平台载体
-        SimpleAsyncTaskExecutor taskExecutor = new SimpleAsyncTaskExecutor(queueName);
-        taskExecutor.setVirtualThreads(true);
-        container.setTaskExecutor(taskExecutor);
-        // 提高启动consumer速度。
-        container.setStartConsumerMinInterval(100);
-        container.setConsecutiveActiveTrigger(1);
-        container.setStopConsumerMinInterval(20000);
-        container.setConsecutiveIdleTrigger(3);
-        switch (runnerConfig.getQueueType()) {
-            case TaskRunnerConfig.TYPE_QUEUE_TASK:
-                container.setMaxConcurrentConsumers(runnerConfig.getConsumerNum());
-                container.setConcurrentConsumers((int) Math.ceil(runnerConfig.getConsumerNum() * 0.1f));
-                container.setPrefetchCount(runnerConfig.getPrefetchNum());
-                break;
-            case TaskRunnerConfig.TYPE_QUEUE_GROUP_PRIORITY:
-                container.setMaxConcurrentConsumers(taskProperties.getQueueGroupPriorityThreadMaxNum());
-                container.setConcurrentConsumers(taskProperties.getQueueGroupPriorityThreadMinNum());
-                container.setPrefetchCount(taskProperties.getQueueGroupPriorityPrefetchNum());
-                break;
-            case TaskRunnerConfig.TYPE_QUEUE_GROUP:
-                container.setMaxConcurrentConsumers(taskProperties.getQueueGroupDefaultThreadMaxNum());
-                container.setConcurrentConsumers(taskProperties.getQueueGroupDefaultThreadMinNum());
-                container.setPrefetchCount(taskProperties.getQueueGroupDefaultPrefetchNum());
-                break;
-            case TaskRunnerConfig.TYPE_QUEUE_PROJECT_PRIORITY:
-                container.setMaxConcurrentConsumers(taskProperties.getQueueProjectPriorityThreadMaxNum());
-                container.setConcurrentConsumers(taskProperties.getQueueProjectPriorityThreadMinNum());
-                container.setPrefetchCount(taskProperties.getQueueProjectPriorityPrefetchNum());
-                break;
-            default:
-                container.setMaxConcurrentConsumers(taskProperties.getQueueProjectDefaultThreadMaxNum());
-                container.setConcurrentConsumers(taskProperties.getQueueProjectDefaultThreadMinNum());
-                container.setPrefetchCount(taskProperties.getQueueProjectDefaultPrefetchNum());
+        if (contact != null) {
+            taskApiClient.initTaskContact(contact);
         }
-        container.setConnectionFactory(taskConnectionFactory);
-        container.setAcknowledgeMode(AcknowledgeMode.AUTO);
-        container.setQueueNames(queueName);
-        MessageListenerAdapter listenerAdapter = new MessageListenerAdapter(taskRunnerContainer, "process");
-        listenerAdapter.setMessageConverter(new TaskMessageConverter());
-        container.setMessageListener(listenerAdapter);
-        // 如果发生错误不再重新排队，我们自己catch异常处理
-        container.setDefaultRequeueRejected(false);
-        container.setAutoStartup(true);
-        container.afterPropertiesSet();
-        container.start();
-        return container;
+        taskMetaInfoManager.setDelayerConfig(taskMetaInfoManager.getDelayerConfigKey(config), config);
+        return config;
     }
 
 }

@@ -270,16 +270,7 @@ public class TaskMetaInfoManager {
             }
         }
         if (config != null) {
-            String queueName = switch (config.getQueueType()) {
-                case TaskRunnerConfig.TYPE_QUEUE_TASK -> fitName;
-                case TaskRunnerConfig.TYPE_QUEUE_GROUP_PRIORITY ->
-                        getGroupQueueName(config.getTaskClass(), "priority", config.getRunTarget());
-                case TaskRunnerConfig.TYPE_QUEUE_GROUP ->
-                        getGroupQueueName(config.getTaskClass(), "default", config.getRunTarget());
-                case TaskRunnerConfig.TYPE_QUEUE_PROJECT_PRIORITY ->
-                        taskProperties.getTaskProject() + "@priority$" + config.getRunTarget();
-                default -> taskProperties.getTaskProject() + "$" + config.getRunTarget();
-            };
+            String queueName = getQueueNameByConfig(config);
             // 只有开启了延时队列并且发送队列异步进行才会返回TTL队列名称
             return config.getDelayType() == TaskRunnerConfig.TYPE_DELAY_ON && data.getRunType() == TaskData.RUN_TYPE_GLOBAL && data.getTaskDelay() > 0 ?
                     getTTLQueueName(queueName) : queueName;
@@ -327,16 +318,7 @@ public class TaskMetaInfoManager {
      * @return 配置键 taskClass#taskParam$runTarget
      */
     public String getCronerConfigKey(TaskCronerConfig config) {
-        StringBuilder sb = new StringBuilder(168);
-        sb.append(config.getTaskClass()).append("#");
-        if (config.getTaskParam() != null && !config.getTaskParam().isEmpty()) {
-            sb.append(config.getTaskParam());
-        }
-        sb.append("$");
-        if (config.getRunTarget() != null && !config.getRunTarget().isEmpty()) {
-            sb.append(config.getRunTarget());
-        }
-        return sb.toString();
+        return getConfigKey(config.getTaskClass(), config.getTaskParam(), config.getRunTarget());
     }
 
     /**
@@ -346,16 +328,18 @@ public class TaskMetaInfoManager {
      * @return 配置键
      */
     public String getRunnerConfigKey(TaskRunnerConfig config) {
-        StringBuilder sb = new StringBuilder(168);
-        sb.append(config.getTaskClass()).append("#");
-        if (config.getTaskTag() != null && !config.getTaskTag().isEmpty()) {
-            sb.append(config.getTaskTag());
-        }
-        sb.append("$");
-        if (config.getRunTarget() != null && !config.getRunTarget().isEmpty()) {
-            sb.append(config.getRunTarget());
-        }
-        return sb.toString();
+        return getConfigKey(config.getTaskClass(), config.getTaskTag(), config.getRunTarget());
+    }
+
+    /**
+     * 获取 Delayer 配置的 key：taskClass#taskTag$runTarget。
+     * <p>多实例维度与 Runner 一致（taskTag），区别于 Croner 的 taskParam。</p>
+     *
+     * @param config 延迟任务配置
+     * @return 配置键
+     */
+    public String getDelayerConfigKey(TaskDelayerConfig config) {
+        return getConfigKey(config.getTaskClass(), config.getTaskTag(), config.getRunTarget());
     }
 
     /**
@@ -365,16 +349,7 @@ public class TaskMetaInfoManager {
      * @return 配置键
      */
     public String getRunnerConfigKeyByData(TaskData<?, ?> data) {
-        StringBuilder sb = new StringBuilder(168);
-        sb.append(data.getTaskClass()).append("#");
-        if (data.getTaskTag() != null && !data.getTaskTag().isEmpty()) {
-            sb.append(data.getTaskTag());
-        }
-        sb.append("$");
-        if (data.getRunTarget() != null && !data.getRunTarget().isEmpty()) {
-            sb.append(data.getRunTarget());
-        }
-        return sb.toString();
+        return getConfigKey(data.getTaskClass(), data.getTaskTag(), data.getRunTarget());
     }
 
     /**

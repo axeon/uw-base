@@ -13,6 +13,7 @@ import uw.common.util.LimitedVirtualThreadExecutor;
 import uw.common.util.SystemClock;
 import uw.task.TaskDelayer;
 import uw.task.TaskData;
+import uw.task.TaskListenerManager;
 import uw.task.api.TaskApiClient;
 import uw.task.conf.TaskMetaInfoManager;
 import uw.task.conf.TaskProperties;
@@ -20,9 +21,8 @@ import uw.task.entity.TaskDelayerConfig;
 import uw.task.entity.TaskDelayerLog;
 import uw.task.entity.TaskDelayerStats;
 import uw.task.entity.TaskRunnerConfig;
-import uw.task.exception.TaskDataException;
-import uw.task.exception.TaskPartnerException;
 import uw.task.exception.TaskRuntimeException;
+import uw.task.listener.TaskDelayerListener;
 import uw.task.util.TaskGlobalRateLimiter;
 import uw.task.util.TaskLocalRateLimiter;
 import uw.task.util.TaskRateLimitHelper;
@@ -92,6 +92,8 @@ public class TaskDelayerContainer {
     private final TaskSequenceManager taskSequenceManager;
     /** Redis 操作模板，key 用 String 序列化、value 用 byte[]（Kryo 序列化 TaskData）。 */
     private final RedisTemplate<String, byte[]> redisTemplate;
+    /** 任务监听管理器（execute 后回调 TaskDelayerListener，对齐 Runner/Croner）。 */
+    private final TaskListenerManager taskListenerManager;
 
     /**
      * configKey -> 运行句柄（poll 线程 + 虚拟线程执行器），按 configKey 索引。
@@ -123,16 +125,19 @@ public class TaskDelayerContainer {
      * @param taskGlobalRateLimiter   全局限速器
      * @param taskSequenceManager     全局发号器
      * @param redisConnectionFactory  Redis 连接工厂（构建 zset 操作模板）
+     * @param taskListenerManager     任务监听管理器（execute 后回调 TaskDelayerListener）
      */
     public TaskDelayerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskMetaInfoManager taskMetaInfoManager,
                                 TaskLocalRateLimiter taskLocalRateLimiter, TaskGlobalRateLimiter taskGlobalRateLimiter,
-                                TaskSequenceManager taskSequenceManager, RedisConnectionFactory redisConnectionFactory) {
+                                TaskSequenceManager taskSequenceManager, RedisConnectionFactory redisConnectionFactory,
+                                TaskListenerManager taskListenerManager) {
         this.taskProperties = taskProperties;
         this.taskApiClient = taskApiClient;
         this.taskMetaInfoManager = taskMetaInfoManager;
         this.taskLocalRateLimiter = taskLocalRateLimiter;
         this.taskGlobalRateLimiter = taskGlobalRateLimiter;
         this.taskSequenceManager = taskSequenceManager;
+        this.taskListenerManager = taskListenerManager;
         this.redisTemplate = new RedisTemplate<>();
         this.redisTemplate.setKeySerializer(new StringRedisSerializer());
         this.redisTemplate.setValueSerializer(RedisSerializer.byteArray());
@@ -180,15 +185,11 @@ public class TaskDelayerContainer {
         if (config.getConsumerNum() < 1) {
             config.setConsumerNum(1);
         }
-        String configKey = taskMetaInfoManager.getConfigKey(config.getTaskClass(), config.getTaskTag(), config.getRunTarget());
-        // state<1（暂停/删除）：remove 配置缓存 + stop handle，不缓存废弃配置（对齐 Runner updateRunnerConfig 的 state<1 remove）
+        String configKey = taskMetaInfoManager.getDelayerConfigKey(config);
+        // state<1（暂停/删除）：remove 配置缓存 + stop handle，不缓存废弃配置（对齐 Runner fetchRunnerConfig 的 state<1 remove）
         if (config.getState() < 1) {
             taskMetaInfoManager.removeDelayerConfig(configKey);
-            TaskDelayerRunHandle existingHandle = runHandleMap.get(configKey);
-            if (existingHandle != null) {
-                existingHandle.stop();
-                runHandleMap.remove(configKey);
-            }
+            stopDelayer(configKey);
             log.info("TaskDelayer[{}]已暂停/删除", configKey);
             return;
         }
@@ -208,7 +209,7 @@ public class TaskDelayerContainer {
             return;
         }
         if (existing != null) {
-            existing.stop();
+            existing.stop(30000);
             runHandleMap.remove(configKey);
         }
         if (taskMetaInfoManager.getDelayerInstance(config.getTaskClass()) == null) {
@@ -219,6 +220,25 @@ public class TaskDelayerContainer {
         runHandleMap.put(configKey, handle);
         handle.start();
         log.info("TaskDelayer[{}]已启动: consumerNum={}, pollInterval={}s, prefetchNum={}", configKey, config.getConsumerNum(), config.getPollInterval(), config.getPrefetchNum());
+    }
+
+    /**
+     * 停止指定 configKey 的 delayer handle（drain 30s 等在途完成），并从 runHandleMap 移除。
+     * <p>对齐 TaskCronerContainer.stopTask(String)：单一职责只管运行句柄，配置缓存移除由调用方负责。
+     * 与 configureTaskDelayer 同监视器（this），从其内部调用为同线程重入，无自锁。</p>
+     *
+     * @param configKey 配置键 taskClass#taskTag$runTarget
+     * @return 是否存在并停止了 handle
+     */
+    public synchronized boolean stopDelayer(String configKey) {
+        TaskDelayerRunHandle existing = runHandleMap.get(configKey);
+        if (existing != null) {
+            existing.stop(30000);
+            runHandleMap.remove(configKey);
+            log.info("TaskDelayer[{}]已停止", configKey);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -289,14 +309,27 @@ public class TaskDelayerContainer {
     }
 
     /**
-     * 关闭所有 poll 与 worker。
+     * 暂停所有延迟任务（host 禁用）：drain 30s 等在途完成，不丢任务。
      */
-    public synchronized void stopAllTaskDelayer() {
+    public synchronized void suspendAll() {
+        log.info("All TaskDelayer Suspended....");
         for (TaskDelayerRunHandle handle : runHandleMap.values()) {
-            handle.stop();
+            handle.stop(30000);
         }
         runHandleMap.clear();
-        log.info("TaskDelayerContainer 已停止，反压跳过累计: {}", backpressureSkipCount.get());
+        log.info("TaskDelayerContainer 已暂停，反压跳过累计: {}", backpressureSkipCount.get());
+    }
+
+    /**
+     * 销毁所有延迟任务（@PreDestroy）：drain 5s + shutdownNow 兜底，不阻塞应用关闭太久。
+     */
+    public synchronized void destroyAll() {
+        log.info("All TaskDelayer Destroy....");
+        for (TaskDelayerRunHandle handle : runHandleMap.values()) {
+            handle.stop(5000);
+        }
+        runHandleMap.clear();
+        log.info("TaskDelayerContainer 已销毁，反压跳过累计: {}", backpressureSkipCount.get());
     }
 
     /**
@@ -342,9 +375,11 @@ public class TaskDelayerContainer {
 
         /**
          * 停止 poll 线程与 workerPool：设置 running=false、中断 poll 线程、shutdown workerPool，
-         * drain 模式等待最多 30 秒让在途虚拟线程任务完成（降级切换/关闭不丢任务），超时 shutdownNow 兜底。
+         * drain 模式等待最多 drainMillis 让在途虚拟线程任务完成（降级切换/关闭不丢任务），超时 shutdownNow 兜底。
+         *
+         * @param drainMillis drain 超时（suspendAll=30s 等在途完成；destroyAll=5s 不阻塞应用关闭太久）
          */
-        void stop() {
+        void stop(long drainMillis) {
             running = false;
             if (pollThread != null) {
                 pollThread.interrupt();
@@ -358,7 +393,7 @@ public class TaskDelayerContainer {
             }
             workerPool.shutdown();
             // drain：等待在途虚拟线程任务完成（IO 任务），降级切换/关闭不丢任务
-            long deadline = SystemClock.now() + 30000;
+            long deadline = SystemClock.now() + drainMillis;
             while (workerPool.getActiveCount() > 0 && SystemClock.now() < deadline) {
                 try {
                     Thread.sleep(100);
@@ -466,21 +501,28 @@ public class TaskDelayerContainer {
                     task.setState(TaskData.STATE_FAIL_PROGRAM);
                     task.setErrorInfo("TaskDelayer not found: " + task.getTaskClass());
                 }
-            } catch (TaskDataException e) {
-                task.setState(TaskData.STATE_FAIL_DATA);
-                task.setErrorInfo(ExceptionUtils.exceptionToString(e));
-            } catch (TaskPartnerException e) {
-                task.setState(TaskData.STATE_FAIL_PARTNER);
-                task.setErrorInfo(ExceptionUtils.exceptionToString(e));
             } catch (Throwable e) {
-                task.setState(TaskData.STATE_FAIL_PROGRAM);
+                // 异常分类：TaskDataException→DATA / TaskPartnerException→PARTNER / 其余→PROGRAM
+                int failState = TaskStatsService.mapFailureState(e);
+                task.setState(failState);
                 task.setErrorInfo(ExceptionUtils.exceptionToString(e));
-                log.error(e.getMessage(), e);
+                if (failState == TaskData.STATE_FAIL_PROGRAM) {
+                    log.error(e.getMessage(), e);
+                }
             }
         } else {
             // 限速等待超时（rateLimitWait 内未获配额，极端高并发）：标记 STATE_FAIL_CONFIG，重试决策统一放到统计/日志之后
             task.setErrorInfo("RateLimit!!!" + config.getRateLimitValue() + "/" + config.getRateLimitTime() + "s");
             task.setState(TaskData.STATE_FAIL_CONFIG);
+        }
+        // 监听器回调（run 后，与 Runner/Croner 对齐）：无论成功/失败都回调，监听器异常不影响任务执行流程
+        List<TaskDelayerListener> delayerListenerList = taskListenerManager.getDelayerListenerList();
+        for (TaskDelayerListener listener : delayerListenerList) {
+            try {
+                listener.onPostExecute(task);
+            } catch (Throwable e) {
+                log.error("TaskDelayerListener.onPostExecute 异常: {}", e.getMessage(), e);
+            }
         }
         // 清理 refObject，避免日志序列化时带入大对象/不可序列化对象（对齐 TaskRunner.process）
         task.setRefObject(null);
@@ -555,31 +597,16 @@ public class TaskDelayerContainer {
         }
         String taskClass = task.getTaskClass();
         String tag = task.getRateLimitTag();
-        String host = taskProperties.getAppHost();
-        if (type == TaskRunnerConfig.RATE_LIMIT_LOCAL) {
-            return taskLocalRateLimiter.tryAcquire("", value, time, config.getRateLimitWait(), 1);
-        } else if (type == TaskRunnerConfig.RATE_LIMIT_LOCAL_TASK) {
-            return taskLocalRateLimiter.tryAcquire(taskClass, value, time, config.getRateLimitWait(), 1);
-        } else if (type == TaskRunnerConfig.RATE_LIMIT_LOCAL_TASK_TAG) {
-            return taskLocalRateLimiter.tryAcquire(taskClass + "$" + tag, value, time, config.getRateLimitWait(), 1);
+        if (type == TaskRunnerConfig.RATE_LIMIT_LOCAL
+                || type == TaskRunnerConfig.RATE_LIMIT_LOCAL_TASK
+                || type == TaskRunnerConfig.RATE_LIMIT_LOCAL_TASK_TAG) {
+            // 进程内限速：限流 key 拼接见 TaskRateLimitHelper.buildLocalLocker
+            String locker = TaskRateLimitHelper.buildLocalLocker(type, taskClass, tag);
+            return taskLocalRateLimiter.tryAcquire(locker, value, time, config.getRateLimitWait(), 1);
         } else {
-            // GLOBAL 系列：sleep 等待窗口滚动（虚拟线程 park），rateLimitWait 内循环重试
-            // 限流 key 拼接规则见 TaskRateLimitHelper.buildGlobalLocker。
-            String locker = TaskRateLimitHelper.buildGlobalLocker(type, taskClass, tag, host);
-            long end = SystemClock.now() + config.getRateLimitWait() * 1000L;
-            while (SystemClock.now() <= end) {
-                long waitMillis = taskGlobalRateLimiter.tryAcquire(locker, value, time, 1);
-                if (waitMillis == 0) {
-                    return true;
-                }
-                try {
-                    Thread.sleep(waitMillis);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return false;
-                }
-            }
-            return false;
+            // GLOBAL 系列：限流 key 见 buildGlobalLocker，等待循环见 acquireGlobalWithWait（虚拟线程 park 不占载体）
+            String locker = TaskRateLimitHelper.buildGlobalLocker(type, taskClass, tag, taskProperties.getAppHost());
+            return TaskRateLimitHelper.acquireGlobalWithWait(taskGlobalRateLimiter, locker, value, time, config.getRateLimitWait());
         }
     }
 }

@@ -45,6 +45,10 @@ public class TaskFactory {
      */
     private final RabbitTemplate rabbitTemplate;
     /**
+     * 任务meta信息管理器。
+     */
+    private final TaskMetaInfoManager taskMetaInfoManager;
+    /**
      * 全局sequence序列，主要用于taskLog日志。
      */
     private final TaskSequenceManager taskSequenceManager;
@@ -53,9 +57,10 @@ public class TaskFactory {
      */
     private final TaskRunnerContainer taskRunnerContainer;
     /**
-     * 任务meta信息管理器。
+     * 延迟任务容器（delayTask 委派给它）。
      */
-    private final TaskMetaInfoManager taskMetaInfoManager;
+    private final TaskDelayerContainer taskDelayerContainer;
+
     /**
      * rpc异步调用线程池
      */
@@ -64,10 +69,6 @@ public class TaskFactory {
      * 任务本地运行线程池。
      */
     private final ExecutorService taskQueueService;
-    /**
-     * 延迟任务容器（delayTask 委派给它）。
-     */
-    private final TaskDelayerContainer taskDelayerContainer;
 
     /**
      * 构造 TaskFactory 并初始化两个内置线程池，同时设置全局单例。
@@ -79,6 +80,7 @@ public class TaskFactory {
      * @param taskRunnerContainer 队列任务执行容器（本地/RPC 模式实际执行入口）
      * @param taskSequenceManager 全局发号器（生成 TaskRunnerLog id）
      * @param taskMetaInfoManager 任务元信息管理器（runner 实例与配置索引）
+     * @param taskDelayerContainer 延迟任务容器（delayTask 委派给它）
      */
     public TaskFactory(TaskProperties taskProperties, RabbitTemplate rabbitTemplate, TaskRunnerContainer taskRunnerContainer, TaskSequenceManager taskSequenceManager,
                        TaskMetaInfoManager taskMetaInfoManager, TaskDelayerContainer taskDelayerContainer) {
@@ -208,6 +210,8 @@ public class TaskFactory {
             // 全局运行模式
             String queue = taskMetaInfoManager.getFitQueue(taskData);
             //此处可能出现The channelMax limit is reached.报错，所以进行重试。
+            //注：仅对 channelMax 类 AmqpException 重试；RPC 超时(retMessage==null)不重试（重试只阻塞调用方+可能重复执行）。
+            String rpcTimeoutQueue = null;
             for (int i = 0; i < MAX_RETRY_TIMES; i++) {
                 try {
                     if (i > 0) {
@@ -217,7 +221,9 @@ public class TaskFactory {
                     if (retMessage != null) {
                         return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
                     }
-                    throw new TaskRuntimeException("RPC call timed out: " + queue);
+                    // RPC 超时（对方没回）：立即失败，不重试
+                    rpcTimeoutQueue = queue;
+                    break;
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
                     if (e instanceof InterruptedException) {
@@ -225,6 +231,9 @@ public class TaskFactory {
                         break;
                     }
                 }
+            }
+            if (rpcTimeoutQueue != null) {
+                throw new TaskRuntimeException("RPC call timed out: " + rpcTimeoutQueue);
             }
             throw new TaskRuntimeException("The channelMax limit is reached!");
         }
@@ -256,7 +265,7 @@ public class TaskFactory {
             taskRunnerContainer.process(taskData);
             return taskData;
         } else {
-            throw new TaskRuntimeException(taskData.getClass().getName() + " is not a local task! ");
+            throw new TaskRuntimeException(taskData.getTaskClass() + " is not a local task! ");
         }
     }
 
@@ -301,6 +310,8 @@ public class TaskFactory {
             String queue = taskMetaInfoManager.getFitQueue(taskData);
             return taskRpcService.submit(() -> {
                 //此处可能出现The channelMax limit is reached.报错，所以进行重试。
+                //注：仅对 channelMax 类 AmqpException 重试；RPC 超时(retMessage==null)不重试（重试只阻塞调用方+可能重复执行）。
+                String rpcTimeoutQueue = null;
                 for (int i = 0; i < MAX_RETRY_TIMES; i++) {
                     try {
                         if (i > 0) {
@@ -310,7 +321,9 @@ public class TaskFactory {
                         if (retMessage != null) {
                             return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
                         }
-                        throw new TaskRuntimeException("RPC call timed out: " + queue);
+                        // RPC 超时（对方没回）：立即失败，不重试
+                        rpcTimeoutQueue = queue;
+                        break;
                     } catch (Exception e) {
                         log.error(e.getMessage(), e);
                         if (e instanceof InterruptedException) {
@@ -318,6 +331,9 @@ public class TaskFactory {
                             break;
                         }
                     }
+                }
+                if (rpcTimeoutQueue != null) {
+                    throw new TaskRuntimeException("RPC call timed out: " + rpcTimeoutQueue);
                 }
                 throw new TaskRuntimeException("The channelMax limit is reached!");
             });

@@ -54,9 +54,9 @@ public enum RunnerRateLimitType {
     GLOBAL_TAG_HOST(7, "全局TAG+HOST限速"),
 
     /**
-     * 限速类型：全局TASK+IP限速
+     * 限速类型：全局TASK+HOST限速
      */
-    GLOBAL_TASK_HOST(8, "全局TASK+IP限速"),
+    GLOBAL_TASK_HOST(8, "全局TASK+HOST限速"),
 
     /**
      * 限速类型：全局TASK+TAG限速
@@ -64,9 +64,9 @@ public enum RunnerRateLimitType {
     GLOBAL_TASK_TAG(9, "全局TASK+TAG限速"),
 
     /**
-     * 限速类型：全局TASK+TAG+IP限速
+     * 限速类型：全局TASK+TAG+HOST限速
      */
-    GLOBAL_TASK_TAG_HOST(10, "全局TASK+TAG+IP限速");
+    GLOBAL_TASK_TAG_HOST(10, "全局TASK+TAG+HOST限速");
 
 
     /**

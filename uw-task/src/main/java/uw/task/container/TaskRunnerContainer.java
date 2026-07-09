@@ -70,21 +70,21 @@ public class TaskRunnerContainer {
     /**
      * 默认构造器。
      *
-     * @param taskProperties       任务全局配置
-     * @param taskApiClient        服务端任务 API 客户端（发送日志等）
-     * @param taskLocalRateLimiter 进程内限速器（LOCAL 系列限速）
+     * @param taskProperties        任务全局配置
+     * @param taskApiClient         服务端任务 API 客户端（发送日志等）
+     * @param taskMetaInfoManager   任务元信息管理器（runner 实例与配置索引）
+     * @param taskLocalRateLimiter  进程内限速器（LOCAL 系列限速）
      * @param taskGlobalRateLimiter 全局限速器（GLOBAL 系列限速，基于 Redis）
-     * @param taskListenerManager  任务监听管理器（pre/postExecute 回调）
-     * @param taskMetaInfoManager  任务元信息管理器（runner 实例与配置索引）
+     * @param taskListenerManager   任务监听管理器（pre/postExecute 回调）
      */
-    public TaskRunnerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskLocalRateLimiter taskLocalRateLimiter,
-                               TaskGlobalRateLimiter taskGlobalRateLimiter, TaskListenerManager taskListenerManager, TaskMetaInfoManager taskMetaInfoManager) {
+    public TaskRunnerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskMetaInfoManager taskMetaInfoManager,
+                               TaskLocalRateLimiter taskLocalRateLimiter, TaskGlobalRateLimiter taskGlobalRateLimiter, TaskListenerManager taskListenerManager) {
         this.taskProperties = taskProperties;
         this.taskApiClient = taskApiClient;
+        this.taskMetaInfoManager = taskMetaInfoManager;
         this.taskLocalRateLimiter = taskLocalRateLimiter;
         this.taskGlobalRateLimiter = taskGlobalRateLimiter;
         this.taskListenerManager = taskListenerManager;
-        this.taskMetaInfoManager = taskMetaInfoManager;
     }
 
 
@@ -118,12 +118,27 @@ public class TaskRunnerContainer {
         } catch (Throwable e) {
             // 兜底守护：未守护路径（getRunnerConfigByData 找不到配置 / 限速 tryAcquire Redis 故障 / 重试 sendToQueue MQ 故障等）
             // 抛异常会逃逸到 MessageListenerAdapter，配合 defaultRequeueRejected(false) 会直接丢消息——
-            // 此处 catch 保证消息 ack（不丢），映射失败状态 + errorInfo 让统计/日志可观测。
+            // 此处 catch 保证消息 ack（不丢），映射失败状态 + 写统计/ES 日志让可观测（与 runner 实例不存在的早期路径对齐）。
             taskData.setState(TaskData.STATE_FAIL_PROGRAM);
             taskData.setErrorInfo(ExceptionUtils.exceptionToString(e));
             if (taskData.getFinishDate() == null) {
                 taskData.setFinishDate(SystemClock.nowDate());
             }
+            long taskId = 0;
+            try {
+                TaskRunnerConfig cfg = taskMetaInfoManager.getRunnerConfigByData(taskData);
+                if (cfg != null) {
+                    taskId = cfg.getId();
+                }
+            } catch (Exception ignore) {
+                // 配置缺失（正是本 catch 常见触发原因），taskId 保持 0
+            }
+            int[] failCounters = TaskStatsService.toFailCounters(taskData.getState());
+            TaskStatsService.updateRunnerStats(taskId, 1, failCounters[0], failCounters[1], failCounters[2], failCounters[3], 0, 0, 0);
+            TaskRunnerLog runnerLog = new TaskRunnerLog(taskData);
+            runnerLog.setTaskId(taskId);
+            runnerLog.setLogLevel(TaskRunnerConfig.TASK_LOG_TYPE_RECORD);
+            taskApiClient.sendTaskRunnerLog(runnerLog);
             log.error("TaskRunner process 未预期异常(已捕获防丢消息),taskClass={}: {}", taskData.getTaskClass(), e.getMessage(), e);
             return taskData;
         }

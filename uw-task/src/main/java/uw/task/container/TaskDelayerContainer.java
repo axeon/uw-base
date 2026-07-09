@@ -78,16 +78,16 @@ public class TaskDelayerContainer {
                     + "return members",
             List.class);
 
-    /** 任务元信息管理器（提供 Delayer 实例索引与 configKey，实例注册由其 init() 统一扫描）。 */
-    private final TaskMetaInfoManager taskMetaInfoManager;
+    /** 任务全局配置（提供 runTarget 等）。 */
+    private final TaskProperties taskProperties;
     /** 服务端任务 API 客户端（发送 delayer 日志）。 */
     private final TaskApiClient taskApiClient;
+    /** 任务元信息管理器（提供 Delayer 实例索引与 configKey，实例注册由其 init() 统一扫描）。 */
+    private final TaskMetaInfoManager taskMetaInfoManager;
     /** 进程内限速器（LOCAL 系列限速）。 */
     private final TaskLocalRateLimiter taskLocalRateLimiter;
     /** 全局限速器（GLOBAL 系列限速，基于 Redis）。 */
     private final TaskGlobalRateLimiter taskGlobalRateLimiter;
-    /** 任务全局配置（提供 runTarget 等）。 */
-    private final TaskProperties taskProperties;
     /** 全局发号器（生成 TaskDelayerLog id，resubmit 换新 id 用）。 */
     private final TaskSequenceManager taskSequenceManager;
     /** Redis 操作模板，key 用 String 序列化、value 用 byte[]（Kryo 序列化 TaskData）。 */
@@ -116,22 +116,22 @@ public class TaskDelayerContainer {
     /**
      * 构造延迟任务容器，初始化专用的 RedisTemplate（String key + byte[] value，Kryo 序列化 TaskData）。
      *
-     * @param taskMetaInfoManager     任务元信息管理器（提供 Delayer 实例索引与 configKey）
+     * @param taskProperties          任务全局配置
      * @param taskApiClient           服务端任务 API 客户端
+     * @param taskMetaInfoManager     任务元信息管理器（提供 Delayer 实例索引与 configKey）
      * @param taskLocalRateLimiter    进程内限速器
      * @param taskGlobalRateLimiter   全局限速器
-     * @param taskProperties          任务全局配置
      * @param taskSequenceManager     全局发号器
      * @param redisConnectionFactory  Redis 连接工厂（构建 zset 操作模板）
      */
-    public TaskDelayerContainer(TaskMetaInfoManager taskMetaInfoManager, TaskApiClient taskApiClient, TaskLocalRateLimiter taskLocalRateLimiter,
-                                TaskGlobalRateLimiter taskGlobalRateLimiter, TaskProperties taskProperties,
+    public TaskDelayerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskMetaInfoManager taskMetaInfoManager,
+                                TaskLocalRateLimiter taskLocalRateLimiter, TaskGlobalRateLimiter taskGlobalRateLimiter,
                                 TaskSequenceManager taskSequenceManager, RedisConnectionFactory redisConnectionFactory) {
-        this.taskMetaInfoManager = taskMetaInfoManager;
+        this.taskProperties = taskProperties;
         this.taskApiClient = taskApiClient;
+        this.taskMetaInfoManager = taskMetaInfoManager;
         this.taskLocalRateLimiter = taskLocalRateLimiter;
         this.taskGlobalRateLimiter = taskGlobalRateLimiter;
-        this.taskProperties = taskProperties;
         this.taskSequenceManager = taskSequenceManager;
         this.redisTemplate = new RedisTemplate<>();
         this.redisTemplate.setKeySerializer(new StringRedisSerializer());
@@ -151,10 +151,10 @@ public class TaskDelayerContainer {
         // Delayer 实例由 TaskMetaInfoManager.init() 统一扫描注册，此处直接取索引遍历配置
         for (Map.Entry<String, TaskDelayer<?, ?>> entry : taskMetaInfoManager.getDelayerInstanceMap().entrySet()) {
             String taskClass = entry.getKey();
-            TaskDelayer runner = entry.getValue();
-            log.info("TaskDelayerContainer 注册 runner: {}", taskClass);
+            TaskDelayer delayer = entry.getValue();
+            log.info("TaskDelayerContainer 注册 delayer: {}", taskClass);
             try {
-                TaskDelayerConfig config = runner.initConfig();
+                TaskDelayerConfig config = delayer.initConfig();
                 if (config != null) {
                     config.setTaskClass(taskClass);
                     config.setRunTarget(taskProperties.getRunTarget());
@@ -270,15 +270,21 @@ public class TaskDelayerContainer {
         if (statsList == null || statsList.isEmpty()) {
             return;
         }
+        // 预建 taskId -> configKey 反查索引，避免对每个 stats 遍历全部 config（O(n*m)→O(n)，对齐 runner 侧 queueNameByTaskId）
+        java.util.Map<String, TaskDelayerConfig> configMap = taskMetaInfoManager.getDelayerConfigMap();
+        java.util.Map<Long, String> configKeyByTaskId = new java.util.HashMap<>(configMap.size());
+        for (Map.Entry<String, TaskDelayerConfig> e : configMap.entrySet()) {
+            configKeyByTaskId.put(e.getValue().getId(), e.getKey());
+        }
         for (TaskDelayerStats s : statsList) {
-            for (Map.Entry<String, TaskDelayerConfig> e : taskMetaInfoManager.getDelayerConfigMap().entrySet()) {
-                if (e.getValue().getId() == s.getTaskId()) {
-                    Long size = redisTemplate.opsForZSet().size(ZSET_PREFIX + e.getKey());
-                    s.setQueueSize(size == null ? 0 : size.intValue());
-                    s.setConsumerNum(e.getValue().getConsumerNum());
-                    break;
-                }
+            String configKey = configKeyByTaskId.get(s.getTaskId());
+            if (configKey == null) {
+                continue;
             }
+            TaskDelayerConfig cfg = configMap.get(configKey);
+            Long size = redisTemplate.opsForZSet().size(ZSET_PREFIX + configKey);
+            s.setQueueSize(size == null ? 0 : size.intValue());
+            s.setConsumerNum(cfg.getConsumerNum());
         }
     }
 

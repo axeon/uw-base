@@ -66,7 +66,9 @@ public class TaskMessageConverter implements MessageConverter {
         try {
             bytes = KryoUtils.serialize(objectToConvert);
         } catch (Exception e) {
-            throw new MessageConversionException("Failed to convert Message content. " + e.getMessage(), e);
+            // 详细原因只进日志（含 kryo 内部信息），对外用固定文案避免泄露序列化实现
+            log.error("TaskData serialize failed: {}", e.toString());
+            throw new MessageConversionException("TaskData invalid or corrupted.");
         }
         messageProperties.setContentLength(bytes.length);
         return new Message(bytes, messageProperties);
@@ -97,7 +99,9 @@ public class TaskMessageConverter implements MessageConverter {
             try {
                 content = KryoUtils.deserialize(message.getBody(), TaskData.class);
             } catch (Exception e) {
-                throw new MessageConversionException("Failed to convert Message content. " + e.getMessage(), e);
+                // 详细原因只进日志（含 kryo 内部信息），对外用固定文案避免泄露序列化实现（消费端边界，可能进死信 x-exception 头）
+                log.error("TaskData deserialize failed: {}", e.toString());
+                throw new MessageConversionException("TaskData invalid or corrupted.");
             }
         } else {
             if (log.isWarnEnabled()) {

@@ -49,16 +49,16 @@ public class TaskStatsService {
 
 
     /**
-     * 更新cronerMetrics。
+     * 更新 croner 统计（聚合到内存 map，reportHostInfo 上报时取快照清空）。
      *
-     * @param taskId
-     * @param numAll
-     * @param numFailProgram
-     * @param numFailConfig
-     * @param numFailData
-     * @param numFailPartner
-     * @param timeWait
-     * @param timeRun
+     * @param taskId         任务配置 id
+     * @param numAll         执行总计数
+     * @param numFailProgram 程序失败计数
+     * @param numFailConfig  配置失败计数
+     * @param numFailData    数据失败计数
+     * @param numFailPartner 合作方失败计数
+     * @param timeWait       等待耗时（毫秒）
+     * @param timeRun        运行耗时（毫秒）
      */
     public static void updateCronerStats(long taskId, int numAll, int numFailProgram, int numFailConfig, int numFailData, int numFailPartner, int timeWait, int timeRun) {
         CRONER_STATS_MAP.compute(taskId, (k, v) -> {
@@ -71,9 +71,9 @@ public class TaskStatsService {
     }
 
     /**
-     * 获取CronerMetrics列表，同时清空map。
+     * 获取 Croner 统计快照列表，同时清空 map。
      *
-     * @return
+     * @return 快照列表
      */
     public static List<TaskCronerStats> getCronerStats() {
         List<TaskCronerStats> list = new ArrayList<>(CRONER_STATS_MAP.values());
@@ -83,17 +83,17 @@ public class TaskStatsService {
 
 
     /**
-     * 更新RunnerMetrics.
+     * 更新 runner 统计（聚合到内存 map，reportHostInfo 上报时取快照清空）。
      *
-     * @param taskId
-     * @param numAll
-     * @param numFailProgram
-     * @param numFailConfig
-     * @param numFailData
-     * @param numFailPartner
-     * @param timeWaitQueue
-     * @param timeWaitDelay
-     * @param timeRun
+     * @param taskId         任务配置 id
+     * @param numAll         执行总计数
+     * @param numFailProgram 程序失败计数
+     * @param numFailConfig  配置失败计数
+     * @param numFailData    数据失败计数
+     * @param numFailPartner 合作方失败计数
+     * @param timeWaitQueue  队列等待耗时（毫秒）
+     * @param timeWaitDelay  限速等待耗时（毫秒）
+     * @param timeRun        运行耗时（毫秒）
      */
     public static void updateRunnerStats(long taskId, int numAll, int numFailProgram, int numFailConfig, int numFailData, int numFailPartner, int timeWaitQueue, int timeWaitDelay, int timeRun) {
         RUNNER_STATS_MAP.compute(taskId, (k, v) -> {
@@ -106,9 +106,9 @@ public class TaskStatsService {
     }
 
     /**
-     * 获取RunnerMetrics列表，同时清空map。
+     * 获取 Runner 统计快照列表，同时清空 map。
      *
-     * @return
+     * @return 快照列表
      */
     public static List<TaskRunnerStats> getRunnerStats() {
         List<TaskRunnerStats> list = new ArrayList<>(RUNNER_STATS_MAP.values());

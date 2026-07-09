@@ -244,10 +244,11 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
     }
 
     /**
-     * builder模式，带taskClass和taskParam参数。
+     * builder 模式，带 taskClass 和 taskParam 参数。
      *
-     * @param taskClass
-     * @return
+     * @param taskClass 任务类全限定名
+     * @param taskParam 任务参数
+     * @return Builder
      */
     public static <TP, RD> Builder<TP, RD> builder(String taskClass, TP taskParam) {
         return new Builder<TP, RD>().taskClass(taskClass).taskParam(taskParam);
@@ -255,16 +256,23 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
 
 
     /**
-     * builder模式，带taskClass和taskParam参数。
+     * builder 模式，带 taskClass 和 taskParam 参数。
      *
-     * @param taskClass
-     * @return
+     * @param taskClass 任务类（TaskRunner 子类）
+     * @param taskParam 任务参数
+     * @return Builder
      */
     public static <TP, RD> Builder<TP, RD> builder(Class<? extends TaskRunner<TP, RD>> taskClass, TP taskParam) {
         return new Builder<TP, RD>().taskClass(taskClass.getName()).taskParam(taskParam);
     }
 
 
+    /**
+     * 基于已有 TaskData 复制出一个 Builder（用于局部修改后重建，如重试 cleanForRetry 后 resubmit）。
+     *
+     * @param copy 源任务数据
+     * @return Builder
+     */
     public static <TP, RD> Builder<TP, RD> builder(TaskData<TP, RD> copy) {
         Builder<TP, RD> builder = new Builder<TP, RD>();
         builder.refTag = copy.getRefTag();

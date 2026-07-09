@@ -163,6 +163,7 @@ public class TaskServiceRegistrar {
      * @param taskApiClient          任务中心 API 客户端
      * @param taskRunnerContainer    队列任务容器
      * @param taskCronerContainer    定时任务容器
+     * @param taskDelayerContainer   延迟任务容器
      * @param taskRabbitConnectionFactory 任务专用 RabbitMQ 连接工厂
      * @param rabbitAdmin            RabbitMQ 管理器
      * @param taskMetaInfoManager    任务元信息管理器
@@ -468,10 +469,12 @@ public class TaskServiceRegistrar {
                     }
                     localConfig.setTaskClass(entry.getKey());
                     localConfig.setRunTarget(taskProperties.getRunTarget());
-                    taskApiClient.initTaskDelayerConfig(localConfig);
-                    // 与降级路径对称：首次上传后立即用本地默认配置填 delayerConfigMap + 启动 poll handle，
-                    // 否则 center 回显前(~60s) submit() 找不到配置抛异常 + 无 handle 消费
-                    taskDelayerContainer.configureTaskDelayer(localConfig);
+                    // 与 Runner/Croner 对称：捕获服务端响应拿 real id（否则 id=0 窗口致统计/日志串扰、fillDelayerStats 错配）
+                    ResponseData<TaskDelayerConfig> delayerResp = taskApiClient.initTaskDelayerConfig(localConfig);
+                    TaskDelayerConfig configToUse = (delayerResp != null && delayerResp.isSuccess() && delayerResp.getData() != null)
+                            ? delayerResp.getData() : localConfig;
+                    // 首次上传后立即填 delayerConfigMap + 启动 poll handle（与降级路径对称），否则 center 回显前(~60s) submit() 抛异常 + 无 handle 消费
+                    taskDelayerContainer.configureTaskDelayer(configToUse);
                     TaskContact contact = runner.initContact();
                     if (contact != null) {
                         contact.setTaskClass(entry.getKey());
@@ -502,9 +505,14 @@ public class TaskServiceRegistrar {
     public void stopAllTaskRunner() {
         log.info("All TaskRunner Destroy....");
         for (SimpleMessageListenerContainer container : queueListenerMap.values()) {
-            // shutdown() 是彻底关闭、stop() 是优雅停止；先 shutdown 后 stop 状态会异常。
-            // SimpleMessageListenerContainer 的 destroy() 按 Spring 生命周期顺序处理关闭，最为稳妥。
-            container.destroy();
+            try {
+                // shutdown() 是彻底关闭、stop() 是优雅停止；先 shutdown 后 stop 状态会异常。
+                // SimpleMessageListenerContainer 的 destroy() 按 Spring 生命周期顺序处理关闭，最为稳妥。
+                container.destroy();
+            } catch (Throwable e) {
+                // 单个 listener destroy 失败不阻断其余 listener 停机 + clear（host-disable 是运维关键操作，须保证后续 croner/delayer 也被停）
+                log.error("TaskRunner listener destroy 失败: {}", e.getMessage(), e);
+            }
         }
         // 清空 map：禁用主机解除后，updateConfig 主循环 registerQueueListener 才会重新创建 listener（否则 map 残留已 destroy 的容器导致跳过）
         queueListenerMap.clear();
@@ -594,7 +602,16 @@ public class TaskServiceRegistrar {
         }
         hostStats.setAppName(taskProperties.getAppName());
         hostStats.setAppVersion(taskProperties.getAppVersion());
-        hostStats.setAppHost(taskProperties.getAppHost());
+        String appHost = taskProperties.getAppHost();
+        if (appHost == null || appHost.isEmpty()) {
+            // 未接入 nacos（appHost 配置为空）时用本机 IP 兜底，避免上报空 host
+            try {
+                appHost = java.net.InetAddress.getLocalHost().getHostAddress();
+            } catch (Exception e) {
+                appHost = "";
+            }
+        }
+        hostStats.setAppHost(appHost);
         hostStats.setAppPort(taskProperties.getAppPort());
         hostStats.setTaskProject(taskProperties.getTaskProject());
         hostStats.setRunTarget(taskProperties.getRunTarget());
@@ -634,8 +651,15 @@ public class TaskServiceRegistrar {
             if (queueName == null) {
                 continue;
             }
-            AMQP.Queue.DeclareOk declareOk = queueInfoMap.computeIfAbsent(queueName,
-                    (Key) -> rabbitAdmin.getRabbitTemplate().execute(channel -> channel.queueDeclarePassive(queueName)));
+            AMQP.Queue.DeclareOk declareOk;
+            try {
+                declareOk = queueInfoMap.computeIfAbsent(queueName,
+                        (Key) -> rabbitAdmin.getRabbitTemplate().execute(channel -> channel.queueDeclarePassive(queueName)));
+            } catch (Exception e) {
+                // 单个队列查询失败（队列不存在/MQ 瞬时故障）不阻断其他队列 + 后续 hostInfo 上报/hostDisabled 检查
+                log.warn("查询队列积压失败,queueName={}: {}", queueName, e.getMessage());
+                continue;
+            }
             stats.setQueueSize(declareOk.getMessageCount());
             stats.setConsumerNum(declareOk.getConsumerCount());
         }
@@ -827,8 +851,15 @@ public class TaskServiceRegistrar {
                     log.error(e.getMessage(), e);
                 }
             } else {
-                queueListenerMap.remove(queueName);
-                sysContainer.destroy();
+                // state<1：GROUP/PROJECT 队列共享，销毁前检查是否仍有其他活跃配置映射到同一 queueName，避免误销毁共享 listener（致同包其他 runner 消费中断）
+                boolean stillInUse = taskMetaInfoManager.getRunnerConfigMap().values().stream()
+                        .anyMatch(c -> queueName.equals(taskMetaInfoManager.getQueueNameByConfig(c)));
+                if (!stillInUse) {
+                    queueListenerMap.remove(queueName);
+                    sysContainer.destroy();
+                } else if (log.isDebugEnabled()) {
+                    log.debug("TaskRunner[{}]仍有活跃配置共享此队列，跳过 destroy", queueName);
+                }
             }
         }
     }

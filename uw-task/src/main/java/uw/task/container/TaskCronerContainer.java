@@ -62,30 +62,29 @@ public class TaskCronerContainer {
      */
     private final ScheduledExecutorService executorService;
     /**
-     * 全局任务锁。
+     * 任务配置
      */
-    private final TaskGlobalLocker taskGlobalLocker;
+    private final TaskProperties taskProperties;
     /**
      * 服务端API
      */
     private final TaskApiClient taskApiClient;
     /**
-     * 监听管理器。
+     * 任务元信息管理器
      */
-    private final TaskListenerManager taskListenerManager;
+    private final TaskMetaInfoManager taskMetaInfoManager;
     /**
      * 全局序列发生器。
      */
     private final TaskSequenceManager taskSequenceManager;
     /**
-     * 任务配置
+     * 全局任务锁。
      */
-    private final TaskProperties taskProperties;
-
+    private final TaskGlobalLocker taskGlobalLocker;
     /**
-     * 任务元信息管理器
+     * 监听管理器。
      */
-    private final TaskMetaInfoManager taskMetaInfoManager;
+    private final TaskListenerManager taskListenerManager;
 
     /**
      * 构造定时任务容器并初始化调度线程池。
@@ -94,18 +93,19 @@ public class TaskCronerContainer {
      *
      * @param taskProperties       任务全局配置
      * @param taskApiClient        服务端任务 API 客户端
+     * @param taskMetaInfoManager  任务元信息管理器（提供 getCronerConfigKey 计算配置键）
      * @param taskSequenceManager  全局发号器（生成 TaskCronerLog id）
-     * @param taskListenerManager  任务监听管理器（pre/postExecute 回调）
      * @param taskGlobalLocker     全局 Leader 锁（SINGLETON 任务用）
+     * @param taskListenerManager  任务监听管理器（pre/postExecute 回调）
      */
-    public TaskCronerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskSequenceManager taskSequenceManager, TaskListenerManager taskListenerManager,
-                               TaskGlobalLocker taskGlobalLocker, TaskMetaInfoManager taskMetaInfoManager) {
-        this.taskGlobalLocker = taskGlobalLocker;
-        this.taskApiClient = taskApiClient;
-        this.taskListenerManager = taskListenerManager;
-        this.taskSequenceManager = taskSequenceManager;
+    public TaskCronerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskMetaInfoManager taskMetaInfoManager, TaskSequenceManager taskSequenceManager,
+                               TaskGlobalLocker taskGlobalLocker, TaskListenerManager taskListenerManager) {
         this.taskProperties = taskProperties;
+        this.taskApiClient = taskApiClient;
         this.taskMetaInfoManager = taskMetaInfoManager;
+        this.taskSequenceManager = taskSequenceManager;
+        this.taskGlobalLocker = taskGlobalLocker;
+        this.taskListenerManager = taskListenerManager;
         // 如果禁用任务注册，则croner线程数按 1 计，节省资源。
         // 注意：不回写 taskProperties，避免篡改共享配置对象影响其他读取方。
         int cronerThreadNum = taskProperties.isEnableRegistry() ? taskProperties.getCronerThreadNum() : 1;

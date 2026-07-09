@@ -40,9 +40,9 @@ class TaskDelayerContainerTest {
     void constructWithoutException() {
         TaskProperties props = new TaskProperties();
         TaskDelayerContainer container = new TaskDelayerContainer(
-                mock(TaskMetaInfoManager.class), mock(TaskApiClient.class),
+                props, mock(TaskApiClient.class), mock(TaskMetaInfoManager.class),
                 mock(TaskLocalRateLimiter.class), mock(TaskGlobalRateLimiter.class),
-                props, mock(uw.task.util.TaskSequenceManager.class), mock(org.springframework.data.redis.connection.RedisConnectionFactory.class));
+                mock(uw.task.util.TaskSequenceManager.class), mock(org.springframework.data.redis.connection.RedisConnectionFactory.class));
         assertThat(container).isNotNull();
     }
 }

@@ -33,7 +33,7 @@ public class TaskListenerManager {
     }
 
     /**
-     * 加入一个RunnerListener.
+     * 加入一个 CronerListener.
      *
      * @param listener
      */
@@ -49,7 +49,7 @@ public class TaskListenerManager {
     }
 
     /**
-     * 清除RunnerListener列表
+     * 清除 CronerListener 列表
      */
     public void clearCronerListener() {
         cronerListenerList.clear();

@@ -300,45 +300,45 @@ public class HotelPriceValue {
                 return false;
             }
             RuleInfo that = (RuleInfo) o;
-            boolean result = false;
+            boolean result = true;
             if (this.confirmType != DEFAULT_RULE_NUM) {
-                result = this.confirmType == that.getConfirmType();
+                result = result && (this.confirmType == that.getConfirmType());
             }
             if (this.allowOversold != DEFAULT_RULE_NUM) {
-                result = this.allowOversold == that.getAllowOversold();
+                result = result && (this.allowOversold == that.getAllowOversold());
             }
             if (this.minAdvMinutes != DEFAULT_RULE_NUM) {
-                result = this.minAdvMinutes == that.getMinAdvMinutes();
+                result = result && (this.minAdvMinutes == that.getMinAdvMinutes());
             }
             if (this.maxAdvMinutes != DEFAULT_RULE_NUM) {
-                result = this.maxAdvMinutes == that.getMaxAdvMinutes();
+                result = result && (this.maxAdvMinutes == that.getMaxAdvMinutes());
             }
             if (this.breakfastNum != DEFAULT_RULE_NUM) {
-                result = this.breakfastNum == that.getBreakfastNum();
+                result = result && (this.breakfastNum == that.getBreakfastNum());
             }
             if (this.minDays != DEFAULT_RULE_NUM) {
-                result = this.minDays == that.getMinDays();
+                result = result && (this.minDays == that.getMinDays());
             }
             if (this.maxDays != DEFAULT_RULE_NUM) {
-                result = this.maxDays == that.getMaxDays();
+                result = result && (this.maxDays == that.getMaxDays());
             }
             if (this.minRoomNum != DEFAULT_RULE_NUM) {
-                result = this.minRoomNum == that.getMinRoomNum();
+                result = result && (this.minRoomNum == that.getMinRoomNum());
             }
             if (this.maxRoomNum != DEFAULT_RULE_NUM) {
-                result = this.maxRoomNum == that.getMaxRoomNum();
+                result = result && (this.maxRoomNum == that.getMaxRoomNum());
             }
             if (this.cancelType != DEFAULT_RULE_NUM) {
-                result = this.cancelType == that.getCancelType();
+                result = result && (this.cancelType == that.getCancelType());
             }
             if (this.dayStartTime != null) {
-                result = Objects.equals(this.dayStartTime, that.getDayStartTime());
+                result = result && Objects.equals(this.dayStartTime, that.getDayStartTime());
             }
             if (this.dayEndTime != null) {
-                result = Objects.equals(this.dayEndTime, that.getDayEndTime());
+                result = result && Objects.equals(this.dayEndTime, that.getDayEndTime());
             }
             if (this.cancelPolicyMap != null) {
-                result = Objects.equals(this.cancelPolicyMap, that.getCancelPolicyMap());
+                result = result && Objects.equals(this.cancelPolicyMap, that.getCancelPolicyMap());
             }
             return result;
         }

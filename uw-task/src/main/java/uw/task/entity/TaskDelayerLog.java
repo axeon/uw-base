@@ -20,7 +20,7 @@ import java.util.Date;
  * @author axeon
  */
 @JsonIgnoreProperties({"taskData"})
-public class TaskDelayerLog extends LogBaseVo {
+public class TaskDelayerLog extends LogBaseVo implements java.io.Serializable {
 
     private static final Logger logger = LoggerFactory.getLogger(TaskDelayerLog.class);
 

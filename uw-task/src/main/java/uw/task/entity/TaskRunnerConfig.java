@@ -156,7 +156,7 @@ public class TaskRunnerConfig implements Serializable {
     /**
      * 任务队列类型。
      */
-    private int queueType;
+    private int queueType = TYPE_QUEUE_TASK;
 
     /**
      * 延迟类型。
@@ -189,7 +189,7 @@ public class TaskRunnerConfig implements Serializable {
     private int rateLimitTime = 1;
 
     /**
-     * 当发生流量限制时，等待的秒数，默认300秒
+     * 当发生流量限制时，等待的秒数，默认30秒
      */
     private int rateLimitWait = 30;
 
@@ -652,7 +652,7 @@ public class TaskRunnerConfig implements Serializable {
         /**
          * 任务队列类型。
          */
-        private int queueType;
+        private int queueType = TYPE_QUEUE_TASK;
 
         /**
          * 延迟类型。
@@ -685,12 +685,12 @@ public class TaskRunnerConfig implements Serializable {
         private int rateLimitTime = 1;
 
         /**
-         * 当发生流量限制时，等待的秒数，默认300秒
+         * 当发生流量限制时，等待的秒数，默认30秒
          */
         private int rateLimitWait = 30;
 
         /**
-         * 超过流量限制重试次数，默认不在重试，放弃任务。
+         * 超过流量限制重试次数，默认不再重试，放弃任务。
          */
         private int retryTimesByOverrated = 0;
 

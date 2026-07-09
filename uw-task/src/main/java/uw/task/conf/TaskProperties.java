@@ -14,25 +14,25 @@ public class TaskProperties {
     /**
      * 应用名称
      */
-    @Value("${spring.application.name}")
+    @Value("${spring.application.name:unknown}")
     private String appName;
 
     /**
      * 应用版本
      */
-    @Value("${project.version}")
+    @Value("${project.version:unknown}")
     private String appVersion;
 
     /**
      * app主机
      */
-    @Value("${spring.cloud.nacos.discovery.ip}")
+    @Value("${spring.cloud.nacos.discovery.ip:unknown}")
     private String appHost;
 
     /**
      * app端口
      */
-    @Value("${server.port}")
+    @Value("${server.port:0}")
     private int appPort;
 
     /**

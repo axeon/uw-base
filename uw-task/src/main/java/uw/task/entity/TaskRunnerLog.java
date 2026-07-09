@@ -19,7 +19,7 @@ import java.util.Date;
  * @author axeon
  */
 @JsonIgnoreProperties({"taskData"})
-public class TaskRunnerLog extends LogBaseVo {
+public class TaskRunnerLog extends LogBaseVo implements java.io.Serializable {
 
     /**
      * 日志器。

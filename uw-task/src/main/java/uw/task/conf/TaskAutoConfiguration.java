@@ -164,7 +164,7 @@ public class TaskAutoConfiguration {
     public void handleContextRefresh() {
         if (initFlag.compareAndSet(false, true)) {
             taskMetaInfoManager.init();
-            // 动态调 channelCacheSize：按 runner（队列）数 × 系数（每队列 publisher+listener channel+余量），下限 25。
+            // 动态调 channelCacheSize：按 runner（队列）数 × 系数（每队列 publisher+listener channel+余量），下限 10。
             // 避免 CachingConnectionFactory 默认 1 的性能陷阱：sendToQueue+listener 抢 channel 频繁创建/close，
             // 每次关 channel 丢进 spring-rabbit-deferred-pool（newCachedThreadPool 无上限）致线程暴涨 + 吞吐腰斩。
             // 必须在 listener 启动（下方 updateConfig→bindMessageListenerContainer）前设，否则 connection 已按默认 1 创建。
@@ -395,12 +395,13 @@ public class TaskAutoConfiguration {
     /**
      * 声明 TaskFactory bean
      *
-     * @param context
-     * @param taskProperties
-     * @param authRestClient
-     * @param clientResources
-     * @param logClient
-     * @return
+     * @param context             Spring 应用上下文（扫描任务 bean）
+     * @param taskProperties       任务全局配置
+     * @param taskListenerManager  任务监听管理器
+     * @param authRestClient       鉴权 RestClient（调 task-center）
+     * @param clientResources      Lettuce 客户端资源
+     * @param logClient            ES 日志客户端
+     * @return TaskFactory bean
      */
     @Bean
     TaskFactory taskFactory(final ApplicationContext context, final TaskProperties taskProperties, final TaskListenerManager taskListenerManager,
@@ -426,11 +427,11 @@ public class TaskAutoConfiguration {
         // 任务信息管理器。
         taskMetaInfoManager = new TaskMetaInfoManager(context, taskProperties);
         // 队列任务容器。
-        taskRunnerContainer = new TaskRunnerContainer(taskProperties, taskApiClient, taskLocalRateLimiter, taskGlobalRateLimiter, taskListenerManager, taskMetaInfoManager);
+        taskRunnerContainer = new TaskRunnerContainer(taskProperties, taskApiClient, taskMetaInfoManager, taskLocalRateLimiter, taskGlobalRateLimiter, taskListenerManager);
         // 延迟任务容器：多实例竞争 zset poll，本地模式自启动（扫描 TaskDelayer + initConfig）
-        taskDelayerContainer = new TaskDelayerContainer(taskMetaInfoManager, taskApiClient, taskLocalRateLimiter, taskGlobalRateLimiter, taskProperties, taskSequenceManager, taskRedisConnectionFactory);
+        taskDelayerContainer = new TaskDelayerContainer(taskProperties, taskApiClient, taskMetaInfoManager, taskLocalRateLimiter, taskGlobalRateLimiter, taskSequenceManager, taskRedisConnectionFactory);
         // 定时任务容器。
-        taskCronerContainer = new TaskCronerContainer(taskProperties, taskApiClient, taskSequenceManager, taskListenerManager, taskGlobalLocker, taskMetaInfoManager);
+        taskCronerContainer = new TaskCronerContainer(taskProperties, taskApiClient, taskMetaInfoManager, taskSequenceManager, taskGlobalLocker, taskListenerManager);
         // 初始化TaskServerConfig
         taskServiceRegistrar = new TaskServiceRegistrar(taskProperties, taskApiClient, taskRunnerContainer, taskCronerContainer, taskDelayerContainer, taskRabbitConnectionFactory, rabbitAdmin,
                 taskMetaInfoManager);

@@ -119,7 +119,7 @@ public class TaskCronerConfig implements Serializable {
     private int state = 1;
 
     /**
-     * 详见 TaskLogObjectAsStringSerializer 日志类型说明
+     * 日志类型，取 {@link #TASK_LOG_TYPE_NONE} 等常量（-1 不记录/0 基础/1 含参数/2 含返回/3 全部）
      */
     private int logLevel = TASK_LOG_TYPE_RECORD;
 
@@ -432,7 +432,7 @@ public class TaskCronerConfig implements Serializable {
         private int state = 1;
 
         /**
-         * 详见 TaskLogObjectAsStringSerializer 日志类型说明
+         * 日志类型，取 {@link #TASK_LOG_TYPE_NONE} 等常量（-1 不记录/0 基础/1 含参数/2 含返回/3 全部）
          */
         private int logLevel = TASK_LOG_TYPE_RECORD;
 

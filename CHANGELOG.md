@@ -1,3 +1,14 @@
+# 2026.0701.0000版本升级说明
+uw-task 新增第三种任务类型 TaskDelayer（延迟任务），与 TaskRunner / TaskCroner 对等。
+
+## uw-task
+1. 新增 TaskDelayer 延迟任务类型：基于 Redis zset 多实例竞争 poll（Lua 原子 ZRANGEBYSCORE+ZREM 取出到期任务），替代 classic TTL+DLX 延迟队列（规避 per-message TTL 队头阻塞），执行能力随实例数水平扩展、无 Leader 单点。业务方通过 TaskFactory.delayTask() 投递，配置/限速/重试/告警/统计与 Runner/Croner 完全对称。
+2. TaskData 改为手工 KryoSerializable 序列化（refObject 不跨 MQ 传输），消息体更小更快。
+
+## ⚠️ 升级注意
+1. TaskData 序列化格式变更，升级前需确保 MQ 队列消费空（旧格式消息新版本无法反序列化，会被静默丢弃）。
+2. TaskDelayer 依赖 Redis（zset 承载延迟任务），需确保 uw-task 接入的 Redis 可用。
+
 # 2026.0601.0010版本升级说明
 重构 ResponseCode / JsonConfigParam 的 i18n 机制，将样板代码内化到接口，涉及公共接口签名变更。
 

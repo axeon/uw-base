@@ -180,7 +180,7 @@ public class TaskDelayerContainer {
         if (config.getConsumerNum() < 1) {
             config.setConsumerNum(1);
         }
-        String configKey = TaskMetaInfoManager.getConfigKey(config.getTaskClass(), config.getTaskTag(), config.getRunTarget());
+        String configKey = taskMetaInfoManager.getConfigKey(config.getTaskClass(), config.getTaskTag(), config.getRunTarget());
         // state<1（暂停/删除）：remove 配置缓存 + stop handle，不缓存废弃配置（对齐 Runner updateRunnerConfig 的 state<1 remove）
         if (config.getState() < 1) {
             taskMetaInfoManager.removeDelayerConfig(configKey);
@@ -239,7 +239,7 @@ public class TaskDelayerContainer {
         // 错投防御：校验 (taskClass, taskTag, runTarget) 在服务端 delayerConfigMap 有对应配置，
         // 否则任务会落无 poll handle 的 zset 永久滞留。合法跨机投递（本机无 bean 但别机 poll）
         // 由服务端配置存在性保证——查配置表而非本机实例表。
-        String configKey = TaskMetaInfoManager.getConfigKey(task.getTaskClass(), task.getTaskTag(), task.getRunTarget());
+        String configKey = taskMetaInfoManager.getConfigKey(task.getTaskClass(), task.getTaskTag(), task.getRunTarget());
         if (!taskMetaInfoManager.getDelayerConfigMap().containsKey(configKey)) {
             // 列出该 taskClass 已注册的 configKey 候选，便于排查：候选空=类型错投(taskClass 非 delayer)，候选非空但无精确 key=taskTag/runTarget 错配
             String taskClassPrefix = task.getTaskClass() + "#";
@@ -257,7 +257,7 @@ public class TaskDelayerContainer {
      * 将一个 TaskData 写入其对应 zset（submit 入口与重试 resubmit 共用）。score = queueDate + taskDelay（到期时间戳）。
      */
     private void addTask(TaskData task) {
-        String zsetKey = ZSET_PREFIX + TaskMetaInfoManager.getConfigKey(task.getTaskClass(), task.getTaskTag(), task.getRunTarget());
+        String zsetKey = ZSET_PREFIX + taskMetaInfoManager.getConfigKey(task.getTaskClass(), task.getTaskTag(), task.getRunTarget());
         double score = task.getQueueDate().getTime() + task.getTaskDelay();
         redisTemplate.opsForZSet().add(zsetKey, KryoUtils.serialize(task), score);
     }

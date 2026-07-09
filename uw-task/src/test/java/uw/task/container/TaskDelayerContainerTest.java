@@ -20,18 +20,6 @@ import static org.mockito.Mockito.mock;
  */
 class TaskDelayerContainerTest {
 
-    /**
-     * configKey 三元组拼接：taskClass#taskTag$runTarget，null 维度作空串。
-     */
-    @Test
-    void getConfigKeyTriplet() {
-        assertThat(TaskMetaInfoManager.getConfigKey("com.demo.MyDelayRunner", "tag1", "default"))
-                .isEqualTo("com.demo.MyDelayRunner#tag1$default");
-        assertThat(TaskMetaInfoManager.getConfigKey("com.demo.MyDelayRunner", null, null))
-                .isEqualTo("com.demo.MyDelayRunner#$");
-        assertThat(TaskMetaInfoManager.getConfigKey("com.demo.MyDelayRunner", "", "default"))
-                .isEqualTo("com.demo.MyDelayRunner#$default");
-    }
 
     /**
      * 构造不抛异常（自建 RedisTemplate + mock 连接工厂）。

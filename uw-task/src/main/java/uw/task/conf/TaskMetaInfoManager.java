@@ -35,11 +35,6 @@ public class TaskMetaInfoManager {
     private final Map<String, TaskDelayer<?, ?>> delayerInstanceMap = new ConcurrentHashMap<>();
 
     /**
-     * Delayer任务配置缓存。
-     */
-    private final ConcurrentHashMap<String, TaskDelayerConfig> delayerConfigMap = new ConcurrentHashMap<>();
-
-    /**
      * Runner任务配置缓存
      */
     private final ConcurrentHashMap<String, TaskRunnerConfig> runnerConfigMap = new ConcurrentHashMap<>();
@@ -48,6 +43,11 @@ public class TaskMetaInfoManager {
      * Cron任务配置缓存。
      */
     private final ConcurrentHashMap<String, TaskCronerConfig> cronerConfigMap = new ConcurrentHashMap<>();
+
+    /**
+     * Delayer任务配置缓存。
+     */
+    private final ConcurrentHashMap<String, TaskDelayerConfig> delayerConfigMap = new ConcurrentHashMap<>();
 
     /**
      * 任务配置。
@@ -386,7 +386,7 @@ public class TaskMetaInfoManager {
      * @param runTarget 运行目标（可空）
      * @return 配置键 taskClass#taskTag$runTarget
      */
-    public static String getConfigKey(String taskClass, String taskTag, String runTarget) {
+    public String getConfigKey(String taskClass, String taskTag, String runTarget) {
         return taskClass + "#" + (taskTag == null ? "" : taskTag) + "$" + (runTarget == null ? "" : runTarget);
     }
 

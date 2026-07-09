@@ -7,7 +7,7 @@ import java.util.List;
  * 主机状态上报数据。
  *
  * <p>由任务执行主机周期性采集并上报到 task-center（见 {@code TaskServiceRegistrar.reportHostInfo}），
- * 含应用标识、JVM 内存与线程指标、注册的任务数量、以及各任务的执行统计（{@link TaskCronerStats}/{@link TaskRunnerStats}）。</p>
+ * 含应用标识、JVM 内存与线程指标、注册的任务数量、以及各任务的执行统计（{@link TaskCronerStats}/{@link TaskRunnerStats}/{@link TaskDelayerStats}）。</p>
  *
  * @author axeon
  */

@@ -11,16 +11,82 @@ import java.util.Date;
  *
  * <p>关键配置：consumerNum（执行并发）、rateLimit*（限速，复用 TaskRunner 的限速体系）、
  * retryTimes*（业务失败重试）、pollInterval/prefetchNum（zset poll 节奏与批量）、
- * alert*（报警阈值，alertDelayOvertime 为延迟任务特有的"实际执行晚于 runAt"超时指标）、logLevel（日志）。</p>
+ * alert*（报警阈值；delayer 的 alertWaitTimeout 语义为"延迟超时（实际执行晚于 runAt）"，区别于 Runner/Croner 的队列等待超时）、logLevel（日志）。</p>
  *
- * <p>限速类型常量复用 {@link TaskRunnerConfig#RATE_LIMIT_NONE} 等系列；日志类型常量复用
- * {@link TaskRunnerConfig#TASK_LOG_TYPE_RECORD} 等系列，语义与 TaskRunner 完全一致。</p>
+ * <p>限速类型常量见本类 {@link #RATE_LIMIT_NONE} 等系列（与 TaskRunner 语义一致，独立定义便于三类解耦）；
+ * 日志类型常量见本类 {@link #TASK_LOG_TYPE_NONE} 等系列（与 TaskRunner 语义一致，独立定义便于三类解耦）。</p>
  *
  * @author axeon
  */
 public class TaskDelayerConfig implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    /**
+     * 限速类型：不限速
+     */
+    public static final int RATE_LIMIT_NONE = 0;
+    /**
+     * 限速类型：本地进程限速
+     */
+    public static final int RATE_LIMIT_LOCAL = 1;
+    /**
+     * 限速类型：本地TASK限速
+     */
+    public static final int RATE_LIMIT_LOCAL_TASK = 2;
+    /**
+     * 限速类型：本地TASK+TAG限速
+     */
+    public static final int RATE_LIMIT_LOCAL_TASK_TAG = 3;
+    /**
+     * 限速类型：全局主机HOST限速
+     */
+    public static final int RATE_LIMIT_GLOBAL_HOST = 4;
+    /**
+     * 限速类型：全局TAG限速
+     */
+    public static final int RATE_LIMIT_GLOBAL_TAG = 5;
+    /**
+     * 限速类型：全局TASK限速
+     */
+    public static final int RATE_LIMIT_GLOBAL_TASK = 6;
+    /**
+     * 限速类型：全局TAG+HOST限速
+     */
+    public static final int RATE_LIMIT_GLOBAL_TAG_HOST = 7;
+    /**
+     * 限速类型：全局TASK+IP限速
+     */
+    public static final int RATE_LIMIT_GLOBAL_TASK_HOST = 8;
+    /**
+     * 限速类型：全局TASK+TAG限速
+     */
+    public static final int RATE_LIMIT_GLOBAL_TASK_TAG = 9;
+    /**
+     * 限速类型：全局TASK+TAG+IP限速
+     */
+    public static final int RATE_LIMIT_GLOBAL_TASK_TAG_HOST = 10;
+
+    /**
+     * 什么都不记录
+     */
+    public static final int TASK_LOG_TYPE_NONE = -1;
+    /**
+     * 记录日志
+     */
+    public static final int TASK_LOG_TYPE_RECORD = 0;
+    /**
+     * 记录日志,含请求参数
+     */
+    public static final int TASK_LOG_TYPE_RECORD_TASK_PARAM = 1;
+    /**
+     * 记录日志,含返回参数
+     */
+    public static final int TASK_LOG_TYPE_RECORD_RESULT_DATA = 2;
+    /**
+     * 记录全部日志
+     */
+    public static final int TASK_LOG_TYPE_RECORD_ALL = 3;
 
     /**
      * 配置主键 id（由 task-center 分配，0 表示尚未注册到服务端）。
@@ -68,9 +134,9 @@ public class TaskDelayerConfig implements Serializable {
     private int consumerNum = 1;
 
     /**
-     * 限速类型，取 {@link TaskRunnerConfig#RATE_LIMIT_NONE} 等常量。
+     * 限速类型，取 {@link #RATE_LIMIT_NONE} 等常量。
      */
-    private int rateLimitType = TaskRunnerConfig.RATE_LIMIT_NONE;
+    private int rateLimitType = RATE_LIMIT_NONE;
 
     /**
      * 限速窗口内配额上限。
@@ -105,7 +171,7 @@ public class TaskDelayerConfig implements Serializable {
     /**
      * 实际执行晚于 runAt 的平均超时报警阈值（毫秒）。
      */
-    private int alertDelayOvertime;
+    private int alertWaitTimeout;
 
     /**
      * 总失败率报警阈值（百分比）。
@@ -113,9 +179,19 @@ public class TaskDelayerConfig implements Serializable {
     private int alertFailRate;
 
     /**
+     * 数据失败率报警阈值（百分比）。
+     */
+    private int alertFailDataRate;
+
+    /**
      * 程序失败率报警阈值。
      */
     private int alertFailProgramRate;
+
+    /**
+     * 配置失败率告警阈值（百分比）。
+     */
+    private int alertFailConfigRate;
 
     /**
      * 合作方失败率报警阈值。
@@ -128,9 +204,9 @@ public class TaskDelayerConfig implements Serializable {
     private int alertRunTimeout;
 
     /**
-     * 日志类型，取 {@link TaskRunnerConfig#TASK_LOG_TYPE_RECORD} 等常量。
+     * 日志类型，取 {@link #TASK_LOG_TYPE_RECORD} 等常量。
      */
-    private int logLevel = TaskRunnerConfig.TASK_LOG_TYPE_RECORD;
+    private int logLevel = TASK_LOG_TYPE_RECORD;
 
     /**
      * 日志字符串字段大小限制，0 表示无限制。
@@ -176,9 +252,11 @@ public class TaskDelayerConfig implements Serializable {
         setRetryTimesByOverrated(builder.retryTimesByOverrated);
         setRetryTimesByPartner(builder.retryTimesByPartner);
         setRetryTimesByProgram(builder.retryTimesByProgram);
-        setAlertDelayOvertime(builder.alertDelayOvertime);
+        setAlertWaitTimeout(builder.alertWaitTimeout);
         setAlertFailRate(builder.alertFailRate);
+        setAlertFailDataRate(builder.alertFailDataRate);
         setAlertFailProgramRate(builder.alertFailProgramRate);
+        setAlertFailConfigRate(builder.alertFailConfigRate);
         setAlertFailPartnerRate(builder.alertFailPartnerRate);
         setAlertRunTimeout(builder.alertRunTimeout);
         setLogLevel(builder.logLevel);
@@ -217,9 +295,11 @@ public class TaskDelayerConfig implements Serializable {
         builder.retryTimesByOverrated = copy.getRetryTimesByOverrated();
         builder.retryTimesByPartner = copy.getRetryTimesByPartner();
         builder.retryTimesByProgram = copy.getRetryTimesByProgram();
-        builder.alertDelayOvertime = copy.getAlertDelayOvertime();
+        builder.alertWaitTimeout = copy.getAlertWaitTimeout();
         builder.alertFailRate = copy.getAlertFailRate();
+        builder.alertFailDataRate = copy.getAlertFailDataRate();
         builder.alertFailProgramRate = copy.getAlertFailProgramRate();
+        builder.alertFailConfigRate = copy.getAlertFailConfigRate();
         builder.alertFailPartnerRate = copy.getAlertFailPartnerRate();
         builder.alertRunTimeout = copy.getAlertRunTimeout();
         builder.logLevel = copy.getLogLevel();
@@ -358,12 +438,12 @@ public class TaskDelayerConfig implements Serializable {
         this.retryTimesByProgram = retryTimesByProgram;
     }
 
-    public int getAlertDelayOvertime() {
-        return alertDelayOvertime;
+    public int getAlertWaitTimeout() {
+        return alertWaitTimeout;
     }
 
-    public void setAlertDelayOvertime(int alertDelayOvertime) {
-        this.alertDelayOvertime = alertDelayOvertime;
+    public void setAlertWaitTimeout(int alertWaitTimeout) {
+        this.alertWaitTimeout = alertWaitTimeout;
     }
 
     public int getAlertFailRate() {
@@ -374,12 +454,28 @@ public class TaskDelayerConfig implements Serializable {
         this.alertFailRate = alertFailRate;
     }
 
+    public int getAlertFailDataRate() {
+        return alertFailDataRate;
+    }
+
+    public void setAlertFailDataRate(int alertFailDataRate) {
+        this.alertFailDataRate = alertFailDataRate;
+    }
+
     public int getAlertFailProgramRate() {
         return alertFailProgramRate;
     }
 
     public void setAlertFailProgramRate(int alertFailProgramRate) {
         this.alertFailProgramRate = alertFailProgramRate;
+    }
+
+    public int getAlertFailConfigRate() {
+        return alertFailConfigRate;
+    }
+
+    public void setAlertFailConfigRate(int alertFailConfigRate) {
+        this.alertFailConfigRate = alertFailConfigRate;
     }
 
     public int getAlertFailPartnerRate() {
@@ -452,19 +548,21 @@ public class TaskDelayerConfig implements Serializable {
         private int consumerNum = 1;
         private long pollInterval = 3;
         private int prefetchNum = 50;
-        private int rateLimitType = TaskRunnerConfig.RATE_LIMIT_NONE;
+        private int rateLimitType = RATE_LIMIT_NONE;
         private int rateLimitValue = 10;
         private int rateLimitTime = 1;
         private int rateLimitWait = 30;
         private int retryTimesByOverrated = 3;
         private int retryTimesByPartner = 0;
         private int retryTimesByProgram = 0;
-        private int alertDelayOvertime;
+        private int alertWaitTimeout;
         private int alertFailRate;
+        private int alertFailDataRate;
         private int alertFailProgramRate;
+        private int alertFailConfigRate;
         private int alertFailPartnerRate;
         private int alertRunTimeout;
-        private int logLevel = TaskRunnerConfig.TASK_LOG_TYPE_RECORD;
+        private int logLevel = TASK_LOG_TYPE_RECORD;
         private int logLimitSize = 0;
         private int state = 1;
         private Date createDate;
@@ -558,8 +656,8 @@ public class TaskDelayerConfig implements Serializable {
             return this;
         }
 
-        public Builder alertDelayOvertime(int alertDelayOvertime) {
-            this.alertDelayOvertime = alertDelayOvertime;
+        public Builder alertWaitTimeout(int alertWaitTimeout) {
+            this.alertWaitTimeout = alertWaitTimeout;
             return this;
         }
 
@@ -568,8 +666,18 @@ public class TaskDelayerConfig implements Serializable {
             return this;
         }
 
+        public Builder alertFailDataRate(int alertFailDataRate) {
+            this.alertFailDataRate = alertFailDataRate;
+            return this;
+        }
+
         public Builder alertFailProgramRate(int alertFailProgramRate) {
             this.alertFailProgramRate = alertFailProgramRate;
+            return this;
+        }
+
+        public Builder alertFailConfigRate(int alertFailConfigRate) {
+            this.alertFailConfigRate = alertFailConfigRate;
             return this;
         }
 

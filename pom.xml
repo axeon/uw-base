@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <revision>2026.0601.0012</revision>
+        <revision>2026.0701.0000</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>25</java.version>
@@ -25,24 +25,24 @@
         <maven.compiler.release>25</maven.compiler.release>
         <spring-cloud.version>2025.0.3</spring-cloud.version>
         <spring-cloud.alibaba.version>2023.0.1.2</spring-cloud.alibaba.version>
-        <uw-ai.version>1.1.33</uw-ai.version>
-        <uw-auth-client.version>6.2.27</uw-auth-client.version>
-        <uw-auth-service.version>6.2.66</uw-auth-service.version>
-        <uw-cache.version>1.2.101</uw-cache.version>
-        <uw-common.version>1.1.109</uw-common.version>
-        <uw-common-app.version>1.1.109</uw-common-app.version>
-        <uw-dao.version>5.3.50</uw-dao.version>
-        <uw-gateway-client.version>1.1.11</uw-gateway-client.version>
-        <uw-httpclient.version>2.3.2</uw-httpclient.version>
-        <uw-log-es.version>3.1.103</uw-log-es.version>
-        <uw-logback-es.version>3.1.99</uw-logback-es.version>
-        <uw-mfa.version>1.1.69</uw-mfa.version>
-        <uw-mydb-client.version>1.1.32</uw-mydb-client.version>
-        <uw-notify-client.version>1.1.31</uw-notify-client.version>
-        <uw-oauth2-client.version>1.1.31</uw-oauth2-client.version>
-        <uw-task.version>5.1.131</uw-task.version>
-        <uw-tinyurl-client.version>1.1.31</uw-tinyurl-client.version>
-        <uw-webot.version>1.0.11</uw-webot.version>
+        <uw-ai.version>1.1.35</uw-ai.version>
+        <uw-auth-client.version>6.2.28</uw-auth-client.version>
+        <uw-auth-service.version>6.2.68</uw-auth-service.version>
+        <uw-cache.version>1.2.102</uw-cache.version>
+        <uw-common.version>1.1.110</uw-common.version>
+        <uw-common-app.version>1.1.110</uw-common-app.version>
+        <uw-dao.version>5.3.51</uw-dao.version>
+        <uw-gateway-client.version>1.1.12</uw-gateway-client.version>
+        <uw-httpclient.version>2.3.3</uw-httpclient.version>
+        <uw-log-es.version>3.1.105</uw-log-es.version>
+        <uw-logback-es.version>3.1.100</uw-logback-es.version>
+        <uw-mfa.version>1.1.70</uw-mfa.version>
+        <uw-mydb-client.version>1.1.33</uw-mydb-client.version>
+        <uw-notify-client.version>1.1.32</uw-notify-client.version>
+        <uw-oauth2-client.version>1.1.32</uw-oauth2-client.version>
+        <uw-task.version>5.1.132</uw-task.version>
+        <uw-tinyurl-client.version>1.1.32</uw-tinyurl-client.version>
+        <uw-webot.version>1.0.12</uw-webot.version>
     </properties>
 
     <dependencyManagement>

@@ -129,8 +129,9 @@ public class TaskRunnerContainer {
      *   <li>无延迟队列时按 taskDelay 做线程内延时；</li>
      *   <li>调用 {@code runTask}，按异常类型映射状态（PARTNER/DATA/PROGRAM）；</li>
      *   <li>触发 RunnerTaskListener、更新统计、按 logLevel 写日志；</li>
-     *   <li>失败时按 retryType/retryTimes 自动重试：LOCAL/RPC 走 {@link TaskFactory#runTaskLocal}，
-     *       GLOBAL 走 {@link TaskFactory#sendToQueue}。</li>
+     *   <li>失败时按 retryType/retryTimes 自动重试：<b>仅 LOCAL 任务</b>走 {@link TaskFactory#runTaskLocal} 本地重跑，
+     *       GLOBAL（MQ 队列任务）走 {@link TaskFactory#sendToQueue} 重新投递；
+     *       <b>GLOBAL_RPC 不在服务端重试</b>（RPC 调用方同步等待，服务端重试易致调用方超时——失败结果直接返回调用方自行决策）。</li>
      * </ol>
      * RPC/LOCAL 模式返回携带结果的 taskData；GLOBAL 模式（MQ 消费）返回 null（结果已随重试/日志处理）。</p>
      *
@@ -146,29 +147,31 @@ public class TaskRunnerContainer {
         try {
             return processInternal(taskData);
         } catch (Throwable e) {
-            // 兜底守护：未守护路径（getRunnerConfigByData 找不到配置 / 限速 tryAcquire Redis 故障 / 重试 sendToQueue MQ 故障等）
-            // 抛异常会逃逸到 MessageListenerAdapter，配合 defaultRequeueRejected(false) 会直接丢消息——
-            // 此处 catch 保证消息 ack（不丢），映射失败状态 + 写统计/ES 日志让可观测（与 runner 实例不存在的早期路径对齐）。
-            taskData.setState(TaskData.STATE_FAIL_PROGRAM);
-            taskData.setErrorInfo(ExceptionUtils.exceptionToString(e));
+            // 兜底守护：未守护路径（getRunnerConfigByData 找不到配置 / 限速 tryAcquire Redis 故障 / 重试 runTaskLocal·sendToQueue 抛等）
+            // 逃逸到 MessageListenerAdapter 配合 defaultRequeueRejected(false) 会直接丢消息——此处 catch 保证消息 ack（不丢）。
+            // 防双计：finishDate==null 说明异常发生在正常统计/日志落盘之前（配置缺失/限速故障），补写 stats/log；
+            // finishDate!=null 说明异常发生在重试投递阶段（runTaskLocal/sendToQueue 抛），正常路径已用真实失败态写过 stats/log，
+            // 此处仅记录日志，不重复写统计、不覆盖真实 state（对齐 TaskDelayerContainer.execute 的 finishDate 守卫）。
             if (taskData.getFinishDate() == null) {
+                taskData.setState(TaskData.STATE_FAIL_PROGRAM);
+                taskData.setErrorInfo(ExceptionUtils.exceptionToString(e));
                 taskData.setFinishDate(SystemClock.nowDate());
-            }
-            long taskId = 0;
-            try {
-                TaskRunnerConfig cfg = taskMetaInfoManager.getRunnerConfigByData(taskData);
-                if (cfg != null) {
-                    taskId = cfg.getId();
+                long taskId = 0;
+                try {
+                    TaskRunnerConfig cfg = taskMetaInfoManager.getRunnerConfigByData(taskData);
+                    if (cfg != null) {
+                        taskId = cfg.getId();
+                    }
+                } catch (Exception ignore) {
+                    // 配置缺失（正是本 catch 常见触发原因），taskId 保持 0
                 }
-            } catch (Exception ignore) {
-                // 配置缺失（正是本 catch 常见触发原因），taskId 保持 0
+                int[] failCounters = TaskStatsService.toFailCounters(taskData.getState());
+                TaskStatsService.updateRunnerStats(taskId, 1, failCounters[0], failCounters[1], failCounters[2], failCounters[3], 0, 0, 0);
+                TaskRunnerLog runnerLog = new TaskRunnerLog(taskData);
+                runnerLog.setTaskId(taskId);
+                runnerLog.setLogLevel(TaskRunnerConfig.TASK_LOG_TYPE_RECORD);
+                taskApiClient.sendTaskRunnerLog(runnerLog);
             }
-            int[] failCounters = TaskStatsService.toFailCounters(taskData.getState());
-            TaskStatsService.updateRunnerStats(taskId, 1, failCounters[0], failCounters[1], failCounters[2], failCounters[3], 0, 0, 0);
-            TaskRunnerLog runnerLog = new TaskRunnerLog(taskData);
-            runnerLog.setTaskId(taskId);
-            runnerLog.setLogLevel(TaskRunnerConfig.TASK_LOG_TYPE_RECORD);
-            taskApiClient.sendTaskRunnerLog(runnerLog);
             log.error("TaskRunner process 未预期异常(已捕获防丢消息),taskClass={}: {}", taskData.getTaskClass(), e.getMessage(), e);
             return taskData;
         }
@@ -301,8 +304,9 @@ public class TaskRunnerContainer {
         }
 
         if (taskData.getRunType() == TaskData.RUN_TYPE_GLOBAL_RPC || taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
-            // 如果异常，根据任务设置，重新跑
-            if (taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO) {
+            // GLOBAL_RPC（RPC 调用，调用方同步等待）不在服务端重试——重新执行会让调用方因等待而超时，
+            // 失败结果直接返回调用方由其决策是否重试；仅 LOCAL 任务在本地重跑。
+            if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL && taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO) {
                 if (taskData.getState() > TaskData.STATE_SUCCESS) {
                     //设置任务延时
                     taskData.setTaskDelay(taskData.getRanTimes() * taskProperties.getTaskRpcRetryDelay());
@@ -314,6 +318,10 @@ public class TaskRunnerContainer {
                         }
                     } else if (taskData.getState() == TaskData.STATE_FAIL_PARTNER) {
                         if (taskData.getRanTimes() <= taskConfig.getRetryTimesByPartner()) {
+                            taskData = TaskFactory.getInstance().runTaskLocal(cleanTaskInfo(taskData));
+                        }
+                    } else if (taskData.getState() == TaskData.STATE_FAIL_PROGRAM) {
+                        if (taskData.getRanTimes() <= taskConfig.getRetryTimesByProgram()) {
                             taskData = TaskFactory.getInstance().runTaskLocal(cleanTaskInfo(taskData));
                         }
                     }
@@ -333,6 +341,10 @@ public class TaskRunnerContainer {
                         }
                     } else if (taskData.getState() == TaskData.STATE_FAIL_PARTNER) {
                         if (taskData.getRanTimes() <= taskConfig.getRetryTimesByPartner()) {
+                            TaskFactory.getInstance().sendToQueue(cleanTaskInfo(taskData));
+                        }
+                    } else if (taskData.getState() == TaskData.STATE_FAIL_PROGRAM) {
+                        if (taskData.getRanTimes() <= taskConfig.getRetryTimesByProgram()) {
                             TaskFactory.getInstance().sendToQueue(cleanTaskInfo(taskData));
                         }
                     }

@@ -141,8 +141,8 @@ public class TaskDelayerLog extends LogBaseVo implements java.io.Serializable {
     public String getTaskParam() {
         Object value = taskData.getTaskParam();
         if (value != null) {
-            if (taskData.getState() != TaskData.STATE_SUCCESS || logLevel == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_ALL
-                    || logLevel == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_TASK_PARAM) {
+            if (taskData.getState() != TaskData.STATE_SUCCESS || logLevel == TaskDelayerConfig.TASK_LOG_TYPE_RECORD_ALL
+                    || logLevel == TaskDelayerConfig.TASK_LOG_TYPE_RECORD_TASK_PARAM) {
                 String data = null;
                 try {
                     data = JsonUtils.toString(value);
@@ -167,8 +167,8 @@ public class TaskDelayerLog extends LogBaseVo implements java.io.Serializable {
     public String getResultData() {
         Object value = taskData.getResultData();
         if (value != null) {
-            if (taskData.getState() != TaskData.STATE_SUCCESS || logLevel == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_ALL
-                    || logLevel == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_RESULT_DATA) {
+            if (taskData.getState() != TaskData.STATE_SUCCESS || logLevel == TaskDelayerConfig.TASK_LOG_TYPE_RECORD_ALL
+                    || logLevel == TaskDelayerConfig.TASK_LOG_TYPE_RECORD_RESULT_DATA) {
                 String data = null;
                 try {
                     data = JsonUtils.toString(value);

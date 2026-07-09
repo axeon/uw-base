@@ -313,7 +313,7 @@ public class TaskServiceRegistrar {
             cronerLastUpdateTime = startUpdateTimeMills - 5000;
             return;
         }
-        // 降级 → 恢复切换：Croner configKey 覆盖（主循环 configureTask 内 stopTask cancel(false) 让在途跑完 + schedule new），不清 map
+        // 降级 → 恢复切换：Croner configKey 覆盖（主循环 configureTask 内 stop cancel(false) 让在途跑完 + schedule new），不清 map
         if (cronerDegraded) {
             log.warn("!TaskCroner center 恢复，从降级模式切换到 center 配置！");
             cronerDegraded = false;
@@ -384,7 +384,8 @@ public class TaskServiceRegistrar {
                     }
                     boolean runFlag = taskCronerContainer.configureTask(taskCroner, taskCronerConfig);
                 } catch (Exception e) {
-                    log.error(e.getMessage(), e);
+                    // 带业务上下文（configId/taskClass/cron），便于排查是哪个 croner 配置失败
+                    log.error("配置CRONER异常, ID: [{}], taskClass: [{}], CRON: [{}]: {}", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron(), e.getMessage(), e);
                 }
             } else {
                 log.warn("!未找到匹配的任务类，未能启动配置ID: [{}], CRONER:[{}], CRON:[{}].", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron());
@@ -404,7 +405,7 @@ public class TaskServiceRegistrar {
      */
     private void updateTaskDelayerConfig() {
         long startUpdateTimeMills = SystemClock.now();
-        // 取得有变化的delayer配置列表（增量已合并进 delayerConfigMap，state<1 已 remove + stopDelayer）
+        // 取得有变化的delayer配置列表（增量已合并进 delayerConfigMap，state<1 已 remove + stop）
         ConcurrentHashMap<String, TaskDelayerConfig> updatedDelayerConfigMap = fetchDelayerConfig();
         if (updatedDelayerConfigMap == null) {
             // 注册主机 + 首次拉取失败（从未拿到配置）+ 未降级 → 本地降级启动（initConfig 默认配置）
@@ -442,17 +443,15 @@ public class TaskServiceRegistrar {
                         log.debug("正在初始化TaskDelayer: [{}].", taskClass);
                     }
                     TaskDelayerConfig localConfig = delayer.initConfig();
-                    if (localConfig == null) {
-                        log.warn("!TaskDelayer: [{}]默认配置为空，无法启动！", taskClass);
+                    TaskContact contact = delayer.initContact();
+                    if (localConfig == null || contact == null) {
+                        log.warn("!TaskDelayer: [{}]默认配置或联系人信息为空，无法启动！", taskClass);
                         continue;
                     }
                     // 防止有人瞎胡搞，任务参数强制设死。
                     localConfig.setTaskClass(taskClass);
                     localConfig.setRunTarget(taskProperties.getRunTarget());
-                    TaskContact contact = delayer.initContact();
-                    if (contact != null) {
-                        contact.setTaskClass(taskClass);
-                    }
+                    contact.setTaskClass(taskClass);
                     String configKey = taskMetaInfoManager.getDelayerConfigKey(localConfig);
                     TaskDelayerConfig serverConfig = updatedDelayerConfigMap.get(configKey);
                     // 上传配置：center 已有则跳过（对齐 runner/croner 条件首传；服务端按三元组幂等去重）
@@ -488,8 +487,17 @@ public class TaskServiceRegistrar {
                 log.debug("正在加载ID: [{}], DELAYER: [{}].", taskDelayerConfig.getId(), taskDelayerConfig.getTaskClass());
             }
             if (taskMetaInfoManager.getDelayerInstance(taskDelayerConfig.getTaskClass()) != null) {
-                // 启动/热更新任务（configureTaskDelayer 幂等：consumerNum 不变则热更新，变则重建）
-                taskDelayerContainer.configureTaskDelayer(taskDelayerConfig);
+                // 单条配置异常隔离（对齐 croner 主循环 try-catch），避免一条配置异常中断本轮其余 delayer
+                try {
+                    if (log.isDebugEnabled()) {
+                        log.debug("正在配置ID: [{}], DELAYER: [{}].", taskDelayerConfig.getId(), taskDelayerConfig.getTaskClass());
+                    }
+                    // 启动/热更新任务（configureTaskDelayer 幂等：consumerNum 不变则热更新，变则重建）
+                    taskDelayerContainer.configureTaskDelayer(taskDelayerConfig);
+                } catch (Exception e) {
+                    // 带业务上下文（configId/taskClass），便于排查是哪个 delayer 配置失败
+                    log.error("配置DELAYER异常, ID: [{}], taskClass: [{}]: {}", taskDelayerConfig.getId(), taskDelayerConfig.getTaskClass(), e.getMessage(), e);
+                }
             } else {
                 log.warn("!未找到匹配的任务类，未能启动配置ID: [{}], DELAYER: [{}].", taskDelayerConfig.getId(), taskDelayerConfig.getTaskClass());
             }
@@ -518,7 +526,7 @@ public class TaskServiceRegistrar {
     /**
      * 本地降级启动所有 Croner（center 不可用时用 initConfig 默认配置调度）。
      * <p>center 恢复后 updateTaskCronerConfig 主循环用 center 配置覆盖（configKey 相同，
-     * configureTask 内 stopTask cancel(false) 让在途跑完 + schedule new，不丢不中断）。</p>
+     * configureTask 内 stop cancel(false) 让在途跑完 + schedule new，不丢不中断）。</p>
      */
     private void startCronersLocal() {
         for (Map.Entry<String, TaskCroner> kv : taskMetaInfoManager.getCronerInstanceMap().entrySet()) {
@@ -690,7 +698,7 @@ public class TaskServiceRegistrar {
                 if (config.getState() < 1) {
                     taskMetaInfoManager.removeCronerConfig(key);
                     // 停掉孤儿 future：center 删除/禁用(state<1)后，已调度的 cron 不应再触发（否则持续跑已废止的业务，直到重启）
-                    taskCronerContainer.stopTask(key);
+                    taskCronerContainer.stop(key);
                 } else {
                     taskMetaInfoManager.setCronerConfig(key, config);
                 }
@@ -729,7 +737,7 @@ public class TaskServiceRegistrar {
 
     /**
      * 从 task-center 增量拉取 delayer 配置（基于 delayerLastUpdateTime），同步更新本地 metaInfo 缓存
-     *（含 state&lt;1 的删除处理：removeDelayerConfig + stopDelayer 停止孤儿 handle）。
+     *（含 state&lt;1 的删除处理：removeDelayerConfig + stop 停止孤儿 handle）。
      * 拉取失败时返回 null，触发降级/warn（delayer 独立于 runner/croner 的 fail-fast，仅 warn 不影响主流程）。
      *
      * @return 本次拉取到的配置 map（configKey -&gt; config）；拉取失败时返回 null
@@ -743,8 +751,8 @@ public class TaskServiceRegistrar {
                 String key = taskMetaInfoManager.getDelayerConfigKey(config);
                 if (config.getState() < 1) {
                     taskMetaInfoManager.removeDelayerConfig(key);
-                    // 停掉孤儿 handle：center 删除/禁用(state<1)后，已 poll 的 handle 不应继续消费（对齐 fetchCronerConfig 的 stopTask）
-                    taskDelayerContainer.stopDelayer(key);
+                    // 停掉孤儿 handle：center 删除/禁用(state<1)后，已 poll 的 handle 不应继续消费（对齐 fetchCronerConfig 的 stop）
+                    taskDelayerContainer.stop(key);
                 } else {
                     taskMetaInfoManager.setDelayerConfig(key, config);
                 }
@@ -796,7 +804,7 @@ public class TaskServiceRegistrar {
      * setDelayerConfig 已满足，故首传与主循环之间不存在"submit 抛异常"窗口。</p>
      *
      * @param config  本地默认配置
-     * @param contact 联系人信息（可空，delayer 不强制）
+     * @param contact 联系人信息
      * @return 服务端确认后的配置（含分配的 id）
      */
     private TaskDelayerConfig uploadDelayerInfo(TaskDelayerConfig config, TaskContact contact) {
@@ -804,9 +812,7 @@ public class TaskServiceRegistrar {
         if (response != null && response.isSuccess() && response.getData() != null) {
             config = response.getData();
         }
-        if (contact != null) {
-            taskApiClient.initTaskContact(contact);
-        }
+        taskApiClient.initTaskContact(contact);
         taskMetaInfoManager.setDelayerConfig(taskMetaInfoManager.getDelayerConfigKey(config), config);
         return config;
     }

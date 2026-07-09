@@ -9,7 +9,7 @@ import java.util.Date;
  * <p>由 {@link uw.task.TaskRunner#initConfig()} 产出默认值，首次注册时上传到 task-center，
  * 之后以服务端下发的动态配置为准。支持多实例：同一 taskClass 通过不同 taskTag 区分。
  * 关键配置：queueType（队列粒度）、delayType（延迟投递）、rateLimitType/Value/Time/Wait（限速）、
- * consumerNum/prefetchNum（消费并发）、retryTimesByPartner/Overrated（重试）、各类 alert 阈值。</p>
+ * consumerNum/prefetchNum（消费并发）、retryTimesByPartner/Overrated/Program（重试）、各类 alert 阈值。</p>
  *
  * @author axeon
  * @version $Revision: 1.00 $ $Date: 2017-05-03 14:00:50
@@ -208,6 +208,13 @@ public class TaskRunnerConfig implements Serializable {
     private int retryTimesByPartner = 0;
 
     /**
+     * 程序自身异常时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。
+     * <p>同 {@link #retryTimesByOverrated}，设为 N 时总计执行 N+1 次（1 次初始 + N 次重试）。
+     * 与 TaskDelayer.retryTimesByProgram 对齐——程序异常（NPE/状态错等）也可配置自动重试。</p>
+     */
+    private int retryTimesByProgram = 0;
+
+    /**
      * 运行目标，不用指定，由程序运行期配置。
      */
     private String runTarget = "default";
@@ -305,6 +312,7 @@ public class TaskRunnerConfig implements Serializable {
         setRateLimitWait(builder.rateLimitWait);
         setRetryTimesByOverrated(builder.retryTimesByOverrated);
         setRetryTimesByPartner(builder.retryTimesByPartner);
+        setRetryTimesByProgram(builder.retryTimesByProgram);
         setRunTarget(builder.runTarget);
         setAlertFailRate(builder.alertFailRate);
         setAlertFailPartnerRate(builder.alertFailPartnerRate);
@@ -363,6 +371,7 @@ public class TaskRunnerConfig implements Serializable {
         builder.rateLimitWait = copy.getRateLimitWait();
         builder.retryTimesByOverrated = copy.getRetryTimesByOverrated();
         builder.retryTimesByPartner = copy.getRetryTimesByPartner();
+        builder.retryTimesByProgram = copy.getRetryTimesByProgram();
         builder.runTarget = copy.getRunTarget();
         builder.alertFailRate = copy.getAlertFailRate();
         builder.alertFailPartnerRate = copy.getAlertFailPartnerRate();
@@ -500,6 +509,14 @@ public class TaskRunnerConfig implements Serializable {
 
     public void setRetryTimesByPartner(int retryTimesByPartner) {
         this.retryTimesByPartner = retryTimesByPartner;
+    }
+
+    public int getRetryTimesByProgram() {
+        return retryTimesByProgram;
+    }
+
+    public void setRetryTimesByProgram(int retryTimesByProgram) {
+        this.retryTimesByProgram = retryTimesByProgram;
     }
 
     public String getRunTarget() {
@@ -698,6 +715,11 @@ public class TaskRunnerConfig implements Serializable {
          * 对方接口错误重试次数，默认不再重试，放弃任务。
          */
         private int retryTimesByPartner = 0;
+
+        /**
+         * 程序异常重试次数，默认不再重试，放弃任务。
+         */
+        private int retryTimesByProgram = 0;
 
         /**
          * 运行目标，不用指定，由程序运行期配置。
@@ -949,6 +971,11 @@ public class TaskRunnerConfig implements Serializable {
          */
         public Builder retryTimesByPartner(int retryTimesByPartner) {
             this.retryTimesByPartner = retryTimesByPartner;
+            return this;
+        }
+
+        public Builder retryTimesByProgram(int retryTimesByProgram) {
+            this.retryTimesByProgram = retryTimesByProgram;
             return this;
         }
 

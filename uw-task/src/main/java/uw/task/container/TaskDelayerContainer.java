@@ -29,6 +29,7 @@ import uw.task.util.TaskRateLimitHelper;
 import uw.task.util.TaskSequenceManager;
 import uw.task.util.TaskStatsService;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -166,7 +167,7 @@ public class TaskDelayerContainer {
                     configureTaskDelayer(config);
                 }
             } catch (Exception e) {
-                log.error("TaskDelayerContainer 初始化 runner[{}]配置失败: {}", taskClass, e.getMessage(), e);
+                log.error("TaskDelayerContainer 初始化 delayer[{}]配置失败: {}", taskClass, e.getMessage(), e);
             }
         }
     }
@@ -189,7 +190,7 @@ public class TaskDelayerContainer {
         // state<1（暂停/删除）：remove 配置缓存 + stop handle，不缓存废弃配置（对齐 Runner fetchRunnerConfig 的 state<1 remove）
         if (config.getState() < 1) {
             taskMetaInfoManager.removeDelayerConfig(configKey);
-            stopDelayer(configKey);
+            stop(configKey);
             log.info("TaskDelayer[{}]已暂停/删除", configKey);
             return;
         }
@@ -213,32 +214,13 @@ public class TaskDelayerContainer {
             runHandleMap.remove(configKey);
         }
         if (taskMetaInfoManager.getDelayerInstance(config.getTaskClass()) == null) {
-            log.warn("TaskDelayer[{}]未找到匹配 runner，跳过启动", config.getTaskClass());
+            log.warn("TaskDelayer[{}]未找到匹配 delayer 实例，跳过启动", config.getTaskClass());
             return;
         }
         TaskDelayerRunHandle handle = new TaskDelayerRunHandle(config, configKey);
         runHandleMap.put(configKey, handle);
         handle.start();
         log.info("TaskDelayer[{}]已启动: consumerNum={}, pollInterval={}s, prefetchNum={}", configKey, config.getConsumerNum(), config.getPollInterval(), config.getPrefetchNum());
-    }
-
-    /**
-     * 停止指定 configKey 的 delayer handle（drain 30s 等在途完成），并从 runHandleMap 移除。
-     * <p>对齐 TaskCronerContainer.stopTask(String)：单一职责只管运行句柄，配置缓存移除由调用方负责。
-     * 与 configureTaskDelayer 同监视器（this），从其内部调用为同线程重入，无自锁。</p>
-     *
-     * @param configKey 配置键 taskClass#taskTag$runTarget
-     * @return 是否存在并停止了 handle
-     */
-    public synchronized boolean stopDelayer(String configKey) {
-        TaskDelayerRunHandle existing = runHandleMap.get(configKey);
-        if (existing != null) {
-            existing.stop(30000);
-            runHandleMap.remove(configKey);
-            log.info("TaskDelayer[{}]已停止", configKey);
-            return true;
-        }
-        return false;
     }
 
     /**
@@ -283,29 +265,51 @@ public class TaskDelayerContainer {
     }
 
     /**
-     * 填充 delayer stats 的 zsetSize（zset 积压数）与 consumerNum（执行线程数）。
-     * <p>reportHostInfo 上报前调用，按 stats.taskId 反查 configMap 得到 configKey，查 zset zcard。</p>
+     * 填充 delayer stats 的 queueSize（zset 积压数）与 consumerNum（活跃执行线程数）。
+     * <p>reportHostInfo 上报前调用，按 stats.taskId 反查 configMap 得到 configKey，
+     * 查 zset zcard 得积压数，查 runHandle 得本机当前正在执行的虚拟线程数（运行期实际值，
+     * 对齐 runner 侧 AMQP getConsumerCount，不复读 config 上限）。</p>
      */
     public void fillDelayerStats(List<TaskDelayerStats> statsList) {
         if (statsList == null || statsList.isEmpty()) {
             return;
         }
         // 预建 taskId -> configKey 反查索引，避免对每个 stats 遍历全部 config（O(n*m)→O(n)，对齐 runner 侧 queueNameByTaskId）
-        java.util.Map<String, TaskDelayerConfig> configMap = taskMetaInfoManager.getDelayerConfigMap();
-        java.util.Map<Long, String> configKeyByTaskId = new java.util.HashMap<>(configMap.size());
+        Map<String, TaskDelayerConfig> configMap = taskMetaInfoManager.getDelayerConfigMap();
+        Map<Long, String> configKeyByTaskId = new HashMap<>(configMap.size());
         for (Map.Entry<String, TaskDelayerConfig> e : configMap.entrySet()) {
             configKeyByTaskId.put(e.getValue().getId(), e.getKey());
         }
-        for (TaskDelayerStats s : statsList) {
-            String configKey = configKeyByTaskId.get(s.getTaskId());
+        for (TaskDelayerStats stats : statsList) {
+            String configKey = configKeyByTaskId.get(stats.getTaskId());
             if (configKey == null) {
                 continue;
             }
-            TaskDelayerConfig cfg = configMap.get(configKey);
+            TaskDelayerRunHandle handle = runHandleMap.get(configKey);
             Long size = redisTemplate.opsForZSet().size(ZSET_PREFIX + configKey);
-            s.setQueueSize(size == null ? 0 : size.intValue());
-            s.setConsumerNum(cfg.getConsumerNum());
+            stats.setQueueSize(size == null ? 0 : size.intValue());
+            // 活跃执行数：本机当前正在执行的虚拟线程数；handle 不存在（本机无 bean / 已暂停 / 合法跨机投递由别机 poll）时填 0
+            stats.setConsumerNum(handle == null ? 0 : handle.activeWorkerCount());
         }
+    }
+
+    /**
+     * 停止指定 configKey 的 delayer handle（drain 30s 等在途完成），并从 runHandleMap 移除。
+     * <p>对齐 TaskCronerContainer.stop(String)：单一职责只管运行句柄，配置缓存移除由调用方负责。
+     * 与 configureTaskDelayer 同监视器（this），从其内部调用为同线程重入，无自锁。</p>
+     *
+     * @param configKey 配置键 taskClass#taskTag$runTarget
+     * @return 是否存在并停止了 handle
+     */
+    public synchronized boolean stop(String configKey) {
+        TaskDelayerRunHandle handle = runHandleMap.get(configKey);
+        if (handle != null) {
+            handle.stop(30000);
+            runHandleMap.remove(configKey);
+            log.info("TaskDelayer[{}]已停止", configKey);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -371,6 +375,13 @@ public class TaskDelayerContainer {
          */
         void updateConfig(TaskDelayerConfig config) {
             this.config = config;
+        }
+
+        /**
+         * 当前正在执行的任务/虚拟线程数（运行期实际并发，对齐 runner 侧 AMQP getConsumerCount 语义）。
+         */
+        int activeWorkerCount() {
+            return workerPool.getActiveCount();
         }
 
         /**
@@ -486,70 +497,107 @@ public class TaskDelayerContainer {
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void execute(TaskData task, TaskDelayerConfig config) {
         task.setRanTimes(task.getRanTimes() + 1);
-        boolean rateLimitPassed = acquireRateLimit(config, task);
-        long startRun = 0;
-        if (rateLimitPassed) {
-            // runDate 在限速通过后设置，确保 timeRun 只统计业务执行耗时
-            task.setRunDate(SystemClock.nowDate());
-            startRun = task.getRunDate().getTime();
-            try {
-                TaskDelayer runner = taskMetaInfoManager.getDelayerInstance(task.getTaskClass());
-                if (runner != null) {
-                    runner.run(task);
-                    task.setState(TaskData.STATE_SUCCESS);
-                } else {
+        try {
+            boolean rateLimitPassed = acquireRateLimit(config, task);
+            long startRun = 0;
+            if (rateLimitPassed) {
+                // runDate 在限速通过后设置，确保 timeRun 只统计业务执行耗时
+                task.setRunDate(SystemClock.nowDate());
+                startRun = task.getRunDate().getTime();
+                try {
+                    TaskDelayer runner = taskMetaInfoManager.getDelayerInstance(task.getTaskClass());
+                    if (runner != null) {
+                        runner.run(task);
+                        task.setState(TaskData.STATE_SUCCESS);
+                    } else {
+                        task.setState(TaskData.STATE_FAIL_PROGRAM);
+                        task.setErrorInfo("TaskDelayer not found: " + task.getTaskClass());
+                    }
+                } catch (Throwable e) {
+                    // 异常分类：TaskDataException→DATA / TaskPartnerException→PARTNER / 其余→PROGRAM
+                    int failState = TaskStatsService.mapFailureState(e);
+                    task.setState(failState);
+                    task.setErrorInfo(ExceptionUtils.exceptionToString(e));
+                    if (failState == TaskData.STATE_FAIL_PROGRAM) {
+                        log.error(e.getMessage(), e);
+                    }
+                }
+            } else {
+                // 限速等待超时（rateLimitWait 内未获配额，极端高并发）：标记 STATE_FAIL_CONFIG，重试决策统一放到统计/日志之后
+                task.setErrorInfo("RateLimit!!!" + config.getRateLimitValue() + "/" + config.getRateLimitTime() + "s");
+                task.setState(TaskData.STATE_FAIL_CONFIG);
+            }
+            // 监听器回调（run 后，与 Runner/Croner 对齐）：无论成功/失败都回调，监听器异常不影响任务执行流程
+            List<TaskDelayerListener> delayerListenerList = taskListenerManager.getDelayerListenerList();
+            for (TaskDelayerListener listener : delayerListenerList) {
+                try {
+                    listener.onPostExecute(task);
+                } catch (Throwable e) {
+                    log.error("TaskDelayerListener.onPostExecute 异常: {}", e.getMessage(), e);
+                }
+            }
+            // 清理 refObject，避免日志序列化时带入大对象/不可序列化对象（对齐 TaskRunner.process）
+            task.setRefObject(null);
+            task.setFinishDate(SystemClock.nowDate());
+            // 统计：timeWaitDelay=consumeDate-(queueDate+taskDelay)（实际延迟等待），timeRun=runDate→finishDate
+            long expectedRunAt = task.getQueueDate() != null ? task.getQueueDate().getTime() + task.getTaskDelay() : 0;
+            int[] failCounters = TaskStatsService.toFailCounters(task.getState());
+            TaskStatsService.updateDelayerStats(config.getId(), 1, failCounters[0], failCounters[1], failCounters[2], failCounters[3],
+                    (task.getConsumeDate() != null && expectedRunAt > 0) ? TaskStatsService.toIntClamped(task.getConsumeDate().getTime() - expectedRunAt) : 0,
+                    startRun > 0 ? TaskStatsService.toIntClamped(task.getFinishDate().getTime() - startRun) : 0);
+            // 日志（先于重试落盘：resubmit 失败不丢统计/日志，对齐 TaskRunner.process 顺序）
+            if (config.getLogLevel() > TaskDelayerConfig.TASK_LOG_TYPE_NONE) {
+                TaskDelayerLog delayerLog = new TaskDelayerLog(task);
+                delayerLog.setLogLevel(config.getLogLevel());
+                delayerLog.setLogLimitSize(config.getLogLimitSize());
+                delayerLog.setTaskId(config.getId());
+                taskApiClient.sendTaskDelayerLog(delayerLog);
+            }
+            // 重试决策（统计/日志已落盘）：PARTNER/PROGRAM 指数退避，CONFIG(限速) 用 rateLimitWait 让配额恢复
+            if (task.getRetryType() == TaskData.RETRY_TYPE_AUTO && task.getState() > TaskData.STATE_SUCCESS) {
+                if (task.getState() == TaskData.STATE_FAIL_PARTNER && task.getRanTimes() <= config.getRetryTimesByPartner()) {
+                    resubmit(task,retryBackoffMillis(task.getRanTimes()));
+                } else if (task.getState() == TaskData.STATE_FAIL_PROGRAM && task.getRanTimes() <= config.getRetryTimesByProgram()) {
+                    resubmit(task,retryBackoffMillis(task.getRanTimes()));
+                } else if (task.getState() == TaskData.STATE_FAIL_CONFIG && task.getRanTimes() <= config.getRetryTimesByOverrated()) {
+                    resubmit(task,config.getRateLimitWait() * 1000L);
+                }
+            }
+        } catch (Throwable e) {
+            // 兜底：任务已通过 Lua ZRANGEBYSCORE+ZREM 从 zset pop（in-flight 归本机），若 post-run（统计/日志/resubmit）抛异常，
+            // 失败任务可能既不重试也无完整日志。对齐 TaskRunner.process 的 outer catch：映射失败状态 + 兜底写统计/日志保证可观测。
+            // 最常见触发：resubmit→addTask 在 Redis 抖动时抛——恰是失败任务最需重试时。
+            // 避免双计：finishDate 已设说明统计/日志已在正常路径落盘（异常发生在 resubmit 阶段），仅记录日志不再重写统计/日志。
+            if (task.getFinishDate() == null) {
+                if (task.getState() <= TaskData.STATE_SUCCESS) {
                     task.setState(TaskData.STATE_FAIL_PROGRAM);
-                    task.setErrorInfo("TaskDelayer not found: " + task.getTaskClass());
                 }
-            } catch (Throwable e) {
-                // 异常分类：TaskDataException→DATA / TaskPartnerException→PARTNER / 其余→PROGRAM
-                int failState = TaskStatsService.mapFailureState(e);
-                task.setState(failState);
                 task.setErrorInfo(ExceptionUtils.exceptionToString(e));
-                if (failState == TaskData.STATE_FAIL_PROGRAM) {
-                    log.error(e.getMessage(), e);
+                task.setFinishDate(SystemClock.nowDate());
+                int[] failCounters = TaskStatsService.toFailCounters(task.getState());
+                TaskStatsService.updateDelayerStats(config.getId(), 1, failCounters[0], failCounters[1], failCounters[2], failCounters[3], 0, 0);
+                if (config.getLogLevel() > TaskDelayerConfig.TASK_LOG_TYPE_NONE) {
+                    TaskDelayerLog delayerLog = new TaskDelayerLog(task);
+                    delayerLog.setLogLevel(config.getLogLevel());
+                    delayerLog.setLogLimitSize(config.getLogLimitSize());
+                    delayerLog.setTaskId(config.getId());
+                    taskApiClient.sendTaskDelayerLog(delayerLog);
+                }
+                // 任务已通过 Lua pop（in-flight），异常发生在 run 之前（如限速器 acquireRateLimit 的 Redis 故障、
+                // setRunDate 之前的任何异常），任务未执行也不进入正常重试决策——写回 zset 延迟重 poll，避免已 pop 任务静默丢失。
+                // 必须有上限防无限死循环：ranTimes <= retryTimesByOverrated 才重投（cleanForRetry 不清 ranTimes，逐次累加达上限即停），
+                // 超限则接受单任务丢失——避免持续基础设施故障下无限重投灌水统计、稀释平均延迟从而 masking 延迟超时告警。
+                try {
+                    if (task.getRanTimes() <= config.getRetryTimesByOverrated()) {
+                        resubmit(task,config.getRateLimitWait() * 1000L);
+                    } else {
+                        log.warn("TaskDelayer[{}]兜底重投已达上限(ranTimes>{}),停止重投接受丢失: {}", config.getTaskClass(), config.getRetryTimesByOverrated(), e.getMessage());
+                    }
+                } catch (Throwable ex) {
+                    log.error("TaskDelayer[{}]兜底写回zset失败,任务可能丢失: {}", config.getTaskClass(), ex.getMessage(), ex);
                 }
             }
-        } else {
-            // 限速等待超时（rateLimitWait 内未获配额，极端高并发）：标记 STATE_FAIL_CONFIG，重试决策统一放到统计/日志之后
-            task.setErrorInfo("RateLimit!!!" + config.getRateLimitValue() + "/" + config.getRateLimitTime() + "s");
-            task.setState(TaskData.STATE_FAIL_CONFIG);
-        }
-        // 监听器回调（run 后，与 Runner/Croner 对齐）：无论成功/失败都回调，监听器异常不影响任务执行流程
-        List<TaskDelayerListener> delayerListenerList = taskListenerManager.getDelayerListenerList();
-        for (TaskDelayerListener listener : delayerListenerList) {
-            try {
-                listener.onPostExecute(task);
-            } catch (Throwable e) {
-                log.error("TaskDelayerListener.onPostExecute 异常: {}", e.getMessage(), e);
-            }
-        }
-        // 清理 refObject，避免日志序列化时带入大对象/不可序列化对象（对齐 TaskRunner.process）
-        task.setRefObject(null);
-        task.setFinishDate(SystemClock.nowDate());
-        // 统计：timeWaitDelay=consumeDate-(queueDate+taskDelay)（实际延迟等待），timeRun=runDate→finishDate
-        long expectedRunAt = task.getQueueDate() != null ? task.getQueueDate().getTime() + task.getTaskDelay() : 0;
-        int[] failCounters = TaskStatsService.toFailCounters(task.getState());
-        TaskStatsService.updateDelayerStats(config.getId(), 1, failCounters[0], failCounters[1], failCounters[2], failCounters[3],
-                (task.getConsumeDate() != null && expectedRunAt > 0) ? TaskStatsService.toIntClamped(task.getConsumeDate().getTime() - expectedRunAt) : 0,
-                startRun > 0 ? TaskStatsService.toIntClamped(task.getFinishDate().getTime() - startRun) : 0);
-        // 日志（先于重试落盘：resubmit 失败不丢统计/日志，对齐 TaskRunner.process 顺序）
-        if (config.getLogLevel() > TaskRunnerConfig.TASK_LOG_TYPE_NONE) {
-            TaskDelayerLog delayerLog = new TaskDelayerLog(task);
-            delayerLog.setLogLevel(config.getLogLevel());
-            delayerLog.setLogLimitSize(config.getLogLimitSize());
-            delayerLog.setTaskId(config.getId());
-            taskApiClient.sendTaskDelayerLog(delayerLog);
-        }
-        // 重试决策（统计/日志已落盘）：PARTNER/PROGRAM 指数退避，CONFIG(限速) 用 rateLimitWait 让配额恢复
-        if (task.getRetryType() == TaskData.RETRY_TYPE_AUTO && task.getState() > TaskData.STATE_SUCCESS) {
-            if (task.getState() == TaskData.STATE_FAIL_PARTNER && task.getRanTimes() <= config.getRetryTimesByPartner()) {
-                resubmit(task, config, retryBackoffMillis(task.getRanTimes()));
-            } else if (task.getState() == TaskData.STATE_FAIL_PROGRAM && task.getRanTimes() <= config.getRetryTimesByProgram()) {
-                resubmit(task, config, retryBackoffMillis(task.getRanTimes()));
-            } else if (task.getState() == TaskData.STATE_FAIL_CONFIG && task.getRanTimes() <= config.getRetryTimesByOverrated()) {
-                resubmit(task, config, config.getRateLimitWait() * 1000L);
-            }
+            log.error("TaskDelayer[{}]execute 兜底异常, taskClass={}, id={}: {}", config.getTaskClass(), task.getTaskClass(), task.getId(), e.getMessage(), e);
         }
     }
 
@@ -558,14 +606,14 @@ public class TaskDelayerContainer {
      * 与 pollInterval 解耦——pollInterval 是 poll 节奏，不该影响重试间隔；指数递增防乒乓（频繁打故障方）。
      */
     private static long retryBackoffMillis(int ranTimes) {
-        long backoff = 1000L << Math.min(Math.max(ranTimes - 1, 0), 20);
+        long backoff = 1000L << Math.clamp(ranTimes - 1, 0, 20);
         return Math.min(backoff, 60_000L);
     }
 
     /**
      * 重新提交任务回 zset（限速/业务失败重试）：清理运行期字段与 refObject，queueDate 重置，taskDelay=退避。
      */
-    private void resubmit(TaskData task, TaskDelayerConfig config, long delayMillis) {
+    private void resubmit(TaskData task, long delayMillis) {
         TaskData copy = task.copy();
         // 重试使用新 id，避免与原任务同 id 导致 ES 日志互相覆盖（对齐 TaskRunner 重试 setId）
         copy.setId(taskSequenceManager.nextId("TaskDelayerLog"));
@@ -587,7 +635,7 @@ public class TaskDelayerContainer {
      */
     private boolean acquireRateLimit(TaskDelayerConfig config, TaskData task) {
         int type = config.getRateLimitType();
-        if (type == TaskRunnerConfig.RATE_LIMIT_NONE) {
+        if (type == TaskDelayerConfig.RATE_LIMIT_NONE) {
             return true;
         }
         int value = config.getRateLimitValue();
@@ -597,9 +645,9 @@ public class TaskDelayerContainer {
         }
         String taskClass = task.getTaskClass();
         String tag = task.getRateLimitTag();
-        if (type == TaskRunnerConfig.RATE_LIMIT_LOCAL
-                || type == TaskRunnerConfig.RATE_LIMIT_LOCAL_TASK
-                || type == TaskRunnerConfig.RATE_LIMIT_LOCAL_TASK_TAG) {
+        if (type == TaskDelayerConfig.RATE_LIMIT_LOCAL
+                || type == TaskDelayerConfig.RATE_LIMIT_LOCAL_TASK
+                || type == TaskDelayerConfig.RATE_LIMIT_LOCAL_TASK_TAG) {
             // 进程内限速：限流 key 拼接见 TaskRateLimitHelper.buildLocalLocker
             String locker = TaskRateLimitHelper.buildLocalLocker(type, taskClass, tag);
             return taskLocalRateLimiter.tryAcquire(locker, value, time, config.getRateLimitWait(), 1);

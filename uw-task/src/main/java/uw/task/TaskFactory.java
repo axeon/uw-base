@@ -311,7 +311,7 @@ public class TaskFactory {
         for (int i = 0; i < MAX_RETRY_TIMES; i++) {
             try {
                 if (i > 0) {
-                    Thread.sleep(i * 500);
+                    Thread.sleep(i * 50);
                 }
                 Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
                 if (retMessage != null) {

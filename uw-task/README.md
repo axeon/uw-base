@@ -260,8 +260,8 @@ public void submitOrderTimeout(long orderId) {
 | `retryTimesByProgram` | 0 | 程序异常重试次数（默认 0 不重试，与 Runner 一致） |
 | `alertFailRate` / `alertFailProgramRate` / `alertFailPartnerRate` | — | 失败率报警阈值（百分比） |
 | `alertRunTimeout` | — | 平均运行耗时报警阈值（毫秒） |
-| `alertDelayOvertime` | — | **Delayer 特有**：实际执行晚于 `runAt` 的平均超时报警阈值（毫秒），建议 > `pollInterval` × 1000 |
-| `logLevel` / `logLimitSize` | 0 / 0 | 日志级别（`TaskRunnerConfig.TASK_LOG_TYPE_*`）与字符串字段大小限制 |
+| `alertWaitTimeout` | — | Delayer 语义为"延迟超时"（实际执行晚于 `runAt` 的平均毫秒），区别于 Runner/Croner 的队列等待超时；建议 > `pollInterval` × 1000 |
+| `logLevel` / `logLimitSize` | 0 / 0 | 日志级别（`TaskDelayerConfig.TASK_LOG_TYPE_*`）与字符串字段大小限制 |
 
 ### 执行机制
 
@@ -481,7 +481,7 @@ center 恢复后，`updateConfig`（每 60s）拉取成功 → 用 center 配置
 
 | 任务 | 切换方式 | 保障 |
 |---|---|---|
-| TaskCroner | `stopTask` 用 `cancel(false)` 不中断在途 | 正在执行的 croner 跑完，新调度接管 |
+···| TaskCroner | `stop` 用 `cancel(false)` 不中断在途 | 正在执行的 croner 跑完，新调度接管 |
 | TaskRunner | 销毁 listener → 重建 | RabbitMQ 未 ack 消息重新入队（broker 持久化） |
 | TaskDelayer | `handle.stop` drain（等在途 worker，30s 超时 shutdownNow 兜底） | 任务在 Redis zset 持久化；poll 线程已 pop 未投递的写回 zset |
 

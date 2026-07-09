@@ -138,7 +138,7 @@ public class TaskCronerContainer {
         // configKey 索引（taskClass#taskParam$runTarget）：本地降级(id=0)与 center(真实id)同 configKey，覆盖时 stop old + new 不错位
         String configKey = taskMetaInfoManager.getCronerConfigKey(taskCronerConfig);
         //尝试关闭已有任务（cancel(false)：不中断正在执行的 croner，当前跑完、new 接管未来调度——切换不丢在途）
-        stopTask(configKey);
+        stop(configKey);
         // 标记删除的，直接返回了。
         if (taskCronerConfig.getState() < 1) {
             log.warn("定时任务状态不符，无法启动！ID:{}, CRONER:{}, CRON:{}.", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron());
@@ -151,6 +151,9 @@ public class TaskCronerContainer {
         // 好处：不依赖"调度器在同线程内连续执行任务体与 trigger 回调"这一隐式契约，
         // 且作用域局限在单次调度闭包内，无跨任务/跨线程串扰与残留风险。
         final TaskCronerLog[] logHolder = new TaskCronerLog[1];
+        // 本次计划执行时间（由 trigger 回调写入上次计算的 nextExec，供下次 Runnable 体内落盘 stats 时作 scheduleDate）。
+        // stats 从 trigger 回调移到 Runnable 体内，避免 cancel 后 Spring ReschedulingRunnable 跳过回调致该轮统计丢失。
+        final Date[] scheduleDateHolder = new Date[1];
 
         ScheduledFuture<?> future = this.taskScheduler.schedule(() -> {
             // 判断全局唯一条件
@@ -166,9 +169,9 @@ public class TaskCronerContainer {
             try {
                 taskCronerLog.setId(taskSequenceManager.nextId("TaskCronerLog"));
             } catch (Exception e) {
-                // Redis 故障致 nextId 失败：id 保持 0，trigger 回调的 id>0 守门会跳过日志/统计落库；
+                // Redis 故障致 nextId 失败：id 保持 0，trigger 回调的 id>0 守门会跳过日志落库（统计已无条件上报）；
                 // 此处 WARN 让运维可见（不抛出，runTask 仍执行，避免 Redis 抖动静默吞掉整轮调度且无任何痕迹）
-                log.warn("Croner[{}] nextId 失败,本轮跳过日志/统计: {}", taskCronerConfig.getTaskClass(), e.getMessage());
+                log.warn("Croner[{}] nextId 失败,本轮跳过日志: {}", taskCronerConfig.getTaskClass(), e.getMessage());
             }
             taskCronerLog.setTaskClass(taskCronerConfig.getTaskClass());
             taskCronerLog.setTaskParam(taskCronerConfig.getTaskParam());
@@ -191,18 +194,14 @@ public class TaskCronerContainer {
             try {
                 resultData = taskCroner.runTask(taskCronerLog);
                 taskCronerLog.setState(TaskData.STATE_SUCCESS);
-            } catch (TaskDataException e) {
-                // 出现TaskDataException，说明是数据错误。
-                taskCronerLog.setState(TaskData.STATE_FAIL_DATA);
-                resultData = ExceptionUtils.exceptionToString(e);
-            } catch (TaskPartnerException e) {
-                // 出现TaskPartnerException，说明是合作方的错误。
-                taskCronerLog.setState(TaskData.STATE_FAIL_PARTNER);
-                resultData = ExceptionUtils.exceptionToString(e);
             } catch (Throwable e) {
+                // 异常分类复用 mapFailureState：TaskDataException→DATA / TaskPartnerException→PARTNER / 其余→PROGRAM（对齐 Runner/Delayer）
+                int failState = TaskStatsService.mapFailureState(e);
+                taskCronerLog.setState(failState);
                 resultData = ExceptionUtils.exceptionToString(e);
-                taskCronerLog.setState(TaskData.STATE_FAIL_PROGRAM);
-                log.error(e.getMessage(), e);
+                if (failState == TaskData.STATE_FAIL_PROGRAM) {
+                    log.error(e.getMessage(), e);
+                }
             }
             // 执行监听器操作
             for (TaskCronerListener listener : cronerListenerList) {
@@ -215,39 +214,47 @@ public class TaskCronerContainer {
             taskCronerLog.setFinishDate(SystemClock.nowDate());
             taskCronerLog.setResultData(resultData);
             taskCronerLog.setRefObject(null);
-        }, triggerContext -> {
-            // 下次计划执行日期。
-            Instant nextExec = cronTrigger.nextExecution(triggerContext);
-            // 从闭包变量取出本次执行的日志实例，并立即清理引用，避免对象滞留至下一轮调度。
-            TaskCronerLog taskCronerLog = logHolder[0];
-            logHolder[0] = null;
-            if (taskCronerLog != null && taskCronerLog.getId() > 0) {
-                //写入下次计划执行时间。
-                if (nextExec != null) {
-                    taskCronerLog.setNextDate(Date.from(nextExec));
-                    if (log.isDebugEnabled()) {
-                        log.debug("正在调度定时任务ID:[{}], CRONER:[{}], CRON:[{}], 下次执行时间:[{}].", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), cronTrigger.getExpression(),
-                                nextExec.toString());
+            // stats 在 Runnable 体内落盘（不依赖 trigger 回调）：cancel 后 Spring ReschedulingRunnable 的 finally 会跳过 trigger 回调，
+            // 若 stats 放回调则该轮统计丢失（监控盲区）。scheduleDate 取闭包传递的上次 nextExec（本次计划时间）。
+            Date scheduleDate = scheduleDateHolder[0];
+            int timeWait = 0;
+            if (scheduleDate != null) {
+                taskCronerLog.setScheduleDate(scheduleDate);
+                // timeWait<0 为时钟误差，Math.max(0,...) 兜底（对齐 Delayer/Runner）
+                timeWait = TaskStatsService.toIntClamped(taskCronerLog.getRunDate().getTime() - scheduleDate.getTime());
+            }
+            int timeRun = TaskStatsService.toIntClamped(taskCronerLog.getFinishDate().getTime() - taskCronerLog.getRunDate().getTime());
+            int[] failCounters = TaskStatsService.toFailCounters(taskCronerLog.getState());
+            TaskStatsService.updateCronerStats(taskCronerConfig.getId(), 1, failCounters[0], failCounters[1], failCounters[2], failCounters[3], timeWait, timeRun);
+            // 日志落库移入 Runnable（cancel 后 Spring ReschedulingRunnable 跳过 trigger 回调，日志不再丢失）。
+            // nextDate 用 cronTrigger 基于本次执行算下次计划时间（近似 trigger 回调的 nextExec）。
+            if (taskCronerLog.getId() > 0 && scheduleDate != null && taskCronerLog.getRunDate() != null && taskCronerLog.getFinishDate() != null) {
+                try {
+                    Instant nextExec = cronTrigger.nextExecution(new org.springframework.scheduling.support.SimpleTriggerContext(
+                            scheduleDate.toInstant(), taskCronerLog.getRunDate().toInstant(), taskCronerLog.getFinishDate().toInstant()));
+                    if (nextExec != null) {
+                        taskCronerLog.setNextDate(Date.from(nextExec));
+                        if (log.isDebugEnabled()) {
+                            log.debug("正在调度定时任务ID:[{}], CRONER:[{}], CRON:[{}], 下次执行时间:[{}].", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), cronTrigger.getExpression(), nextExec.toString());
+                        }
                     }
+                } catch (Exception ignore) {
+                    // cron 计算异常（极少），nextDate 留空不影响日志主体落盘
                 }
-                // 在此处写入本次执行的信息
-                if (triggerContext.lastScheduledExecution() != null) {
-                    taskCronerLog.setScheduleDate(Date.from(triggerContext.lastScheduledExecution()));
-                }
-                int timeWait = 0, timeRun = 0;
-                if (taskCronerLog.getScheduleDate() != null) {
-                    // 特定情况下 timeWait<0 为时钟误差，统一 Math.max(0,...) 兜底；Math.min 防溢出（对齐 Delayer/Runner）
-                    timeWait = TaskStatsService.toIntClamped(taskCronerLog.getRunDate().getTime() - taskCronerLog.getScheduleDate().getTime());
-                }
-                timeRun = TaskStatsService.toIntClamped(taskCronerLog.getFinishDate().getTime() - taskCronerLog.getRunDate().getTime());
-                //开始输出统计数据。
-                int[] failCounters = TaskStatsService.toFailCounters(taskCronerLog.getState());
-                TaskStatsService.updateCronerStats(taskCronerConfig.getId(), 1, failCounters[0], failCounters[1], failCounters[2], failCounters[3], timeWait, timeRun);
-                // 入库（对齐 Runner/Delayer：logLevel > NONE 才发日志）
-                if (taskCronerConfig.getLogLevel() > TaskRunnerConfig.TASK_LOG_TYPE_NONE) {
+                if (taskCronerConfig.getLogLevel() > TaskCronerConfig.TASK_LOG_TYPE_NONE) {
                     taskApiClient.sendTaskCronerLog(taskCronerConfig.getId(), taskCronerLog);
                 }
             }
+        }, triggerContext -> {
+            // 下次计划执行日期。
+            Instant nextExec = cronTrigger.nextExecution(triggerContext);
+            // 记录下次计划时间到闭包，供下次 Runnable 体内落盘 stats 时作 scheduleDate（timeWait=runDate-scheduleDate）。
+            // stats 已移到 Runnable 体内（cancel 不丢统计），trigger 回调仅传递 scheduleDate + 日志落库（nextDate=nextExec）。
+            if (nextExec != null) {
+                scheduleDateHolder[0] = Date.from(nextExec);
+            }
+            // logHolder 仅清理引用（stats + log 已在 Runnable 体内落盘，trigger 回调不再处理日志，cancel 不丢）。
+            logHolder[0] = null;
             return nextExec;
         });
         this.cronerTasks.put(configKey, future);
@@ -257,12 +264,12 @@ public class TaskCronerContainer {
     /**
      * 停止一个定时任务：cancel(false) 不中断正在执行的任务（配置覆盖/降级切换让在途跑完，不丢），
      * 仅取消未来调度，并从 {@link #cronerTasks} map 中移除。
-     * <p>注意：主机级停机用 {@link #suspendAllCroners()}（cancel(true) 立即停），与本方法 cancel(false) 区分。</p>
+     * <p>注意：主机级停机用 {@link #suspendAll()}（cancel(true) 立即停），与本方法 cancel(false) 区分。</p>
      *
      * @param configKey 配置键（见 {@link TaskMetaInfoManager#getCronerConfigKey(TaskCronerConfig)}）
      * @return 成功取消返回 true；map 中无对应调度返回 false
      */
-    public boolean stopTask(String configKey) {
+    public boolean stop(String configKey) {
         ScheduledFuture<?> future = this.cronerTasks.get(configKey);
         if (future == null) {
             return false;
@@ -274,12 +281,10 @@ public class TaskCronerContainer {
     }
 
     /**
-     * 暂停所有定时任务（cancel future + 清空 cronerTasks），但<b>不关闭调度线程池</b>。
-     * <p>用于主机被禁用(state=0)时停任务却保留 executorService/taskScheduler，
-     * 以便解除禁用后 {@link #configureTask} 能重新调度。区别于 {@link #stopAllTaskCroner}
-     *（后者 shutdownNow 线程池，仅供 @PreDestroy 应用关闭时使用）。</p>
+     * 暂停所有定时任务（禁用，保池）：cancel future + 清空 cronerTasks，不关闭调度线程池。
+     * <p>用于主机被禁用(state=0)时停任务却保留 executorService/taskScheduler，以便解除禁用后重新调度。</p>
      */
-    public void suspendAllCroners() {
+    public void suspendAll() {
         log.info("All TaskCroner Suspended....");
         for (Entry<String, ScheduledFuture<?>> kv : this.cronerTasks.entrySet()) {
             kv.getValue().cancel(true);
@@ -288,27 +293,12 @@ public class TaskCronerContainer {
     }
 
     /**
-     * 停止所有定时任务并关闭调度线程池：逐个 cancel(true) 已注册的 future，再 shutdownNow 线程池。
-     */
-    public void stopAllTaskCroner() {
-        log.info("All TaskCroner Destroy....");
-        suspendAllCroners();
-        executorService.shutdownNow();
-    }
-
-    /**
-     * 暂停所有定时任务（禁用，保池）：cancel future + 清空 cronerTasks，不关闭调度线程池。
-     * <p>用于主机被禁用(state=0)时停任务却保留 executorService/taskScheduler，以便解除禁用后重新调度。</p>
-     */
-    public void suspendAll() {
-        suspendAllCroners();
-    }
-
-    /**
-     * 销毁所有定时任务（@PreDestroy，关池）：委托 {@link #stopAllTaskCroner}。
+     * 销毁所有定时任务（@PreDestroy，关池）。
      */
     public void destroyAll() {
-        stopAllTaskCroner();
+        log.info("All TaskCroner Destroy....");
+        suspendAll();
+        executorService.shutdownNow();
     }
 
 }

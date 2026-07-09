@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 任务运行统计聚合服务。
  *
- * <p>按 taskId 聚合 croner / runner 的执行计数与耗时，供主机状态报告周期性采集上报。</p>
+ * <p>按 taskId 聚合 croner / runner / delayer 的执行计数与耗时，供主机状态报告周期性采集上报。</p>
  *
  * <h3>并发模型</h3>
  * 单读多写：{@code updateXxxStats} 由多个任务执行线程并发调用，{@code getXxxStats} 仅由主机状态上报

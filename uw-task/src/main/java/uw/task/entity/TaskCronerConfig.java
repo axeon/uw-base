@@ -99,6 +99,11 @@ public class TaskCronerConfig implements Serializable {
     private int alertFailProgramRate;
 
     /**
+     * 配置失败率告警阈值（百分比）。
+     */
+    private int alertFailConfigRate;
+
+    /**
      * 数据失败率
      */
     private int alertFailDataRate;
@@ -152,6 +157,7 @@ public class TaskCronerConfig implements Serializable {
         setAlertFailRate(builder.alertFailRate);
         setAlertFailPartnerRate(builder.alertFailPartnerRate);
         setAlertFailProgramRate(builder.alertFailProgramRate);
+        setAlertFailConfigRate(builder.alertFailConfigRate);
         setAlertFailDataRate(builder.alertFailDataRate);
         setAlertWaitTimeout(builder.alertWaitTimeout);
         setAlertRunTimeout(builder.alertRunTimeout);
@@ -208,6 +214,7 @@ public class TaskCronerConfig implements Serializable {
         builder.alertFailRate = copy.getAlertFailRate();
         builder.alertFailPartnerRate = copy.getAlertFailPartnerRate();
         builder.alertFailProgramRate = copy.getAlertFailProgramRate();
+        builder.alertFailConfigRate = copy.getAlertFailConfigRate();
         builder.alertFailDataRate = copy.getAlertFailDataRate();
         builder.alertWaitTimeout = copy.getAlertWaitTimeout();
         builder.alertRunTimeout = copy.getAlertRunTimeout();
@@ -304,6 +311,14 @@ public class TaskCronerConfig implements Serializable {
 
     public void setAlertFailProgramRate(int alertFailProgramRate) {
         this.alertFailProgramRate = alertFailProgramRate;
+    }
+
+    public int getAlertFailConfigRate() {
+        return alertFailConfigRate;
+    }
+
+    public void setAlertFailConfigRate(int alertFailConfigRate) {
+        this.alertFailConfigRate = alertFailConfigRate;
     }
 
     public int getAlertFailDataRate() {
@@ -410,6 +425,11 @@ public class TaskCronerConfig implements Serializable {
          * 程序失败率
          */
         private int alertFailProgramRate;
+
+        /**
+         * 配置失败率告警阈值（百分比）。
+         */
+        private int alertFailConfigRate;
 
         /**
          * 数据失败率
@@ -571,6 +591,17 @@ public class TaskCronerConfig implements Serializable {
          */
         public Builder alertFailProgramRate(int alertFailProgramRate) {
             this.alertFailProgramRate = alertFailProgramRate;
+            return this;
+        }
+
+        /**
+         * Sets the {@code alertFailConfigRate} and returns a reference to this Builder enabling method chaining.
+         *
+         * @param alertFailConfigRate the {@code alertFailConfigRate} to set
+         * @return a reference to this Builder
+         */
+        public Builder alertFailConfigRate(int alertFailConfigRate) {
+            this.alertFailConfigRate = alertFailConfigRate;
             return this;
         }
 

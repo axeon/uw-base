@@ -5,9 +5,9 @@ import uw.task.TaskData;
 /**
  * 延迟任务（TaskDelayer）的监听器。
  *
- * <p>实现此接口并通过 {@link uw.task.TaskListenerManager#addDelayernListener(TaskDelayerListener)} 注册后，
- * 框架在队列任务执行完成后回调 {@link #onPostExecute}（用于埋点、链路追踪、自定义指标采集等）。
- * 注意：当前框架在队列任务执行流程中<b>仅调用 {@code onPostExecute}</b>，
+ * <p>实现此接口并通过 {@link uw.task.TaskListenerManager#addDelayerListener(TaskDelayerListener)} 注册后，
+ * 框架在延迟任务执行完成后回调 {@link #onPostExecute}（用于埋点、链路追踪、自定义指标采集等）。
+ * 注意：当前框架在延迟任务执行流程中<b>仅调用 {@code onPostExecute}</b>，
  * {@code onPreExecute} 保留为接口契约，暂未被框架调用。
  * 监听器内抛出的异常会被框架吞掉（仅记录日志），不会影响任务执行流程。</p>
  *
@@ -16,7 +16,7 @@ import uw.task.TaskData;
 public interface TaskDelayerListener {
 
     /**
-     * 任务执行前的回调（当前框架未在队列任务流程中调用，保留为接口契约）。
+     * 任务执行前的回调（当前框架未在延迟任务流程中调用，保留为接口契约）。
      *
      * @param data 本次执行的任务数据（此时仅包含入参与队列信息，结果尚未产生）
      */

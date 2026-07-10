@@ -255,10 +255,10 @@ long id = SnowflakeIdGenerator.getInstance().generateId();
 
 > `getActiveCount()`（任务执行口径）只数已进入 `run()` 的 worker，不含「已持许可但虚拟线程未 mount 进 `run()`」及接力 poll 间隙的 worker。**勿用 `getMaximumPoolSize() - getActiveCount()` 估算空闲**（会高估），查可立即占用的并发槽位用 `getIdleCount()`，观察实际执行负载用 `getActiveCount()`。
 
-**调用策略**（`CallPolicy`，对齐 JDK `RejectedExecutionHandler`）：`BlockPolicy`（阻塞等待，快速模式默认）/ `FailFastPolicy`（抛 `RejectedExecutionException`，队列模式默认）/ `CallerRunsPolicy`（调用者执行）/ `DiscardPolicy`（静默丢弃）。
+**调用策略**（`CallPolicy`，对齐 JDK `RejectedExecutionHandler`）：`BlockPolicy`（阻塞等待，队列模式默认——提交线程阻塞做自然反压，不拒绝不丢任务）/ `CallerRunsPolicy`（调用者执行，快速模式默认）/ `FailFastPolicy`（抛 `RejectedExecutionException`）/ `DiscardPolicy`（静默丢弃）。
 
 ```java
-// 队列模式：并发 100、队列 1000，队列满则快速失败
+// 队列模式：并发 100、队列 1000，队列满则阻塞提交线程（BlockPolicy，自然反压）
 LimitedVirtualThreadExecutor executor = new LimitedVirtualThreadExecutor("my-task-", 100, 1000);
 executor.submit(() -> doSomething());
 executor.shutdown();

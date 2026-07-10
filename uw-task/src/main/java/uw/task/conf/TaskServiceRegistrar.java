@@ -34,6 +34,28 @@ import java.util.concurrent.locks.ReentrantLock;
  * 三者各自维护独立的时间戳与 fail-fast，互不影响：runner/croner 拉取失败保留上次配置不更新，delayer 拉取失败仅 warn。
  * {@link #reportHostInfo} 上报 JVM/线程/统计/队列积压等信息。</p>
  *
+ * <h3>降级与恢复（center 不可达时）</h3>
+ * <p>三类任务各自独立判定，核心机制：<b>fetch 失败时 {@code xxxLastUpdateTime} 不推进</b>（拉取失败直接 return，不更新时间戳），
+ * 保证 center 恢复后能按断联前的时间点补拉增量，不丢配置变更窗口。</p>
+ * <ul>
+ *   <li><b>启动降级</b>：仅首次拉取失败（{@code xxxFirstRun && !xxxDegraded}）触发，用 {@code initConfig()} 本地默认配置
+ *       启动（{@code startRunnersLocal}/{@code startCronersLocal}/{@code TaskDelayerContainer#start}）。此时 {@code xxxLastUpdateTime}
+ *       仍为初始 0，且降级分支<b>不</b>把 {@code xxxFirstRun} 置 false。center 恢复后 fetch 用 {@code lastUpdateTime=0} 拉全量，
+ *       firstRun 块重新执行（upload 缺失配置 + register/configure），按 configKey 覆盖本地降级 config，无残留。</li>
+ *   <li><b>运行中断联</b>：非首次拉取失败不触发降级（firstRun 已 false），直接 fail-fast return 保留上次配置，
+ *       {@code xxxLastUpdateTime} 冻在断联前。center 恢复后按断联前时间点拉增量，补齐断联期间的配置变更。</li>
+ *   <li><b>无需重置 lastUpdateTime</b>：启动降级必然发生在 {@code lastUpdateTime=0}（初始值），恢复即全量拉取；
+ *       运行中断联靠"时间戳不推进"自然补齐增量，两类场景都不需要额外的 lastUpdateTime 重置。</li>
+ * </ul>
+ * <p>降级标志（{@code runnerDegraded}/{@code cronerDegraded}/{@code delayerDegraded}）单向流转 true→false（仅恢复时置 false），
+ * 一旦拉取成功就不再因后续失败重新降级——运行中故障靠 fail-fast 保留配置，避免降级/恢复反复抖动。</p>
+ *
+ * <h3>主循环增量驱动</h3>
+ * <p>{@link #updateTaskRunnerConfig}/{@link #updateTaskCronerConfig}/{@link #updateTaskDelayerConfig} 的主循环<b>只遍历本次 fetch 增量
+ * （updatedXxxConfigMap）</b>，不遍历全量 configMap：配置无变化时 fetch 返回空、主循环不遍历，避免每 60s 对全量 config 重复
+ * register/configure（Runner 白跑 stillInUse 扫描、Croner 无谓 stop+reschedule 抖动、Delayer 刷"配置已热更新"误报日志）。
+ * firstRun 上传的 config（center 没返回过、不在增量里）在 firstRun 分支直接 register/configure 启动。</p>
+ *
  * @author axeon
  */
 public class TaskServiceRegistrar {
@@ -246,6 +268,9 @@ public class TaskServiceRegistrar {
                             log.debug("TaskRunner: [{}]未找到服务器端配置，上传默认配置...", taskClass);
                         }
                         serverConfig = uploadRunnerInfo(localConfig, contact);
+                        // 首次上传的 config 不在 fetch 增量(updatedRunnerConfigMap)里，这里直接 register 启动 listener；
+                        // 后续由下方主循环按 fetch 增量驱动
+                        taskRunnerContainer.registerQueueListener(serverConfig);
                     }
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
@@ -253,8 +278,10 @@ public class TaskServiceRegistrar {
             }
         }
 
-        // 改Runner配置，逐一循环并配置。
-        for (TaskRunnerConfig taskRunnerConfig : taskMetaInfoManager.getRunnerConfigMap().values()) {
+        // 只处理本次 fetch 增量（updatedRunnerConfigMap），不遍历全量 runnerConfigMap：
+        // 配置无变化时 fetch 返回空，避免每 60s 对全量 config 调 registerQueueListener 白跑（含 stillInUse 扫描）。
+        // firstRun 上传的 config 已在上方 firstRun 分支直接 register 启动，不依赖此循环。
+        for (TaskRunnerConfig taskRunnerConfig : updatedRunnerConfigMap.values()) {
             //必须是本项目任务，否则跳过
             if (!taskRunnerConfig.getTaskClass().startsWith(taskProperties.getTaskProject())) {
                 if (log.isDebugEnabled()) {
@@ -348,6 +375,9 @@ public class TaskServiceRegistrar {
                             log.debug("TaskCroner: [{}]未找到服务器端配置，上传默认配置...", taskClass);
                         }
                         serverConfig = uploadCronerInfo(localConfig, contact);
+                        // 首次上传的 config 不在 fetch 增量(updatedCronerConfigMap)里，这里直接 configure 启动调度；
+                        // 后续由下方主循环按 fetch 增量驱动
+                        taskCronerContainer.configureTask(taskCroner, serverConfig);
                     }
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
@@ -355,8 +385,10 @@ public class TaskServiceRegistrar {
             }
         }
 
-        // 此时执行更新操作
-        for (TaskCronerConfig taskCronerConfig : taskMetaInfoManager.getCronerConfigMap().values()) {
+        // 只处理本次 fetch 增量（updatedCronerConfigMap），不遍历全量 cronerConfigMap：
+        // 配置无变化时 fetch 返回空，避免每 60s 对全量 croner 调 configureTask（stop cancel + reschedule）浪费与调度抖动。
+        // firstRun 上传的 config 已在上方 firstRun 分支直接 configure 启动，不依赖此循环。
+        for (TaskCronerConfig taskCronerConfig : updatedCronerConfigMap.values()) {
             //必须是本项目任务，否则跳过
             if (!taskCronerConfig.getTaskClass().startsWith(taskProperties.getTaskProject())) {
                 if (log.isDebugEnabled()) {
@@ -459,7 +491,10 @@ public class TaskServiceRegistrar {
                         if (log.isDebugEnabled()) {
                             log.debug("TaskDelayer: [{}]未找到服务器端配置，上传默认配置...", taskClass);
                         }
-                        uploadDelayerInfo(localConfig, contact);
+                        TaskDelayerConfig uploaded = uploadDelayerInfo(localConfig, contact);
+                        // 首次上传的 config 不在 fetch 增量(updatedDelayerConfigMap)里，这里直接 configure 启动 poll handle；
+                        // 后续由下方主循环按 fetch 增量驱动（center 存入后下次拉取会进入增量）
+                        taskDelayerContainer.configureTaskDelayer(uploaded);
                     }
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
@@ -467,8 +502,11 @@ public class TaskServiceRegistrar {
             }
         }
 
-        // 此时执行更新操作：遍历全量缓存（增量已由 fetchDelayerConfig 合并进 delayerConfigMap），过滤本项目+本 runTarget
-        for (TaskDelayerConfig taskDelayerConfig : taskMetaInfoManager.getDelayerConfigMap().values()) {
+        // 只处理本次 fetch 增量（updatedDelayerConfigMap），不遍历全量 delayerConfigMap：
+        // 配置无变化时 fetch 返回空，避免每 60s 对全量 config 调 configureTaskDelayer 刷"配置已热更新"误报日志（兼省 CPU）。
+        // firstRun 上传的 config 已在上方 firstRun 分支直接 configure 启动，不依赖此循环。
+        // state<1 的 config 也在 fetch 增量里（fetchDelayerConfig 已对 state<1 做 removeDelayerConfig+stop，此处 configureTaskDelayer 再走 state<1 分支幂等）
+        for (TaskDelayerConfig taskDelayerConfig : updatedDelayerConfigMap.values()) {
             //必须是本项目任务，否则跳过
             if (!taskDelayerConfig.getTaskClass().startsWith(taskProperties.getTaskProject())) {
                 if (log.isDebugEnabled()) {

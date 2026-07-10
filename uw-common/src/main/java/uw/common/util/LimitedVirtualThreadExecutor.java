@@ -220,8 +220,9 @@ public class LimitedVirtualThreadExecutor {
             executor.submit(() -> {
                 Runnable task = firstTask;
                 try {
-                    // 每轮检查中断/关闭状态：shutdownNow interrupt 后退出循环，不再 poll（对齐 JDK worker 循环）
-                    while (task != null && !Thread.currentThread().isInterrupted()) {
+                    // while 只判 task 非空：保证已持有的 task（firstTask 或刚 queue.poll 的）一定执行完，
+                    // 不因 shutdownNow interrupt 落在 while 条件处而丢失（interrupt 检查改放 run 之后）。
+                    while (task != null) {
                         activeCount.incrementAndGet();
                         try {
                             task.run();
@@ -266,6 +267,11 @@ public class LimitedVirtualThreadExecutor {
      * 任务已 best-effort 放回队列），此处吞掉异常——扫尾失败不影响主流程，遗留任务由 {@link #shutdownNow()} drain 回收。</p>
      */
     private void drainQueueIfPresent() {
+        // executor 已关闭时不再 startWorker：孤儿任务由 shutdownNow 的 queue drain 回收。
+        // 此处若再 startWorker 会因 executor 已关闭而失败、把任务 offer 回 queue，与 shutdownNow drain 形成关闭竞态（极罕见但可能丢任务）。
+        if (executor.isShutdown()) {
+            return;
+        }
         if (queue == null || queue.isEmpty()) {
             return;
         }

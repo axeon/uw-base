@@ -11,8 +11,8 @@ import uw.common.util.ExceptionUtils;
 import uw.common.util.KryoUtils;
 import uw.common.util.LimitedVirtualThreadExecutor;
 import uw.common.util.SystemClock;
-import uw.task.TaskDelayer;
 import uw.task.TaskData;
+import uw.task.TaskDelayer;
 import uw.task.TaskListenerManager;
 import uw.task.api.TaskApiClient;
 import uw.task.conf.TaskMetaInfoManager;
@@ -20,15 +20,11 @@ import uw.task.conf.TaskProperties;
 import uw.task.entity.TaskDelayerConfig;
 import uw.task.entity.TaskDelayerLog;
 import uw.task.entity.TaskDelayerStats;
-import uw.task.entity.TaskRunnerConfig;
 import uw.task.exception.TaskRuntimeException;
 import uw.task.listener.TaskDelayerListener;
-import uw.task.util.TaskGlobalRateLimiter;
-import uw.task.util.TaskLocalRateLimiter;
-import uw.task.util.TaskRateLimitHelper;
-import uw.task.util.TaskSequenceManager;
-import uw.task.util.TaskStatsService;
+import uw.task.util.*;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,8 +45,10 @@ import java.util.concurrent.atomic.AtomicLong;
  *       反压满（并发许可耗尽）sleep {@value #BACKPRESSURE_BACKOFF_MS}ms 后立即重试——反压检查只读本地 Semaphore 不打 Redis，故用短间隔尽快填满空闲 worker；</li>
  *   <li><b>虚拟线程执行</b>：worker 用 {@link LimitedVirtualThreadExecutor}（Semaphore 限并发=consumerNum），
  *       延迟任务 run 多为 IO 密集，虚拟线程不阻塞载体线程；</li>
- *   <li><b>动态批量</b>：单次 pop = min(prefetchNum, 可用许可数)，绝不取超过当前空闲并发数，取到即 submit 即执行，无内存队列缓冲；</li>
- *   <li><b>反压</b>：并发许可耗尽时跳过本次 poll（任务留 zset 不进内存），poll 线程睡 {@value #BACKPRESSURE_BACKOFF_MS}ms 后重试，不阻塞不丢数据；</li>
+ *   <li><b>动态批量 + 水位控制</b>：单次 pop = min(prefetchNum, 空闲并发槽位 + 队列补货量)，poll 在队列低于低水位（容量/2）时一次补满、
+ *       高于低水位则只补 1 条；worker 从有界队列（容量=consumerNum）接力取下一个任务（μs 级），消除"队列空等 pollOnce RTT"的空窗；</li>
+ *   <li><b>反压</b>：worker 全忙且队列满时跳过本次 poll（任务留 zset），poll 线程等 pollSignal（worker 完成 release 唤醒，零延迟）或
+ *       {@value #BACKPRESSURE_BACKOFF_MS}ms 超时兜底重试；submit 走 BlockPolicy，水位竞态下队列满则阻塞 poll 线程做自然反压，不拒绝不丢任务；</li>
  *   <li><b>限速</b>：复用 TaskLocal/GlobalRateLimiter，在 worker 虚拟线程内等待配额（LOCAL 系 Guava tryAcquire、
  *       GLOBAL 系循环 sleep 等窗口滚动），等待期间占用一个并发许可；超过 rateLimitWait 仍未获配额则 resubmit 回 zset
  *       （runAt=now+rateLimitWait），连续超 retryTimesByOverrated 标记 STATE_FAIL_CONFIG 防死循环；</li>
@@ -73,27 +71,40 @@ public class TaskDelayerContainer {
      * Lua 原子 pop 脚本：ZRANGEBYSCORE 取出到期成员并 ZREM 删除，避免多实例重复取与查删竞态。
      * KEYS[1]=zset key，ARGV[1]=当前时间戳(now)，ARGV[2]=批量数。
      */
-    private static final DefaultRedisScript<List> POP_SCRIPT = new DefaultRedisScript<>(
-            "local members = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'LIMIT', 0, ARGV[2]) "
-                    + "if #members > 0 then for i=1,#members do redis.call('ZREM', KEYS[1], members[i]) end end "
-                    + "return members",
-            List.class);
+    @SuppressWarnings("unchecked")
+    private static final DefaultRedisScript<List<byte[]>> POP_SCRIPT = new DefaultRedisScript<>("local members = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'LIMIT', 0, ARGV[2]) " + "if #members > 0 then for i=1,#members do redis.call('ZREM', KEYS[1], members[i]) end end " + "return members", (Class<List<byte[]>>) (Class<?>) List.class);
 
-    /** 任务全局配置（提供 runTarget 等）。 */
+    /**
+     * 任务全局配置（提供 runTarget 等）。
+     */
     private final TaskProperties taskProperties;
-    /** 服务端任务 API 客户端（发送 delayer 日志）。 */
+    /**
+     * 服务端任务 API 客户端（发送 delayer 日志）。
+     */
     private final TaskApiClient taskApiClient;
-    /** 任务元信息管理器（提供 Delayer 实例索引与 configKey，实例注册由其 init() 统一扫描）。 */
+    /**
+     * 任务元信息管理器（提供 Delayer 实例索引与 configKey，实例注册由其 init() 统一扫描）。
+     */
     private final TaskMetaInfoManager taskMetaInfoManager;
-    /** 进程内限速器（LOCAL 系列限速）。 */
+    /**
+     * 进程内限速器（LOCAL 系列限速）。
+     */
     private final TaskLocalRateLimiter taskLocalRateLimiter;
-    /** 全局限速器（GLOBAL 系列限速，基于 Redis）。 */
+    /**
+     * 全局限速器（GLOBAL 系列限速，基于 Redis）。
+     */
     private final TaskGlobalRateLimiter taskGlobalRateLimiter;
-    /** 全局发号器（生成 TaskDelayerLog id，resubmit 换新 id 用）。 */
+    /**
+     * 全局发号器（生成 TaskDelayerLog id，resubmit 换新 id 用）。
+     */
     private final TaskSequenceManager taskSequenceManager;
-    /** Redis 操作模板，key 用 String 序列化、value 用 byte[]（Kryo 序列化 TaskData）。 */
+    /**
+     * Redis 操作模板，key 用 String 序列化、value 用 byte[]（Kryo 序列化 TaskData）。
+     */
     private final RedisTemplate<String, byte[]> redisTemplate;
-    /** 任务监听管理器（execute 后回调 TaskDelayerListener，对齐 Runner/Croner）。 */
+    /**
+     * 任务监听管理器（execute 后回调 TaskDelayerListener，对齐 Runner/Croner）。
+     */
     private final TaskListenerManager taskListenerManager;
 
     /**
@@ -112,26 +123,23 @@ public class TaskDelayerContainer {
     /**
      * 反压满时的短 backoff（毫秒）：worker 全在跑、zset 仍有到期数据待取时，poll 线程以此间隔重试。
      * <p>反压检查只读本地 Semaphore、不打 Redis，故可取较小值；worker 空闲后被重新填满的空窗 ≤ 此值。
-     * 取 50ms：相对 pollInterval(默认 3s) 把反压空窗压到可忽略，唤醒频率 20/s 无压力。</p>
+     * 取 5ms：相对 pollInterval(默认 3s) 把反压空窗压到可忽略，唤醒频率 20/s 无压力。</p>
      */
-    private static final long BACKPRESSURE_BACKOFF_MS = 50L;
+    private static final long BACKPRESSURE_BACKOFF_MS = 5L;
 
     /**
      * 构造延迟任务容器，初始化专用的 RedisTemplate（String key + byte[] value，Kryo 序列化 TaskData）。
      *
-     * @param taskProperties          任务全局配置
-     * @param taskApiClient           服务端任务 API 客户端
-     * @param taskMetaInfoManager     任务元信息管理器（提供 Delayer 实例索引与 configKey）
-     * @param taskLocalRateLimiter    进程内限速器
-     * @param taskGlobalRateLimiter   全局限速器
-     * @param taskSequenceManager     全局发号器
-     * @param redisConnectionFactory  Redis 连接工厂（构建 zset 操作模板）
-     * @param taskListenerManager     任务监听管理器（execute 后回调 TaskDelayerListener）
+     * @param taskProperties         任务全局配置
+     * @param taskApiClient          服务端任务 API 客户端
+     * @param taskMetaInfoManager    任务元信息管理器（提供 Delayer 实例索引与 configKey）
+     * @param taskLocalRateLimiter   进程内限速器
+     * @param taskGlobalRateLimiter  全局限速器
+     * @param taskSequenceManager    全局发号器
+     * @param redisConnectionFactory Redis 连接工厂（构建 zset 操作模板）
+     * @param taskListenerManager    任务监听管理器（execute 后回调 TaskDelayerListener）
      */
-    public TaskDelayerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskMetaInfoManager taskMetaInfoManager,
-                                TaskLocalRateLimiter taskLocalRateLimiter, TaskGlobalRateLimiter taskGlobalRateLimiter,
-                                TaskSequenceManager taskSequenceManager, RedisConnectionFactory redisConnectionFactory,
-                                TaskListenerManager taskListenerManager) {
+    public TaskDelayerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskMetaInfoManager taskMetaInfoManager, TaskLocalRateLimiter taskLocalRateLimiter, TaskGlobalRateLimiter taskGlobalRateLimiter, TaskSequenceManager taskSequenceManager, RedisConnectionFactory redisConnectionFactory, TaskListenerManager taskListenerManager) {
         this.taskProperties = taskProperties;
         this.taskApiClient = taskApiClient;
         this.taskMetaInfoManager = taskMetaInfoManager;
@@ -178,18 +186,25 @@ public class TaskDelayerContainer {
      * {@code TaskServiceRegistrar.configLock} 内串行执行（updateConfig / reportHostInfo 禁用分支 / shutdownAllTasks 持锁调用），
      * {@code runHandleMap} 为 ConcurrentHashMap（{@link #fillDelayerStats} 在锁外并发读亦安全），故无需 synchronized。
      * 注意：handle.stop(30000) 的 drain 仍在 configLock 持有期间执行，会阻塞竞争同一锁的 suspendAll/destroyAll
-     *（仅 consumerNum 变更触发重建时 drain，罕见，通常 &lt;1s）。</p>
+     * （仅 consumerNum 变更触发重建时 drain，罕见，通常 &lt;1s）。</p>
      */
     public void configureTaskDelayer(TaskDelayerConfig config) {
         // 配置兜底：防止 0/负值导致 busy poll(pollInterval=0)、永不取数(prefetchNum=0)、并发0
         if (config.getPollInterval() < 1) {
             config.setPollInterval(1);
         }
+        if (config.getConsumerNum() < 1) {
+            config.setConsumerNum(1);
+        }
+        // prefetchNum 兜底：至少 1；且 ≥ 2*consumerNum（= worker 并发数 + queue 容量），保证一次 poll 能填满
+        // worker+queue 而不被 prefetchNum 截断（截断则需多 poll 几次才填满，浪费 Redis RTT）。
+        // 不宜过大：prefetchNum 是单次 Lua ZRANGEBYSCORE LIMIT 上限，过大阻塞 Redis 单线程。
         if (config.getPrefetchNum() < 1) {
             config.setPrefetchNum(1);
         }
-        if (config.getConsumerNum() < 1) {
-            config.setConsumerNum(1);
+        int minPrefetchForFill = config.getConsumerNum() * 2;
+        if (config.getPrefetchNum() < minPrefetchForFill) {
+            config.setPrefetchNum(minPrefetchForFill);
         }
         String configKey = taskMetaInfoManager.getDelayerConfigKey(config);
         // state<1（暂停/删除）：remove 配置缓存 + stop handle，不缓存废弃配置（对齐 Runner fetchRunnerConfig 的 state<1 remove）
@@ -204,14 +219,10 @@ public class TaskDelayerContainer {
         taskMetaInfoManager.setDelayerConfig(configKey, config);
         TaskDelayerRunHandle existing = runHandleMap.get(configKey);
         // 仅 consumerNum(workerPool 并发数) 变化才需重建 handle；其余字段走 volatile 即时更新
-        boolean needRebuild = existing == null
-                || oldConfig == null
-                || oldConfig.getConsumerNum() != config.getConsumerNum();
+        boolean needRebuild = existing == null || oldConfig == null || oldConfig.getConsumerNum() != config.getConsumerNum();
         if (!needRebuild) {
             existing.updateConfig(config);
-            log.info("TaskDelayer[{}]配置已热更新: pollInterval={}s, prefetchNum={}, rateLimitType={}, retryByPartner={}, retryByProgram={}, logLevel={}",
-                    configKey, config.getPollInterval(), config.getPrefetchNum(), config.getRateLimitType(),
-                    config.getRetryTimesByPartner(), config.getRetryTimesByProgram(), config.getLogLevel());
+            log.info("TaskDelayer[{}]配置已热更新: pollInterval={}s, prefetchNum={}, rateLimitType={}, retryByPartner={}, retryByProgram={}, logLevel={}", configKey, config.getPollInterval(), config.getPrefetchNum(), config.getRateLimitType(), config.getRetryTimesByPartner(), config.getRetryTimesByProgram(), config.getLogLevel());
             return;
         }
         if (existing != null) {
@@ -250,11 +261,8 @@ public class TaskDelayerContainer {
         if (!taskMetaInfoManager.getDelayerConfigMap().containsKey(configKey)) {
             // 列出该 taskClass 已注册的 configKey 候选，便于排查：候选空=类型错投(taskClass 非 delayer)，候选非空但无精确 key=taskTag/runTarget 错配
             String taskClassPrefix = task.getTaskClass() + "#";
-            List<String> registeredKeys = taskMetaInfoManager.getDelayerConfigMap().keySet().stream()
-                    .filter(k -> k.startsWith(taskClassPrefix))
-                    .toList();
-            log.error("TaskDelayer投递被拒: configKey={} 未在服务端delayerConfigMap注册, taskClass={}, taskTag={}, runTarget={}, 该taskClass已注册配置={}",
-                    configKey, task.getTaskClass(), task.getTaskTag(), task.getRunTarget(), registeredKeys);
+            List<String> registeredKeys = taskMetaInfoManager.getDelayerConfigMap().keySet().stream().filter(k -> k.startsWith(taskClassPrefix)).toList();
+            log.error("TaskDelayer投递被拒: configKey={} 未在服务端delayerConfigMap注册, taskClass={}, taskTag={}, runTarget={}, 该taskClass已注册配置={}", configKey, task.getTaskClass(), task.getTaskTag(), task.getRunTarget(), registeredKeys);
             throw new TaskRuntimeException("TaskDelayer not registered or taskTag/runTarget mismatch.");
         }
         addTask(task);
@@ -350,19 +358,23 @@ public class TaskDelayerContainer {
         private volatile TaskDelayerConfig config;
         private final String zsetKey;
         private final LimitedVirtualThreadExecutor workerPool;
-        private final int concurrency;
         private volatile boolean running = true;
         private Thread pollThread;
+        /**
+         * 反压唤醒信号：worker（execute）完成时 release，poll 反压时 tryAcquire 等待。
+         * 取代固定 Thread.sleep(backoff)——线程池一有空立即唤醒 poll 拉新数据，零延迟；超时兜底防信号丢失。
+         */
+        private final java.util.concurrent.Semaphore pollSignal = new java.util.concurrent.Semaphore(0);
 
         TaskDelayerRunHandle(TaskDelayerConfig config, String configKey) {
             this.config = config;
             this.zsetKey = ZSET_PREFIX + configKey;
-            this.concurrency = Math.max(1, config.getConsumerNum());
-            // 虚拟线程 + Semaphore 限并发 + CallerRunsPolicy 反压（permit 满 poll 线程自跑 execute）
-            this.workerPool = new LimitedVirtualThreadExecutor(
-                    "uw-task-delayer-worker-" + config.getTaskClass() + "-",
-                    concurrency,
-                    new LimitedVirtualThreadExecutor.CallerRunsPolicy());
+            // 虚拟线程 + Semaphore 限并发(consumerNum) + 有界队列缓冲(queueCapacity=consumerNum)。
+            int concurrency = Math.max(1, config.getConsumerNum());
+            int queueCap = Math.max(1, config.getConsumerNum());
+            // 显式指定 BlockPolicy：队列满时阻塞 poll 线程做自然反压（不拒绝、不丢任务、不乒乓写回 zset），
+            // 不依赖 3 参构造的默认策略——保证 workerPool 行为确定，不受 LimitedVirtualThreadExecutor 默认策略变更影响。
+            this.workerPool = new LimitedVirtualThreadExecutor("uw-task-delayer-worker-" + config.getTaskClass() + "-", concurrency, queueCap, new LimitedVirtualThreadExecutor.BlockPolicy());
         }
 
         /**
@@ -398,19 +410,25 @@ public class TaskDelayerContainer {
         void stop(long drainMillis) {
             running = false;
             if (pollThread != null) {
-                pollThread.interrupt();
+                // 优雅关机：不立即 interrupt，先等 poll 线程当前 pollOnce/sleep 自然完成后 while(running) 退出，
+                // 避免 interrupt 打断 Redis 命令产生 RedisSystemException(Redis command interrupted) 噪音
                 try {
-                    // 等 poll 线程退出：让它完成当前 batch 的 submit（或 submit 失败时写回 zset），
-                    // 避免 workerPool.shutdown 后 poll 线程继续 submit 抛 IllegalStateException 导致已 pop 的任务丢失
                     pollThread.join(5000);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
+                // join 超时仍未退出（极端：卡在 >5s 的长 Redis 命令），interrupt 兜底（pollLoop catch 的停机分支 debug 记录）
+                if (pollThread.isAlive()) {
+                    log.warn("TaskDelayer[{}]poll 线程 join(5s) 未退出，interrupt 兜底", config.getTaskClass());
+                    pollThread.interrupt();
+                }
             }
             workerPool.shutdown();
-            // drain：等待在途虚拟线程任务完成（IO 任务），降级切换/关闭不丢任务
+            // drain：等待在途任务完成（IO 任务），降级切换/关闭不丢任务。
+            // 用 getIdleCount()<maxPoolSize 判活（涵盖接力 worker + BlockPolicy/safeSubmit 在途任务，二者都持许可），
+            // 而非 getActiveCount()>0（后者只数接力 worker，漏 BlockPolicy 经 safeSubmit 的任务 → 会提前退出 drain、把本可自然完成的任务强制中断重试）。
             long deadline = SystemClock.now() + drainMillis;
-            while (workerPool.getActiveCount() > 0 && SystemClock.now() < deadline) {
+            while (workerPool.getIdleCount() < workerPool.getMaximumPoolSize() && SystemClock.now() < deadline) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
@@ -418,9 +436,19 @@ public class TaskDelayerContainer {
                     break;
                 }
             }
+            // shutdownNow：强制中断残留 worker + 排空队列，返回未执行任务（对齐 JDK）
+            java.util.List<Runnable> remaining = workerPool.shutdownNow();
             if (workerPool.getActiveCount() > 0) {
-                log.warn("TaskDelayer[{}]workerPool 仍有 {} 个任务未完成，调用 shutdownNow 强制中断", config.getTaskClass(), workerPool.getActiveCount());
-                workerPool.shutdownNow();
+                log.warn("TaskDelayer[{}]workerPool 仍有 {} 个任务未完成，已强制中断", config.getTaskClass(), workerPool.getActiveCount());
+            }
+            // 未执行任务写回 zset（他机或本机恢复后重新 poll），确保不丢
+            for (Runnable r : remaining) {
+                if (r instanceof DelayerTask) {
+                    addTask(((DelayerTask) r).getTask());
+                }
+            }
+            if (!remaining.isEmpty()) {
+                log.info("TaskDelayer[{}]队列排空：{} 条未执行任务写回 zset", config.getTaskClass(), remaining.size());
             }
         }
 
@@ -432,8 +460,10 @@ public class TaskDelayerContainer {
                 try {
                     int r = pollOnce();
                     if (r < 0) {
-                        // BACKPRESSURE：worker 满、zset 可能有数据，短 backoff 后立即重试（反压检查不打 Redis）
-                        Thread.sleep(BACKPRESSURE_BACKOFF_MS);
+                        // BACKPRESSURE：worker 满、zset 可能有数据。信号驱动——等 worker 释放(execute 完)立即唤醒重 poll，
+                        // 零延迟（zset 有数据 + 线程池有空即立刻拉）；tryAcquire 超时 BACKPRESSURE_BACKOFF_MS 兜底防信号丢失。
+                        // 积压 release 会让 tryAcquire 立即返回，但 pollOnce 反压检查不打 Redis(available<=0 直接 return)，故空转代价可忽略
+                        pollSignal.tryAcquire(BACKPRESSURE_BACKOFF_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
                     } else if (r == 0) {
                         // EMPTY：zset 无到期数据，正常间隔省 Redis
                         Thread.sleep(config.getPollInterval() * 1000L);
@@ -443,6 +473,13 @@ public class TaskDelayerContainer {
                     Thread.currentThread().interrupt();
                     return;
                 } catch (Throwable e) {
+                    // 停机兜底：优雅关机正常走 while(running) 自然退出，不进这里；仅当 join 超时 interrupt 兜底、或连接随关闭断开时，
+                    // pollOnce 的 Redis 命令被中断抛 RedisSystemException（Lettuce 把中断包成 RedisSystemException 而非 InterruptedException）。
+                    // 降级 debug 保留排查信息（不丢信息），不刷 error 屏；running 仍 true 才是真 Redis 异常（连接断开等），记 error 并退避重试
+                    if (!running) {
+                        log.debug("TaskDelayer[{}]停机期间 poll 被中断: {}", config.getTaskClass(), e.getMessage());
+                        return;
+                    }
                     log.error("TaskDelayer[{}]poll 异常: {}", config.getTaskClass(), e.getMessage(), e);
                     try {
                         Thread.sleep(config.getPollInterval() * 1000L);
@@ -455,21 +492,36 @@ public class TaskDelayerContainer {
         }
 
         /**
-         * 执行一次 poll：反压水位检查 → Lua 原子 pop（动态批量=可用许可）→ 逐条反序列化 → 提交 worker。
+         * 执行一次 poll：反压检查 → 水位计算 → Lua 原子 pop（动态批量）→ 逐条反序列化 → 提交 worker。
+         * <p>
+         * 水位控制：队列低于低水位（queueCapacity/2）时增大 batch，一次补够——worker 从队列接力取（μs），
+         * poll 在队列 drain 到空前提前补货，消除"队列空等 pollOnce RTT"的空窗。
+         * </p>
          *
-         * @return 1=HIT（命中并提交）；0=EMPTY（zset 无到期数据）；-1=BACKPRESSURE（并发许可耗尽，任务留 zset）
+         * @return 1=HIT（命中并提交）；0=EMPTY（zset 无到期数据）；-1=BACKPRESSURE（worker 全满 + 队列满）
          */
         @SuppressWarnings({"unchecked", "rawtypes"})
         private int pollOnce() {
-            // 反压水位检查：并发许可耗尽 → 返回 BACKPRESSURE(-1)，任务留 zset 不进内存，pollLoop 用短 backoff 重试
-            int available = workerPool.getAvailablePermits();
-            if (available <= 0) {
+            // 从 workerPool 读真实容量（不依赖 config，避免 config 热更新与 workerPool 重建窗口的不一致）
+            int queueCapacity = workerPool.getQueueCapacity();
+            // available 用 semaphore 真实空闲许可（getIdleCount），而非 maxPoolSize-activeCount 估算：
+            // 后者只数已进入 run() 的 worker，漏数持许可但虚拟线程尚未 mount（排队等载体）的，脉冲 submit 下高估空闲
+            // → batch 偏大 → queue offer 溢出（走 BlockPolicy 阻塞 poll 线程反压；旧 FailFast 拒绝已废弃）。getIdleCount 让 batch 精确、避免该阻塞。
+            int available = workerPool.getIdleCount();
+            int queued = workerPool.getQueueSize();
+            // BACKPRESSURE：worker 全忙 + 队列满 → 无空间可填充，任务留 zset
+            if (available <= 0 && queued >= queueCapacity) {
                 backpressureSkipCount.incrementAndGet();
                 return -1;
             }
-            int batch = Math.min(config.getPrefetchNum(), available);
-            List<byte[]> members = redisTemplate.execute(POP_SCRIPT, java.util.Collections.singletonList(zsetKey),
-                    String.valueOf(SystemClock.now()), String.valueOf(batch));
+            // 水位控制 batch：水位是触发线（队列 < 低水位时才补货），补货目标 = 补满队列
+            // 一次 Redis RTT 尽量多拉（最大化每次 RTT 的价值），减少 pollOnce 频率
+            int lowWaterMark = Math.max(1, queueCapacity / 2);
+            int need = (queued < lowWaterMark) ? (queueCapacity - queued) : 0;
+            int batch = Math.min(config.getPrefetchNum(), Math.max(1, available + need));
+            byte[] nowArg = String.valueOf(SystemClock.now()).getBytes();
+            byte[] batchArg = String.valueOf(batch).getBytes();
+            List<byte[]> members = redisTemplate.execute(POP_SCRIPT, Collections.singletonList(zsetKey), nowArg, batchArg);
             if (members == null || members.isEmpty()) {
                 return 0;
             }
@@ -485,7 +537,7 @@ public class TaskDelayerContainer {
                 }
                 task.setConsumeDate(SystemClock.nowDate());
                 try {
-                    workerPool.submit(() -> execute(task, config));
+                    workerPool.submit(new DelayerTask(task, config, pollSignal));
                 } catch (Exception e) {
                     // workerPool 已关闭（stop/降级切换）：把已 pop 的任务写回 zset，避免丢失（他机或本机恢复后重新 poll）
                     log.warn("TaskDelayer[{}]workerPool 提交失败,任务写回zset: {}", config.getTaskClass(), e.toString());
@@ -547,9 +599,7 @@ public class TaskDelayerContainer {
             // 统计：timeWaitDelay=consumeDate-(queueDate+taskDelay)（实际延迟等待），timeRun=runDate→finishDate
             long expectedRunAt = task.getQueueDate() != null ? task.getQueueDate().getTime() + task.getTaskDelay() : 0;
             int[] failCounters = TaskStatsService.toFailCounters(task.getState());
-            TaskStatsService.updateDelayerStats(config.getId(), 1, failCounters[0], failCounters[1], failCounters[2], failCounters[3],
-                    (task.getConsumeDate() != null && expectedRunAt > 0) ? TaskStatsService.toIntClamped(task.getConsumeDate().getTime() - expectedRunAt) : 0,
-                    startRun > 0 ? TaskStatsService.toIntClamped(task.getFinishDate().getTime() - startRun) : 0);
+            TaskStatsService.updateDelayerStats(config.getId(), 1, failCounters[0], failCounters[1], failCounters[2], failCounters[3], (task.getConsumeDate() != null && expectedRunAt > 0) ? TaskStatsService.toIntClamped(task.getConsumeDate().getTime() - expectedRunAt) : 0, startRun > 0 ? TaskStatsService.toIntClamped(task.getFinishDate().getTime() - startRun) : 0);
             // 日志（先于重试落盘：resubmit 失败不丢统计/日志，对齐 TaskRunner.process 顺序）
             if (config.getLogLevel() > TaskDelayerConfig.TASK_LOG_TYPE_NONE) {
                 TaskDelayerLog delayerLog = new TaskDelayerLog(task);
@@ -561,11 +611,11 @@ public class TaskDelayerContainer {
             // 重试决策（统计/日志已落盘）：PARTNER/PROGRAM 指数退避，CONFIG(限速) 用 rateLimitWait 让配额恢复
             if (task.getRetryType() == TaskData.RETRY_TYPE_AUTO && task.getState() > TaskData.STATE_SUCCESS) {
                 if (task.getState() == TaskData.STATE_FAIL_PARTNER && task.getRanTimes() <= config.getRetryTimesByPartner()) {
-                    resubmit(task,retryBackoffMillis(task.getRanTimes()));
+                    resubmit(task, retryBackoffMillis(task.getRanTimes()));
                 } else if (task.getState() == TaskData.STATE_FAIL_PROGRAM && task.getRanTimes() <= config.getRetryTimesByProgram()) {
-                    resubmit(task,retryBackoffMillis(task.getRanTimes()));
+                    resubmit(task, retryBackoffMillis(task.getRanTimes()));
                 } else if (task.getState() == TaskData.STATE_FAIL_CONFIG && task.getRanTimes() <= config.getRetryTimesByOverrated()) {
-                    resubmit(task,config.getRateLimitWait() * 1000L);
+                    resubmit(task, config.getRateLimitWait() * 1000L);
                 }
             }
         } catch (Throwable e) {
@@ -594,7 +644,7 @@ public class TaskDelayerContainer {
                 // 超限则接受单任务丢失——避免持续基础设施故障下无限重投灌水统计、稀释平均延迟从而 masking 延迟超时告警。
                 try {
                     if (task.getRanTimes() <= config.getRetryTimesByOverrated()) {
-                        resubmit(task,config.getRateLimitWait() * 1000L);
+                        resubmit(task, config.getRateLimitWait() * 1000L);
                     } else {
                         log.warn("TaskDelayer[{}]兜底重投已达上限(ranTimes>{}),停止重投接受丢失: {}", config.getTaskClass(), config.getRetryTimesByOverrated(), e.getMessage());
                     }
@@ -650,9 +700,7 @@ public class TaskDelayerContainer {
         }
         String taskClass = task.getTaskClass();
         String tag = task.getRateLimitTag();
-        if (type == TaskDelayerConfig.RATE_LIMIT_LOCAL
-                || type == TaskDelayerConfig.RATE_LIMIT_LOCAL_TASK
-                || type == TaskDelayerConfig.RATE_LIMIT_LOCAL_TASK_TAG) {
+        if (type == TaskDelayerConfig.RATE_LIMIT_LOCAL || type == TaskDelayerConfig.RATE_LIMIT_LOCAL_TASK || type == TaskDelayerConfig.RATE_LIMIT_LOCAL_TASK_TAG) {
             // 进程内限速：限流 key 拼接见 TaskRateLimitHelper.buildLocalLocker
             String locker = TaskRateLimitHelper.buildLocalLocker(type, taskClass, tag);
             return taskLocalRateLimiter.tryAcquire(locker, value, time, config.getRateLimitWait(), 1);
@@ -660,6 +708,34 @@ public class TaskDelayerContainer {
             // GLOBAL 系列：限流 key 见 buildGlobalLocker，等待循环见 acquireGlobalWithWait（虚拟线程 park 不占载体）
             String locker = TaskRateLimitHelper.buildGlobalLocker(type, taskClass, tag, taskProperties.getAppHost());
             return TaskRateLimitHelper.acquireGlobalWithWait(taskGlobalRateLimiter, locker, value, time, config.getRateLimitWait());
+        }
+    }
+
+    /**
+     * 延迟任务执行包装：命名类（非 lambda），stop 时 shutdownNow 可 getTask → addTask 回收写回 zset。
+     */
+    private final class DelayerTask implements Runnable {
+        private final TaskData task;
+        private final TaskDelayerConfig taskConfig;
+        private final java.util.concurrent.Semaphore releaseSignal;
+
+        DelayerTask(TaskData task, TaskDelayerConfig config, java.util.concurrent.Semaphore releaseSignal) {
+            this.task = task;
+            this.taskConfig = config;
+            this.releaseSignal = releaseSignal;
+        }
+
+        @Override
+        public void run() {
+            try {
+                execute(task, taskConfig);
+            } finally {
+                releaseSignal.release();
+            }
+        }
+
+        TaskData getTask() {
+            return task;
         }
     }
 }

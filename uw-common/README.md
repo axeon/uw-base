@@ -217,6 +217,60 @@ long r = MoneyUtils.of(10000).multiply(3).multiplyRate("0.85").add(500).cent(); 
 long id = SnowflakeIdGenerator.getInstance().generateId();
 ```
 
+### LimitedVirtualThreadExecutor — 限流虚拟线程执行器
+
+背压限制虚拟线程执行器，基于虚拟线程（`Thread.ofVirtual`）+ `Semaphore` 限制最大并发数。两种模式：
+
+| 模式 | queueCapacity | 行为 |
+|------|---------------|------|
+| 快速模式 | = 0 | 无队列缓冲，并发满直接走 `CallPolicy` |
+| 队列模式 | > 0 | 有界无锁队列（`MpmcArrayQueue`）缓冲；并发满先入队，队列满才走 `CallPolicy` |
+
+队列模式下 worker 跑**接力循环**：完成当前 task 后非阻塞 `poll` 队列取下一个（有则继续、不释放许可，消除空窗；无则释放退出）。worker 退出与 submit 入队时均有扫尾补偿，保证"入队成功 ⇒ 必有 worker 最终消费"，避免关闭时孤儿任务静默丢失。
+
+虚拟线程以 `threadNamePrefix + 序号` 命名（如 "my-task-0"），便于 JMC/JFR/线程堆栈区分；前缀建议以分隔符结尾。
+
+**构造**：
+
+| 构造 | 模式 | 默认策略 |
+|------|------|---------|
+| `(threadNamePrefix, maxConcurrency)` | 快速 | `BlockPolicy` |
+| `(threadNamePrefix, maxConcurrency, CallPolicy)` | 快速 | 指定 |
+| `(threadNamePrefix, maxConcurrency, queueCapacity)` | >0 队列 / =0 快速 | 队列 `FailFastPolicy` / 快速 `BlockPolicy` |
+| `(threadNamePrefix, maxConcurrency, queueCapacity, CallPolicy)` | 全参 | 指定（null→`BlockPolicy`） |
+
+**方法**：
+
+| 方法 | 说明 |
+|------|------|
+| `submit(Runnable)` | 提交任务（已关闭抛 `IllegalStateException`） |
+| `shutdown()` | 优雅关闭：不再接受新任务，已提交（含队列）执行完毕 |
+| `shutdownNow()` | 立即关闭：中断运行中任务，返回未执行任务 `List<Runnable>` |
+| `awaitTermination(long, TimeUnit)` | 等待所有任务完成或超时 |
+| `getActiveCount()` | 正在执行的任务数（近似，任务执行口径） |
+| `getIdleCount()` | 空闲并发槽位数（`availablePermits`，可立即 `startWorker` 不进队列/不被拒的新任务数） |
+| `getMaximumPoolSize()` | 最大并发数（= Semaphore 许可数） |
+| `getQueueCapacity()` / `getQueueSize()` | 队列容量 / 队列待执行任务数（快速模式均 0） |
+| `getRejectedCount()` | 累计被拒绝任务数 |
+
+> `getActiveCount()`（任务执行口径）只数已进入 `run()` 的 worker，不含「已持许可但虚拟线程未 mount 进 `run()`」及接力 poll 间隙的 worker。**勿用 `getMaximumPoolSize() - getActiveCount()` 估算空闲**（会高估），查可立即占用的并发槽位用 `getIdleCount()`，观察实际执行负载用 `getActiveCount()`。
+
+**调用策略**（`CallPolicy`，对齐 JDK `RejectedExecutionHandler`）：`BlockPolicy`（阻塞等待，快速模式默认）/ `FailFastPolicy`（抛 `RejectedExecutionException`，队列模式默认）/ `CallerRunsPolicy`（调用者执行）/ `DiscardPolicy`（静默丢弃）。
+
+```java
+// 队列模式：并发 100、队列 1000，队列满则快速失败
+LimitedVirtualThreadExecutor executor = new LimitedVirtualThreadExecutor("my-task-", 100, 1000);
+executor.submit(() -> doSomething());
+executor.shutdown();
+executor.awaitTermination(5, TimeUnit.SECONDS);
+
+// 快速模式 + 丢弃策略（异步更新，丢了无所谓）
+LimitedVirtualThreadExecutor updateExecutor =
+    new LimitedVirtualThreadExecutor("update-", 20, new LimitedVirtualThreadExecutor.DiscardPolicy());
+```
+
+> `shutdownNow()` 返回的 `List<Runnable>` 含队列未执行任务，可遍历回收（如写回 Redis zset）。
+
 ### DateTools — 日期工具
 
 提供丰富日期格式常量（`DATE_TIME` / `DATE` / `TIME` / `DATE_SIMPLE` 等）与日期运算。
@@ -284,7 +338,6 @@ long id = SnowflakeIdGenerator.getInstance().generateId();
 | `CurrencyUtils` | `getCurrency(code)` / `getAvailableCurrencies()` / `CURRENCY_DEFAULT`(CNY) | 币种工具 |
 | `ExceptionUtils` | `exceptionToString(Throwable)` | 过滤框架堆栈的异常格式化 |
 | `ResponseCodeUtils` | `toProperties(Class)` / `toPropertyString(Class)` | ResponseCode 枚举导出为 i18n Properties |
-| `LimitedVirtualThreadExecutor` | `new LimitedVirtualThreadExecutor(threadNamePrefix, maxConcurrency)` / `submit(Runnable)` | 限流虚拟线程执行器（Semaphore 背压，支持 Block/FailFast/CallerRuns/Discard 策略，虚拟线程带自定义名前缀便于 JMC/JFR 监控） |
 
 ### StringTools — 字符串处理
 

@@ -217,7 +217,7 @@ public class OrderTimeoutCloseTask extends TaskDelayer<OrderTimeoutParam, Void> 
         // 报警阈值（毫秒）
         config.setAlertFailRate(10);
         config.setAlertRunTimeout(1000);
-        config.setAlertDelayOvertime(5000);  // 实际执行晚于 runAt 的平均超时报警（Delayer 特有）
+        config.setAlertWaitTimeout(5000);  // 实际执行晚于 runAt 的平均超时报警（Delayer 特有）
         return config;
     }
 
@@ -272,6 +272,17 @@ public void submitOrderTimeout(long orderId) {
 - **限速 / 重试 / 异常分类**：与 TaskRunner 一致（见"任务内异常处理"与"重试机制"）。业务失败重试按指数退避（1s/2s/4s…封顶 60s）换新 id 后重新写回 zset；限速超限按 `rateLimitWait` 重新调度。
 
 > 与队列任务的差异：队列任务（TaskRunner）经 RabbitMQ 派发、靠消费者拉取；延迟任务（TaskDelayer）由各执行主机主动 poll 共享 zset，**无需 MQ、无队头阻塞**，长延时与短延时任务互不影响。
+
+### 适用场景与选型
+
+TaskDelayer 基于 Redis zset poll、到期即取即执行，精度高（默认 `pollInterval=3s`），适合**分钟级**延时任务——下单 30 分钟未支付关单、几分钟后回调通知、短时指数退避重试等"X 秒/分钟后做某事"的场景。
+
+但任务在到期前会一直驻留 Redis zset，**不适合天级别及以上的长延时**：海量未来任务长期占用 Redis 内存，poll 线程也在反复空扫到期数据。长延时场景应改用 **TaskCroner 定时扫描数据库**：在业务表上记录到期时间，用 TaskCroner 周期性扫描 `WHERE expire_time <= NOW()` 的记录，命中后触发执行。DB 天然持久化、可分页/游标增量扫描、重启不丢，是长延时的正确载体。
+
+| 延时量级 | 推荐方案 | 载体 | 触发精度 |
+|---|---|---|---|
+| 分钟级（秒 ~ 小时） | TaskDelayer | Redis zset | 高（`pollInterval`，默认 3s） |
+| 天级别及以上 | TaskCroner 扫表 | 业务数据库 | 取决于 cron 周期（如每分钟扫一次） |
 
 ## 任务内异常处理
 

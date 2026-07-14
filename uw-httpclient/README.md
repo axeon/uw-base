@@ -284,7 +284,7 @@ public interface HttpDataProcessor<D extends HttpData, T> {
 ##### 使用示例
 
 ```java
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 import uw.httpclient.json.JsonInterfaceHelper;
 import uw.httpclient.http.*;
 

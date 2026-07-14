@@ -18,10 +18,10 @@ uw-task 是一个分布式任务框架，基于 Spring Boot + RabbitMQ + Redis �
 
 ## 版本要求
 
-- JDK 17+（建议 21）
-- Spring Boot 3.5.x
-- RabbitMQ 3.x
-- Redis 6.x+
+- JDK 25+
+- Spring Boot 4.1.x
+- RabbitMQ 4.3+
+- Redis 8.x+
 
 ## maven 引入
 

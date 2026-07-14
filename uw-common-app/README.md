@@ -32,8 +32,9 @@
 | `enableCritLog` | boolean | `true` | 是否开启关键日志落库 |
 | `localeDefault` | Locale | `zh_CN` | 默认语言（Accept-Language 缺失或匹配失败时使用） |
 | `localeList` | List&lt;Locale&gt; | 12 种已覆盖语言 | 可选语言列表，参与 Accept-Language 匹配 |
-| `shutdownTimeout` | Duration | `3s` | Nacos 反注册后预留的优雅停机等待时长 |
 | `disableSwagger` | boolean | `false` | 是否禁用 Swagger 接口（/v3/api-docs、/swagger-ui） |
+
+> **注**：优雅停机已交由 uw-nacos-client 的 `NacosGracefulShutdownDelegate` 负责（`spring.cloud.nacos.discovery.graceful-shutdown-wait-time` 控制），本模块不再参与。Swagger 禁用与 LB 缓存禁用由 `CommonAppEnvPostProcessor` 在环境准备阶段注入默认项（可被 application.yml 覆盖）。
 
 ## 自动化权限注入查询参数
 
@@ -203,13 +204,9 @@ public static void main(String[] args) {
 uw.common.app
 ├── AppBootStrap                       应用启动引导
 ├── conf/                              自动配置
-│   ├── CommonAppAutoConfiguration     启动配置（i18n/日志/LB/Swagger/ObjectMapper）
+│   ├── CommonAppAutoConfiguration     启动配置（i18n/日志/ObjectMapper 定制）
+│   ├── CommonAppEnvPostProcessor     免配置默认项（Swagger/LB缓存禁用）
 │   └── CommonAppProperties            配置属性
-├── constant/                          常量与响应码
-│   ├── CommonConstants                常用字面量
-│   ├── CommonState                    通用状态枚举（-1/0/1）
-│   ├── CommonResponseCode             通用响应码
-│   └── ValidateResponseCode           校验响应码
 ├── dto/                               预置查询参数
 │   ├── IdQueryParam / IdStateQueryParam
 │   ├── AuthQueryParam / AuthIdQueryParam / AuthIdStateQueryParam
@@ -219,14 +216,12 @@ uw.common.app
 │   ├── SysCritLog                     系统关键日志
 │   └── SysDataHistory                 系统数据历史
 ├── helper/                            工具类
-│   ├── SchemaValidateHelper           Schema 注解校验
-│   ├── QueryParamHelper               URL 查询参数构建
-│   ├── JsonConfigHelper               JSON 配置构建/校验
 │   └── SysDataHistoryHelper           数据历史记录
 ├── service/                           服务
 │   └── SysCritLogStorageService       关键日志异步落库
-└── vo/                                值对象
-    ├── JsonConfigBox                  JSON 配置盒子
-    ├── JsonConfigParam                JSON 配置参数定义
-    └── ValidateResult                 校验结果
 ```
+
+> **已迁移到 uw-common**：以下类已从本模块迁至 `uw-common`（`uw.common.constant` / `uw.common.vo` / `uw.common.helper`），本模块不再包含：
+> - 常量与响应码：`CommonConstants`、`CommonState`、`CommonResponseCode`、`ValidateResponseCode`
+> - 值对象：`JsonConfigBox`、`JsonConfigParam`、`ValidateResult`
+> - 工具类：`JsonConfigHelper`、`SchemaValidateHelper`、`QueryParamHelper`

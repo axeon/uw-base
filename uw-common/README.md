@@ -28,6 +28,9 @@ uw.common
 ├── response/   # ResponseData / ResponseCode 响应封装与状态码
 ├── data/       # PageList / PageRowSet / KryoData 数据容器
 ├── dto/        # QueryParam / PageQueryParam 查询参数基类
+├── constant/   # CommonConstants / CommonState / CommonResponseCode / ValidateResponseCode（从 uw-common-app 迁入）
+├── vo/         # JsonConfigBox / JsonConfigParam / ValidateResult（从 uw-common-app 迁入）
+├── helper/     # JsonConfigHelper / SchemaValidateHelper / QueryParamHelper（从 uw-common-app 迁入）
 └── util/       # 20+ 工具类（详见下文）
 ```
 
@@ -296,7 +299,7 @@ LimitedVirtualThreadExecutor updateExecutor =
 | `parse(String, TypeReference<T>)` / `parse(String, JavaType)` | 泛型反序列化（如 `List<User>`） |
 | `convert(Object, Class<T>)` | 对象类型转换（如 Map → POJO） |
 | `write(Object, OutputStream)` | 序列化到流 |
-| `getJsonMapper()` | 获取底层 ObjectMapper |
+| `getJsonMapper()` | 获取底层 JsonMapper（Jackson 3） |
 
 ### KryoUtils — Kryo 序列化
 

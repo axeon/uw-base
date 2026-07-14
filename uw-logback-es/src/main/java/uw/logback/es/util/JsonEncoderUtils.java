@@ -1,6 +1,6 @@
 package uw.logback.es.util;
 
-import com.fasterxml.jackson.core.io.JsonStringEncoder;
+import tools.jackson.core.io.JsonStringEncoder;
 import org.apache.commons.lang3.time.FastDateFormat;
 
 import java.nio.charset.Charset;
@@ -45,7 +45,7 @@ public class JsonEncoderUtils {
         if (input == null) {
             return "null";
         } else {
-            return new String(JsonStringEncoder.getInstance().quoteAsString(input));
+            return new String(JsonStringEncoder.getInstance().quoteAsUTF8(input));
         }
     }
 

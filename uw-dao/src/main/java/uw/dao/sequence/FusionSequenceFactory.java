@@ -7,10 +7,10 @@ import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 一个基于Redis优化的Sequence工厂类。
@@ -303,7 +303,7 @@ public class FusionSequenceFactory {
                 // owner 使用随机 long 而非时间戳：毫秒级时间戳在同毫秒内可能重复，
                 // 会导致 UNLOCK 误删他人持有的锁；全空间随机 long 碰撞概率可忽略
                 Long renewOwner = ThreadLocalRandom.current().nextLong();
-                if (!KV_OP.setIfAbsent(renewLocker, renewOwner, 10_000L, TimeUnit.MILLISECONDS)) {
+                if (!KV_OP.setIfAbsent(renewLocker, renewOwner, Duration.ofMillis(10_000L))) {
                     // 锁被占，说明其他线程正在续段：指数退避 2→50ms 后重试取号，
                     // 持锁者续段通常几 ms~几十 ms，固定 sleep 会让等锁线程空转浪费吞吐
                     sleepBackoff(tryCount, 2L, 50L);
@@ -438,7 +438,7 @@ public class FusionSequenceFactory {
                 // 池不足，抢补池锁；抢到则从 DB 申请段，并用 Lua 原子补池+pop
                 // owner 使用随机 long 而非时间戳，避免同毫秒重复导致 UNLOCK 误删他人锁
                 Long lockOwner = ThreadLocalRandom.current().nextLong();
-                if (!KV_OP.setIfAbsent(redisLocker, lockOwner, 10_000L, TimeUnit.MILLISECONDS)) {
+                if (!KV_OP.setIfAbsent(redisLocker, lockOwner, Duration.ofMillis(10_000L))) {
                     // 锁被占，持锁者正在补池（几 ms~几十 ms）：指数退避 2→50ms 后重试，重试时池通常已补足
                     sleepBackoff(tryCount - 1, 2L, 50L);
                     continue;

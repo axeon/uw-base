@@ -1,7 +1,6 @@
 package uw.oauth2.client.vo;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -14,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class OAuth2TokenTest {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final JsonMapper objectMapper = JsonMapper.builder().build();
 
     @Test
     void testOAuth2TokenBuilder() {
@@ -123,7 +122,7 @@ class OAuth2TokenTest {
     }
 
     @Test
-    void testOAuth2TokenJsonSerialization() throws JsonProcessingException {
+    void testOAuth2TokenJsonSerialization() {
         long currentTime = System.currentTimeMillis();
         OAuth2Token token = OAuth2Token.builder()
                 .accessToken("access_token_123")

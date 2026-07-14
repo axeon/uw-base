@@ -6,10 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -25,7 +23,6 @@ import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import uw.auth.service.AuthServiceHelper;
-import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.advice.GlobalExceptionAdvice;
 import uw.auth.service.advice.GlobalResponseAdvice;
 import uw.auth.service.filter.AuthServiceFilter;
@@ -37,6 +34,7 @@ import uw.auth.service.rpc.impl.AuthAppRpcImpl;
 import uw.auth.service.rpc.impl.AuthServiceRpcImpl;
 import uw.auth.service.service.MscAppUpdateService;
 import uw.auth.service.service.MscAuthPermService;
+import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.vo.MscActionLog;
 import uw.auth.service.vo.MscGuestLoginLog;
 import uw.auth.service.vo.MscLoginLog;
@@ -56,7 +54,6 @@ import java.util.Arrays;
 @Configuration
 @Import({GlobalResponseAdvice.class, GlobalExceptionAdvice.class})
 @EnableConfigurationProperties({AuthServiceProperties.class})
-@AutoConfigureAfter({RedisAutoConfiguration.class})
 public class AuthServiceAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(AuthServiceAutoConfiguration.class);

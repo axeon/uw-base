@@ -3,8 +3,6 @@ package uw.task.conf;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.lettuce.core.resource.ClientResources;
 import jakarta.annotation.PreDestroy;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -15,10 +13,9 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
-import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
-import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
+import org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration;
+import org.springframework.boot.amqp.autoconfigure.RabbitProperties;
+import org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.PropertyMapper;
@@ -27,13 +24,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.RedisPassword;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
-import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestClient;
+import uw.common.util.RedisConnectionFactoryBuilder;
 import uw.log.es.LogClient;
 import uw.task.TaskFactory;
 import uw.task.TaskListenerManager;
@@ -69,7 +62,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Configuration
 @EnableScheduling
 @EnableConfigurationProperties({TaskProperties.class})
-@AutoConfigureAfter({RedisAutoConfiguration.class, RabbitAutoConfiguration.class})
+@AutoConfigureAfter({DataRedisAutoConfiguration.class, RabbitAutoConfiguration.class})
 public class TaskAutoConfiguration {
     /**
      * 日志器。
@@ -267,19 +260,19 @@ public class TaskAutoConfiguration {
      * @param rabbitProperties RabbitMQ配置
      * @return ConnectionFactory
      */
-    private ConnectionFactory getTaskRabbitConnectionFactory(TaskProperties.RabbitProperties rabbitProperties) {
+    private ConnectionFactory getTaskRabbitConnectionFactory(RabbitProperties rabbitProperties) {
         PropertyMapper map = PropertyMapper.get();
         RabbitConnectionFactoryBean factoryBean = new RabbitConnectionFactoryBean();
-        map.from(rabbitProperties::determineHost).whenNonNull().to(factoryBean::setHost);
+        map.from(rabbitProperties::determineHost).to(factoryBean::setHost);
         map.from(rabbitProperties::determinePort).to(factoryBean::setPort);
-        map.from(rabbitProperties::determineUsername).whenNonNull().to(factoryBean::setUsername);
-        map.from(rabbitProperties::determinePassword).whenNonNull().to(factoryBean::setPassword);
-        map.from(rabbitProperties::determineVirtualHost).whenNonNull().to(factoryBean::setVirtualHost);
-        map.from(rabbitProperties::getRequestedHeartbeat).whenNonNull().asInt(Duration::getSeconds).to(factoryBean::setRequestedHeartbeat);
+        map.from(rabbitProperties::determineUsername).to(factoryBean::setUsername);
+        map.from(rabbitProperties::determinePassword).to(factoryBean::setPassword);
+        map.from(rabbitProperties::determineVirtualHost).to(factoryBean::setVirtualHost);
+        map.from(rabbitProperties::getRequestedHeartbeat).asInt(Duration::getSeconds).to(factoryBean::setRequestedHeartbeat);
         RabbitProperties.Ssl ssl = rabbitProperties.getSsl();
         if (ssl.getEnabled() != null && ssl.getEnabled()) {
             factoryBean.setUseSSL(true);
-            map.from(ssl::getAlgorithm).whenNonNull().to(factoryBean::setSslAlgorithm);
+            map.from(ssl::getAlgorithm).to(factoryBean::setSslAlgorithm);
             map.from(ssl::getKeyStoreType).to(factoryBean::setKeyStoreType);
             map.from(ssl::getKeyStore).to(factoryBean::setKeyStore);
             map.from(ssl::getKeyStorePassword).to(factoryBean::setKeyStorePassphrase);
@@ -287,7 +280,7 @@ public class TaskAutoConfiguration {
             map.from(ssl::getTrustStore).to(factoryBean::setTrustStore);
             map.from(ssl::getTrustStorePassword).to(factoryBean::setTrustStorePassphrase);
         }
-        map.from(rabbitProperties::getConnectionTimeout).whenNonNull().asInt(Duration::toMillis).to(factoryBean::setConnectionTimeout);
+        map.from(rabbitProperties::getConnectionTimeout).asInt(Duration::toMillis).to(factoryBean::setConnectionTimeout);
         try {
             factoryBean.afterPropertiesSet();
         } catch (Exception e) {
@@ -306,14 +299,14 @@ public class TaskAutoConfiguration {
             log.error("获取ConnectionFactory出错", e);
             throw new RuntimeException("获取ConnectionFactory出错", e);
         }
-        map.from(rabbitProperties::getPublisherConfirmType).whenNonNull().to(connFactory::setPublisherConfirmType);
+        map.from(rabbitProperties::getPublisherConfirmType).to(connFactory::setPublisherConfirmType);
         map.from(rabbitProperties::isPublisherReturns).to(connFactory::setPublisherReturns);
         RabbitProperties.Cache.Channel channel = rabbitProperties.getCache().getChannel();
-        map.from(channel::getSize).whenNonNull().to(connFactory::setChannelCacheSize);
-        map.from(channel::getCheckoutTimeout).whenNonNull().as(Duration::toMillis).to(connFactory::setChannelCheckoutTimeout);
+        map.from(channel::getSize).to(connFactory::setChannelCacheSize);
+        map.from(channel::getCheckoutTimeout).as(Duration::toMillis).to(connFactory::setChannelCheckoutTimeout);
         RabbitProperties.Cache.Connection connection = rabbitProperties.getCache().getConnection();
-        map.from(connection::getMode).whenNonNull().to(connFactory::setCacheMode);
-        map.from(connection::getSize).whenNonNull().to(connFactory::setConnectionCacheSize);
+        map.from(connection::getMode).to(connFactory::setCacheMode);
+        map.from(connection::getSize).to(connFactory::setConnectionCacheSize);
 
         try {
             connFactory.afterPropertiesSet();
@@ -321,55 +314,6 @@ public class TaskAutoConfiguration {
             log.error("配置CachingConnectionFactory出错", e);
         }
         return connFactory;
-    }
-
-    /**
-     * 自定义的redis链接工厂类。
-     *
-     * @param redisProperties
-     * @param clientResources
-     * @return
-     */
-    private RedisConnectionFactory getTaskRedisConnectionFactory(final TaskProperties.RedisProperties redisProperties, final ClientResources clientResources) {
-        //设置连接池。
-        RedisProperties.Pool poolProperties = redisProperties.getLettuce().getPool();
-        GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
-        poolConfig.setMaxTotal(poolProperties.getMaxActive());
-        poolConfig.setMaxIdle(poolProperties.getMaxIdle());
-        poolConfig.setMinIdle(poolProperties.getMinIdle());
-        if (poolProperties.getMaxWait() != null) {
-            poolConfig.setMaxWait(poolProperties.getMaxWait());
-        }
-        LettucePoolingClientConfiguration.LettucePoolingClientConfigurationBuilder builder = LettucePoolingClientConfiguration.builder().poolConfig(poolConfig);
-        if (redisProperties.getTimeout() != null) {
-            builder.commandTimeout(redisProperties.getTimeout());
-        }
-        //设置shutdownTimeout。
-        RedisProperties.Lettuce lettuce = redisProperties.getLettuce();
-        if (lettuce.getShutdownTimeout() != null && !lettuce.getShutdownTimeout().isZero()) {
-            builder.shutdownTimeout(redisProperties.getLettuce().getShutdownTimeout());
-        }
-        //设置clientResources。
-        builder.clientResources(clientResources);
-        //设置ssl。
-        if (redisProperties.getSsl().isEnabled()) {
-            builder.useSsl();
-        }
-        //构建standaloneConfig。
-        LettuceClientConfiguration clientConfig = builder.build();
-        RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration();
-        standaloneConfig.setHostName(redisProperties.getHost());
-        standaloneConfig.setPort(redisProperties.getPort());
-        standaloneConfig.setDatabase(redisProperties.getDatabase());
-        if (StringUtils.isNotBlank(redisProperties.getUsername())) {
-            standaloneConfig.setUsername(redisProperties.getUsername());
-        }
-        if (StringUtils.isNotBlank(redisProperties.getPassword())) {
-            standaloneConfig.setPassword(RedisPassword.of(redisProperties.getPassword()));
-        }
-        LettuceConnectionFactory factory = new LettuceConnectionFactory(standaloneConfig, clientConfig);
-        factory.afterPropertiesSet();
-        return factory;
     }
 
     /**
@@ -413,7 +357,7 @@ public class TaskAutoConfiguration {
         // task自定义的rabbit连接工厂
         taskRabbitConnectionFactory = (CachingConnectionFactory) getTaskRabbitConnectionFactory(taskProperties.getRabbitmq());
         // task自定义的redis连接工厂
-        taskRedisConnectionFactory = getTaskRedisConnectionFactory(taskProperties.getRedis(), clientResources);
+        taskRedisConnectionFactory = RedisConnectionFactoryBuilder.build(taskProperties.getRedis(), clientResources);
         // 本地限速器。
         TaskLocalRateLimiter taskLocalRateLimiter = new TaskLocalRateLimiter();
         // 全局限速器

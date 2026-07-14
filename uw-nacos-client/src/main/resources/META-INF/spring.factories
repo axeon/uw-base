@@ -1,0 +1,23 @@
+# Fork 自 Spring Cloud Alibaba 2025.1.x（config + starter config 合并）
+# 已裁剪：endpoint（NacosConfigEndpointAutoConfiguration）
+
+org.springframework.boot.env.PropertySourceLoader=\
+uw.nacos.config.parser.NacosJsonPropertySourceLoader,\
+uw.nacos.config.parser.NacosXmlPropertySourceLoader
+
+# ConfigData Location Resolvers
+org.springframework.boot.context.config.ConfigDataLocationResolver=\
+uw.nacos.config.configdata.NacosConfigDataLocationResolver
+
+# ConfigData Loaders
+org.springframework.boot.context.config.ConfigDataLoader=\
+uw.nacos.config.configdata.NacosConfigDataLoader
+
+# Environment post processor（import-check）
+org.springframework.boot.EnvironmentPostProcessor=\
+uw.nacos.config.configdata.NacosConfigDataMissingEnvironmentPostProcessor
+
+# Failure analyzer
+org.springframework.boot.diagnostics.FailureAnalyzer=\
+uw.nacos.config.configdata.NacosConfigDataMissingEnvironmentPostProcessor.ImportExceptionFailureAnalyzer,\
+uw.nacos.config.NacosConnectionFailureAnalyzer

@@ -1,0 +1,6 @@
+# uw-common-app 环境后置处理器：注入 LoadBalancer 缓存禁用 / Swagger 按环境禁用 等免配置默认项。
+# 注意：EnvironmentPostProcessor 只能通过 spring.factories 注册（未迁移到 AutoConfiguration.imports）。
+# Spring Boot 4.0 起 EnvironmentPostProcessor 包路径从 org.springframework.boot.env 迁到
+# org.springframework.boot（旧路径已 @Deprecated(since=4.0,forRemoval=true)，4.2 移除）。
+org.springframework.boot.EnvironmentPostProcessor=\
+uw.common.app.conf.CommonAppEnvPostProcessor

@@ -19,6 +19,7 @@ import uw.mfa.util.RedisKeyUtils;
 
 import java.security.SecureRandom;
 import java.util.*;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -152,7 +153,7 @@ public class MfaDeviceCodeHelper {
         String redisKey = RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_SEND_PREFIX, userIp);
         long sentTimes = Objects.requireNonNullElse(mfaRedisOp.increment(redisKey), 0L);
         if (sentTimes == 1L) {
-            mfaRedisTemplate.expire(redisKey, uwMfaProperties.getDeviceCodeSendLimitSeconds(), TimeUnit.SECONDS);
+            mfaRedisTemplate.expire(redisKey, Duration.ofSeconds(uwMfaProperties.getDeviceCodeSendLimitSeconds()));
         }
         if (sentTimes >= uwMfaProperties.getDeviceCodeSendLimitTimes()) {
             long ttl = mfaRedisTemplate.getExpire(redisKey, TimeUnit.MINUTES) + 1;
@@ -167,7 +168,7 @@ public class MfaDeviceCodeHelper {
         paramMap.put(TEMPLATE_EXPIRE_MINUTES, String.valueOf(uwMfaProperties.getDeviceCodeExpiredSeconds() / 60));
         String deviceCodeKey = RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_PREFIX, deviceType, deviceId);
         if (deviceType == MfaDeviceType.MOBILE_CODE.getValue()) {
-            mfaRedisOp.set(deviceCodeKey, deviceCode, uwMfaProperties.getDeviceCodeExpiredSeconds(), TimeUnit.SECONDS);
+            mfaRedisOp.set(deviceCodeKey, deviceCode, Duration.ofSeconds(uwMfaProperties.getDeviceCodeExpiredSeconds()));
             //调用接口发送短信
             ResponseData responseData = MfaDeviceCodeHelper.sendSms(saasId, "mfa", deviceId, deviceId, replaceTemplate(notifyContent, paramMap), paramMap);
             if (responseData.isSuccess()) {
@@ -178,7 +179,7 @@ public class MfaDeviceCodeHelper {
                 return ResponseData.errorCode(MfaResponseCode.DEVICE_CODE_SEND_ERROR);
             }
         } else if (deviceType == MfaDeviceType.EMAIL_CODE.getValue()) {
-            mfaRedisOp.set(deviceCodeKey, deviceCode, uwMfaProperties.getDeviceCodeExpiredSeconds(), TimeUnit.SECONDS);
+            mfaRedisOp.set(deviceCodeKey, deviceCode, Duration.ofSeconds(uwMfaProperties.getDeviceCodeExpiredSeconds()));
             //调用接口发送邮件
             ResponseData responseData = MfaDeviceCodeHelper.sendEmail(saasId, "mfa", deviceId, deviceId, replaceTemplate(notifySubject, paramMap), replaceTemplate(notifyContent, paramMap), paramMap);
             if (responseData.isSuccess()) {
@@ -257,7 +258,7 @@ public class MfaDeviceCodeHelper {
     public static boolean incrementVerifyErrorTimes(String deviceId) {
         Long times = mfaRedisOp.increment(RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_VERIFY_PREFIX, deviceId));
         if (times != null && times == 1L) {
-            return mfaRedisTemplate.expire(RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_VERIFY_PREFIX, deviceId), uwMfaProperties.getDeviceCodeVerifyLimitSeconds(), TimeUnit.SECONDS);
+            return mfaRedisTemplate.expire(RedisKeyUtils.buildKey(REDIS_DEVICE_CODE_VERIFY_PREFIX, deviceId), Duration.ofSeconds(uwMfaProperties.getDeviceCodeVerifyLimitSeconds()));
         }
         return false;
     }

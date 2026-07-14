@@ -16,6 +16,10 @@
     <dependencies>
         <dependency>
             <groupId>com.umtone</groupId>
+            <artifactId>uw-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.umtone</groupId>
             <artifactId>uw-dao</artifactId>
         </dependency>
         <dependency>
@@ -27,12 +31,8 @@
             <artifactId>spring-cloud-loadbalancer</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+            <groupId>com.umtone</groupId>
+            <artifactId>uw-nacos-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

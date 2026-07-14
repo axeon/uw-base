@@ -1,7 +1,9 @@
 package uw.task.conf;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.amqp.autoconfigure.RabbitProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.data.redis.autoconfigure.DataRedisProperties;
 
 /**
  * 任务配置类。
@@ -153,7 +155,7 @@ public class TaskProperties {
     /**
      * Redis配置
      */
-    private RedisProperties redis = new RedisProperties();
+    private DataRedisProperties redis = new DataRedisProperties();
 
     /**
      * Rabbit MQ配置
@@ -360,11 +362,11 @@ public class TaskProperties {
         this.queueGroupPriorityPrefetchNum = queueGroupPriorityPrefetchNum;
     }
 
-    public RedisProperties getRedis() {
+    public DataRedisProperties getRedis() {
         return redis;
     }
 
-    public void setRedis(RedisProperties redis) {
+    public void setRedis(DataRedisProperties redis) {
         this.redis = redis;
     }
 
@@ -376,9 +378,4 @@ public class TaskProperties {
         this.rabbitmq = rabbitmq;
     }
 
-    public static class RedisProperties extends org.springframework.boot.autoconfigure.data.redis.RedisProperties {
-    }
-
-    public static class RabbitProperties extends org.springframework.boot.autoconfigure.amqp.RabbitProperties {
-    }
 }

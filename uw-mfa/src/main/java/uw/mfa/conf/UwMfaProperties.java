@@ -1,12 +1,13 @@
 package uw.mfa.conf;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.data.redis.autoconfigure.DataRedisProperties;
 import uw.mfa.constant.HmacAlgorithm;
 
 /**
  * uw-mfa配置属性。
  * <p>配置前缀为 {@code uw.mfa}，涵盖IP限制、Captcha、设备验证码、TOTP四类业务的全部参数，</p>
- * <p>以及独立的Redis连接配置（{@link RedisProperties}，默认继承Spring Boot的Redis属性）。</p>
+ * <p>以及独立的Redis连接配置（{@link DataRedisProperties}，默认继承Spring Boot的Redis属性）。</p>
  */
 @ConfigurationProperties(prefix = "uw.mfa")
 public class UwMfaProperties {
@@ -154,7 +155,7 @@ public class UwMfaProperties {
     /**
      * Redis配置
      */
-    private RedisProperties redis = new RedisProperties();
+    private DataRedisProperties redis = new DataRedisProperties();
 
     public String getIpWhiteList() {
         return ipWhiteList;
@@ -380,14 +381,11 @@ public class UwMfaProperties {
         this.totpQrSize = totpQrSize;
     }
 
-    public RedisProperties getRedis() {
+    public DataRedisProperties getRedis() {
         return redis;
     }
 
-    public void setRedis(RedisProperties redis) {
+    public void setRedis(DataRedisProperties redis) {
         this.redis = redis;
-    }
-
-    public static class RedisProperties extends org.springframework.boot.autoconfigure.data.redis.RedisProperties {
     }
 }

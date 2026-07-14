@@ -1,7 +1,7 @@
 package uw.webot.captcha.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.util.JsonUtils;
@@ -36,7 +36,7 @@ public class TwoCaptchaServiceImpl implements CaptchaService {
     /**
      * JSON对象映射器。
      */
-    private static final ObjectMapper OBJECT_MAPPER = JsonUtils.getJsonMapper();
+    private static final JsonMapper OBJECT_MAPPER = JsonUtils.getJsonMapper();
 
     /**
      * Captcha配置属性。
@@ -114,10 +114,10 @@ public class TwoCaptchaServiceImpl implements CaptchaService {
             JsonNode result = OBJECT_MAPPER.readTree(response.body());
 
             if (result.has("status") && result.get("status").asInt() == 1) {
-                String captchaId = result.get("request").asText();
+                String captchaId = result.get("request").asString();
                 return pollForResult(captchaId, startTime);
             } else {
-                String error = result.has("request") ? result.get("request").asText() : "Unknown error";
+                String error = result.has("request") ? result.get("request").asString() : "Unknown error";
                 return CaptchaResult.failure("2Captcha submit failed: " + error);
             }
 
@@ -186,10 +186,10 @@ public class TwoCaptchaServiceImpl implements CaptchaService {
             JsonNode result = OBJECT_MAPPER.readTree(response.body());
 
             if (result.has("status") && result.get("status").asInt() == 1) {
-                String captchaId = result.get("request").asText();
+                String captchaId = result.get("request").asString();
                 return pollForResult(captchaId, startTime);
             } else {
-                String error = result.has("request") ? result.get("request").asText() : "Unknown error";
+                String error = result.has("request") ? result.get("request").asString() : "Unknown error";
                 return CaptchaResult.failure("2Captcha submit failed: " + error);
             }
 
@@ -239,10 +239,10 @@ public class TwoCaptchaServiceImpl implements CaptchaService {
             JsonNode result = OBJECT_MAPPER.readTree(response.body());
 
             if (result.has("status") && result.get("status").asInt() == 1) {
-                String captchaId = result.get("request").asText();
+                String captchaId = result.get("request").asString();
                 return pollForResult(captchaId, startTime);
             } else {
-                String error = result.has("request") ? result.get("request").asText() : "Unknown error";
+                String error = result.has("request") ? result.get("request").asString() : "Unknown error";
                 return CaptchaResult.failure("2Captcha submit failed: " + error);
             }
 
@@ -287,10 +287,10 @@ public class TwoCaptchaServiceImpl implements CaptchaService {
             JsonNode result = OBJECT_MAPPER.readTree(response.body());
 
             if (result.has("status") && result.get("status").asInt() == 1) {
-                String captchaId = result.get("request").asText();
+                String captchaId = result.get("request").asString();
                 return pollForResult(captchaId, startTime);
             } else {
-                String error = result.has("request") ? result.get("request").asText() : "Unknown error";
+                String error = result.has("request") ? result.get("request").asString() : "Unknown error";
                 return CaptchaResult.failure("2Captcha submit failed: " + error);
             }
 
@@ -339,10 +339,10 @@ public class TwoCaptchaServiceImpl implements CaptchaService {
             JsonNode result = OBJECT_MAPPER.readTree(response.body());
 
             if (result.has("status") && result.get("status").asInt() == 1) {
-                String captchaId = result.get("request").asText();
+                String captchaId = result.get("request").asString();
                 return pollForResult(captchaId, startTime);
             } else {
-                String error = result.has("request") ? result.get("request").asText() : "Unknown error";
+                String error = result.has("request") ? result.get("request").asString() : "Unknown error";
                 return CaptchaResult.failure("2Captcha submit failed: " + error);
             }
 
@@ -389,13 +389,13 @@ public class TwoCaptchaServiceImpl implements CaptchaService {
                     int status = result.get("status").asInt();
                     if (status == 1) {
                         long solveTime = System.currentTimeMillis() - startTime;
-                        String code = result.get("request").asText();
+                        String code = result.get("request").asString();
                         return CaptchaResult.success(code, solveTime, 0);
                     }
                 }
 
                 if (result.has("request")) {
-                    String requestStatus = result.get("request").asText();
+                    String requestStatus = result.get("request").asString();
                     if (!"CAPCHA_NOT_READY".equals(requestStatus)) {
                         return CaptchaResult.failure("2Captcha error: " + requestStatus);
                     }

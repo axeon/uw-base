@@ -372,7 +372,22 @@ public class SysDataHistoryQueryParam extends AuthPageQueryParam{
         setEntityClass(entityClass);
         return this;
     }
-	
+
+    /**
+     * 设置实体类。
+     */
+    public void setEntityClass(Class<?> entityClass) {
+        this.entityClass = entityClass.getName();
+    }
+
+    /**
+     * 设置实体类链式调用。
+     */
+    public SysDataHistoryQueryParam entityClass(Class<?> entityClass) {
+        setEntityClass(entityClass.getName());
+        return this;
+    }
+
     /**
     * 获取实体ID。
     */

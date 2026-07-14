@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <packaging>jar</packaging>
+    <artifactId>uw-nacos-client</artifactId>
+    <version>${uw-nacos-client.version}</version>
+    <name>uw-nacos-client</name>
+    <description>uw-nacos-client: Nacos 注册发现与配置中心封装，脱离 Spring Cloud Alibaba，fork 自 SCA 2025.1.x。</description>
+
+    <parent>
+        <groupId>com.umtone</groupId>
+        <artifactId>uw-base</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <dependencies>
+        <!-- Spring Cloud 官方抽象（Boot 4.1 / SC 2025.1 已支持） -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-commons</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-context</artifactId>
+        </dependency>
+        <!-- spring-boot-autoconfigure：SCA 的 spring-cloud-* jar 把 spring-boot/spring-context 标为 optional，
+             本模块大量使用 @ConfigurationProperties/@Conditional*/AutoConfigure* 及 spring-context 抽象，
+             故需显式声明（版本由 spring-boot-dependencies BOM 管理）。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <!-- reactor-core：仅 NacosReactiveDiscoveryClient 需要（uw-gateway webflux 必需），
+             标 optional 避免强制传递给非 webflux 应用；webflux 应用由 spring-boot-starter-webflux 自带。 -->
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <!-- spring-boot-web-server：仅 NacosAutoServiceRegistration 间接需要
+             (AbstractAutoServiceRegistration 监听 WebServerInitializedEvent)，标 optional；
+             web 应用由 spring-boot-starter-web 自带。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-web-server</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <!-- jakarta.annotation-api：@PostConstruct（SCA 原依赖 jakarta.annotation.PostConstruct，
+             spring-boot 4.x 不再强制传递，显式声明）。 -->
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+        </dependency>
+        <!-- Nacos 官方客户端（版本当前由 SCA BOM 管理；脱离 SCA 后由 uw-base dependencyManagement 管理） -->
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-client</artifactId>
+        </dependency>
+        <!-- Jackson 3：NacosJsonPropertySourceLoader 解析 JSON 配置用（tools.jackson，与 uw-common 一致）。
+             JsonIgnore 等注解仍用 com.fasterxml.jackson.annotation（Jackson 3 databind 传递依赖 jackson-annotations 2.x）。 -->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <!-- 不引 spring-cloud-loadbalancer（项目自引）、不引 spring-cloud-starter-bootstrap（改用 ConfigData） -->
+    </dependencies>
+
+</project>

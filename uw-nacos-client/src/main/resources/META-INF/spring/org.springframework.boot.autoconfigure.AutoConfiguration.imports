@@ -1,0 +1,7 @@
+uw.nacos.discovery.NacosServiceAutoConfiguration
+uw.nacos.discovery.UtilIPv6AutoConfiguration
+uw.nacos.discovery.NacosDiscoveryAutoConfiguration
+uw.nacos.discovery.NacosDiscoveryClientConfiguration
+uw.nacos.discovery.reactive.NacosReactiveDiscoveryClientConfiguration
+uw.nacos.registry.NacosServiceRegistryAutoConfiguration
+uw.nacos.config.NacosConfigAutoConfiguration

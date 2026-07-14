@@ -2,14 +2,13 @@ package uw.common.app.conf;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 
 /**
  * uw-common-app 配置属性。
  * <p>
- * 配置前缀为 {@code uw.common.app}，控制关键日志、i18n、Swagger 与优雅关闭等行为。
+ * 配置前缀为 {@code uw.common.app}，控制关键日志、i18n、Swagger 等行为。
  * </p>
  */
 @ConfigurationProperties(prefix = "uw.common.app")
@@ -44,11 +43,6 @@ public class CommonAppProperties {
             Locale.of("pt"),
             Locale.of("ar")
     );
-
-    /**
-     * 优雅关闭超时时间。
-     */
-    private Duration shutdownTimeout = Duration.ofSeconds(3);
 
     /**
      * 禁用swagger
@@ -107,24 +101,6 @@ public class CommonAppProperties {
      */
     public void setLocaleList(List<Locale> localeList) {
         this.localeList = localeList != null ? localeList : List.of();
-    }
-
-    /**
-     * 获取优雅关闭超时时间（Nacos 反注册后预留的停机等待时长）。
-     *
-     * @return 优雅关闭超时时间
-     */
-    public Duration getShutdownTimeout() {
-        return shutdownTimeout;
-    }
-
-    /**
-     * 设置优雅关闭超时时间。
-     *
-     * @param shutdownTimeout 优雅关闭超时时间
-     */
-    public void setShutdownTimeout(Duration shutdownTimeout) {
-        this.shutdownTimeout = shutdownTimeout;
     }
 
     /**

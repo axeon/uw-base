@@ -1,17 +1,16 @@
 package uw.httpclient.xml;
 
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.*;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.dataformat.xml.XmlMapper;
 import uw.common.util.DateTools;
 import uw.httpclient.exception.DataMapperException;
 import uw.httpclient.http.DataObjectMapper;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.TimeZone;
@@ -19,8 +18,9 @@ import java.util.TimeZone;
 /**
  * 基于 Jackson XML 的 {@link DataObjectMapper} XML 实现。
  * <p>
- * 内部持有一个全局共享的 {@link com.fasterxml.jackson.dataformat.xml.XmlMapper}，预配置：
+ * 内部持有一个全局共享的 {@link XmlMapper}，预配置：
  * 关闭未知属性报错、关闭日期时间戳、注册 JSR310 模块、按统一 ISO 毫秒格式序列化 {@link Date}。
+ * <p>
  *
  * @since 2018-03-01
  */
@@ -29,7 +29,7 @@ public class XmlObjectMapperImpl implements DataObjectMapper {
     /**
      * 共享的 Jackson XmlMapper 实例，由 {@link #xmlMapperInit()} 初始化。
      */
-    private final static com.fasterxml.jackson.dataformat.xml.XmlMapper xmlMapper = xmlMapperInit();
+    private final static XmlMapper xmlMapper = xmlMapperInit();
 
     /**
      * {@inheritDoc}
@@ -114,28 +114,28 @@ public class XmlObjectMapperImpl implements DataObjectMapper {
      *
      * @return 预配置的 XmlMapper。
      */
-    private static com.fasterxml.jackson.dataformat.xml.XmlMapper xmlMapperInit() {
-        com.fasterxml.jackson.dataformat.xml.XmlMapper xmlMapper = new com.fasterxml.jackson.dataformat.xml.XmlMapper();
-        xmlMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        xmlMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    private static XmlMapper xmlMapperInit() {
         // 设置日期格式
         SimpleModule dateUtilModule = new SimpleModule();
-        dateUtilModule.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+        dateUtilModule.addDeserializer(Date.class, new ValueDeserializer<Date>() {
             @Override
-            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
-                String dateString = jsonParser.getText();
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) {
+                String dateString = jsonParser.getString();
                 return DateTools.stringToDate(dateString);
             }
         });
-        dateUtilModule.addSerializer(Date.class, new JsonSerializer<Date>() {
+        dateUtilModule.addSerializer(Date.class, new ValueSerializer<Date>() {
             @Override
-            public void serialize(Date date, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JacksonException {
+            public void serialize(Date date, JsonGenerator jsonGenerator, SerializationContext serializationContext) {
                 jsonGenerator.writeString(DateTools.dateToString(date, DateTools.DATE_MILLIS_ISO));
             }
         });
-        xmlMapper.registerModule(dateUtilModule);
-        xmlMapper.setTimeZone(TimeZone.getDefault());
-        xmlMapper.registerModule(new JavaTimeModule());
-        return xmlMapper;
+        // Jackson 3 中 XmlMapper 同样构建后不可变，通过 XmlMapper.builder() 链式配置。
+        return XmlMapper.builder()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .addModule(dateUtilModule)
+                .defaultTimeZone(TimeZone.getDefault())
+                .build();
     }
 }

@@ -1,3 +1,32 @@
+# 2026.0800.0000版本升级说明
+全面适配 Spring Boot 4.1 + Spring Framework 7 + Jackson 3。
+
+## 核心升级
+1. Spring Boot 3.5→4.1，Spring Framework 6→7，Spring Cloud→2025.1。
+2. Jackson 2→3：core/databind 包名 com.fasterxml.jackson→tools.jackson；注解包 com.fasterxml.jackson.annotation 保留不变（Jackson 3 仍依赖 annotations 2.x）。
+3. nacos-client→3.2.2，fork SCA 2025.1.x 成 uw-nacos-client（脱离 Spring Cloud Alibaba）。
+
+## uw-common-app 重构
+1. 新增 CommonAppEnvPostProcessor：Swagger 禁用 + LB 缓存禁用改为免配置默认项（可被 application.yml 覆盖）。
+2. 优雅停机交由 uw-nacos-client NacosGracefulShutdownDelegate，删除原 onContextClosedEvent（曾双触发）。
+3. 日期输出开关 DATE_AS_ISO：true=ISO 字符串（默认，与 JsonUtils 一致），false=毫秒时间戳。
+4. WebMvcConfigurer.extendMessageConverters（Spring 7 废弃）迁移到 configureMessageConverters(ServerBuilder)。
+
+## 各 center 配置统一
+1. application.yml 单处 spring.config.import + ${NACOS_*} 环境变量驱动，零 profile 文件（debug/test/uat/prod 均靠环境变量）。
+2. nacos dataId 去掉 .yaml 后缀（匹配 nacos 约定）。
+3. nacos 配置清除 Jackson 2 残留（write-dates-as-timestamps / 空 serialization 段）。
+
+## 其他
+1. uw-ops-agent 跟随升级 uw-common 1.1.112 + uw-httpclient 2.3.5。
+2. uw-ai-center ES bean 循环依赖修复（Rest5ClientBuilderCustomizer 分离到独立 Configuration）。
+3. pom 整理：module 内版本上提父 dependencyManagement，springdoc 去变量化，删除冗余 maven.compiler.*。
+
+## ⚠️ 不兼容变更
+1. Jackson 3：ObjectMapper→JsonMapper（无参构造移除），@ResponseBody 日期默认 ISO 字符串（原毫秒时间戳）。
+2. EnvironmentPostProcessor 包路径 org.springframework.boot.env→org.springframework.boot（Spring Boot 4.0 迁移，旧路径 forRemoval）。
+3. center 启动需设环境变量：NACOS_SERVER/NACOS_USERNAME/NACOS_PASSWORD/NACOS_NAMESPACE（IDE run config 或部署环境）。
+
 # 2026.0701.0000版本升级说明
 uw-task 新增第三种任务类型 TaskDelayer（延迟任务），与 TaskRunner / TaskCroner 对等。
 

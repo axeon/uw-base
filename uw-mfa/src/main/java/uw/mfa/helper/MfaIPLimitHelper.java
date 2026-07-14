@@ -12,6 +12,7 @@ import uw.mfa.util.RedisKeyUtils;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -124,7 +125,7 @@ public class MfaIPLimitHelper {
         }
         Long times = mfaRedisOp.increment(RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, userIp));
         if (times != null && times == 1L) {
-            return mfaRedisTemplate.expire(RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, userIp), uwMfaProperties.getIpLimitSeconds(), TimeUnit.SECONDS);
+            return mfaRedisTemplate.expire(RedisKeyUtils.buildKey(REDIS_LIMIT_IP_PREFIX, userIp), Duration.ofSeconds(uwMfaProperties.getIpLimitSeconds()));
         }
         return false;
     }

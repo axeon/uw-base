@@ -12,9 +12,9 @@ import uw.cache.util.RedisKeyUtils;
 import uw.cache.vo.CacheValueWrapper;
 import uw.common.util.KryoUtils;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -139,7 +139,7 @@ public class GlobalCache {
         if (ttl == 0) {
             opsForValue.set(redisKey, redisData);
         } else {
-            opsForValue.set(redisKey, redisData, ttl, TimeUnit.MILLISECONDS);
+            opsForValue.set(redisKey, redisData, Duration.ofMillis(ttl));
         }
         return valueWrapper;
     }
@@ -421,7 +421,7 @@ public class GlobalCache {
                 if (ttl == 0) {
                     opsForValue.set(redisKey, redisData);
                 } else {
-                    opsForValue.set(redisKey, redisData, ttl, TimeUnit.MILLISECONDS);
+                    opsForValue.set(redisKey, redisData, Duration.ofMillis(ttl));
                 }
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);

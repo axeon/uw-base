@@ -11,10 +11,10 @@ import org.springframework.data.redis.core.script.RedisScript;
 import uw.cache.util.RedisKeyUtils;
 import uw.common.util.SnowflakeIdGenerator;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 基于 Redis 实现的全局锁。
@@ -97,8 +97,7 @@ public class GlobalLocker {
         // 使用 SnowflakeId 作为 stamp，避免跨 JVM 使用 System.nanoTime() 可能出现的重复值，
         // 保证不同实例、不同持锁时刻的 stamp 全局唯一，CAS 解锁时不会误判。
         long stamp = SnowflakeIdGenerator.getInstance().generateId();
-        if (Boolean.TRUE.equals(longCacheRedisTemplate.opsForValue().setIfAbsent(RedisKeyUtils.buildTypeId(REDIS_PREFIX, lockerType, lockerId), stamp, lockTimeMillis,
-                TimeUnit.MILLISECONDS))) {
+        if (Boolean.TRUE.equals(longCacheRedisTemplate.opsForValue().setIfAbsent(RedisKeyUtils.buildTypeId(REDIS_PREFIX, lockerType, lockerId), stamp, Duration.ofMillis(lockTimeMillis)))) {
             return stamp;
         } else {
             return 0;

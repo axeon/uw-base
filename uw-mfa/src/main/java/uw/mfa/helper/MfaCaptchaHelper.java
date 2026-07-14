@@ -19,6 +19,7 @@ import uw.mfa.util.RedisKeyUtils;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -85,7 +86,7 @@ public class MfaCaptchaHelper {
         String redisKey = RedisKeyUtils.buildKey(REDIS_CAPTCHA_LIMIT_PREFIX, userIp);
         long sentTimes = Objects.requireNonNullElse(mfaRedisOp.increment(redisKey), 0L);
         if (sentTimes == 1L) {
-            mfaRedisTemplate.expire(redisKey, uwMfaProperties.getCaptchaSendLimitSeconds(), TimeUnit.SECONDS);
+            mfaRedisTemplate.expire(redisKey, Duration.ofSeconds(uwMfaProperties.getCaptchaSendLimitSeconds()));
         }
         if (sentTimes >= uwMfaProperties.getCaptchaSendLimitTimes()) {
             long ttl = mfaRedisTemplate.getExpire(redisKey, TimeUnit.MINUTES) + 1;
@@ -102,7 +103,7 @@ public class MfaCaptchaHelper {
         CaptchaQuestion captchaQuestion = captchaData.getCaptchaQuestion();
         //设置有效期
         captchaQuestion.setCaptchaTTL(uwMfaProperties.getCaptchaExpiredSeconds());
-        mfaRedisOp.set(RedisKeyUtils.buildKey(REDIS_CAPTCHA_PREFIX, captchaQuestion.getCaptchaId()), captchaData.getCaptchaResult(), uwMfaProperties.getCaptchaExpiredSeconds(), TimeUnit.SECONDS);
+        mfaRedisOp.set(RedisKeyUtils.buildKey(REDIS_CAPTCHA_PREFIX, captchaQuestion.getCaptchaId()), captchaData.getCaptchaResult(), Duration.ofSeconds(uwMfaProperties.getCaptchaExpiredSeconds()));
         return ResponseData.success(captchaQuestion);
     }
 

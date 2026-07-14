@@ -24,7 +24,7 @@ import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.ResourceHttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.http.converter.support.AllEncompassingFormHttpMessageConverter;
 import org.springframework.http.converter.xml.SourceHttpMessageConverter;
 import org.springframework.web.client.RestClient;
@@ -203,7 +203,7 @@ public class AuthClientAutoConfiguration {
         converters.add(new ResourceHttpMessageConverter());
         converters.add(new SourceHttpMessageConverter<>());
         converters.add(new AllEncompassingFormHttpMessageConverter());
-        converters.add(new MappingJackson2HttpMessageConverter());
+        converters.add(new JacksonJsonHttpMessageConverter());
         return converters;
     }
 
@@ -219,13 +219,19 @@ public class AuthClientAutoConfiguration {
         @Bean("baseAuthClientRestClientBuilder")
         @LoadBalanced
         public RestClient.Builder baseAuthClientRestClientBuilder() {
-            return RestClient.builder().messageConverters(buildMessageConverters());
+            return RestClient.builder().configureMessageConverters(b -> b.configureMessageConvertersList(c -> {
+            c.clear();
+            c.addAll(buildMessageConverters());
+        }));
         }
 
         @Bean("authRestClientBuilder")
         @LoadBalanced
         public RestClient.Builder authRestClientBuilder() {
-            return RestClient.builder().messageConverters(buildMessageConverters());
+            return RestClient.builder().configureMessageConverters(b -> b.configureMessageConvertersList(c -> {
+            c.clear();
+            c.addAll(buildMessageConverters());
+        }));
         }
 
         @Bean("authWebClientBuilder")
@@ -246,12 +252,18 @@ public class AuthClientAutoConfiguration {
 
         @Bean("baseAuthClientRestClientBuilder")
         public RestClient.Builder baseAuthClientRestClientBuilder() {
-            return RestClient.builder().messageConverters(buildMessageConverters());
+            return RestClient.builder().configureMessageConverters(b -> b.configureMessageConvertersList(c -> {
+            c.clear();
+            c.addAll(buildMessageConverters());
+        }));
         }
 
         @Bean("authRestClientBuilder")
         public RestClient.Builder authRestClientBuilder() {
-            return RestClient.builder().messageConverters(buildMessageConverters());
+            return RestClient.builder().configureMessageConverters(b -> b.configureMessageConvertersList(c -> {
+            c.clear();
+            c.addAll(buildMessageConverters());
+        }));
         }
 
         @Bean("authWebClientBuilder")

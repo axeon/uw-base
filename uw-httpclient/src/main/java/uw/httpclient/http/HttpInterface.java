@@ -1,7 +1,7 @@
 package uw.httpclient.http;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JavaType;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JavaType;
 import okhttp3.*;
 import org.apache.commons.lang3.StringUtils;
 import uw.common.util.SystemClock;

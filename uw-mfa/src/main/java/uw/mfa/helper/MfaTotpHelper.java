@@ -20,6 +20,7 @@ import uw.mfa.util.RedisKeyUtils;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -169,7 +170,7 @@ public class MfaTotpHelper {
     public static boolean incrementVerifyErrorTimes(String userInfo) {
         Long times = mfaRedisOp.increment(RedisKeyUtils.buildKey(REDIS_TOTP_VERIFY_PREFIX, userInfo));
         if (times != null && times == 1L) {
-            return mfaRedisTemplate.expire(RedisKeyUtils.buildKey(REDIS_TOTP_VERIFY_PREFIX, userInfo), uwMfaProperties.getTotpVerifyLimitSeconds(), TimeUnit.SECONDS);
+            return mfaRedisTemplate.expire(RedisKeyUtils.buildKey(REDIS_TOTP_VERIFY_PREFIX, userInfo), Duration.ofSeconds(uwMfaProperties.getTotpVerifyLimitSeconds()));
         }
         return false;
     }

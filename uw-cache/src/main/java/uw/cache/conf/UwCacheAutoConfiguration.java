@@ -1,33 +1,27 @@
 package uw.cache.conf;
 
 import io.lettuce.core.resource.ClientResources;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.support.TaskExecutorAdapter;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.RedisPassword;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
-import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.GenericToStringSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.data.redis.support.collections.RedisProperties;
 import uw.cache.*;
 import uw.cache.listener.FusionCacheNotifyListener;
+import uw.common.util.RedisConnectionFactoryBuilder;
 
 import java.util.concurrent.Executors;
 
@@ -46,7 +40,7 @@ import java.util.concurrent.Executors;
 @Configuration
 @ConditionalOnClass({RedisTemplate.class, RedisConnectionFactory.class})
 @EnableConfigurationProperties({UwCacheProperties.class})
-@AutoConfigureAfter({RedisAutoConfiguration.class})
+@AutoConfigureAfter({DataRedisAutoConfiguration.class})
 public class UwCacheAutoConfiguration {
     private static final Logger log = LoggerFactory.getLogger(UwCacheAutoConfiguration.class);
 
@@ -146,7 +140,7 @@ public class UwCacheAutoConfiguration {
     public RedisTemplate<String, byte[]> dataCacheRedisTemplate(final UwCacheProperties uwCacheProperties, final ClientResources clientResources) {
         RedisTemplate<String, byte[]> redisTemplate = new RedisTemplate<>();
         redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setConnectionFactory(redisConnectionFactory(uwCacheProperties.getRedis(), clientResources));
+        redisTemplate.setConnectionFactory(RedisConnectionFactoryBuilder.build(uwCacheProperties.getRedis(), clientResources));
         redisTemplate.setEnableDefaultSerializer(false);
         redisTemplate.afterPropertiesSet();
         return redisTemplate;
@@ -167,61 +161,10 @@ public class UwCacheAutoConfiguration {
         RedisTemplate<String, Long> redisTemplate = new RedisTemplate<>();
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         redisTemplate.setValueSerializer(new GenericToStringSerializer<Long>(Long.class));
-        redisTemplate.setConnectionFactory(redisConnectionFactory(uwCacheProperties.getRedis(), clientResources));
+        redisTemplate.setConnectionFactory(RedisConnectionFactoryBuilder.build(uwCacheProperties.getRedis(), clientResources));
         redisTemplate.setEnableDefaultSerializer(false);
         redisTemplate.afterPropertiesSet();
         return redisTemplate;
-    }
-
-    /**
-     * 构建 Lettuce 连接工厂（Standalone + 连接池）。
-     * <p>
-     * 根据 uw.cache.redis 配置组装：连接池、命令超时、shutdown 超时、SSL、主机/端口/库/账号密码等。
-     *
-     * @param redisProperties uw.cache.redis 配置
-     * @param clientResources Lettuce 共享 ClientResources
-     * @return LettuceConnectionFactory
-     */
-    private RedisConnectionFactory redisConnectionFactory(RedisProperties redisProperties, ClientResources clientResources) {
-        //设置连接池。
-        RedisProperties.Pool poolProperties = redisProperties.getLettuce().getPool();
-        GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
-        poolConfig.setMaxTotal(poolProperties.getMaxActive());
-        poolConfig.setMaxIdle(poolProperties.getMaxIdle());
-        poolConfig.setMinIdle(poolProperties.getMinIdle());
-        if (poolProperties.getMaxWait() != null) {
-            poolConfig.setMaxWait(poolProperties.getMaxWait());
-        }
-        LettucePoolingClientConfiguration.LettucePoolingClientConfigurationBuilder builder = LettucePoolingClientConfiguration.builder().poolConfig(poolConfig);
-        if (redisProperties.getTimeout() != null) {
-            builder.commandTimeout(redisProperties.getTimeout());
-        }
-        //设置shutdownTimeout。
-        RedisProperties.Lettuce lettuce = redisProperties.getLettuce();
-        if (lettuce.getShutdownTimeout() != null && !lettuce.getShutdownTimeout().isZero()) {
-            builder.shutdownTimeout(redisProperties.getLettuce().getShutdownTimeout());
-        }
-        //设置clientResources。
-        builder.clientResources(clientResources);
-        //设置ssl。
-        if (redisProperties.getSsl().isEnabled()) {
-            builder.useSsl();
-        }
-        //构建standaloneConfig。
-        LettuceClientConfiguration clientConfig = builder.build();
-        RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration();
-        standaloneConfig.setHostName(redisProperties.getHost());
-        standaloneConfig.setPort(redisProperties.getPort());
-        standaloneConfig.setDatabase(redisProperties.getDatabase());
-        if (StringUtils.isNotBlank(redisProperties.getUsername())) {
-            standaloneConfig.setUsername(redisProperties.getUsername());
-        }
-        if (StringUtils.isNotBlank(redisProperties.getPassword())) {
-            standaloneConfig.setPassword(RedisPassword.of(redisProperties.getPassword()));
-        }
-        LettuceConnectionFactory factory = new LettuceConnectionFactory(standaloneConfig, clientConfig);
-        factory.afterPropertiesSet();
-        return factory;
     }
 
 }

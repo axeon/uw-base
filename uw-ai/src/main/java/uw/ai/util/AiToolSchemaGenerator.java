@@ -1,10 +1,10 @@
 package uw.ai.util;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 import com.github.victools.jsonschema.generator.*;
 import com.github.victools.jsonschema.generator.Module;
-import com.github.victools.jsonschema.module.jackson.JacksonModule;
+import com.github.victools.jsonschema.module.jackson.JacksonSchemaModule;
 import com.github.victools.jsonschema.module.jackson.JacksonOption;
 import com.github.victools.jsonschema.module.swagger2.Swagger2Module;
 import org.springframework.util.Assert;
@@ -47,7 +47,7 @@ public final class AiToolSchemaGenerator {
      * Initialize JSON Schema generators.
      */
     static {
-        Module jacksonModule = new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED);
+        Module jacksonModule = new JacksonSchemaModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED);
         Module openApiModule = new Swagger2Module();
 
         SchemaGeneratorConfigBuilder schemaGeneratorConfigBuilder =
@@ -107,23 +107,23 @@ public final class AiToolSchemaGenerator {
     // Based on the method in ModelOptionsUtils.
     public static void convertTypeValuesToUpperCase(ObjectNode node) {
         if (node.isObject()) {
-            node.fields().forEachRemaining(entry -> {
+            node.properties().forEach(entry -> {
                 JsonNode value = entry.getValue();
                 if (value.isObject()) {
                     convertTypeValuesToUpperCase((ObjectNode) value);
                 } else if (value.isArray()) {
-                    value.elements().forEachRemaining(element -> {
+                    value.valueStream().forEach(element -> {
                         if (element.isObject() || element.isArray()) {
                             convertTypeValuesToUpperCase((ObjectNode) element);
                         }
                     });
-                } else if (value.isTextual() && entry.getKey().equals("type")) {
-                    String oldValue = node.get("type").asText();
+                } else if (value.isString() && entry.getKey().equals("type")) {
+                    String oldValue = node.get("type").asString();
                     node.put("type", oldValue.toUpperCase());
                 }
             });
         } else if (node.isArray()) {
-            node.elements().forEachRemaining(element -> {
+            node.valueStream().forEach(element -> {
                 if (element.isObject() || element.isArray()) {
                     convertTypeValuesToUpperCase((ObjectNode) element);
                 }

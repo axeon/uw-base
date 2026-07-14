@@ -1,8 +1,8 @@
 package uw.webot.captcha.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.util.JsonUtils;
@@ -33,7 +33,7 @@ public class CapsolverServiceImpl implements CaptchaService {
     /**
      * JSON对象映射器。
      */
-    private static final ObjectMapper OBJECT_MAPPER = JsonUtils.getJsonMapper();
+    private static final JsonMapper OBJECT_MAPPER = JsonUtils.getJsonMapper();
 
     /**
      * Captcha配置属性。
@@ -104,11 +104,11 @@ public class CapsolverServiceImpl implements CaptchaService {
             JsonNode result = OBJECT_MAPPER.readTree(response.body());
 
             if (result.has("taskId")) {
-                String taskId = result.get("taskId").asText();
+                String taskId = result.get("taskId").asString();
                 return pollForResult(taskId, startTime);
             } else if (result.has("errorId") && result.get("errorId").asInt() != 0) {
                 String error = result.has("errorDescription") ?
-                        result.get("errorDescription").asText() : "Unknown error";
+                        result.get("errorDescription").asString() : "Unknown error";
                 return CaptchaResult.failure("Capsolver submit failed: " + error);
             } else {
                 return CaptchaResult.failure("Capsolver submit failed: No taskId returned");
@@ -160,11 +160,11 @@ public class CapsolverServiceImpl implements CaptchaService {
             JsonNode result = OBJECT_MAPPER.readTree(response.body());
 
             if (result.has("taskId")) {
-                String taskId = result.get("taskId").asText();
+                String taskId = result.get("taskId").asString();
                 return pollForResult(taskId, startTime);
             } else {
                 String error = result.has("errorDescription") ?
-                        result.get("errorDescription").asText() : "Unknown error";
+                        result.get("errorDescription").asString() : "Unknown error";
                 return CaptchaResult.failure("Capsolver submit failed: " + error);
             }
 
@@ -205,11 +205,11 @@ public class CapsolverServiceImpl implements CaptchaService {
             JsonNode result = OBJECT_MAPPER.readTree(response.body());
 
             if (result.has("taskId")) {
-                String taskId = result.get("taskId").asText();
+                String taskId = result.get("taskId").asString();
                 return pollForResult(taskId, startTime);
             } else {
                 String error = result.has("errorDescription") ?
-                        result.get("errorDescription").asText() : "Unknown error";
+                        result.get("errorDescription").asString() : "Unknown error";
                 return CaptchaResult.failure("Capsolver submit failed: " + error);
             }
 
@@ -248,11 +248,11 @@ public class CapsolverServiceImpl implements CaptchaService {
             JsonNode result = OBJECT_MAPPER.readTree(response.body());
 
             if (result.has("taskId")) {
-                String taskId = result.get("taskId").asText();
+                String taskId = result.get("taskId").asString();
                 return pollForResult(taskId, startTime);
             } else {
                 String error = result.has("errorDescription") ?
-                        result.get("errorDescription").asText() : "Unknown error";
+                        result.get("errorDescription").asString() : "Unknown error";
                 return CaptchaResult.failure("Capsolver submit failed: " + error);
             }
 
@@ -292,11 +292,11 @@ public class CapsolverServiceImpl implements CaptchaService {
             JsonNode result = OBJECT_MAPPER.readTree(response.body());
 
             if (result.has("taskId")) {
-                String taskId = result.get("taskId").asText();
+                String taskId = result.get("taskId").asString();
                 return pollForResult(taskId, startTime);
             } else {
                 String error = result.has("errorDescription") ?
-                        result.get("errorDescription").asText() : "Unknown error";
+                        result.get("errorDescription").asString() : "Unknown error";
                 return CaptchaResult.failure("Capsolver submit failed: " + error);
             }
 
@@ -334,15 +334,15 @@ public class CapsolverServiceImpl implements CaptchaService {
                 JsonNode result = OBJECT_MAPPER.readTree(response.body());
 
                 if (result.has("status")) {
-                    String status = result.get("status").asText();
+                    String status = result.get("status").asString();
                     if ("ready".equals(status)) {
                         long solveTime = System.currentTimeMillis() - startTime;
                         JsonNode solution = result.get("solution");
                         if (solution != null && solution.has("text")) {
-                            String code = solution.get("text").asText();
+                            String code = solution.get("text").asString();
                             return CaptchaResult.success(code, solveTime, 0);
                         } else if (solution != null && solution.has("gRecaptchaResponse")) {
-                            String code = solution.get("gRecaptchaResponse").asText();
+                            String code = solution.get("gRecaptchaResponse").asString();
                             return CaptchaResult.success(code, solveTime, 0);
                         }
                     }
@@ -350,7 +350,7 @@ public class CapsolverServiceImpl implements CaptchaService {
 
                 if (result.has("errorId") && result.get("errorId").asInt() != 0) {
                     String error = result.has("errorDescription") ?
-                            result.get("errorDescription").asText() : "Unknown error";
+                            result.get("errorDescription").asString() : "Unknown error";
                     return CaptchaResult.failure("Capsolver error: " + error);
                 }
 

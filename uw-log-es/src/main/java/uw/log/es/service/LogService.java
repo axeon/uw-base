@@ -1,7 +1,7 @@
 package uw.log.es.service;
 
-import com.fasterxml.jackson.core.io.JsonStringEncoder;
-import com.fasterxml.jackson.databind.JavaType;
+import tools.jackson.core.io.JsonStringEncoder;
+import tools.jackson.databind.JavaType;
 import com.google.common.base.CaseFormat;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import okhttp3.Credentials;
@@ -40,7 +40,6 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * 日志服务。
  * <p>
- * {@link LogClient} 的核心实现，负责：
  * <ul>
  *   <li>日志类型注册与索引名管理（原始名 / 查询名 / 时间滚动模式）；</li>
  *   <li>日志写入：单条与批量均写入 {@link #buffer}，由 {@link ElasticsearchDaemonExporter}
@@ -528,7 +527,7 @@ public class LogService {
         }
         StringBuilder urlBuilder = new StringBuilder(esServer);
         urlBuilder.append("/_search/").append(SCROLL);
-        String escapedScrollId = new String(JsonStringEncoder.getInstance().quoteAsString(scrollId));
+        String escapedScrollId = new String(JsonStringEncoder.getInstance().quoteAsUTF8(scrollId));
         String requestBody = String.format("{\"scroll_id\":\"%s\",\"scroll\":\"%s\"}", escapedScrollId, scrollExpireSeconds + "s");
         ScrollResponse<T> resp = null;
         JavaType javaType = JsonUtils.constructParametricType(ScrollResponse.class, tClass);
@@ -563,7 +562,7 @@ public class LogService {
         }
         StringBuilder urlBuilder = new StringBuilder(esServer);
         urlBuilder.append("/_search/").append(SCROLL);
-        String escapedScrollId = new String(JsonStringEncoder.getInstance().quoteAsString(scrollId));
+        String escapedScrollId = new String(JsonStringEncoder.getInstance().quoteAsUTF8(scrollId));
         String requestBody = String.format("{\"scroll_id\":\"%s\"}", escapedScrollId);
         DeleteScrollResponse resp;
         try {
@@ -609,7 +608,7 @@ public class LogService {
         if (resultNum > 0) {
             sql = sql + " limit " + resultNum;
         }
-        String escapedSql = new String(JsonStringEncoder.getInstance().quoteAsString(sql));
+        String escapedSql = new String(JsonStringEncoder.getInstance().quoteAsUTF8(sql));
         String sqlBody = String.format("{\"query\": \"%s\"}", escapedSql);
         Request.Builder requestBuilder = new Request.Builder().url(urlBuilder.toString());
         if (needBasicAuth) {
@@ -618,9 +617,9 @@ public class LogService {
         String dsl = httpInterface.requestForEntity(requestBuilder.post(RequestBody.create(sqlBody, MediaTypes.JSON_UTF8)).build(), String.class).getValue();
 
         // 以JsonNode方式解析后改写，避免字符串拼接破坏JSON结构（如fields数组内含']'字符、首字符非'{'等情况）。
-        com.fasterxml.jackson.databind.node.ObjectNode root;
+        tools.jackson.databind.node.ObjectNode root;
         try {
-            root = (com.fasterxml.jackson.databind.node.ObjectNode) JsonUtils.getJsonMapper().readTree(dsl);
+            root = (tools.jackson.databind.node.ObjectNode) JsonUtils.getJsonMapper().readTree(dsl);
         } catch (Exception e) {
             log.error("translateSqlToDsl parse ES _sql/translate response failed! raw:{}", dsl, e);
             throw new IllegalArgumentException("invalid dsl from _sql/translate: " + dsl, e);
@@ -632,7 +631,7 @@ public class LogService {
             root.put("track_total_hits", true);
         }
         // es8.x返回_source为false, 设置为true兼容
-        com.fasterxml.jackson.databind.JsonNode sourceNode = root.get("_source");
+        tools.jackson.databind.JsonNode sourceNode = root.get("_source");
         if (sourceNode != null && sourceNode.isBoolean() && !sourceNode.asBoolean()) {
             root.put("_source", true);
         }

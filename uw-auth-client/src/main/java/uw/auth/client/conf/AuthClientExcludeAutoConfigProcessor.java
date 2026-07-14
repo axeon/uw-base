@@ -1,7 +1,7 @@
 package uw.auth.client.conf;
 
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.env.EnvironmentPostProcessor;
+import org.springframework.boot.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.util.StringUtils;
 
@@ -17,7 +17,7 @@ import java.util.Set;
  * 此处在 bootstrap 早期阶段将该自动配置类加入 {@code spring.autoconfigure.exclude}。
  * <p>
  * 注册方式：必须通过 {@code META-INF/spring.factories}（key =
- * {@code org.springframework.boot.env.EnvironmentPostProcessor}）注册，而非
+ * {@code org.springframework.boot.EnvironmentPostProcessor}）注册，而非
  * {@code AutoConfiguration.imports}——后者只识别自动配置类，且生效时机晚于本处理器。
  */
 public class AuthClientExcludeAutoConfigProcessor implements EnvironmentPostProcessor {
@@ -26,7 +26,8 @@ public class AuthClientExcludeAutoConfigProcessor implements EnvironmentPostProc
      * 需要排除的自动配置类全限定名。
      */
     private static final String TO_EXCLUDE =
-            "org.springframework.boot.autoconfigure.web.reactive.function.client.ClientHttpConnectorAutoConfiguration";
+            // Spring Boot 4 模块化后，该类从 spring-boot-autoconfigure 迁到 spring-boot-webclient 模块
+            "org.springframework.boot.webclient.autoconfigure.ClientHttpConnectorAutoConfiguration";
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {

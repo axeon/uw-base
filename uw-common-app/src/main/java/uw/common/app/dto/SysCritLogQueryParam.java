@@ -497,6 +497,13 @@ public class SysCritLogQueryParam extends AuthPageQueryParam{
         setBizType(bizType);
         return this;
     }
+
+    /**
+     * 设置业务类型类（取类的全限定名作为 bizType，与 AuthServiceHelper.logSysInfo 的写入格式一致，确保查询能匹配）。
+     */
+    public void setBizTypeClass(Class<?> bizTypeClass) {
+        this.bizType = bizTypeClass.getName();
+    }
 	
     /**
     * 获取业务ID。

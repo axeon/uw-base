@@ -1,21 +1,18 @@
 package uw.ai.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.util.DefaultIndenter;
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import com.github.victools.jsonschema.generator.Option;
 import com.github.victools.jsonschema.generator.SchemaGenerator;
 import com.github.victools.jsonschema.generator.SchemaGeneratorConfig;
 import com.github.victools.jsonschema.generator.SchemaGeneratorConfigBuilder;
-import com.github.victools.jsonschema.module.jackson.JacksonModule;
+import com.github.victools.jsonschema.module.jackson.JacksonSchemaModule;
 import com.github.victools.jsonschema.module.jackson.JacksonOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 import uw.common.util.JsonUtils;
 
 import java.lang.reflect.Type;
@@ -39,7 +36,7 @@ public class BeanOutputConverter<T> {
     /**
      * The object mapper used for deserialization and other JSON operations.
      */
-    private final ObjectMapper objectMapper;
+    private final JsonMapper objectMapper;
 
     /**
      * Holds the generated JSON schema for the target type.
@@ -62,7 +59,7 @@ public class BeanOutputConverter<T> {
      * @param clazz        The target type's class.
      * @param objectMapper Custom object mapper for JSON operations. endings.
      */
-    public BeanOutputConverter(Class<T> clazz, ObjectMapper objectMapper) {
+    public BeanOutputConverter(Class<T> clazz, JsonMapper objectMapper) {
         this(ParameterizedTypeReference.forType(clazz), objectMapper);
     }
 
@@ -83,7 +80,7 @@ public class BeanOutputConverter<T> {
      * @param typeRef      The target class type reference.
      * @param objectMapper Custom object mapper for JSON operations. endings.
      */
-    public BeanOutputConverter(ParameterizedTypeReference<T> typeRef, ObjectMapper objectMapper) {
+    public BeanOutputConverter(ParameterizedTypeReference<T> typeRef, JsonMapper objectMapper) {
         this(typeRef.getType(), objectMapper);
     }
 
@@ -95,7 +92,7 @@ public class BeanOutputConverter<T> {
      * @param type         The target class type.
      * @param objectMapper Custom object mapper for JSON operations. endings.
      */
-    private BeanOutputConverter(Type type, ObjectMapper objectMapper) {
+    private BeanOutputConverter(Type type, JsonMapper objectMapper) {
         Objects.requireNonNull(type, "Type cannot be null;");
         this.type = type;
         this.objectMapper = objectMapper != null ? objectMapper : JsonUtils.getJsonMapper();
@@ -145,7 +142,7 @@ public class BeanOutputConverter<T> {
     public T convert(@NonNull String text) {
         try {
             return (T) this.objectMapper.readValue(text, this.objectMapper.constructType(this.type));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             logger.error(
                     "Could not parse the given text to the desired target type: \"{}\" into {}", text, this.type);
             throw new RuntimeException(e);
@@ -181,7 +178,7 @@ public class BeanOutputConverter<T> {
     public Map<String, Object> getJsonSchemaMap() {
         try {
             return this.objectMapper.readValue(this.jsonSchema, Map.class);
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             logger.error("Could not parse the JSON Schema to a Map object", ex);
             throw new IllegalStateException(ex);
         }
@@ -191,7 +188,7 @@ public class BeanOutputConverter<T> {
      * Generates the JSON schema for the target type.
      */
     private void generateSchema() {
-        JacksonModule jacksonModule = new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED,
+        JacksonSchemaModule jacksonModule = new JacksonSchemaModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED,
                 JacksonOption.RESPECT_JSONPROPERTY_ORDER);
         SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(
                 com.github.victools.jsonschema.generator.SchemaVersion.DRAFT_2020_12,
@@ -200,13 +197,13 @@ public class BeanOutputConverter<T> {
                 .with(Option.FORBIDDEN_ADDITIONAL_PROPERTIES_BY_DEFAULT);
         SchemaGeneratorConfig config = configBuilder.build();
         SchemaGenerator generator = new SchemaGenerator(config);
-        JsonNode jsonNode = generator.generateSchema(this.type);
-        ObjectWriter objectWriter = this.objectMapper.writer(new DefaultPrettyPrinter()
-                .withObjectIndenter(new DefaultIndenter().withLinefeed(System.lineSeparator())));
+        // victools jsonschema-generator 5.0 基于 Jackson 3，generateSchema 返回 tools.jackson.databind.node.ObjectNode，
+        // 可直接用 Jackson 3 的 objectMapper 美化输出。
+        JsonNode schemaNode = generator.generateSchema(this.type);
         try {
-            this.jsonSchema = objectWriter.writeValueAsString(jsonNode);
-        } catch (JsonProcessingException e) {
-            logger.error("Could not pretty print json schema for jsonNode: {}", jsonNode);
+            this.jsonSchema = this.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(schemaNode);
+        } catch (JacksonException e) {
+            logger.error("Could not pretty print json schema: {}", schemaNode);
             throw new RuntimeException("Could not pretty print json schema for " + this.type, e);
         }
     }

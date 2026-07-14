@@ -3,24 +3,17 @@ package uw.dao.conf;
 import io.lettuce.core.resource.ClientResources;
 import jakarta.annotation.PreDestroy;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.RedisPassword;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
-import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericToStringSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import uw.common.util.RedisConnectionFactoryBuilder;
 import uw.dao.conf.DaoConfig.ConnPoolConfig;
 import uw.dao.conf.DaoConfig.TableShardConfig;
 import uw.dao.connectionpool.ConnectionManager;
@@ -37,7 +30,7 @@ import java.util.Map.Entry;
  */
 @Configuration
 @EnableConfigurationProperties({DaoConfig.class})
-@AutoConfigureAfter({RedisAutoConfiguration.class})
+@AutoConfigureAfter({DataRedisAutoConfiguration.class})
 public class DaoAutoConfiguration {
 
     /**
@@ -135,7 +128,7 @@ public class DaoAutoConfiguration {
             RedisTemplate<String, Long> redisTemplate = new RedisTemplate<>();
             redisTemplate.setKeySerializer(new StringRedisSerializer());
             redisTemplate.setValueSerializer(new GenericToStringSerializer(Long.class));
-            redisTemplate.setConnectionFactory(redisConnectionFactory(daoConfig.getRedis(), clientResources));
+            redisTemplate.setConnectionFactory(RedisConnectionFactoryBuilder.build(daoConfig.getRedis(), clientResources));
             redisTemplate.setEnableDefaultSerializer(false);
             redisTemplate.afterPropertiesSet();
             new FusionSequenceFactory(redisTemplate);
@@ -151,57 +144,4 @@ public class DaoAutoConfiguration {
         DaoService.stop();
         ConnectionManager.stop();
     }
-
-    /**
-     * Redis连接工厂
-     *
-     * @param redisProperties
-     * @param clientResources
-     * @return
-     */
-    private RedisConnectionFactory redisConnectionFactory(RedisProperties redisProperties, ClientResources clientResources) {
-        LettucePoolingClientConfiguration.LettucePoolingClientConfigurationBuilder builder = LettucePoolingClientConfiguration.builder();
-        //设置连接池（仅在用户配置了 lettuce.pool 时启用，否则使用 Lettuce 默认的非池化连接）。
-        RedisProperties.Pool poolProperties = redisProperties.getLettuce().getPool();
-        if (poolProperties != null) {
-            GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
-            poolConfig.setMaxTotal(poolProperties.getMaxActive());
-            poolConfig.setMaxIdle(poolProperties.getMaxIdle());
-            poolConfig.setMinIdle(poolProperties.getMinIdle());
-            if (poolProperties.getMaxWait() != null) {
-                poolConfig.setMaxWait(poolProperties.getMaxWait());
-            }
-            builder.poolConfig(poolConfig);
-        }
-        if (redisProperties.getTimeout() != null) {
-            builder.commandTimeout(redisProperties.getTimeout());
-        }
-        //设置shutdownTimeout。
-        RedisProperties.Lettuce lettuce = redisProperties.getLettuce();
-        if (lettuce.getShutdownTimeout() != null && !lettuce.getShutdownTimeout().isZero()) {
-            builder.shutdownTimeout(redisProperties.getLettuce().getShutdownTimeout());
-        }
-        //设置clientResources。
-        builder.clientResources(clientResources);
-        //设置ssl。
-        if (redisProperties.getSsl().isEnabled()) {
-            builder.useSsl();
-        }
-        //构建standaloneConfig。
-        LettuceClientConfiguration clientConfig = builder.build();
-        RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration();
-        standaloneConfig.setHostName(redisProperties.getHost());
-        standaloneConfig.setPort(redisProperties.getPort());
-        standaloneConfig.setDatabase(redisProperties.getDatabase());
-        if (StringUtils.isNotBlank(redisProperties.getUsername())) {
-            standaloneConfig.setUsername(redisProperties.getUsername());
-        }
-        if (StringUtils.isNotBlank(redisProperties.getPassword())) {
-            standaloneConfig.setPassword(RedisPassword.of(redisProperties.getPassword()));
-        }
-        LettuceConnectionFactory factory = new LettuceConnectionFactory(standaloneConfig, clientConfig);
-        factory.afterPropertiesSet();
-        return factory;
-    }
-
 }

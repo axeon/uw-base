@@ -1,13 +1,11 @@
 package uw.log.es.util;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.util.JsonUtils;
-
-import java.io.IOException;
 
 /**
  * Json 对象序列化成字符串而非嵌套 Json 对象。
@@ -16,7 +14,7 @@ import java.io.IOException;
  *
  * @param <T> 被序列化对象类型
  */
-public class ObjectAsStringSerializer<T> extends JsonSerializer<T> {
+public class ObjectAsStringSerializer<T> extends ValueSerializer<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(ObjectAsStringSerializer.class);
 
@@ -26,10 +24,9 @@ public class ObjectAsStringSerializer<T> extends JsonSerializer<T> {
      * @param value      待序列化对象，为 {@code null} 时写出 JSON null
      * @param gen        JSON 生成器
      * @param serializers 序列化上下文
-     * @throws IOException 写出异常
      */
     @Override
-    public void serialize(T value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+    public void serialize(T value, JsonGenerator gen, SerializationContext serializers) {
         if (value == null) {
             gen.writeNull();
             return;

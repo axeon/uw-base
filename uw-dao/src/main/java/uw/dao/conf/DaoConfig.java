@@ -1,6 +1,7 @@
 package uw.dao.conf;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.data.redis.autoconfigure.DataRedisProperties;
 
 import java.util.LinkedHashMap;
 import java.util.Set;
@@ -37,7 +38,7 @@ public class DaoConfig {
     /**
      * Redis配置
      */
-    private RedisProperties redis = null;
+    private DataRedisProperties redis = null;
     /**
      * 生产环境命名列表
      */
@@ -80,11 +81,11 @@ public class DaoConfig {
         this.sqlStats = sqlStats;
     }
 
-    public RedisProperties getRedis() {
+    public DataRedisProperties getRedis() {
         return redis;
     }
 
-    public void setRedis(RedisProperties redis) {
+    public void setRedis(DataRedisProperties redis) {
         this.redis = redis;
     }
 
@@ -102,9 +103,6 @@ public class DaoConfig {
 
     public void setProdProfile(boolean prodProfile) {
         isProdProfile = prodProfile;
-    }
-
-    public static class RedisProperties extends org.springframework.boot.autoconfigure.data.redis.RedisProperties {
     }
 
     /**

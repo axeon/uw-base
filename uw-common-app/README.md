@@ -7,10 +7,10 @@
 - **自动化权限注入查询参数**：基于 `uw-auth-service` 的 `AuthServiceHelper` 与 `uw-dao` 的 `QueryParam`，自动绑定当前登录用户上下文（saasId/mchId/userId/userType）。
 - **关键操作日志**：将 CRIT 级别操作日志异步落库到 `sys_crit_log`，弥补 ES 生命周期管理导致的日志丢失。
 - **数据历史记录**：通过 `SysDataHistoryHelper` 记录实体变更快照到 `sys_data_history`，支持数据回滚与审计。
-- **JSON 配置管理**：通过 `JsonConfigHelper` / `JsonConfigBox` 实现强类型、可校验的 JSON 配置读写。
-- **Schema 数据校验**：基于 `@Schema` 注解的声明式 VO 校验。
 - **i18n 国际化**：内置 12 种语言的校验/响应码国际化资源。
 - **应用启动引导**：`AppBootStrap` 解决多模块同后缀组件的 bean 命名冲突。
+
+> 常量/响应码（CommonConstants/CommonState/CommonResponseCode/ValidateResponseCode）、JSON 配置（JsonConfigHelper/JsonConfigBox/JsonConfigParam）、Schema 校验（SchemaValidateHelper）、URL 参数构建（QueryParamHelper）已迁移到 uw-common，详见 [uw-common/README.md](../uw-common/README.md)。
 
 ## 依赖引入
 
@@ -112,81 +112,6 @@ result.onSuccess(updated -> SysDataHistoryHelper.saveHistory(updated, "更新后
 - 落库失败不阻断主业务，仅记录 WARN 日志。
 
 配套查询参数：`SysDataHistoryQueryParam`；实体：`SysDataHistory`。
-
-## JSON 配置管理
-
-通过 `JsonConfigParam`（通常用枚举实现）定义配置项元数据，`JsonConfigHelper` 构建强类型 `JsonConfigBox` 供业务读取。
-
-### 定义配置参数
-
-```java
-public enum SystemConfig implements JsonConfigParam {
-    SITE_NAME("siteName", ParamType.STRING, "MySite", "站点名称", null),
-    MAX_UPLOAD_SIZE("maxUploadSize", ParamType.INT, "10485760", "最大上传大小(字节)", null),
-    ENABLE_FEATURE("enableFeature", ParamType.BOOLEAN, "false", "是否开启特性", null);
-
-    private final ParamData paramData;
-
-    SystemConfig(String key, ParamType type, String value, String desc, String regex) {
-        this.paramData = new ParamData(key, type, value, desc, regex);
-    }
-
-    @Override
-    public ParamData getParamData() { return paramData; }
-}
-```
-
-### 构建与读取
-
-```java
-// 从数据库/任意来源拿到配置 JSON 字符串
-ResponseData<JsonConfigBox> box = JsonConfigHelper.buildParamBox(
-        Arrays.asList(SystemConfig.values()), configDataJson);
-
-// 校验配置数据
-ResponseData<List<ValidateResult>> validateResult =
-        JsonConfigHelper.validateConfigData(Arrays.asList(SystemConfig.values()), configDataJson);
-
-// 强类型读取
-if (box.isSuccess()) {
-    String siteName = box.getData().getParam(SystemConfig.SITE_NAME);
-    int maxSize = box.getData().getIntParam(SystemConfig.MAX_UPLOAD_SIZE);
-    boolean enabled = box.getData().getBooleanParam(SystemConfig.ENABLE_FEATURE);
-}
-```
-
-- `JsonConfigHelper`：构建盒子与校验配置（静态方法）。
-- `JsonConfigBox`：强类型读取（支持 String/int/long/float/double/boolean 及数组、Map）。
-- `JsonConfigParam`：参数定义接口（key/type/value/desc/regex）。
-- `JsonConfigParam.ParamType`：参数类型枚举（含 STRING/INT/BOOLEAN/DATE/ENUM/MAP 等及其集合类型）。
-
-## Schema 数据校验
-
-基于 `@Schema` 注解的声明式校验，无需手写校验逻辑。
-
-```java
-@PostMapping("/save")
-public ResponseData<Void> save(@RequestBody UserForm form) {
-    List<ValidateResult> errors = SchemaValidateHelper.validate(form);
-    if (!errors.isEmpty()) {
-        return ResponseData.error(errors, "", "数据校验失败！");
-    }
-    // ... 业务逻辑
-}
-```
-
-支持的 `@Schema` 约束：`requiredMode=REQUIRED`（必填）、`minimum/maximum`（数值范围）、`minLength/maxLength`（长度）、`pattern`（正则）。反射元数据通过 Caffeine 缓存。
-
-## 国际化（i18n）
-
-内置两套 i18n 资源，覆盖 12 种语言（zh_CN/zh_TW/en/ja/ko/de/fr/it/es/ru/pt/ar）：
-
-| 资源包 | 对应枚举 | codePrefix |
-|--------|---------|-----------|
-| `i18n/messages/uw_common` | `CommonResponseCode` | `uw.common` |
-| `i18n/messages/uw_validate` | `ValidateResponseCode` | `uw.validate` |
-
-通过请求头 `Accept-Language` 自动切换语言，香港地区（zh-HK）自动映射为中文繁体。
 
 ## 应用启动引导
 

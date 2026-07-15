@@ -16,6 +16,7 @@
     </parent>
 
     <dependencies>
+        <!-- ============ Spring 生态 ============ -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
@@ -24,6 +25,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
+        <!-- ============ 自研框架 uw-* ============ -->
         <dependency>
             <groupId>com.umtone</groupId>
             <artifactId>uw-common</artifactId>
@@ -36,6 +38,7 @@
             <groupId>com.umtone</groupId>
             <artifactId>uw-log-es</artifactId>
         </dependency>
+        <!-- ============ 通用工具库 ============ -->
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>

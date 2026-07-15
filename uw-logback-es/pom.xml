@@ -16,6 +16,16 @@
     </parent>
 
     <dependencies>
+        <!-- ============ 自研框架 uw-* ============ -->
+        <dependency>
+            <groupId>com.umtone</groupId>
+            <artifactId>uw-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.umtone</groupId>
+            <artifactId>uw-httpclient</artifactId>
+        </dependency>
+        <!-- ============ 通用工具库 ============ -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -25,17 +35,10 @@
             <artifactId>logback-classic</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.umtone</groupId>
-            <artifactId>uw-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.umtone</groupId>
-            <artifactId>uw-httpclient</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
+        <!-- ============ 测试依赖 ============ -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

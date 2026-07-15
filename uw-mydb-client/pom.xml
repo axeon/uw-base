@@ -14,6 +14,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <dependencies>
+        <!-- ============ 自研框架 uw-* ============ -->
         <dependency>
             <groupId>com.umtone</groupId>
             <artifactId>uw-common</artifactId>
@@ -22,6 +23,7 @@
             <groupId>com.umtone</groupId>
             <artifactId>uw-auth-client</artifactId>
         </dependency>
+        <!-- ============ 通用工具库 ============ -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations</artifactId>

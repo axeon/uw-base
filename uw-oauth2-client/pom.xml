@@ -19,6 +19,7 @@
     </parent>
 
     <dependencies>
+        <!-- ============ 自研框架 uw-* ============ -->
         <dependency>
             <groupId>com.umtone</groupId>
             <artifactId>uw-common</artifactId>
@@ -35,21 +36,23 @@
             <groupId>com.umtone</groupId>
             <artifactId>uw-cache</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-annotations</artifactId>
-        </dependency>
+        <!-- ============ 第三方业务 SDK ============ -->
         <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
             <version>4.5.0</version>
         </dependency>
+        <!-- ============ 通用工具库 ============ -->
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+        </dependency>
+        <!-- ============ 测试依赖 ============ -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
 </project>

@@ -19,10 +19,12 @@
     </parent>
 
     <dependencies>
+        <!-- ============ Spring 生态 ============ -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
+        <!-- ============ 自研框架 uw-* ============ -->
         <dependency>
             <groupId>com.umtone</groupId>
             <artifactId>uw-common</artifactId>
@@ -31,6 +33,18 @@
             <groupId>com.umtone</groupId>
             <artifactId>uw-auth-client</artifactId>
         </dependency>
+        <!-- ============ 第三方业务 SDK ============ -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+        <!-- ============ 通用工具库 ============ -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
@@ -47,22 +61,12 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.google.zxing</groupId>
-            <artifactId>core</artifactId>
-            <version>3.5.3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.zxing</groupId>
-            <artifactId>javase</artifactId>
-            <version>3.5.3</version>
-        </dependency>
+        <!-- ============ 测试依赖 ============ -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-test</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
 </project>

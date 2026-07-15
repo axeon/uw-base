@@ -16,10 +16,12 @@
     </parent>
 
     <dependencies>
+        <!-- ============ Spring 生态 ============ -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
+        <!-- ============ 自研框架 uw-* ============ -->
         <dependency>
             <groupId>com.umtone</groupId>
             <artifactId>uw-common</artifactId>
@@ -28,25 +30,26 @@
             <groupId>com.umtone</groupId>
             <artifactId>uw-httpclient</artifactId>
         </dependency>
+        <!-- ============ 通用工具库 ============ -->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+        </dependency>
+        <!-- ============ 测试依赖 ============ -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-annotations</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
 </project>

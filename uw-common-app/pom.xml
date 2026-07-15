@@ -14,6 +14,12 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <dependencies>
+        <!-- ============ Spring 生态 ============ -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-loadbalancer</artifactId>
+        </dependency>
+        <!-- ============ 自研框架 uw-* ============ -->
         <dependency>
             <groupId>com.umtone</groupId>
             <artifactId>uw-common</artifactId>
@@ -27,13 +33,10 @@
             <artifactId>uw-auth-service</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-loadbalancer</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.umtone</groupId>
             <artifactId>uw-nacos-client</artifactId>
         </dependency>
+        <!-- ============ 测试依赖 ============ -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

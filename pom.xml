@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <revision>2026.0800.0000</revision>
+        <revision>2026.0800.0001</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>25</java.version>
@@ -34,7 +34,7 @@
         <uw-logback-es.version>3.1.101</uw-logback-es.version>
         <uw-mfa.version>1.1.71</uw-mfa.version>
         <uw-mydb-client.version>1.1.35</uw-mydb-client.version>
-        <uw-nacos-client.version>1.0.0</uw-nacos-client.version>
+        <uw-nacos-client.version>1.0.1</uw-nacos-client.version>
         <uw-notify-client.version>1.1.33</uw-notify-client.version>
         <uw-oauth2-client.version>1.1.33</uw-oauth2-client.version>
         <uw-task.version>5.1.135</uw-task.version>
@@ -54,7 +54,7 @@
             <dependency>
                 <groupId>com.alibaba.nacos</groupId>
                 <artifactId>nacos-client</artifactId>
-                <version>3.2.2</version>
+                <version>3.2.3</version>
             </dependency>
             <dependency>
                 <groupId>com.umtone</groupId>
@@ -154,12 +154,12 @@
             <dependency>
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.2</version>
             </dependency>
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-annotations</artifactId>
-                <version>2.2.50</version>
+                <version>2.2.52</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -199,7 +199,7 @@
             <dependency>
                 <groupId>org.jctools</groupId>
                 <artifactId>jctools-core</artifactId>
-                <version>4.0.5</version>
+                <version>4.0.6</version>
             </dependency>
             <dependency>
                 <groupId>com.github.stuxuhai</groupId>
@@ -224,7 +224,7 @@
             <dependency>
                 <groupId>com.auth0</groupId>
                 <artifactId>java-jwt</artifactId>
-                <version>4.5.0</version>
+                <version>4.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.openjdk.jmh</groupId>

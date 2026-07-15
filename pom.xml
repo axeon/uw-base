@@ -152,16 +152,6 @@
                 <version>${uw-webot.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.openjdk.jmh</groupId>
-                <artifactId>jmh-core</artifactId>
-                <version>1.37</version>
-            </dependency>
-            <dependency>
-                <groupId>org.openjdk.jmh</groupId>
-                <artifactId>jmh-generator-annprocess</artifactId>
-                <version>1.37</version>
-            </dependency>
-            <dependency>
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
                 <version>3.0.3</version>
@@ -206,7 +196,6 @@
                 <artifactId>jsonschema-module-swagger-2</artifactId>
                 <version>5.0.0</version>
             </dependency>
-            <!-- 以下为各 module 共用的第三方库，统一在此管理版本（module 内不再写版本） -->
             <dependency>
                 <groupId>org.jctools</groupId>
                 <artifactId>jctools-core</artifactId>
@@ -237,6 +226,19 @@
                 <artifactId>java-jwt</artifactId>
                 <version>4.5.0</version>
             </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-core</artifactId>
+                <version>1.37</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-generator-annprocess</artifactId>
+                <version>1.37</version>
+                <scope>test</scope>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 

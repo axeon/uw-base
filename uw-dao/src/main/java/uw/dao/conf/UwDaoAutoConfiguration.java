@@ -14,8 +14,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericToStringSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import uw.common.util.RedisConnectionFactoryBuilder;
-import uw.dao.conf.DaoConfig.ConnPoolConfig;
-import uw.dao.conf.DaoConfig.TableShardConfig;
+import uw.dao.conf.UwDaoProperties.ConnPoolConfig;
+import uw.dao.conf.UwDaoProperties.TableShardConfig;
 import uw.dao.connectionpool.ConnectionManager;
 import uw.dao.sequence.FusionSequenceFactory;
 import uw.dao.service.DaoService;
@@ -29,29 +29,29 @@ import java.util.Map.Entry;
  * @author axeon
  */
 @Configuration
-@EnableConfigurationProperties({DaoConfig.class})
+@EnableConfigurationProperties({UwDaoProperties.class})
 @AutoConfigureAfter({DataRedisAutoConfiguration.class})
-public class DaoAutoConfiguration {
+public class UwDaoAutoConfiguration {
 
     /**
      * 日志.
      */
-    private static final Logger log = LoggerFactory.getLogger(DaoAutoConfiguration.class);
+    private static final Logger log = LoggerFactory.getLogger(UwDaoAutoConfiguration.class);
 
 
-    public DaoAutoConfiguration(ApplicationContext context, DaoConfig daoConfig, final ClientResources clientResources) {
-        init(context, daoConfig, clientResources);
+    public UwDaoAutoConfiguration(ApplicationContext context, UwDaoProperties uwDaoProperties, final ClientResources clientResources) {
+        init(context, uwDaoProperties, clientResources);
     }
 
     /**
      * 配置初始化。
      * 初始化代码放入构造器，是考虑到初始化阶段可能有数据库操作。
      */
-    public void init(ApplicationContext context, DaoConfig daoConfig, final ClientResources clientResources) {
+    public void init(ApplicationContext context, UwDaoProperties uwDaoProperties, final ClientResources clientResources) {
 
         log.info("uw-dao start auto configuration...");
 
-        if (daoConfig == null) {
+        if (uwDaoProperties == null) {
             log.warn("uw-dao start failed, because the config missing!!! ");
             return;
         }
@@ -61,27 +61,27 @@ public class DaoAutoConfiguration {
             log.info("uw-dao detecting profile: {}", profile);
             if (StringUtils.isNotBlank(profile)) {
                 profile = profile.trim().toLowerCase();
-                for (String prodProfile : daoConfig.getProdProfiles()) {
+                for (String prodProfile : uwDaoProperties.getProdProfiles()) {
                     if (profile.startsWith(prodProfile)) {
-                        daoConfig.setProdProfile(true);
+                        uwDaoProperties.setProdProfile(true);
                         log.info("uw-dao detected prod profile: {}", profile);
                         break;
                     }
                 }
-                if (daoConfig.isProdProfile()) {
+                if (uwDaoProperties.isProdProfile()) {
                     break;
                 }
             }
         }
 
         //如果root配置没有，直接返回吧。
-        ConnPoolConfig rootPoolConfig = daoConfig.getConnPool().getRoot();
+        ConnPoolConfig rootPoolConfig = uwDaoProperties.getConnPool().getRoot();
         if (rootPoolConfig == null) {
             log.warn("uw-dao not found root conn config!!!");
             return;
         }
 
-        Map<String, ConnPoolConfig> poolMap = daoConfig.getConnPool().getList();
+        Map<String, ConnPoolConfig> poolMap = uwDaoProperties.getConnPool().getList();
         if (poolMap != null) {
             // 检查并填充DAOConfig默认值
             for (Entry<String, ConnPoolConfig> kv : poolMap.entrySet()) {
@@ -110,25 +110,25 @@ public class DaoAutoConfiguration {
             }
         }
         // 给值
-        DaoConfigManager.setConfig(daoConfig);
+        DaoConfigManager.setConfig(uwDaoProperties);
         // 启动连接池。
         ConnectionManager.start();
-        if (daoConfig.getSqlStats().isEnable()) {
+        if (uwDaoProperties.getSqlStats().isEnable()) {
             // 加入统计日志表到sharding配置中。
             TableShardConfig config = new TableShardConfig();
             config.setShardType("date");
             config.setShardRule("day");
             config.setAutoGen(true);
-            daoConfig.getTableShard().put(DaoService.STATS_BASE_TABLE, config);
+            uwDaoProperties.getTableShard().put(DaoService.STATS_BASE_TABLE, config);
         }
         DaoService.start();
         //处理Sequence问题。
-        if (daoConfig.getRedis() != null) {
+        if (uwDaoProperties.getRedis() != null) {
             log.info("uw-dao FusionSequenceFactory init! ");
             RedisTemplate<String, Long> redisTemplate = new RedisTemplate<>();
             redisTemplate.setKeySerializer(new StringRedisSerializer());
             redisTemplate.setValueSerializer(new GenericToStringSerializer(Long.class));
-            redisTemplate.setConnectionFactory(RedisConnectionFactoryBuilder.build(daoConfig.getRedis(), clientResources));
+            redisTemplate.setConnectionFactory(RedisConnectionFactoryBuilder.build(uwDaoProperties.getRedis(), clientResources));
             redisTemplate.setEnableDefaultSerializer(false);
             redisTemplate.afterPropertiesSet();
             new FusionSequenceFactory(redisTemplate);

@@ -5,7 +5,7 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-import uw.dao.conf.DaoConfig;
+import uw.dao.conf.UwDaoProperties;
 import uw.dao.conf.DaoConfigManager;
 
 import java.util.LinkedHashMap;
@@ -36,9 +36,9 @@ public class MysqlServerBenchmark {
 
     @Setup
     public static void setup() {
-        DaoConfig daoConfig = new DaoConfig();
-        DaoConfig.ConnPool pool = new DaoConfig.ConnPool();
-        DaoConfig.ConnPoolConfig poolConfig = new DaoConfig.ConnPoolConfig();
+        UwDaoProperties uwDaoProperties = new UwDaoProperties();
+        UwDaoProperties.ConnPool pool = new UwDaoProperties.ConnPool();
+        UwDaoProperties.ConnPoolConfig poolConfig = new UwDaoProperties.ConnPoolConfig();
         poolConfig.setDriver("com.mysql.cj.jdbc.Driver");
         poolConfig.setUrl("jdbc:mysql://192.168.88.21:3308/uw_auth?zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true");
         poolConfig.setUsername("root");
@@ -50,8 +50,8 @@ public class MysqlServerBenchmark {
         poolConfig.setConnIdleTimeout(120);
         pool.setRoot(poolConfig);
         pool.setList(new LinkedHashMap<>());
-        daoConfig.setConnPool(pool);
-        DaoConfigManager.setConfig(daoConfig);
+        uwDaoProperties.setConnPool(pool);
+        DaoConfigManager.setConfig(uwDaoProperties);
     }
 
     @Benchmark

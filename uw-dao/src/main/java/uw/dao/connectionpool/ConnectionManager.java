@@ -5,7 +5,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.dao.conf.DaoConfig.ConnPoolConfig;
+import uw.dao.conf.UwDaoProperties.ConnPoolConfig;
 import uw.dao.conf.DaoConfigManager;
 import uw.dao.dialect.Dialect;
 import uw.dao.dialect.DialectManager;

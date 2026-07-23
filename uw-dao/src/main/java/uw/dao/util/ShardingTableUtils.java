@@ -1,6 +1,6 @@
 package uw.dao.util;
 
-import uw.dao.conf.DaoConfig.TableShardConfig;
+import uw.dao.conf.UwDaoProperties.TableShardConfig;
 import uw.dao.conf.DaoConfigManager;
 
 import java.time.LocalDate;

@@ -113,7 +113,7 @@ RuntimeException
 2. 请求、返回对象序列化集成到类库中，并可自由定义 `DataObjectMapper`；
 3. 支持 JSON / XML 格式接口（`JsonInterfaceHelper` / `XmlInterfaceHelper`）；
 4. 支持完整的 HTTP 请求日志（`HttpData`），并可自定义日志类与数据处理器（`HttpDataProcessor`）；
-5. 支持表单（Form）、请求体（Body）、文件上传（multipart FormFile）与文件下载。
+5. 完整支持 GET / POST / PUT / PATCH / DELETE；POST/PUT/PATCH/DELETE 四种写方法对称提供 Form（表单）/ Body（请求体）/ BodyQuery（请求体 + URL queryParam），POST/PUT/PATCH 额外支持 FormFile（文件上传）；并支持文件下载。
 
 #### 快速入门
 
@@ -172,7 +172,7 @@ public JsonInterfaceHelper(HttpConfig httpConfig,
 ```
 {httpMethod}{请求体形式}{返回形式}
   httpMethod:    get / post / put / patch / delete
-  请求体形式:    Form(表单) | Body(请求体) | FormFile(含文件上传) | 无(get/delete)
+  请求体形式:    Form(表单) | Body(请求体) | FormFile(含文件上传) | BodyQuery(请求体 + URL queryParam) | 无(GET 仅 queryParam；DELETE 另有无 body 的 queryParam 版本)
   返回形式:      ForData(返回 HttpData) | ForEntity(返回 HttpEntity，含反序列化对象)
 ```
 
@@ -182,13 +182,21 @@ public JsonInterfaceHelper(HttpConfig httpConfig,
 
 ##### 主要方法
 
-- `getForData` / `getForEntity`：GET。`getForData` 也可用于下载二进制数据（图片、文件）。
-- `postFormForData` / `postFormForEntity`：POST 表单（application/x-www-form-urlencoded）。
-- `postBodyForData` / `postBodyForEntity`：POST 请求体（按配置的 mediaType 序列化，默认 JSON）。
-- `postFormFileForData` / `postFormFileForEntity`：POST multipart，**文件上传**（fileData 值支持 `byte[]` / `File` / 其它）。
-- `putFormForData` / `putBodyForData` / `putFormForEntity` / `putBodyForEntity`：PUT。
-- `patchFormForData` / `patchBodyForData` / `patchFormForEntity` / `patchBodyForEntity`：PATCH。
-- `deleteForData` / `deleteForEntity`：DELETE（无 body，可带 queryParam）。
+各 HTTP 方法 × 请求体形式的覆盖矩阵（每种组合都提供 `ForData` / `ForEntity` 两套返回形式；`ForEntity` 再分 `Class<T>` / `TypeReference<T>` / `JavaType` 三套响应类型 × 带不带 `headers`）：
+
+| 请求体形式 | 方法名前缀 | GET | POST | PUT | PATCH | DELETE |
+|---|---|:---:|:---:|:---:|:---:|:---:|
+| 无 body（仅 queryParam） | `{m}ForData/Entity` | ✅ | — | — | — | ✅ |
+| Form 表单 | `{m}FormForData/Entity` | — | ✅ | ✅ | ✅ | ✅ |
+| FormFile 文件上传 | `{m}FormFileForData/Entity` | — | ✅ | ✅ | ✅ | — |
+| Body 请求体 | `{m}BodyForData/Entity` | — | ✅ | ✅ | ✅ | ✅ |
+| Body + queryParam | `{m}BodyQueryForData/Entity` | — | ✅ | ✅ | ✅ | ✅ |
+
+- **Form**：`application/x-www-form-urlencoded` 表单。
+- **FormFile**：multipart，**文件上传**，`fileData` 值支持 `byte[]` / `File` / 其它(toString)。
+- **Body**：请求体按配置的 `mediaType` 序列化（默认 JSON）。
+- **BodyQuery**：请求体 + URL queryParam，适用于 JSON body 同时需通过 query 传递分页/筛选等参数的场景（参数顺序 `url → [responseType] → headers → queryParam → body`）。
+- `getForData` 也可用于下载二进制数据（图片、文件），取 `.getResponseBytes()`。
 
 此外提供基于 OkHttp 原生 `Request` 的基础方法，用于更灵活的场景：
 
@@ -241,8 +249,8 @@ HttpConfig config = HttpConfig.builder()
 | `getResponseHeaders()` | 完整响应头（`Map<String, List<String>>`，**大小写不敏感**，不可变快照；同名多值头如 `Set-Cookie` 用 List 表达） |
 | `getResponseHeader(name)` | （`HttpDefaultData`）便捷取单个响应头首个值，大小写不敏感 |
 | `getResponseMessage()` | HTTP 状态消息（reason phrase，如 "Not Found"） |
-| `getElapsedMillis()` | 本次请求整体耗时（毫秒，基于 OkHttp `receivedResponseAtMillis - sentRequestAtMillis`，已含连接/重试/传输耗时） |
-| `getRetryCount()` | 重试/重定向次数（除首次外的额外尝试次数，含连接失败重试与 follow-up）。`retryOnConnectionFailure=false` 时恒为 0；自动启用，无需配置 |
+| `getElapsedMillis()` | 本次请求整体耗时（毫秒，基于 OkHttp `receivedResponseAtMillis - sentRequestAtMillis`，已含连接与传输耗时） |
+| `getRetryCount()` | 重试/重定向次数（除首次外的额外尝试次数，含连接失败重试与 follow-up）。**未配置 HttpConfig（走全局兜底 client）时恒为 0**；自动启用，无需配置 |
 | `getStatusCode()` | HTTP 状态码 |
 
 ```java
@@ -379,7 +387,7 @@ A: 设为 true 将开启请求失败重试。如果业务有严格幂等要求�
 A: 用 `*ForEntity` 方法，返回 `HttpEntity`，通过 `getValue()` 获取（注意不是 `getBody()`）。
 
 **Q: 方法名记不住怎么办？**
-A: 遵循 `{method}{Form|Body|FormFile}{ForData|ForEntity}` 规律：表单用 `Form`，请求体用 `Body`，含文件上传用 `FormFile`；要反序列化用 `ForEntity`，否则用 `ForData`。
+A: 遵循 `{method}{Form|Body|FormFile|BodyQuery}{ForData|ForEntity}` 规律：表单用 `Form`，请求体用 `Body`，含文件上传用 `FormFile`，请求体 + queryParam 用 `BodyQuery`；要反序列化用 `ForEntity`，否则用 `ForData`。POST/PUT/PATCH/DELETE 四种写方法在 Form/Body/BodyQuery 上完全对称。
 
 **Q: 如何获取响应头（如 `X-Trace-Id`、`Set-Cookie`、`Location`）？**
 A: 从 `HttpData` 取：`data.getResponseHeaders()` 返回大小写不敏感的 `Map<String, List<String>>`（同名多值头用 List 表达）；`HttpDefaultData` 还提供 `getResponseHeader(name)` 取单个首值。详见「获取响应头与请求耗时」章节。

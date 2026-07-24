@@ -1,3 +1,11 @@
+# 2026.0800.0003版本升级说明
+uw-httpclient 对称补齐写方法（POST/PUT/PATCH/DELETE）的请求体能力，新增 BodyQuery（请求体 + queryParam）系列。
+
+## uw-httpclient
+1. 新增 BodyQuery 系列（请求体 + URL queryParam）：postBodyQueryForData/Entity、putBodyQueryForData/Entity、patchBodyQueryForData/Entity、deleteBodyQueryForData/Entity，适用于 JSON body 同时需通过 query 传递分页/筛选参数的场景（如 POST /search?page=1 + 筛选 body）。每族提供 Class/TypeReference/JavaType 三套响应类型 × 带不带 headers 重载，共 32 个公开方法 + 4 个私有底层。
+2. DELETE 补齐 Body 与 Form：新增 deleteBodyForData/Entity（带 RequestBody，用于批量删除等场景）、deleteFormForData/Entity。DELETE 现与 PUT/PATCH 对称（无 body queryParam / Form / Body / BodyQuery）。
+3. PUT/PATCH 补齐文件上传：新增 putFormFileForData/Entity、patchFormFileForData/Entity，与 postFormFile 同构（MultipartBody + OkHttp .put/.patch）。
+
 # 2026.0800.0002版本升级说明
 全面适配 Spring Boot 4.1 + Spring Framework 7 + Jackson 3。
 

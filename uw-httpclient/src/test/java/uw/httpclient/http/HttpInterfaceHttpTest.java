@@ -184,6 +184,7 @@ public class HttpInterfaceHttpTest {
         HttpData d = helper().putFormForData(base + "/putf", form);
         assertEquals(200, d.getStatusCode());
         assertEquals("PUT", lastMethod.get());
+        assertTrue(lastContentType.get().contains("application/x-www-form-urlencoded"));
     }
 
     @Test
@@ -201,6 +202,7 @@ public class HttpInterfaceHttpTest {
         HttpData d = helper().patchFormForData(base + "/patchf", form);
         assertEquals(200, d.getStatusCode());
         assertEquals("PATCH", lastMethod.get());
+        assertTrue(lastContentType.get().contains("application/x-www-form-urlencoded"));
     }
 
     @Test
@@ -209,6 +211,150 @@ public class HttpInterfaceHttpTest {
         assertEquals(200, d.getStatusCode());
         assertEquals("PATCH", lastMethod.get());
         assertEquals("hello", lastBody.get());
+    }
+
+    /**
+     * POST Body + queryParam：验证 query 拼到 URL 且 JSON body 发出。
+     */
+    @Test
+    public void testPostBodyQueryForData() {
+        Map<String, String> q = new HashMap<>();
+        q.put("page", "1");
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("keyword", "abc");
+        HttpData d = helper().postBodyQueryForData(base + "/pbq", q, body);
+        assertEquals(200, d.getStatusCode());
+        assertEquals("POST", lastMethod.get());
+        assertTrue(lastQuery.get().contains("page=1"));
+        assertNotNull(lastBody.get());
+        assertTrue(lastBody.get().contains("\"keyword\":\"abc\""));
+    }
+
+    /**
+     * PUT Body + queryParam：验证 query 拼到 URL 且 body 发出。
+     */
+    @Test
+    public void testPutBodyQueryForData() {
+        Map<String, String> q = new HashMap<>();
+        q.put("op", "update");
+        HttpData d = helper().putBodyQueryForData(base + "/utbq", q, "hello");
+        assertEquals(200, d.getStatusCode());
+        assertEquals("PUT", lastMethod.get());
+        assertTrue(lastQuery.get().contains("op=update"));
+        assertEquals("hello", lastBody.get());
+    }
+
+    /**
+     * PATCH Body + queryParam：验证 query 拼到 URL 且 body 发出。
+     */
+    @Test
+    public void testPatchBodyQueryForData() {
+        Map<String, String> q = new HashMap<>();
+        q.put("scope", "all");
+        HttpData d = helper().patchBodyQueryForData(base + "/ptbq", q, "hello");
+        assertEquals(200, d.getStatusCode());
+        assertEquals("PATCH", lastMethod.get());
+        assertTrue(lastQuery.get().contains("scope=all"));
+        assertEquals("hello", lastBody.get());
+    }
+
+    /**
+     * DELETE Body + queryParam：验证 query 拼到 URL 且 body 发出。
+     */
+    @Test
+    public void testDeleteBodyQueryForData() {
+        Map<String, String> q = new HashMap<>();
+        q.put("cascade", "true");
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("ids", java.util.Arrays.asList(1, 2, 3));
+        HttpData d = helper().deleteBodyQueryForData(base + "/delbq", q, body);
+        assertEquals(200, d.getStatusCode());
+        assertEquals("DELETE", lastMethod.get());
+        assertTrue(lastQuery.get().contains("cascade=true"));
+        assertNotNull(lastBody.get());
+        assertTrue(lastBody.get().contains("\"ids\""));
+        assertTrue(lastBody.get().contains("[1,2,3]"));
+    }
+
+    /**
+     * BodyQuery ForEntity：验证四参签名 (url, Class, queryParam, body) 正确且响应可反序列化。
+     * 防止 BodyQuery 的 queryParam 与 headers（同为 Map）重载签名混淆。
+     */
+    @Test
+    public void testPostBodyQueryForEntity() {
+        Map<String, String> q = new HashMap<>();
+        q.put("page", "1");
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("keyword", "abc");
+        HttpEntity<? extends HttpData, EchoVo> e = helper().postBodyQueryForEntity(base + "/pbqe", EchoVo.class, q, body);
+        assertEquals(200, e.getHttpData().getStatusCode());
+        assertEquals("POST", e.getValue().getMethod());
+        assertTrue(lastQuery.get().contains("page=1"));
+    }
+
+    @Test
+    public void testPutBodyQueryForEntity() {
+        Map<String, String> q = new HashMap<>();
+        q.put("op", "update");
+        HttpEntity<? extends HttpData, EchoVo> e = helper().putBodyQueryForEntity(base + "/utbqe", EchoVo.class, q, "hello");
+        assertEquals(200, e.getHttpData().getStatusCode());
+        assertEquals("PUT", e.getValue().getMethod());
+        assertTrue(lastQuery.get().contains("op=update"));
+    }
+
+    @Test
+    public void testPatchBodyQueryForEntity() {
+        Map<String, String> q = new HashMap<>();
+        q.put("scope", "all");
+        HttpEntity<? extends HttpData, EchoVo> e = helper().patchBodyQueryForEntity(base + "/ptbqe", EchoVo.class, q, "hello");
+        assertEquals(200, e.getHttpData().getStatusCode());
+        assertEquals("PATCH", e.getValue().getMethod());
+        assertTrue(lastQuery.get().contains("scope=all"));
+    }
+
+    @Test
+    public void testDeleteBodyQueryForEntity() {
+        Map<String, String> q = new HashMap<>();
+        q.put("cascade", "true");
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("ids", 1);
+        HttpEntity<? extends HttpData, EchoVo> e = helper().deleteBodyQueryForEntity(base + "/delbqe", EchoVo.class, q, body);
+        assertEquals(200, e.getHttpData().getStatusCode());
+        assertEquals("DELETE", e.getValue().getMethod());
+        assertTrue(lastQuery.get().contains("cascade=true"));
+    }
+
+    /**
+     * PUT + FormFile：验证以 multipart/form-data 发出文件上传请求（byte[] 当文件）。
+     */
+    @Test
+    public void testPutFormFileForData() {
+        Map<String, String> form = new LinkedHashMap<>();
+        form.put("name", "f1");
+        Map<String, Object> files = new LinkedHashMap<>();
+        files.put("file", "文本内容".getBytes(StandardCharsets.UTF_8));
+        HttpData d = helper().putFormFileForData(base + "/putff", form, files);
+        assertEquals(200, d.getStatusCode());
+        assertEquals("PUT", lastMethod.get());
+        assertTrue(lastContentType.get().contains("multipart/form-data"));
+        assertNotNull(lastBody.get());
+        assertTrue(lastBody.get().contains("name=\"name\""));
+        assertTrue(lastBody.get().contains("文本内容"));
+    }
+
+    /**
+     * PATCH + FormFile：验证以 multipart/form-data 发出文件上传请求。
+     */
+    @Test
+    public void testPatchFormFileForData() {
+        Map<String, Object> files = new LinkedHashMap<>();
+        files.put("file", "patchdata".getBytes(StandardCharsets.UTF_8));
+        HttpData d = helper().patchFormFileForData(base + "/patchff", null, files);
+        assertEquals(200, d.getStatusCode());
+        assertEquals("PATCH", lastMethod.get());
+        assertTrue(lastContentType.get().contains("multipart/form-data"));
+        assertNotNull(lastBody.get());
+        assertTrue(lastBody.get().contains("patchdata"));
     }
 
     @Test
@@ -226,6 +372,52 @@ public class HttpInterfaceHttpTest {
         assertEquals(200, e.getHttpData().getStatusCode());
         assertEquals("DELETE", e.getValue().getMethod());
         assertTrue(lastQuery.get().contains("id=9"));
+    }
+
+    /**
+     * DELETE + Form：验证以 application/x-www-form-urlencoded 发出表单请求体。
+     */
+    @Test
+    public void testDeleteFormForData() {
+        Map<String, String> form = new LinkedHashMap<>();
+        form.put("a", "1");
+        form.put("b", "2");
+        HttpData d = helper().deleteFormForData(base + "/delf", form);
+        assertEquals(200, d.getStatusCode());
+        assertEquals("DELETE", lastMethod.get());
+        assertTrue(lastContentType.get().contains("application/x-www-form-urlencoded"));
+        assertNotNull(lastBody.get());
+        assertTrue(lastBody.get().contains("a=1"));
+        assertTrue(lastBody.get().contains("b=2"));
+    }
+
+    /**
+     * DELETE + Body：验证以 JSON 发出请求体（DELETE with RequestBody）。
+     */
+    @Test
+    public void testDeleteBodyForData() {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("name", "test");
+        body.put("age", 18);
+        HttpData d = helper().deleteBodyForData(base + "/delb", body);
+        assertEquals(200, d.getStatusCode());
+        assertEquals("DELETE", lastMethod.get());
+        assertNotNull(lastBody.get());
+        assertTrue(lastBody.get().contains("\"name\":\"test\""));
+        assertTrue(lastContentType.get().contains("application/json"));
+    }
+
+    /**
+     * DELETE + Body ForEntity：验证响应反序列化。
+     */
+    @Test
+    public void testDeleteBodyForEntity() {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("id", 99);
+        HttpEntity<? extends HttpData, EchoVo> e = helper().deleteBodyForEntity(base + "/delbe", EchoVo.class, body);
+        assertEquals(200, e.getHttpData().getStatusCode());
+        assertEquals("DELETE", e.getValue().getMethod());
+        assertEquals("/delbe", e.getValue().getPath());
     }
 
     /**

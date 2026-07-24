@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  * <b>方法命名规律</b>：{@code {httpMethod}{请求体形式}{返回形式}}
  * <ul>
- *   <li>请求体形式：{@code Form}（表单）、{@code Body}（请求体）、{@code FormFile}（含文件上传）、GET/DELETE 无；</li>
+ *   <li>请求体形式：{@code Form}（表单）、{@code Body}（请求体）、{@code FormFile}（含文件上传，仅 POST/PUT/PATCH）、{@code BodyQuery}（请求体 + URL queryParam）；GET 仅 queryParam 无请求体，DELETE 另有无 body（queryParam）版本（不提供 FormFile，DELETE+multipart 罕见）；POST/PUT/PATCH/DELETE 的 {@code Body} 均提供 {@code BodyQuery} 变体（同时携带请求体与 query 参数）；</li>
  *   <li>返回形式：{@code ForData}（返回 {@link HttpData}，二进制友好）、{@code ForEntity}（返回 {@link HttpEntity}，含反序列化对象）。</li>
  * </ul>
  * 每个 {@code ForEntity} 方法均提供 {@code Class}/{@code TypeReference}/{@code JavaType} 三套响应类型重载，
@@ -490,18 +490,6 @@ public class HttpInterface {
 
 
     /**
-     * POST Form(含文件上传)获取HttpData。
-     *
-     * @param url 请求地址。
-     * @param formData 表单数据，可为 null。
-     * @return 承载请求/响应日志的 HttpData。
-     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
-     */
-    public <D extends HttpData> D postFormFileForData(String url, Map<String, String> formData, Map<String, Object> fileData) {
-        return postFormFileForData(url, null, formData, fileData);
-    }
-
-    /**
      * POST Form获取HttpData。
      *
      * @param url 请求地址。
@@ -518,23 +506,6 @@ public class HttpInterface {
         return httpData;
     }
 
-
-    /**
-     * POST Form(含文件上传)获取HttpData。
-     *
-     * @param url 请求地址。
-     * @param headers 请求头，可为 null。
-     * @param formData 表单数据，可为 null。
-     * @return 承载请求/响应日志的 HttpData。
-     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
-     */
-    public <D extends HttpData> D postFormFileForData(String url, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
-        D httpData = postFormFileData(url, headers, formData, fileData);
-        if (this.httpDataProcessor != null) {
-            invokePostProcess(httpData, null);
-        }
-        return httpData;
-    }
 
     /**
      * POST FormData 获取HttpEntity。
@@ -643,11 +614,43 @@ public class HttpInterface {
 
 
     /**
+     * POST Form(含文件上传)获取HttpData。
+     *
+     * @param url 请求地址。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D postFormFileForData(String url, Map<String, String> formData, Map<String, Object> fileData) {
+        return postFormFileForData(url, null, formData, fileData);
+    }
+
+    /**
+     * POST Form(含文件上传)获取HttpData。
+     *
+     * @param url 请求地址。
+     * @param headers 请求头，可为 null。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D postFormFileForData(String url, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
+        D httpData = postFormFileData(url, headers, formData, fileData);
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, null);
+        }
+        return httpData;
+    }
+
+    /**
      * POST FormData(含文件上传)获取HttpEntity。
      *
      * @param url 请求地址。
      * @param responseType 响应目标类型。
      * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
      * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
      * @throws HttpRequestException 当请求发生网络或 IO 错误时。
      * @throws DataMapperException 当响应反序列化失败时。
@@ -663,6 +666,7 @@ public class HttpInterface {
      * @param responseType 响应目标类型。
      * @param headers 请求头，可为 null。
      * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
      * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
      * @throws HttpRequestException 当请求发生网络或 IO 错误时。
      * @throws DataMapperException 当响应反序列化失败时。
@@ -683,6 +687,7 @@ public class HttpInterface {
      * @param url 请求地址。
      * @param typeRef 响应泛型类型引用。
      * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
      * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
      * @throws HttpRequestException 当请求发生网络或 IO 错误时。
      * @throws DataMapperException 当响应反序列化失败时。
@@ -698,6 +703,7 @@ public class HttpInterface {
      * @param typeRef 响应泛型类型引用。
      * @param headers 请求头，可为 null。
      * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
      * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
      * @throws HttpRequestException 当请求发生网络或 IO 错误时。
      * @throws DataMapperException 当响应反序列化失败时。
@@ -718,6 +724,7 @@ public class HttpInterface {
      * @param url 请求地址。
      * @param javaType 响应 JavaType。
      * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
      * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
      * @throws HttpRequestException 当请求发生网络或 IO 错误时。
      * @throws DataMapperException 当响应反序列化失败时。
@@ -733,6 +740,7 @@ public class HttpInterface {
      * @param javaType 响应 JavaType。
      * @param headers 请求头，可为 null。
      * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
      * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
      * @throws HttpRequestException 当请求发生网络或 IO 错误时。
      * @throws DataMapperException 当响应反序列化失败时。
@@ -883,6 +891,151 @@ public class HttpInterface {
     }
 
     /**
+     * POST RequestBody + queryParam 获取HttpData。
+     * <p>
+     * 与 {@link #postBodyForData(String, Object)} 的区别：额外携带 URL query 参数，
+     * 适用于请求体为 JSON 等结构化对象、同时需通过 query 传递分页/筛选等参数的场景。
+     *
+     * @param url         请求地址。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D postBodyQueryForData(String url, Map<String, String> queryParam, Object requestData) {
+        return postBodyQueryForData(url, null, queryParam, requestData);
+    }
+
+    /**
+     * POST RequestBody + queryParam 获取HttpData。
+     *
+     * @param url         请求地址。
+     * @param headers     请求头，可为 null。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D postBodyQueryForData(String url, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        D httpData = postBodyQueryData(url, headers, queryParam, requestData);
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, null);
+        }
+        return httpData;
+    }
+
+    /**
+     * POST RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url          请求地址。
+     * @param responseType 响应目标类型。
+     * @param queryParam   URL 查询参数，可为 null。
+     * @param requestData  请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> postBodyQueryForEntity(String url, Class<T> responseType, Map<String, String> queryParam, Object requestData) {
+        return postBodyQueryForEntity(url, responseType, null, queryParam, requestData);
+    }
+
+    /**
+     * POST RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url          请求地址。
+     * @param responseType 响应目标类型。
+     * @param headers      请求头，可为 null。
+     * @param queryParam   URL 查询参数，可为 null。
+     * @param requestData  请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> postBodyQueryForEntity(String url, Class<T> responseType, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        D httpData = postBodyQueryData(url, headers, queryParam, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * POST RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url         请求地址。
+     * @param typeRef     响应泛型类型引用。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> postBodyQueryForEntity(String url, TypeReference<T> typeRef, Map<String, String> queryParam, Object requestData) {
+        return postBodyQueryForEntity(url, typeRef, null, queryParam, requestData);
+    }
+
+    /**
+     * POST RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url         请求地址。
+     * @param typeRef     响应泛型类型引用。
+     * @param headers     请求头，可为 null。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> postBodyQueryForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        D httpData = postBodyQueryData(url, headers, queryParam, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * POST RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url         请求地址。
+     * @param javaType    响应 JavaType。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> postBodyQueryForEntity(String url, JavaType javaType, Map<String, String> queryParam, Object requestData) {
+        return postBodyQueryForEntity(url, javaType, null, queryParam, requestData);
+    }
+
+    /**
+     * POST RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url         请求地址。
+     * @param javaType    响应 JavaType。
+     * @param headers     请求头，可为 null。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> postBodyQueryForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        D httpData = postBodyQueryData(url, headers, queryParam, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
      * PUT Form获取HttpData。
      *
      * @param url 请求地址。
@@ -1008,6 +1161,148 @@ public class HttpInterface {
      */
     public <D extends HttpData, T> HttpEntity<D, T> putFormForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> formData) {
         D httpData = putFormData(url, headers, formData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * PUT Form(含文件上传)获取HttpData。
+     *
+     * @param url 请求地址。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D putFormFileForData(String url, Map<String, String> formData, Map<String, Object> fileData) {
+        return putFormFileForData(url, null, formData, fileData);
+    }
+
+    /**
+     * PUT Form(含文件上传)获取HttpData。
+     *
+     * @param url 请求地址。
+     * @param headers 请求头，可为 null。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D putFormFileForData(String url, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
+        D httpData = putFormFileData(url, headers, formData, fileData);
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, null);
+        }
+        return httpData;
+    }
+
+    /**
+     * PUT FormData(含文件上传)获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param responseType 响应目标类型。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> putFormFileForEntity(String url, Class<T> responseType, Map<String, String> formData, Map<String, Object> fileData) {
+        return putFormFileForEntity(url, responseType, null, formData, fileData);
+    }
+
+    /**
+     * PUT FormData(含文件上传)获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param responseType 响应目标类型。
+     * @param headers 请求头，可为 null。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> putFormFileForEntity(String url, Class<T> responseType, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
+        D httpData = putFormFileData(url, headers, formData, fileData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * PUT FormData(含文件上传)获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param typeRef 响应泛型类型引用。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> putFormFileForEntity(String url, TypeReference<T> typeRef, Map<String, String> formData, Map<String, Object> fileData) {
+        return putFormFileForEntity(url, typeRef, null, formData, fileData);
+    }
+
+    /**
+     * PUT FormData(含文件上传)获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param typeRef 响应泛型类型引用。
+     * @param headers 请求头，可为 null。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> putFormFileForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
+        D httpData = putFormFileData(url, headers, formData, fileData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * PUT FormData(含文件上传)获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param javaType 响应 JavaType。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> putFormFileForEntity(String url, JavaType javaType, Map<String, String> formData, Map<String, Object> fileData) {
+        return putFormFileForEntity(url, javaType, null, formData, fileData);
+    }
+
+    /**
+     * PUT FormData(含文件上传)获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param javaType 响应 JavaType。
+     * @param headers 请求头，可为 null。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> putFormFileForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
+        D httpData = putFormFileData(url, headers, formData, fileData);
         T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
         //处理日志。
         if (this.httpDataProcessor != null) {
@@ -1152,6 +1447,151 @@ public class HttpInterface {
     }
 
     /**
+     * PUT RequestBody + queryParam 获取HttpData。
+     * <p>
+     * 与 {@link #putBodyForData(String, Object)} 的区别：额外携带 URL query 参数，
+     * 适用于请求体为 JSON 等结构化对象、同时需通过 query 传递参数的场景。
+     *
+     * @param url         请求地址。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D putBodyQueryForData(String url, Map<String, String> queryParam, Object requestData) {
+        return putBodyQueryForData(url, null, queryParam, requestData);
+    }
+
+    /**
+     * PUT RequestBody + queryParam 获取HttpData。
+     *
+     * @param url         请求地址。
+     * @param headers     请求头，可为 null。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D putBodyQueryForData(String url, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        D httpData = putBodyQueryData(url, headers, queryParam, requestData);
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, null);
+        }
+        return httpData;
+    }
+
+    /**
+     * PUT RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url          请求地址。
+     * @param responseType 响应目标类型。
+     * @param queryParam   URL 查询参数，可为 null。
+     * @param requestData  请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> putBodyQueryForEntity(String url, Class<T> responseType, Map<String, String> queryParam, Object requestData) {
+        return putBodyQueryForEntity(url, responseType, null, queryParam, requestData);
+    }
+
+    /**
+     * PUT RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url          请求地址。
+     * @param responseType 响应目标类型。
+     * @param headers      请求头，可为 null。
+     * @param queryParam   URL 查询参数，可为 null。
+     * @param requestData  请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> putBodyQueryForEntity(String url, Class<T> responseType, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        D httpData = putBodyQueryData(url, headers, queryParam, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * PUT RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url         请求地址。
+     * @param typeRef     响应泛型类型引用。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> putBodyQueryForEntity(String url, TypeReference<T> typeRef, Map<String, String> queryParam, Object requestData) {
+        return putBodyQueryForEntity(url, typeRef, null, queryParam, requestData);
+    }
+
+    /**
+     * PUT RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url         请求地址。
+     * @param typeRef     响应泛型类型引用。
+     * @param headers     请求头，可为 null。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> putBodyQueryForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        D httpData = putBodyQueryData(url, headers, queryParam, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * PUT RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url         请求地址。
+     * @param javaType    响应 JavaType。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> putBodyQueryForEntity(String url, JavaType javaType, Map<String, String> queryParam, Object requestData) {
+        return putBodyQueryForEntity(url, javaType, null, queryParam, requestData);
+    }
+
+    /**
+     * PUT RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url         请求地址。
+     * @param javaType    响应 JavaType。
+     * @param headers     请求头，可为 null。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> putBodyQueryForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        D httpData = putBodyQueryData(url, headers, queryParam, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
      * PATCH Form获取HttpData。
      *
      * @param url 请求地址。
@@ -1277,6 +1717,148 @@ public class HttpInterface {
      */
     public <D extends HttpData, T> HttpEntity<D, T> patchFormForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> formData) {
         D httpData = patchFormData(url, headers, formData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * PATCH Form(含文件上传)获取HttpData。
+     *
+     * @param url 请求地址。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D patchFormFileForData(String url, Map<String, String> formData, Map<String, Object> fileData) {
+        return patchFormFileForData(url, null, formData, fileData);
+    }
+
+    /**
+     * PATCH Form(含文件上传)获取HttpData。
+     *
+     * @param url 请求地址。
+     * @param headers 请求头，可为 null。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D patchFormFileForData(String url, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
+        D httpData = patchFormFileData(url, headers, formData, fileData);
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, null);
+        }
+        return httpData;
+    }
+
+    /**
+     * PATCH FormData(含文件上传)获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param responseType 响应目标类型。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> patchFormFileForEntity(String url, Class<T> responseType, Map<String, String> formData, Map<String, Object> fileData) {
+        return patchFormFileForEntity(url, responseType, null, formData, fileData);
+    }
+
+    /**
+     * PATCH FormData(含文件上传)获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param responseType 响应目标类型。
+     * @param headers 请求头，可为 null。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> patchFormFileForEntity(String url, Class<T> responseType, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
+        D httpData = patchFormFileData(url, headers, formData, fileData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * PATCH FormData(含文件上传)获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param typeRef 响应泛型类型引用。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> patchFormFileForEntity(String url, TypeReference<T> typeRef, Map<String, String> formData, Map<String, Object> fileData) {
+        return patchFormFileForEntity(url, typeRef, null, formData, fileData);
+    }
+
+    /**
+     * PATCH FormData(含文件上传)获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param typeRef 响应泛型类型引用。
+     * @param headers 请求头，可为 null。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> patchFormFileForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
+        D httpData = patchFormFileData(url, headers, formData, fileData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * PATCH FormData(含文件上传)获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param javaType 响应 JavaType。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> patchFormFileForEntity(String url, JavaType javaType, Map<String, String> formData, Map<String, Object> fileData) {
+        return patchFormFileForEntity(url, javaType, null, formData, fileData);
+    }
+
+    /**
+     * PATCH FormData(含文件上传)获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param javaType 响应 JavaType。
+     * @param headers 请求头，可为 null。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> patchFormFileForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
+        D httpData = patchFormFileData(url, headers, formData, fileData);
         T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
         //处理日志。
         if (this.httpDataProcessor != null) {
@@ -1412,6 +1994,151 @@ public class HttpInterface {
      */
     public <D extends HttpData, T> HttpEntity<D, T> patchBodyForEntity(String url, JavaType javaType, Map<String, String> headers, Object requestData) {
         D httpData = patchBodyData(url, headers, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * PATCH RequestBody + queryParam 获取HttpData。
+     * <p>
+     * 与 {@link #patchBodyForData(String, Object)} 的区别：额外携带 URL query 参数，
+     * 适用于请求体为 JSON 等结构化对象、同时需通过 query 传递参数的场景。
+     *
+     * @param url         请求地址。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D patchBodyQueryForData(String url, Map<String, String> queryParam, Object requestData) {
+        return patchBodyQueryForData(url, null, queryParam, requestData);
+    }
+
+    /**
+     * PATCH RequestBody + queryParam 获取HttpData。
+     *
+     * @param url         请求地址。
+     * @param headers     请求头，可为 null。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D patchBodyQueryForData(String url, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        D httpData = patchBodyQueryData(url, headers, queryParam, requestData);
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, null);
+        }
+        return httpData;
+    }
+
+    /**
+     * PATCH RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url          请求地址。
+     * @param responseType 响应目标类型。
+     * @param queryParam   URL 查询参数，可为 null。
+     * @param requestData  请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> patchBodyQueryForEntity(String url, Class<T> responseType, Map<String, String> queryParam, Object requestData) {
+        return patchBodyQueryForEntity(url, responseType, null, queryParam, requestData);
+    }
+
+    /**
+     * PATCH RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url          请求地址。
+     * @param responseType 响应目标类型。
+     * @param headers      请求头，可为 null。
+     * @param queryParam   URL 查询参数，可为 null。
+     * @param requestData  请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> patchBodyQueryForEntity(String url, Class<T> responseType, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        D httpData = patchBodyQueryData(url, headers, queryParam, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * PATCH RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url         请求地址。
+     * @param typeRef     响应泛型类型引用。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> patchBodyQueryForEntity(String url, TypeReference<T> typeRef, Map<String, String> queryParam, Object requestData) {
+        return patchBodyQueryForEntity(url, typeRef, null, queryParam, requestData);
+    }
+
+    /**
+     * PATCH RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url         请求地址。
+     * @param typeRef     响应泛型类型引用。
+     * @param headers     请求头，可为 null。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> patchBodyQueryForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        D httpData = patchBodyQueryData(url, headers, queryParam, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * PATCH RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url         请求地址。
+     * @param javaType    响应 JavaType。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> patchBodyQueryForEntity(String url, JavaType javaType, Map<String, String> queryParam, Object requestData) {
+        return patchBodyQueryForEntity(url, javaType, null, queryParam, requestData);
+    }
+
+    /**
+     * PATCH RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url         请求地址。
+     * @param javaType    响应 JavaType。
+     * @param headers     请求头，可为 null。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> patchBodyQueryForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        D httpData = patchBodyQueryData(url, headers, queryParam, requestData);
         T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
         //处理日志。
         if (this.httpDataProcessor != null) {
@@ -1606,6 +2333,419 @@ public class HttpInterface {
     }
 
     /**
+     * DELETE Form获取HttpData。
+     *
+     * @param url 请求地址。
+     * @param formData 表单数据，可为 null。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D deleteFormForData(String url, Map<String, String> formData) {
+        return deleteFormForData(url, null, formData);
+    }
+
+    /**
+     * DELETE Form获取HttpData。
+     *
+     * @param url 请求地址。
+     * @param headers 请求头，可为 null。
+     * @param formData 表单数据，可为 null。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D deleteFormForData(String url, Map<String, String> headers, Map<String, String> formData) {
+        D httpData = deleteFormData(url, headers, formData);
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, null);
+        }
+        return httpData;
+    }
+
+    /**
+     * DELETE FormData 获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param responseType 响应目标类型。
+     * @param formData 表单数据，可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteFormForEntity(String url, Class<T> responseType, Map<String, String> formData) {
+        return deleteFormForEntity(url, responseType, null, formData);
+    }
+
+    /**
+     * DELETE FormData 获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param responseType 响应目标类型。
+     * @param headers 请求头，可为 null。
+     * @param formData 表单数据，可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteFormForEntity(String url, Class<T> responseType, Map<String, String> headers, Map<String, String> formData) {
+        D httpData = deleteFormData(url, headers, formData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * DELETE FormData 获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param typeRef 响应泛型类型引用。
+     * @param formData 表单数据，可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteFormForEntity(String url, TypeReference<T> typeRef, Map<String, String> formData) {
+        return deleteFormForEntity(url, typeRef, null, formData);
+    }
+
+    /**
+     * DELETE FormData 获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param typeRef 响应泛型类型引用。
+     * @param headers 请求头，可为 null。
+     * @param formData 表单数据，可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteFormForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Map<String, String> formData) {
+        D httpData = deleteFormData(url, headers, formData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * DELETE FormData 获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param javaType 响应 JavaType。
+     * @param formData 表单数据，可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteFormForEntity(String url, JavaType javaType, Map<String, String> formData) {
+        return deleteFormForEntity(url, javaType, null, formData);
+    }
+
+    /**
+     * DELETE FormData 获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param javaType 响应 JavaType。
+     * @param headers 请求头，可为 null。
+     * @param formData 表单数据，可为 null。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteFormForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> formData) {
+        D httpData = deleteFormData(url, headers, formData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * DELETE RequestBody获取HttpData。
+     *
+     * @param url 请求地址。
+     * @param requestData 请求体对象，会被序列化。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D deleteBodyForData(String url, Object requestData) {
+        return deleteBodyForData(url, null, requestData);
+    }
+
+    /**
+     * DELETE RequestBody获取HttpData。
+     *
+     * @param url 请求地址。
+     * @param headers 请求头，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D deleteBodyForData(String url, Map<String, String> headers, Object requestData) {
+        D httpData = deleteBodyData(url, headers, requestData);
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, null);
+        }
+        return httpData;
+    }
+
+    /**
+     * DELETE RequestBody 获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param responseType 响应目标类型。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteBodyForEntity(String url, Class<T> responseType, Object requestData) {
+        return deleteBodyForEntity(url, responseType, null, requestData);
+    }
+
+    /**
+     * DELETE RequestBody 获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param responseType 响应目标类型。
+     * @param headers 请求头，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteBodyForEntity(String url, Class<T> responseType, Map<String, String> headers, Object requestData) {
+        D httpData = deleteBodyData(url, headers, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * DELETE RequestBody 获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param typeRef 响应泛型类型引用。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteBodyForEntity(String url, TypeReference<T> typeRef, Object requestData) {
+        return deleteBodyForEntity(url, typeRef, null, requestData);
+    }
+
+    /**
+     * DELETE RequestBody 获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param typeRef 响应泛型类型引用。
+     * @param headers 请求头，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteBodyForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Object requestData) {
+        D httpData = deleteBodyData(url, headers, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * DELETE RequestBody 获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param javaType 响应 JavaType。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteBodyForEntity(String url, JavaType javaType, Object requestData) {
+        return deleteBodyForEntity(url, javaType, null, requestData);
+    }
+
+    /**
+     * DELETE RequestBody 获取HttpEntity。
+     *
+     * @param url 请求地址。
+     * @param javaType 响应 JavaType。
+     * @param headers 请求头，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException 当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteBodyForEntity(String url, JavaType javaType, Map<String, String> headers, Object requestData) {
+        D httpData = deleteBodyData(url, headers, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * DELETE RequestBody + queryParam 获取HttpData。
+     * <p>
+     * 与 {@link #deleteBodyForData(String, Object)} 的区别：额外携带 URL query 参数，
+     * 适用于请求体携带批量删除条件、同时通过 query 传递级联/作用域等参数的场景。
+     *
+     * @param url         请求地址。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D deleteBodyQueryForData(String url, Map<String, String> queryParam, Object requestData) {
+        return deleteBodyQueryForData(url, null, queryParam, requestData);
+    }
+
+    /**
+     * DELETE RequestBody + queryParam 获取HttpData。
+     *
+     * @param url         请求地址。
+     * @param headers     请求头，可为 null。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    public <D extends HttpData> D deleteBodyQueryForData(String url, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        D httpData = deleteBodyQueryData(url, headers, queryParam, requestData);
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, null);
+        }
+        return httpData;
+    }
+
+    /**
+     * DELETE RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url          请求地址。
+     * @param responseType 响应目标类型。
+     * @param queryParam   URL 查询参数，可为 null。
+     * @param requestData  请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteBodyQueryForEntity(String url, Class<T> responseType, Map<String, String> queryParam, Object requestData) {
+        return deleteBodyQueryForEntity(url, responseType, null, queryParam, requestData);
+    }
+
+    /**
+     * DELETE RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url          请求地址。
+     * @param responseType 响应目标类型。
+     * @param headers      请求头，可为 null。
+     * @param queryParam   URL 查询参数，可为 null。
+     * @param requestData  请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteBodyQueryForEntity(String url, Class<T> responseType, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        D httpData = deleteBodyQueryData(url, headers, queryParam, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), responseType);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * DELETE RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url         请求地址。
+     * @param typeRef     响应泛型类型引用。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteBodyQueryForEntity(String url, TypeReference<T> typeRef, Map<String, String> queryParam, Object requestData) {
+        return deleteBodyQueryForEntity(url, typeRef, null, queryParam, requestData);
+    }
+
+    /**
+     * DELETE RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url         请求地址。
+     * @param typeRef     响应泛型类型引用。
+     * @param headers     请求头，可为 null。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteBodyQueryForEntity(String url, TypeReference<T> typeRef, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        D httpData = deleteBodyQueryData(url, headers, queryParam, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), typeRef);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
+     * DELETE RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url         请求地址。
+     * @param javaType    响应 JavaType。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteBodyQueryForEntity(String url, JavaType javaType, Map<String, String> queryParam, Object requestData) {
+        return deleteBodyQueryForEntity(url, javaType, null, queryParam, requestData);
+    }
+
+    /**
+     * DELETE RequestBody + queryParam 获取HttpEntity。
+     *
+     * @param url         请求地址。
+     * @param javaType    响应 JavaType。
+     * @param headers     请求头，可为 null。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return HttpEntity，含 HttpData 与反序列化后的响应对象。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     * @throws DataMapperException  当响应反序列化失败时。
+     */
+    public <D extends HttpData, T> HttpEntity<D, T> deleteBodyQueryForEntity(String url, JavaType javaType, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        D httpData = deleteBodyQueryData(url, headers, queryParam, requestData);
+        T t = this.objectMapper.parse(httpData.getResponseData(), javaType);
+        //处理日志。
+        if (this.httpDataProcessor != null) {
+            invokePostProcess(httpData, t);
+        }
+        return new HttpEntity<>(httpData, t);
+    }
+
+    /**
      * 自定义Request请求，返回HttpData。
      *
      * @param request OkHttp Request。
@@ -1690,11 +2830,12 @@ public class HttpInterface {
 
 
     /**
-     * POST Form获取HttpData。
+     * POST Form(含文件上传)获取HttpData。
      *
      * @param url 请求地址。
      * @param headers 请求头，可为 null。
      * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
      * @return 承载请求/响应日志的 HttpData。
      * @throws HttpRequestException 当请求发生网络或 IO 错误时。
      */
@@ -1770,6 +2911,35 @@ public class HttpInterface {
     }
 
     /**
+     * POST RequestBody + queryParam 获取HttpData。
+     *
+     * @param url         请求地址。
+     * @param headers     请求头，可为 null。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    private <D extends HttpData> D postBodyQueryData(String url, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        //请求体。
+        String requestBody = this.objectMapper.toString(requestData);
+        //request过滤器。
+        if (this.httpDataProcessor != null) {
+            this.httpDataProcessor.requestProcess(requestBody, queryParam, headers);
+        }
+        Request.Builder builder = new Request.Builder().url(buildUrl(url, queryParam));
+        if (headers != null) {
+            builder.headers(Headers.of(headers));
+        }
+        Request request = builder.post(RequestBody.create(requestBody, this.mediaType)).build();
+        D httpData = initHttpData();
+        fillRequestMeta(httpData, request);
+        fillRequestBody(httpData, requestBody);
+        fillResponse(httpData, request);
+        return httpData;
+    }
+
+    /**
      * PUT Form获取HttpData。
      *
      * @param url 请求地址。
@@ -1805,6 +2975,58 @@ public class HttpInterface {
     }
 
     /**
+     * PUT Form(含文件上传)获取HttpData。
+     *
+     * @param url 请求地址。
+     * @param headers 请求头，可为 null。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    private <D extends HttpData> D putFormFileData(String url, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
+        //request过滤器。
+        if (this.httpDataProcessor != null) {
+            this.httpDataProcessor.requestProcess(null, formData, headers);
+        }
+        Request.Builder requestBuilder = new Request.Builder().url(url);
+        applyHeaders(requestBuilder, headers);
+        MultipartBody.Builder formBodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
+        // 添加表单数据
+        if (formData != null) {
+            for (Map.Entry<String, String> entry : formData.entrySet()) {
+                formBodyBuilder.addFormDataPart(entry.getKey(), entry.getValue());
+            }
+        }
+        if (fileData != null) {
+            //添加文件数据，同时支持file和byte[]
+            for (Map.Entry<String, Object> entry : fileData.entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                if (value instanceof byte[]) {
+                    RequestBody body = RequestBody.create((byte[]) value, MediaTypes.OCTET_STREAM);
+                    formBodyBuilder.addFormDataPart(key, key, body);
+                } else if (value instanceof File) {
+                    RequestBody body = RequestBody.create((File) value, MediaTypes.OCTET_STREAM);
+                    formBodyBuilder.addFormDataPart(key, ((File) value).getName(), body);
+                } else {
+                    formBodyBuilder.addFormDataPart(key, value.toString());
+                }
+            }
+        }
+        Request request = requestBuilder.put(formBodyBuilder.build()).build();
+        D httpData = initHttpData();
+        fillRequestMeta(httpData, request);
+        if (HttpDataLogLevel.isRecordRequest(httpDataLogLevel) && formData != null && !formData.isEmpty()) {
+            String requestData = JsonInterfaceHelper.JSON_CONVERTER.toString(formData);
+            httpData.setRequestData(requestData);
+            httpData.setRequestSize(requestData.length());
+        }
+        fillResponse(httpData, request);
+        return httpData;
+    }
+
+    /**
      * PUT RequestBody获取HttpData。
      *
      * @param url 请求地址。
@@ -1821,6 +3043,35 @@ public class HttpInterface {
             this.httpDataProcessor.requestProcess(requestBody, null, headers);
         }
         Request.Builder builder = new Request.Builder().url(url);
+        if (headers != null) {
+            builder.headers(Headers.of(headers));
+        }
+        Request request = builder.put(RequestBody.create(requestBody, this.mediaType)).build();
+        D httpData = initHttpData();
+        fillRequestMeta(httpData, request);
+        fillRequestBody(httpData, requestBody);
+        fillResponse(httpData, request);
+        return httpData;
+    }
+
+    /**
+     * PUT RequestBody + queryParam 获取HttpData。
+     *
+     * @param url         请求地址。
+     * @param headers     请求头，可为 null。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    private <D extends HttpData> D putBodyQueryData(String url, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        //请求体。
+        String requestBody = this.objectMapper.toString(requestData);
+        //request过滤器。
+        if (this.httpDataProcessor != null) {
+            this.httpDataProcessor.requestProcess(requestBody, queryParam, headers);
+        }
+        Request.Builder builder = new Request.Builder().url(buildUrl(url, queryParam));
         if (headers != null) {
             builder.headers(Headers.of(headers));
         }
@@ -1868,6 +3119,58 @@ public class HttpInterface {
     }
 
     /**
+     * PATCH Form(含文件上传)获取HttpData。
+     *
+     * @param url 请求地址。
+     * @param headers 请求头，可为 null。
+     * @param formData 表单数据，可为 null。
+     * @param fileData 文件数据（支持 {@link File}/byte[]/其它类型toString），可为 null。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    private <D extends HttpData> D patchFormFileData(String url, Map<String, String> headers, Map<String, String> formData, Map<String, Object> fileData) {
+        //request过滤器。
+        if (this.httpDataProcessor != null) {
+            this.httpDataProcessor.requestProcess(null, formData, headers);
+        }
+        Request.Builder requestBuilder = new Request.Builder().url(url);
+        applyHeaders(requestBuilder, headers);
+        MultipartBody.Builder formBodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
+        // 添加表单数据
+        if (formData != null) {
+            for (Map.Entry<String, String> entry : formData.entrySet()) {
+                formBodyBuilder.addFormDataPart(entry.getKey(), entry.getValue());
+            }
+        }
+        if (fileData != null) {
+            //添加文件数据，同时支持file和byte[]
+            for (Map.Entry<String, Object> entry : fileData.entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                if (value instanceof byte[]) {
+                    RequestBody body = RequestBody.create((byte[]) value, MediaTypes.OCTET_STREAM);
+                    formBodyBuilder.addFormDataPart(key, key, body);
+                } else if (value instanceof File) {
+                    RequestBody body = RequestBody.create((File) value, MediaTypes.OCTET_STREAM);
+                    formBodyBuilder.addFormDataPart(key, ((File) value).getName(), body);
+                } else {
+                    formBodyBuilder.addFormDataPart(key, value.toString());
+                }
+            }
+        }
+        Request request = requestBuilder.patch(formBodyBuilder.build()).build();
+        D httpData = initHttpData();
+        fillRequestMeta(httpData, request);
+        if (HttpDataLogLevel.isRecordRequest(httpDataLogLevel) && formData != null && !formData.isEmpty()) {
+            String requestData = JsonInterfaceHelper.JSON_CONVERTER.toString(formData);
+            httpData.setRequestData(requestData);
+            httpData.setRequestSize(requestData.length());
+        }
+        fillResponse(httpData, request);
+        return httpData;
+    }
+
+    /**
      * PATCH RequestBody获取HttpData。
      *
      * @param url 请求地址。
@@ -1884,6 +3187,35 @@ public class HttpInterface {
             this.httpDataProcessor.requestProcess(requestBody, null, headers);
         }
         Request.Builder builder = new Request.Builder().url(url);
+        if (headers != null) {
+            builder.headers(Headers.of(headers));
+        }
+        Request request = builder.patch(RequestBody.create(requestBody, this.mediaType)).build();
+        D httpData = initHttpData();
+        fillRequestMeta(httpData, request);
+        fillRequestBody(httpData, requestBody);
+        fillResponse(httpData, request);
+        return httpData;
+    }
+
+    /**
+     * PATCH RequestBody + queryParam 获取HttpData。
+     *
+     * @param url         请求地址。
+     * @param headers     请求头，可为 null。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    private <D extends HttpData> D patchBodyQueryData(String url, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        //请求体。
+        String requestBody = this.objectMapper.toString(requestData);
+        //request过滤器。
+        if (this.httpDataProcessor != null) {
+            this.httpDataProcessor.requestProcess(requestBody, queryParam, headers);
+        }
+        Request.Builder builder = new Request.Builder().url(buildUrl(url, queryParam));
         if (headers != null) {
             builder.headers(Headers.of(headers));
         }
@@ -1914,6 +3246,98 @@ public class HttpInterface {
         Request request = requestBuilder.delete().build();
         D httpData = initHttpData();
         fillRequestMeta(httpData, request);
+        fillResponse(httpData, request);
+        return httpData;
+    }
+
+    /**
+     * DELETE Form获取HttpData。
+     *
+     * @param url 请求地址。
+     * @param headers 请求头，可为 null。
+     * @param formData 表单数据，可为 null。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    private <D extends HttpData> D deleteFormData(String url, Map<String, String> headers, Map<String, String> formData) {
+        //request过滤器。
+        if (this.httpDataProcessor != null) {
+            this.httpDataProcessor.requestProcess(null, formData, headers);
+        }
+        Request.Builder requestBuilder = new Request.Builder().url(url);
+        applyHeaders(requestBuilder, headers);
+        FormBody.Builder formBodyBuilder = new FormBody.Builder();
+        if (formData != null) {
+            //表单数据。
+            for (Map.Entry<String, String> param : formData.entrySet()) {
+                formBodyBuilder.add(param.getKey(), param.getValue());
+            }
+        }
+        Request request = requestBuilder.delete(formBodyBuilder.build()).build();
+        D httpData = initHttpData();
+        fillRequestMeta(httpData, request);
+        if (HttpDataLogLevel.isRecordRequest(httpDataLogLevel) && formData != null && !formData.isEmpty()) {
+            String requestData = JsonInterfaceHelper.JSON_CONVERTER.toString(formData);
+            httpData.setRequestData(requestData);
+            httpData.setRequestSize(requestData.length());
+        }
+        fillResponse(httpData, request);
+        return httpData;
+    }
+
+    /**
+     * DELETE RequestBody获取HttpData。
+     *
+     * @param url 请求地址。
+     * @param headers 请求头，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    private <D extends HttpData> D deleteBodyData(String url, Map<String, String> headers, Object requestData) {
+        //请求体。
+        String requestBody = this.objectMapper.toString(requestData);
+        //request过滤器。
+        if (this.httpDataProcessor != null) {
+            this.httpDataProcessor.requestProcess(requestBody, null, headers);
+        }
+        Request.Builder builder = new Request.Builder().url(url);
+        if (headers != null) {
+            builder.headers(Headers.of(headers));
+        }
+        Request request = builder.delete(RequestBody.create(requestBody, this.mediaType)).build();
+        D httpData = initHttpData();
+        fillRequestMeta(httpData, request);
+        fillRequestBody(httpData, requestBody);
+        fillResponse(httpData, request);
+        return httpData;
+    }
+
+    /**
+     * DELETE RequestBody + queryParam 获取HttpData。
+     *
+     * @param url         请求地址。
+     * @param headers     请求头，可为 null。
+     * @param queryParam  URL 查询参数，可为 null。
+     * @param requestData 请求体对象，会被序列化。
+     * @return 承载请求/响应日志的 HttpData。
+     * @throws HttpRequestException 当请求发生网络或 IO 错误时。
+     */
+    private <D extends HttpData> D deleteBodyQueryData(String url, Map<String, String> headers, Map<String, String> queryParam, Object requestData) {
+        //请求体。
+        String requestBody = this.objectMapper.toString(requestData);
+        //request过滤器。
+        if (this.httpDataProcessor != null) {
+            this.httpDataProcessor.requestProcess(requestBody, queryParam, headers);
+        }
+        Request.Builder builder = new Request.Builder().url(buildUrl(url, queryParam));
+        if (headers != null) {
+            builder.headers(Headers.of(headers));
+        }
+        Request request = builder.delete(RequestBody.create(requestBody, this.mediaType)).build();
+        D httpData = initHttpData();
+        fillRequestMeta(httpData, request);
+        fillRequestBody(httpData, requestBody);
         fillResponse(httpData, request);
         return httpData;
     }

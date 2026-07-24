@@ -5,7 +5,7 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-import uw.dao.conf.UwDaoProperties;
+import uw.dao.conf.DaoConfig;
 import uw.dao.conf.DaoConfigManager;
 
 import java.sql.Connection;
@@ -33,9 +33,9 @@ public class ConnBenchmark {
 
     @Setup
     public static void setup() {
-        UwDaoProperties uwDaoProperties = new UwDaoProperties();
-        UwDaoProperties.ConnPool pool = new UwDaoProperties.ConnPool();
-        UwDaoProperties.ConnPoolConfig poolConfig = new UwDaoProperties.ConnPoolConfig();
+        DaoConfig daoConfig = new DaoConfig();
+        DaoConfig.ConnPool pool = new DaoConfig.ConnPool();
+        DaoConfig.ConnPoolConfig poolConfig = new DaoConfig.ConnPoolConfig();
         poolConfig.setDriver("uw.dao.connectionpool.stubs.StubDriver");
         poolConfig.setUrl("abc");
         poolConfig.setUsername("test");
@@ -47,8 +47,8 @@ public class ConnBenchmark {
         poolConfig.setConnIdleTimeout(120);
         pool.setRoot(poolConfig);
         pool.setList(new LinkedHashMap<>());
-        uwDaoProperties.setConnPool(pool);
-        DaoConfigManager.setConfig(uwDaoProperties);
+        daoConfig.setConnPool(pool);
+        DaoConfigManager.setConfig(daoConfig);
     }
 
     @Benchmark

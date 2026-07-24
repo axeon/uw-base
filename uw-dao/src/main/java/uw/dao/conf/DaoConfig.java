@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author axeon
  */
 @ConfigurationProperties(prefix = "uw.dao")
-public class UwDaoProperties {
+public class DaoConfig {
 
     /**
      * 连接池配置.

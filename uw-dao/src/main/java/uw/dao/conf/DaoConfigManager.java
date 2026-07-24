@@ -1,10 +1,10 @@
 package uw.dao.conf;
 
 import org.apache.commons.lang3.StringUtils;
-import uw.dao.conf.UwDaoProperties.ConnPoolConfig;
-import uw.dao.conf.UwDaoProperties.ConnRoute;
-import uw.dao.conf.UwDaoProperties.ConnRouteConfig;
-import uw.dao.conf.UwDaoProperties.TableShardConfig;
+import uw.dao.conf.DaoConfig.ConnPoolConfig;
+import uw.dao.conf.DaoConfig.ConnRoute;
+import uw.dao.conf.DaoConfig.ConnRouteConfig;
+import uw.dao.conf.DaoConfig.TableShardConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,20 +30,20 @@ public final class DaoConfigManager {
     /**
      * DAO配置表.
      */
-    private static UwDaoProperties config;
+    private static DaoConfig config;
 
 
     /**
      * @return the config
      */
-    public static UwDaoProperties getConfig() {
+    public static DaoConfig getConfig() {
         return config;
     }
 
     /**
      * @param config the config to set
      */
-    public static void setConfig(UwDaoProperties config) {
+    public static void setConfig(DaoConfig config) {
         DaoConfigManager.config = config;
         // 清空路由缓存，使新配置（连接池/路由变更）立即生效，支持配置热更新。
         routeMap.clear();
@@ -66,7 +66,7 @@ public final class DaoConfigManager {
      * @param maxConn
      */
     public static void initTestConn(String driver, String url, String username, String password, int maxConn) {
-        DaoConfigManager.config = new UwDaoProperties();
+        DaoConfigManager.config = new DaoConfig();
         ConnPoolConfig connPoolConfig = new ConnPoolConfig();
         config.getConnPool().setRoot(connPoolConfig);
         connPoolConfig.setDriver(driver);

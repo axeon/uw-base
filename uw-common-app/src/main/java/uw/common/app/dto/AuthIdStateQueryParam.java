@@ -157,6 +157,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
     public AuthIdStateQueryParam(Serializable id, Integer state) {
         this.id = id;
         this.state = state;
+        bindSaasId();
     }
 
     /**
@@ -169,6 +170,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
     public AuthIdStateQueryParam(Serializable id, Integer... states) {
         this.id = id;
         this.states = states;
+        bindSaasId();
     }
 
     /**
@@ -181,6 +183,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
     public AuthIdStateQueryParam(Serializable[] ids, Integer state) {
         this.ids = ids;
         this.state = state;
+        bindSaasId();
     }
 
     /**
@@ -193,6 +196,7 @@ public class AuthIdStateQueryParam extends QueryParam<AuthIdStateQueryParam> {
     public AuthIdStateQueryParam(Serializable[] ids, Integer... states) {
         this.ids = ids;
         this.states = states;
+        bindSaasId();
     }
 
 

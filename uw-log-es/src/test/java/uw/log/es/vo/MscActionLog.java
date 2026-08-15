@@ -83,11 +83,6 @@ public class MscActionLog extends LogBaseVo implements Serializable {
     private Date responseDate;
 
     /**
-     * 异常信息
-     */
-    private String exception;
-
-    /**
      * 响应状态码
      */
     private int statusCode;
@@ -202,14 +197,6 @@ public class MscActionLog extends LogBaseVo implements Serializable {
 
     public void setResponseDate(Date responseDate) {
         this.responseDate = responseDate;
-    }
-
-    public String getException() {
-        return exception;
-    }
-
-    public void setException(String exception) {
-        this.exception = exception;
     }
 
     public int getStatusCode() {

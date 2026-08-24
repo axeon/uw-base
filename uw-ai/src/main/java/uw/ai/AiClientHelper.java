@@ -186,38 +186,18 @@ public class AiClientHelper {
     /**
      * 聊天生成实体（结构化输出）。
      * <p>
-     * 自动在系统提示后追加目标类型的 JSON Schema 格式说明，并对大模型返回的文本进行清洗
-     * （去除 markdown 标记、think 标签等）后反序列化为目标类型。
+     * 委托 {@link StructuredOutputAdvisor} 完成：在系统提示后追加目标类型的 JSON Schema 格式说明，
+     * 对大模型返回的文本进行清洗（去除 markdown 标记、think 标签等）后反序列化为目标类型；
+     * JSON 解析失败时自动重试（默认最多 3 次），把上一次的输出与解析错误信息追加到用户提示中
+     * 反馈给模型针对性修正；生成失败（配置/网络等）不重试。
      *
      * @param param 对话生成参数（系统提示可为空，会追加格式说明）
      * @param clazz 目标类型
      * @param <T>   目标类型泛型
-     * @return 转换后的实体；生成失败或 JSON 转换失败时返回错误 ResponseData
+     * @return 转换后的实体；生成失败或重试后仍 JSON 转换失败时返回错误 ResponseData
      */
-    @SuppressWarnings("unchecked")
     public static <T> ResponseData<T> generateEntity(AiChatGenerateParam param, Class<T> clazz) {
-        // 设置类型转换器
-        BeanOutputConverter<T> beanOutputConverter = new BeanOutputConverter<>(clazz);
-        // 设置系统提示（仅使用 getFormat，避免 Schema 嵌套重复导致弱模型混淆）
-        StringBuilder systemPrompt = new StringBuilder();
-        if (param.getSystemPrompt() != null) {
-            systemPrompt.append(param.getSystemPrompt());
-            systemPrompt.append("\n");
-        }
-        systemPrompt.append(beanOutputConverter.getFormat());
-        param.setSystemPrompt(systemPrompt.toString());
-        // 调用生成
-        ResponseData<String> responseData = generate(param);
-        if (responseData.isNotSuccess()) {
-            return responseData.raw();
-        }
-        // 转换成实体
-        try {
-            return ResponseData.success(beanOutputConverter.convert(beanOutputConverter.cleanJson(responseData.getData())), responseData.getCode(), responseData.getData());
-        } catch (Exception e) {
-            log.error("generateEntity() JSON转换失败: {}", e.getMessage(), e);
-            return ResponseData.errorMsg("JSON转换失败: " + e.getMessage());
-        }
+        return new StructuredOutputAdvisor<>(clazz).adviseCall(param, AiClientHelper::generate);
     }
 
     /**

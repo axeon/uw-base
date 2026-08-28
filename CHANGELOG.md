@@ -1,10 +1,31 @@
-# 2026.0800.0003版本升级说明
-uw-httpclient 对称补齐写方法（POST/PUT/PATCH/DELETE）的请求体能力，新增 BodyQuery（请求体 + queryParam）系列。
+# 2026.0900.0000版本升级说明
+uw-httpclient 对称补齐写方法（POST/PUT/PATCH/DELETE）的请求体能力，新增 BodyQuery（请求体 + queryParam）系列；uw-ai 新增积点计费体系与结构化输出自校正；uw-common 新增全局审批状态 AuditState；同步升级 Spring Boot 4.1.1 / Spring Cloud 2025.1.3 / nacos-client 3.3.0-BETA。
 
 ## uw-httpclient
 1. 新增 BodyQuery 系列（请求体 + URL queryParam）：postBodyQueryForData/Entity、putBodyQueryForData/Entity、patchBodyQueryForData/Entity、deleteBodyQueryForData/Entity，适用于 JSON body 同时需通过 query 传递分页/筛选参数的场景（如 POST /search?page=1 + 筛选 body）。每族提供 Class/TypeReference/JavaType 三套响应类型 × 带不带 headers 重载，共 32 个公开方法 + 4 个私有底层。
 2. DELETE 补齐 Body 与 Form：新增 deleteBodyForData/Entity（带 RequestBody，用于批量删除等场景）、deleteFormForData/Entity。DELETE 现与 PUT/PATCH 对称（无 body queryParam / Form / Body / BodyQuery）。
 3. PUT/PATCH 补齐文件上传：新增 putFormFileForData/Entity、patchFormFileForData/Entity，与 postFormFile 同构（MultipartBody + OkHttp .put/.patch）。
+
+## uw-ai
+1. 新增 AI 积点计费体系：AiCreditRpc 支持 saas 积点充值/回收（credits 可为负=回收）、余额查询、员工限额查询（周期已过按重置后口径返回）与员工当前周期已用清零；AiClientHelper 新增 rechargeSaasCredits / getSaasCreditsBalance / getUserCreditsLimit / resetUserCreditsLimit 门面方法，配套 AiCreditBalanceVo / AiCreditLimitVo / AiCreditRechargeParam / AiCreditUserLimitParam。
+2. AiModelConfigVo 新增模型计费字段：creditRateInput/Output/Cached（积点倍率，千分比，1000=1.0 倍）与 priceInput/Output/Cached（厂商定价，分/百万 token）。
+3. AiConfigRpc 接口增加 saasId 首参（listModelConfigByApi / getModelConfig / getApiConfig），configCode/apiCode 按 (saas_id, code) 唯一域解析；AiClientHelper 新增带 saasId 重载（listModelInfoById / listModelInfoByCode / getModelApiByCode），原单参方法委托平台域（saasId=0），兼容存量调用。
+4. 新增 StructuredOutputAdvisor 结构化输出顾问：请求侧追加目标类型 JSON Schema 格式说明，输出 JSON 解析失败时携带错误信息与上次输出自校正重试（默认最多 3 次），替代原 BeanOutputConverter 直转。
+
+## uw-common
+1. 新增 AuditState 全局审批状态枚举，统一审批状态机值域：INIT(0) 草稿 / APPLY(1) 已申请待审批 / CANCEL(-1) 已撤回 / APPROVE(2) 审批通过 / REJECT(-2) 审批拒绝 / REVOKE(-3) 已撤销 / EXPIRE(-4) 已过期；死单（终态）查询约定 audit_state < 0；与数据状态维 CommonState 正交（audit_state 表达审批生命周期，state 表达数据行生命周期）；未知值解析保守回落 REJECT。
+
+## uw-common-app
+1. AuthIdStateQueryParam 构造器自动绑定 saasId，AuthQueryParam 用户类型判断逻辑简化（saas 隔离强化）。
+2. 系统日志表结构优化：sys_crit_log 删除 op_state / op_log / exception 冗余字段；sys_crit_log 新增 (saas_id,user_id)、(biz_type,biz_id)、(saas_id,request_date) 索引，sys_data_history 新增 (entity_class,entity_id)、(saas_id,user_id)、(saas_id,create_date) 索引。
+
+## 依赖升级
+1. Spring Boot 4.1.0→4.1.1，Spring Cloud 2025.1.2→2025.1.3，nacos-client 3.2.3→3.3.0-BETA。
+2. 模块版本联动：uw-ai 1.1.37、uw-common 1.1.113、uw-common-app 1.1.112、uw-log-es 3.1.107。
+
+## ⚠️ 不兼容变更
+1. AiConfigRpc 三个方法签名加 saasId 首参，需与 uw-ai-center 服务端同步升级；AiChatRpc.chatGenerate 及 AiClientHelper.chatGenerate 更名为 generateStream。
+2. sys_crit_log 删除 3 个冗余列并新增组合索引，存量库需同步执行 DDL 变更（删列 + 建索引）。
 
 # 2026.0800.0002版本升级说明
 全面适配 Spring Boot 4.1 + Spring Framework 7 + Jackson 3。

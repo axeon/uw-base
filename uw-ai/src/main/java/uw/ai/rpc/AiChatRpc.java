@@ -27,6 +27,6 @@ public interface AiChatRpc {
      * @param param 对话生成参数
      * @return 文本片段流
      */
-    Flux<String> chatGenerate(AiChatGenerateParam param);
+    Flux<String> generateStream(AiChatGenerateParam param);
 
 }

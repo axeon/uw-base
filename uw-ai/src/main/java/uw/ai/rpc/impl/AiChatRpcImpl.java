@@ -77,11 +77,11 @@ public class AiChatRpcImpl implements AiChatRpc {
      * @return SSE流式响应
      */
     @Override
-    public Flux<String> chatGenerate(AiChatGenerateParam param) {
+    public Flux<String> generateStream(AiChatGenerateParam param) {
         MultiValueMap<String, Object> body = buildChatBody(param);
 
         return authWebClient.post()
-                .uri(uwAiProperties.getAiCenterHost() + "/rpc/chat/chatGenerate")
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/chat/generateStream")
                 .contentType(MediaType.MULTIPART_FORM_DATA).
                 body(BodyInserters.fromMultipartData(body))
                 .accept(MediaType.TEXT_EVENT_STREAM)

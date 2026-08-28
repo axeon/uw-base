@@ -82,6 +82,30 @@ public class AiModelConfigVo {
      */
     @Schema(title = "状态", description = "状态", maxLength=10, nullable=true )
     private int state;
+    /**
+     * 输入token积点倍率(千分比,1000=1.0倍)
+     */
+    private Integer creditRateInput;
+    /**
+     * 输出token积点倍率(千分比,3000=3.0倍)
+     */
+    private Integer creditRateOutput;
+    /**
+     * 缓存命中token折抵倍率(千分比,900=0.9倍)
+     */
+    private Integer creditRateCached;
+    /**
+     * 输入token厂商定价(分/百万token)
+     */
+    private Integer priceInput;
+    /**
+     * 输出token厂商定价(分/百万token)
+     */
+    private Integer priceOutput;
+    /**
+     * 缓存命中token厂商定价(分/百万token)
+     */
+    private Integer priceCached;
 
     /**
      * 创建时间
@@ -205,5 +229,52 @@ public class AiModelConfigVo {
 
     public void setModifyDate(Date modifyDate) {
         this.modifyDate = modifyDate;
+    }
+    public Integer getCreditRateInput() {
+        return creditRateInput;
+    }
+
+    public void setCreditRateInput(Integer creditRateInput) {
+        this.creditRateInput = creditRateInput;
+    }
+
+    public Integer getCreditRateOutput() {
+        return creditRateOutput;
+    }
+
+    public void setCreditRateOutput(Integer creditRateOutput) {
+        this.creditRateOutput = creditRateOutput;
+    }
+
+    public Integer getCreditRateCached() {
+        return creditRateCached;
+    }
+
+    public void setCreditRateCached(Integer creditRateCached) {
+        this.creditRateCached = creditRateCached;
+    }
+
+    public Integer getPriceInput() {
+        return priceInput;
+    }
+
+    public void setPriceInput(Integer priceInput) {
+        this.priceInput = priceInput;
+    }
+
+    public Integer getPriceOutput() {
+        return priceOutput;
+    }
+
+    public void setPriceOutput(Integer priceOutput) {
+        this.priceOutput = priceOutput;
+    }
+
+    public Integer getPriceCached() {
+        return priceCached;
+    }
+
+    public void setPriceCached(Integer priceCached) {
+        this.priceCached = priceCached;
     }
 }

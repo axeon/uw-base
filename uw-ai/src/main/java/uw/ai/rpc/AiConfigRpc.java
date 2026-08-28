@@ -23,20 +23,22 @@ public interface AiConfigRpc {
     /**
      * 根据API配置获取模型配置列表。
      *
+     * @param saasId  租户ID（按 apiCode 解析时限定唯一域 (saas_id, api_code)；0=平台域）
      * @param apiId   API配置ID
      * @param apiCode API配置代码
      * @return 模型配置列表
      */
-    ResponseData<List<AiModelConfigVo>> listModelConfigByApi(Long apiId, String apiCode);
+    ResponseData<List<AiModelConfigVo>> listModelConfigByApi(Long saasId, Long apiId, String apiCode);
 
     /**
      * 根据ID或配置代码获取模型配置
      *
+     * @param saasId     租户ID（按 configCode 解析时限定唯一域 (saas_id, config_code)；0=平台域）
      * @param id         模型配置ID
      * @param configCode 配置代码（id 为空时使用）
      * @return 模型配置
      */
-    ResponseData<AiModelConfigVo> getModelConfig(Long id, String configCode);
+    ResponseData<AiModelConfigVo> getModelConfig(Long saasId, Long id, String configCode);
 
     /**
      * 根据模型类型和标签获取模型配置列表。
@@ -59,9 +61,10 @@ public interface AiConfigRpc {
     /**
      * 根据ID或配置代码获取API连接配置。
      *
+     * @param saasId  租户ID（按 apiCode 解析时限定唯一域 (saas_id, api_code)；0=平台域）
      * @param id      API配置ID
      * @param apiCode 配置代码
      * @return API连接配置
      */
-    ResponseData<AiModelApiVo> getApiConfig(Long id, String apiCode);
+    ResponseData<AiModelApiVo> getApiConfig(Long saasId, Long id, String apiCode);
 }

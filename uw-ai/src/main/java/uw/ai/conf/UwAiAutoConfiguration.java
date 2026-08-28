@@ -15,16 +15,8 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.client.WebClient;
 import uw.ai.AiClientHelper;
 import uw.ai.controller.AiToolExecuteController;
-import uw.ai.rpc.AiChatRpc;
-import uw.ai.rpc.AiConfigRpc;
-import uw.ai.rpc.AiImageRpc;
-import uw.ai.rpc.AiToolRpc;
-import uw.ai.rpc.AiTranslateRpc;
-import uw.ai.rpc.impl.AiChatRpcImpl;
-import uw.ai.rpc.impl.AiConfigRpcImpl;
-import uw.ai.rpc.impl.AiImageRpcImpl;
-import uw.ai.rpc.impl.AiToolRpcImpl;
-import uw.ai.rpc.impl.AiTranslateRpcImpl;
+import uw.ai.rpc.*;
+import uw.ai.rpc.impl.*;
 import uw.ai.tool.AiTool;
 import uw.ai.util.AiToolSchemaGenerator;
 import uw.ai.vo.AiToolMeta;
@@ -112,12 +104,21 @@ public class UwAiAutoConfiguration {
 
 
     /**
+     * 初始化 AiCreditRpc Bean（token 余额充值与查询）。
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public AiCreditRpc aiCreditRpc(UwAiProperties uwAiProperties, RestClient authRestClient) {
+        return new AiCreditRpcImpl(uwAiProperties, authRestClient);
+    }
+
+    /**
      * 初始化 AiClientHelper 静态门面，注入全部底层 RPC Bean。
      */
     @Bean
     @ConditionalOnMissingBean
-    public AiClientHelper aiClientHelper(AiToolRpc toolRpc, AiChatRpc chatRpc, AiTranslateRpc translateRpc, AiConfigRpc configRpc, AiImageRpc imageRpc) {
-        return new AiClientHelper(toolRpc, chatRpc, translateRpc, configRpc, imageRpc);
+    public AiClientHelper aiClientHelper(AiToolRpc toolRpc, AiChatRpc chatRpc, AiTranslateRpc translateRpc, AiConfigRpc configRpc, AiImageRpc imageRpc, AiCreditRpc tokenRpc) {
+        return new AiClientHelper(toolRpc, chatRpc, translateRpc, configRpc, imageRpc, tokenRpc);
     }
 
     /**

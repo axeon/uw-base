@@ -40,9 +40,9 @@ public class AiConfigRpcImpl implements AiConfigRpc {
     }
 
     @Override
-    public ResponseData<List<AiModelConfigVo>> listModelConfigByApi(Long apiId, String apiCode) {
+    public ResponseData<List<AiModelConfigVo>> listModelConfigByApi(Long saasId, Long apiId, String apiCode) {
         ResponseData<List<AiModelConfigVo>> result = authRestClient.get()
-                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/listModelConfigByApi?apiId={apiId}&apiCode={apiCode}", apiId, apiCode)
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/listModelConfigByApi?saasId={saasId}&apiId={apiId}&apiCode={apiCode}", saasId == null ? 0 : saasId, apiId, apiCode)
                 .retrieve()
                 .body(new ParameterizedTypeReference<ResponseData<List<AiModelConfigVo>>>() {});
         if (result == null) {
@@ -52,9 +52,9 @@ public class AiConfigRpcImpl implements AiConfigRpc {
     }
 
     @Override
-    public ResponseData<AiModelConfigVo> getModelConfig(Long id, String configCode) {
+    public ResponseData<AiModelConfigVo> getModelConfig(Long saasId, Long id, String configCode) {
         ResponseData<AiModelConfigVo> result = authRestClient.get()
-                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/getModelConfig?id={id}&configCode={configCode}", id, configCode)
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/getModelConfig?saasId={saasId}&id={id}&configCode={configCode}", saasId == null ? 0 : saasId, id, configCode)
                 .retrieve()
                 .body(new ParameterizedTypeReference<ResponseData<AiModelConfigVo>>() {});
         if (result == null) {
@@ -88,9 +88,9 @@ public class AiConfigRpcImpl implements AiConfigRpc {
     }
 
     @Override
-    public ResponseData<AiModelApiVo> getApiConfig(Long id, String apiCode) {
+    public ResponseData<AiModelApiVo> getApiConfig(Long saasId, Long id, String apiCode) {
         ResponseData<AiModelApiVo> result = authRestClient.get()
-                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/getApiConfig?id={id}&apiCode={apiCode}", id, apiCode)
+                .uri(uwAiProperties.getAiCenterHost() + "/rpc/config/getApiConfig?saasId={saasId}&id={id}&apiCode={apiCode}", saasId == null ? 0 : saasId, id, apiCode)
                 .retrieve()
                 .body(new ParameterizedTypeReference<ResponseData<AiModelApiVo>>() {});
         if (result == null) {

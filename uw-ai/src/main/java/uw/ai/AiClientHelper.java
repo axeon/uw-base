@@ -4,12 +4,8 @@ package uw.ai;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
-import uw.ai.rpc.AiChatRpc;
-import uw.ai.rpc.AiConfigRpc;
-import uw.ai.rpc.AiImageRpc;
-import uw.ai.rpc.AiToolRpc;
-import uw.ai.rpc.AiTranslateRpc;
-import uw.ai.util.BeanOutputConverter;
+import uw.ai.rpc.*;
+import uw.ai.util.StructuredOutputAdvisor;
 import uw.ai.vo.*;
 import uw.common.response.ResponseData;
 
@@ -31,34 +27,40 @@ public class AiClientHelper {
     /**
      * toolRpc
      */
-    private static volatile AiToolRpc toolRpc;
+    private static volatile AiToolRpc aiToolRpc;
 
     /**
      * chatRpc
      */
-    private static volatile AiChatRpc chatRpc;
+    private static volatile AiChatRpc aiChatRpc;
 
     /**
      * translateRpc
      */
-    private static volatile AiTranslateRpc translateRpc;
+    private static volatile AiTranslateRpc aiTranslateRpc;
 
     /**
      * configRpc
      */
-    private static volatile AiConfigRpc configRpc;
+    private static volatile AiConfigRpc aiConfigRpc;
 
     /**
      * imageRpc
      */
-    private static volatile AiImageRpc imageRpc;
+    private static volatile AiImageRpc aiImageRpc;
 
-    public AiClientHelper(AiToolRpc toolRpc, AiChatRpc chatRpc, AiTranslateRpc translateRpc, AiConfigRpc configRpc, AiImageRpc imageRpc) {
-        AiClientHelper.toolRpc = toolRpc;
-        AiClientHelper.chatRpc = chatRpc;
-        AiClientHelper.translateRpc = translateRpc;
-        AiClientHelper.configRpc = configRpc;
-        AiClientHelper.imageRpc = imageRpc;
+    /**
+     * tokenRpc
+     */
+    private static volatile AiCreditRpc aiCreditRpc;
+
+    public AiClientHelper(AiToolRpc aiToolRpc, AiChatRpc aiChatRpc, AiTranslateRpc aiTranslateRpc, AiConfigRpc aiConfigRpc, AiImageRpc aiImageRpc, AiCreditRpc aiCreditRpc) {
+        AiClientHelper.aiToolRpc = aiToolRpc;
+        AiClientHelper.aiChatRpc = aiChatRpc;
+        AiClientHelper.aiTranslateRpc = aiTranslateRpc;
+        AiClientHelper.aiConfigRpc = aiConfigRpc;
+        AiClientHelper.aiImageRpc = aiImageRpc;
+        AiClientHelper.aiCreditRpc = aiCreditRpc;
     }
 
     /**
@@ -67,7 +69,7 @@ public class AiClientHelper {
      * @return
      */
     public static ResponseData<List<AiToolMeta>> listToolMeta(String appName) {
-        return toolRpc.listToolMeta(appName);
+        return aiToolRpc.listToolMeta(appName);
     }
 
     /**
@@ -77,7 +79,7 @@ public class AiClientHelper {
      * @return
      */
     public static ResponseData updateToolMeta(AiToolMeta aiToolMeta) {
-        return toolRpc.updateToolMeta(aiToolMeta);
+        return aiToolRpc.updateToolMeta(aiToolMeta);
     }
 
     /**
@@ -88,7 +90,7 @@ public class AiClientHelper {
      * @return 模型配置列表
      */
     public static ResponseData<List<AiModelConfigVo>> listModelInfoBySaas(Long saasId, Long mchId) {
-        return configRpc.listModelConfigBySaas(saasId, mchId);
+        return aiConfigRpc.listModelConfigBySaas(saasId, mchId);
     }
 
     /**
@@ -98,7 +100,7 @@ public class AiClientHelper {
      * @return 模型配置列表
      */
     public static ResponseData<List<AiModelConfigVo>> listModelInfoByApi(Long apiId) {
-        return configRpc.listModelConfigByApi(apiId, null);
+        return aiConfigRpc.listModelConfigByApi(0L, apiId, null);
     }
 
     /**
@@ -108,17 +110,39 @@ public class AiClientHelper {
      * @return 模型配置
      */
     public static ResponseData<AiModelConfigVo> listModelInfoById(Long id) {
-        return configRpc.getModelConfig(id, null);
+        return aiConfigRpc.getModelConfig(0L, id, null);
     }
 
     /**
-     * 根据配置代码获取模型配置。
+     * 根据ID获取模型配置（限定租户域）。
+     *
+     * @param saasId 租户ID（0=平台域）
+     * @param id     模型配置ID
+     * @return 模型配置
+     */
+    public static ResponseData<AiModelConfigVo> listModelInfoById(Long saasId, Long id) {
+        return aiConfigRpc.getModelConfig(saasId, id, null);
+    }
+
+    /**
+     * 根据配置代码获取模型配置（平台域 saas_id=0）。
      *
      * @param configCode 配置代码
      * @return 模型配置
      */
     public static ResponseData<AiModelConfigVo> listModelInfoByCode(String configCode) {
-        return configRpc.getModelConfig(null, configCode);
+        return aiConfigRpc.getModelConfig(0L, null, configCode);
+    }
+
+    /**
+     * 根据配置代码获取模型配置（限定租户域，唯一域 (saas_id, config_code)）。
+     *
+     * @param saasId     租户ID（0=平台域）
+     * @param configCode 配置代码
+     * @return 模型配置
+     */
+    public static ResponseData<AiModelConfigVo> listModelInfoByCode(Long saasId, String configCode) {
+        return aiConfigRpc.getModelConfig(saasId, null, configCode);
     }
 
     /**
@@ -129,7 +153,7 @@ public class AiClientHelper {
      * @return 模型配置列表
      */
     public static ResponseData<List<AiModelConfigVo>> listModelInfoByType(String modelType, String modelTag) {
-        return configRpc.listModelConfigByType(modelType, modelTag);
+        return aiConfigRpc.listModelConfigByType(modelType, modelTag);
     }
 
     /**
@@ -140,7 +164,7 @@ public class AiClientHelper {
      * @return API连接配置列表
      */
     public static ResponseData<List<AiModelApiVo>> listModelApiBySaas(Long saasId, Long mchId) {
-        return configRpc.listApiConfigBySaas(saasId, mchId);
+        return aiConfigRpc.listApiConfigBySaas(saasId, mchId);
     }
 
     /**
@@ -150,17 +174,28 @@ public class AiClientHelper {
      * @return API连接配置
      */
     public static ResponseData<AiModelApiVo> getModelApiById(Long id) {
-        return configRpc.getApiConfig(id, null);
+        return aiConfigRpc.getApiConfig(0L, id, null);
     }
 
     /**
-     * 根据配置代码获取API连接配置。
+     * 根据配置代码获取API连接配置（平台域 saas_id=0）。
      *
      * @param apiCode 配置代码
      * @return API连接配置
      */
     public static ResponseData<AiModelApiVo> getModelApiByCode(String apiCode) {
-        return configRpc.getApiConfig(null, apiCode);
+        return aiConfigRpc.getApiConfig(0L, null, apiCode);
+    }
+
+    /**
+     * 根据配置代码获取API连接配置（限定租户域，唯一域 (saas_id, api_code)）。
+     *
+     * @param saasId 租户ID（0=平台域）
+     * @param apiCode 配置代码
+     * @return API连接配置
+     */
+    public static ResponseData<AiModelApiVo> getModelApiByCode(Long saasId, String apiCode) {
+        return aiConfigRpc.getApiConfig(saasId, null, apiCode);
     }
 
     /**
@@ -170,7 +205,7 @@ public class AiClientHelper {
      * @return
      */
     public static ResponseData<String> generate(AiChatGenerateParam param) {
-        return chatRpc.generate(param);
+        return aiChatRpc.generate(param);
     }
 
     /**
@@ -179,8 +214,8 @@ public class AiClientHelper {
      * @param param
      * @return
      */
-    public static Flux<String> chatGenerate(AiChatGenerateParam param) {
-        return chatRpc.chatGenerate(param);
+    public static Flux<String> generateStream(AiChatGenerateParam param) {
+        return aiChatRpc.generateStream(param);
     }
 
     /**
@@ -206,7 +241,7 @@ public class AiClientHelper {
      * @param param
      */
     public static ResponseData<AiTranslateResultData[]> translateList(AiTranslateListParam param) {
-        return translateRpc.translateList(param);
+        return aiTranslateRpc.translateList(param);
     }
 
     /**
@@ -215,7 +250,7 @@ public class AiClientHelper {
      * @param param
      */
     public static ResponseData<AiTranslateResultData[]> translateMap(AiTranslateMapParam param) {
-        return translateRpc.translateMap(param);
+        return aiTranslateRpc.translateMap(param);
     }
 
     /**
@@ -225,6 +260,49 @@ public class AiClientHelper {
      * @return 图片生成结果
      */
     public static ResponseData<AiImageResultData> generateImage(AiImageGenerateParam param) {
-        return imageRpc.generate(param);
+        return aiImageRpc.generate(param);
     }
+
+    /**
+     * 给 saas 充值 AI 积点（ 可为负=回收）。
+     *
+     * @param param 充值参数
+     * @return 充值后的余额
+     */
+    public static ResponseData<AiCreditBalanceVo> rechargeSaasCredits(AiCreditRechargeParam param) {
+        return aiCreditRpc.recharge(param);
+    }
+
+    /**
+     * 查询 saas AI 积点 余额。
+     *
+     * @param saasId 租户
+     * @return 余额
+     */
+    public static ResponseData<AiCreditBalanceVo> getSaasCreditsBalance(long saasId) {
+        return aiCreditRpc.getBalance(saasId);
+    }
+
+    /**
+     * 查询员工 AI 积点限额（周期已过时按重置后口径返回）。
+     *
+     * @param saasId 租户
+     * @param userId 员工
+     * @return 员工限额（无行=未开通 AI 授权，data 为空）
+     */
+    public static ResponseData<AiCreditLimitVo> getUserCreditsLimit(long saasId, long userId) {
+        return aiCreditRpc.getUserLimit(saasId, userId);
+    }
+
+    /**
+     * 清零员工当前周期已用 AI 积点（立即重置）。
+     *
+     * @param saasId 租户
+     * @param userId 员工
+     * @return 重置后的限额
+     */
+    public static ResponseData<AiCreditLimitVo> resetUserCreditsLimit(long saasId, long userId) {
+        return aiCreditRpc.resetUserLimit(saasId, userId);
+    }
+
 }

@@ -1,4 +1,4 @@
-# 2026.0900.0000版本升级说明
+# 2026.0900.0001版本升级说明
 uw-httpclient 对称补齐写方法（POST/PUT/PATCH/DELETE）的请求体能力，新增 BodyQuery（请求体 + queryParam）系列；uw-ai 新增积点计费体系与结构化输出自校正；uw-common 新增全局审批状态 AuditState；同步升级 Spring Boot 4.1.1 / Spring Cloud 2025.1.3 / nacos-client 3.3.0-BETA。
 
 ## uw-httpclient

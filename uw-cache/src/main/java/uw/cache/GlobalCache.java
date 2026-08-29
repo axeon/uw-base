@@ -389,6 +389,7 @@ public class GlobalCache {
             }
             // 假如还是没有get到值 则就是apply方法执行报错了 可以尝试继续执行 再放入redis
             V data = null;
+            boolean loadFailed = false;
             for (int retryTimes = 0; retryTimes < reloadMaxTimes; retryTimes++) {
                 try {
                     data = cacheDataLoader.load(key);
@@ -396,22 +397,28 @@ public class GlobalCache {
                         expireMillis = cacheDataLoader.getExpireMillis();
                     }
                     if (data == null) {
-                        expireMillis = DEFAULT_NULL_PROTECT_MILLIS;
+                        //loader 正常返回空值:走空值保护(此前硬编码 DEFAULT_NULL_PROTECT_MILLIS,
+                        //自定义 nullProtectMillis 参数被忽略)
+                        expireMillis = nullProtectMillis;
                     }
                     valueWrapper = new CacheValueWrapper<>(data, expireMillis);
                     //正常执行就退出吧。
                     break;
                 } catch (Throwable e) {
+                    loadFailed = true;
                     logger.error("Global数据加载失败! cacheName:{}, key:{}, retryTimes:{}, msg:{}", cacheName, key, retryTimes, e.getMessage(), e);
                 }
                 try {
                     Thread.sleep(reloadIntervalMillis);
-                } catch (InterruptedException ignored) {
+                } catch (InterruptedException e) {
+                    //恢复中断标志并提前结束重试(不吞中断)
+                    Thread.currentThread().interrupt();
+                    break;
                 }
             }
-            // 如果此时还没有得到数值，说明加载彻底失败。
+            // 如果此时还没有得到数值，说明加载彻底失败:走失败保护(loader 正常返回空值时为空值保护)
             if (data == null) {
-                expireMillis = DEFAULT_NULL_PROTECT_MILLIS;
+                expireMillis = loadFailed ? failProtectMillis : nullProtectMillis;
                 valueWrapper = new CacheValueWrapper<>(data, expireMillis);
             }
             //序列化写库。
@@ -452,7 +459,7 @@ public class GlobalCache {
     public static boolean invalidate(String cacheName, Object key) {
         //如果key是null，则清除全部。
         if (key == null) {
-            cacheRedisTemplate.delete(keys(cacheName, null));
+            cacheRedisTemplate.delete(buildFullKeys(cacheName, keys(cacheName, null)));
             return true;
         } else {
             String redisKey = RedisKeyUtils.buildTypeId(REDIS_PREFIX, cacheName, key);
@@ -479,8 +486,21 @@ public class GlobalCache {
      * @return true 表示删除成功
      */
     public static boolean invalidatePrefix(String cacheName, String keyPrefix) {
-        cacheRedisTemplate.delete(keys(cacheName, keyPrefix));
+        cacheRedisTemplate.delete(buildFullKeys(cacheName, keys(cacheName, keyPrefix)));
         return true;
+    }
+
+    /**
+     * 将 {@link #keys} 返回的剥前缀业务 key 补回完整 Redis key（含 {@code uw-cache:{cacheName}:} 前缀）。
+     * <p>keys() 返回裸 key 供业务使用，直接传给 delete 删的是无前缀的错误 key——
+     * invalidate(null) 全清与 invalidatePrefix 此前因此从未真正删除过任何数据。</p>
+     */
+    private static Set<String> buildFullKeys(String cacheName, Set<String> rawKeys) {
+        Set<String> fullKeys = new HashSet<>(rawKeys.size());
+        for (String rawKey : rawKeys) {
+            fullKeys.add(RedisKeyUtils.buildTypeId(REDIS_PREFIX, cacheName, rawKey));
+        }
+        return fullKeys;
     }
 
     /**
@@ -512,7 +532,9 @@ public class GlobalCache {
      * @return 缓存值，加载彻底失败返回 null
      */
     public static <K, V> V get(String cacheName, K key, CacheDataLoader<K, V> cacheDataLoader, long expireMillis, long failProtectMillis) {
-        return get(cacheName, key, cacheDataLoader, expireMillis, failProtectMillis, DEFAULT_NULL_PROTECT_MILLIS, DEFAULT_RELOAD_INTERVAL_MILLIS, DEFAULT_RELOAD_MAX_TIMES);
+        //注意参数序:8参签名为 (..., nullProtectMillis, failProtectMillis, ...)——此前误将 failProtectMillis
+        //传入 nullProtectMillis 槽位(因保护参数长期未被使用而未显形,修复参数生效后必须同修)
+        return get(cacheName, key, cacheDataLoader, expireMillis, DEFAULT_NULL_PROTECT_MILLIS, failProtectMillis, DEFAULT_RELOAD_INTERVAL_MILLIS, DEFAULT_RELOAD_MAX_TIMES);
     }
 
     /**

@@ -75,7 +75,10 @@ public class LocalRetryCacheLoader<K, V> implements CacheLoader<K, CacheValueWra
             }
             try {
                 Thread.sleep(cacheConfig.getReloadIntervalMillis());
-            } catch (InterruptedException ignored) {
+            } catch (InterruptedException e) {
+                //恢复中断标志并提前结束重试(不吞中断)
+                Thread.currentThread().interrupt();
+                break;
             }
             retryTimes++;
         } while (retryTimes < cacheConfig.getReloadMaxTimes());

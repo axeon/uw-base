@@ -49,11 +49,15 @@ public class GlobalHashSet {
      * @param item    元素对象，null 或 setName 为 null 时返回 false。
      * @return true 表示新增成功，false 表示已存在或参数非法
      */
-    public static boolean add(String setName, Object item) {
+    public static long add(String setName, Object item) {
         if (setName == null || item == null) {
-            return false;
+            return -1;
         }
-        return Boolean.TRUE.equals(dataCacheRedisTemplate.opsForSet().add(REDIS_PREFIX + setName, KryoUtils.serialize(item)));
+        //SetOperations.add 返回 Long(新增数量)——此前用 Boolean.TRUE.equals 包 Long 恒为 false,返回值从未正确过
+        Long ret = dataCacheRedisTemplate.opsForSet().add(REDIS_PREFIX + setName, KryoUtils.serialize(item));
+        if (ret==null)
+            return 0;
+        return ret;
     }
 
     /**

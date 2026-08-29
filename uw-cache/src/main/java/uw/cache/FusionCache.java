@@ -1237,10 +1237,9 @@ public class FusionCache {
             private int localCacheMaxNum = 10000;
 
             /**
-             * 全局缓存有效期毫秒数，默认为-1。
-             * 设置为0的时候，表示永不过期。
-             * 设置为-1的时候，表示不使用全局缓存。
-             * 鉴于redis的特性，一般建议设置一个有效期，防止redis爆库。
+             * 缓存有效期毫秒数，默认为-1（与 Config.cacheExpireMillis 同语义）。
+             * -1/0：永不过期（本地与 Redis 均不设过期；全局缓存的开关是 isGlobalCache）。
+             * >0：同时作为本地 wrapper 过期时间与 Redis TTL。鉴于redis的特性，建议设正值防止redis爆库。
              */
             private long cacheExpireMillis = -1;
             /**

@@ -84,9 +84,10 @@ class GlobalSortedSetDelayQueueTest {
     void memberUniquenessTrap() {
         String set = setName("uniq");
         try {
-            // 完全相同的两个对象 → kryo 字节相同 → zadd 覆盖，size 仍为 1
+            // 完全相同的两个对象 → kryo 字节相同 → zadd 视为同一 member 仅更新 score：
+            // 第二次 add 返回 false（Spring 契约：仅更新 score 时返回 false）——这正是"覆盖"的证明，size 仍为 1
             assertThat(GlobalSortedSet.add(set, new DelayItem("id1", "x"), 1000)).isTrue();
-            assertThat(GlobalSortedSet.add(set, new DelayItem("id1", "x"), 2000)).isTrue();
+            assertThat(GlobalSortedSet.add(set, new DelayItem("id1", "x"), 2000)).isFalse();
             assertThat(GlobalSortedSet.size(set)).as("相同 payload 被 zset 覆盖，只保留一条").isEqualTo(1);
 
             // id 不同 → 字节不同 → 共存

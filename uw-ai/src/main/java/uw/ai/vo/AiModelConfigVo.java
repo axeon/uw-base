@@ -83,29 +83,29 @@ public class AiModelConfigVo {
     @Schema(title = "状态", description = "状态", maxLength=10, nullable=true )
     private int state;
     /**
-     * 输入token积点倍率(千分比,1000=1.0倍)
+     * 输入计费参数(毫积点/千token;按量模型=0)
      */
-    private Integer creditRateInput;
+    private int creditInput;
     /**
-     * 输出token积点倍率(千分比,3000=3.0倍)
+     * 输出计费参数(毫积点/千token;按量模型=每单位毫积点)
      */
-    private Integer creditRateOutput;
+    private int creditOutput;
     /**
-     * 缓存命中token折抵倍率(千分比,900=0.9倍)
+     * 缓存折抵参数(毫积点/千token)
      */
-    private Integer creditRateCached;
+    private int creditCached;
     /**
-     * 输入token厂商定价(分/百万token)
+     * 输入token厂商定价(分/百万token;0=未提供)
      */
-    private Integer priceInput;
+    private int priceInput;
     /**
-     * 输出token厂商定价(分/百万token)
+     * 输出token厂商定价(分/百万token;0=未提供)
      */
-    private Integer priceOutput;
+    private int priceOutput;
     /**
-     * 缓存命中token厂商定价(分/百万token)
+     * 缓存命中token厂商定价(分/百万token;0=未提供)
      */
-    private Integer priceCached;
+    private int priceCached;
 
     /**
      * 创建时间
@@ -230,51 +230,51 @@ public class AiModelConfigVo {
     public void setModifyDate(Date modifyDate) {
         this.modifyDate = modifyDate;
     }
-    public Integer getCreditRateInput() {
-        return creditRateInput;
+    public int getCreditInput() {
+        return creditInput;
     }
 
-    public void setCreditRateInput(Integer creditRateInput) {
-        this.creditRateInput = creditRateInput;
+    public void setCreditInput(int creditInput) {
+        this.creditInput = creditInput;
     }
 
-    public Integer getCreditRateOutput() {
-        return creditRateOutput;
+    public int getCreditOutput() {
+        return creditOutput;
     }
 
-    public void setCreditRateOutput(Integer creditRateOutput) {
-        this.creditRateOutput = creditRateOutput;
+    public void setCreditOutput(int creditOutput) {
+        this.creditOutput = creditOutput;
     }
 
-    public Integer getCreditRateCached() {
-        return creditRateCached;
+    public int getCreditCached() {
+        return creditCached;
     }
 
-    public void setCreditRateCached(Integer creditRateCached) {
-        this.creditRateCached = creditRateCached;
+    public void setCreditCached(int creditCached) {
+        this.creditCached = creditCached;
     }
 
-    public Integer getPriceInput() {
+    public int getPriceInput() {
         return priceInput;
     }
 
-    public void setPriceInput(Integer priceInput) {
+    public void setPriceInput(int priceInput) {
         this.priceInput = priceInput;
     }
 
-    public Integer getPriceOutput() {
+    public int getPriceOutput() {
         return priceOutput;
     }
 
-    public void setPriceOutput(Integer priceOutput) {
+    public void setPriceOutput(int priceOutput) {
         this.priceOutput = priceOutput;
     }
 
-    public Integer getPriceCached() {
+    public int getPriceCached() {
         return priceCached;
     }
 
-    public void setPriceCached(Integer priceCached) {
+    public void setPriceCached(int priceCached) {
         this.priceCached = priceCached;
     }
 }

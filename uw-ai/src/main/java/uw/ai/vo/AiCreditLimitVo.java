@@ -21,15 +21,15 @@ public class AiCreditLimitVo {
     private long userId;
 
     /**
-     * 周期限额积点
+     * 周期限额(毫积点)
      */
-    @Schema(title = "周期限额积点", description = "周期限额积点(计费口径)")
+    @Schema(title = "周期限额", description = "周期限额(毫积点,展示÷1000=积点)")
     private long creditsLimit;
 
     /**
-     * 当前周期内已用积点
+     * 当前周期内已用(毫积点)
      */
-    @Schema(title = "当前周期内已用积点", description = "当前周期内已用积点(计费口径,周期已过时为重置后口径)")
+    @Schema(title = "当前周期内已用", description = "当前周期内已用(毫积点,展示÷1000=积点,周期已过时为重置后口径)")
     private long creditsUsed;
 
     /**

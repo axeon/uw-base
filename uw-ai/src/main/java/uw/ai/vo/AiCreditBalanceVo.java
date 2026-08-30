@@ -15,21 +15,21 @@ public class AiCreditBalanceVo {
     private long saasId;
 
     /**
-     * 累计充值积点
+     * 累计充值(毫积点)
      */
-    @Schema(title = "累计充值积点", description = "累计充值积点(计费口径)")
+    @Schema(title = "累计充值", description = "累计充值(毫积点,展示÷1000=积点)")
     private long creditsAll;
 
     /**
-     * 累计消耗积点
+     * 累计消耗(毫积点)
      */
-    @Schema(title = "累计消耗积点", description = "累计消耗积点(计费口径)")
+    @Schema(title = "累计消耗", description = "累计消耗(毫积点,展示÷1000=积点)")
     private long creditsUsed;
 
     /**
-     * 剩余token(=grant-used,负数=欠费)
+     * 剩余(=grant-used,毫积点,负数=欠费)
      */
-    @Schema(title = "剩余token", description = "剩余token(=grant-used,负数=欠费)")
+    @Schema(title = "剩余", description = "剩余(=grant-used,毫积点,负数=欠费)")
     private long remaining;
 
     public long getSaasId() {

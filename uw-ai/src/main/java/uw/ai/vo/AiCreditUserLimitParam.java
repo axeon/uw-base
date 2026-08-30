@@ -15,9 +15,9 @@ public class AiCreditUserLimitParam {
     private long userId;
 
     /**
-     * 周期限额积点(0=只统计不拦截)
+     * 周期限额(毫积点,前端已×1000;0=只统计不拦截)
      */
-    @Schema(title = "周期限额积点", description = "周期限额积点(0=只统计不拦截)")
+    @Schema(title = "周期限额", description = "周期限额(毫积点,0=只统计不拦截)")
     private long creditsLimit;
 
     /**

@@ -1,5 +1,6 @@
 package uw.auth.service.token;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import uw.common.util.SystemClock;
 
 import java.util.StringJoiner;
@@ -73,10 +74,19 @@ public class InvalidTokenData {
         setNotice(builder.notice);
     }
 
+    /**
+     * 显式声明无参构造为反序列化creator。
+     * Jackson3默认会把public带参构造隐式推断为properties-based creator(authToken参数无对应JSON属性会绑null导致NPE)，
+     * 显式注解后隐式推断被压制，反序列化固定走无参构造+setter；序列化不受影响。
+     */
+    @JsonCreator
     public InvalidTokenData() {
 
     }
 
+    /**
+     * 服务端组装出参用的便捷构造(实体转Vo)。
+     */
     public InvalidTokenData(AuthTokenData authToken, int invalidType, String notice) {
         this.invalidType = invalidType;
         this.invalidDate = SystemClock.now();

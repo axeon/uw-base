@@ -11,7 +11,7 @@ import uw.common.response.ResponseData;
 public interface AiCreditRpc {
 
     /**
-     * 给 SaaS 充值积点（credits 可为负=回收；RPC 入参单位为积点，服务端转为毫积点存储）。
+     * 给 SaaS 充值毫积点（credits 可为负=回收；RPC 入参单位为毫积点）。
      *
      * @param param 充值参数（saasId + credits + remark）
      * @return 充值后的余额，字段金额单位为毫积点

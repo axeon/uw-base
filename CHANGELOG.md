@@ -1,3 +1,22 @@
+# 2026.0900.0003版本升级说明
+uw-common 的 MoneyUtils 与 CurrencyUtils 打通，金额计量口径由硬编码「分」升级为币种感知的「最小货币单位」，支持 ISO 4217 全部精度（0/2/3/4 位），修复跨精度币种汇率换算的量级错误、大额金额精度截断与币种代码大小写陷阱；修复 uw_common / uw_validate 国际化资源错置导致的 i18n 全面失效。
+
+## uw-common
+1. CurrencyUtils 新增最小货币单位能力：getMinorUnit(Currency/String) 返回币种小数位数（ISO 4217 exponent），getScale(Currency/String) 返回换算比例 10^minorUnit。数据源为 JDK 内置 Currency 表，随 JDK 更新维护，无需自建币种字典。黄金(XAU)等非流通代码 JDK 返回 -1，统一归一化为 0，保证比例恒为正。币种代码解析大小写不敏感并自动去除首尾空白。
+2. MoneyUtils 新增币种感知的主单位/最小单位转换：toMajor(long, Currency/String) 与 fromMajor(String, Currency/String)，小数位数按币种决定——CNY 1999→"19.99"、JPY 1000→"1000"、KWD 1999→"1.999"。fromMajor 对超出币种精度的入参抛出 IllegalArgumentException（fail-closed，不静默截断，避免资金差错）。
+3. MoneyUtils 新增 exchange(long, String rate, Currency/String from, Currency/String to) 跨币种换算，自动修正两币种的最小单位精度差，公式为 minorTo = minorFrom × rate × 10^(minorUnitTo − minorUnitFrom)。⚠️ 此前用 multiplyRate 直接换算在精度不同的币种间会产生量级错误：100.00 USD 按汇率 150 换日元，未修正得 1500000（150 万日元），正确为 15000 日元，相差 100 倍；两币种精度相同时修正因子为 1，与 multiplyRate 等价。
+4. MoneyUtils.Chain 携带币种：新增 of(long, Currency/String)、ofMajor(String, Currency/String) 入口，新增 major() 按币种精度结算、minor() 作为 cent() 的多币种语义别名、currency() 读取币种、exchangeTo(rate, 目标币种) 链式换算（币种变化故返回新实例）。Chain 之间的 add/subtract/gt/gte/lt/lte 校验币种一致性，不一致抛出 IllegalArgumentException 防止串币；equals 对币种不一致返回 false 而非抛异常，以符合 Object.equals 通用约定。
+
+## 兼容性说明
+1. toYuan/fromYuan/ofYuan/yuan()/cent() 全部保留且语义不变（内部委托 CNY 实现），存量按「分」计量的调用无需任何改动。币种缺省一律按 CNY 处理。
+2. 唯一行为变更：Chain.toString() 由 "1.99" 改为 "1.99 CNY"（追加币种代码，便于日志排查串币）。该方法仅用于调试展示，结算请使用 cent()/minor()/major()/yuan()。
+3. 多币种业务请改用 toMajor/fromMajor/exchange —— toYuan/fromYuan 的「元」概念仅对 2 位币种成立，对 JPY(0 位)、KWD(3 位)等会得到错误结果。
+
+## 缺陷修复
+1. 修复 i18n 资源错置导致的国际化全面失效：uw_common（CommonResponseCode）与 uw_validate（ValidateResponseCode）两族共 26 个 properties 原置于 uw-common-app，而其归属类在 uw-common。因 ResponseCode 按 codePrefix 推导 basename 从 classpath 加载，仅依赖 uw-common 而不依赖 uw-common-app 的 16 个模块（uw-dao / uw-cache / uw-auth-client / uw-httpclient 等）在运行期找不到资源包，getLocalizedMessage() 静默回退中文兜底文案，所有语种失效且无任何报错。现将资源移至归属模块 uw-common，与 uw-dao / uw-mfa / uw-oauth2-client 各自携带自身资源的既有约定一致。修复后 en/ja/ko 等语种在仅有 uw-common 的环境下正常解析。
+2. 修复大额金额精度截断（存量缺陷）：multiplyRate(long,String) 与 multiplyRate(long,double) 原用 MathContext.DECIMAL64（16 位有效数字）做乘法，而 long 最大 19 位有效数字，超过 16 位的金额被静默截断——实测 1234567890123456789 × 1.0 得 1234567890123457000，误差 211。现移除 MathContext 改为精确乘法；exchange 同源问题一并修正，其降精度分支改用 divide(divisor, 0, HALF_UP) 一次定标，既保精度又避免无终止小数抛 ArithmeticException。已补回归测试并经变异测试验证（还原旧实现即失败）。
+3. 修复币种代码大小写陷阱：Currency.getInstance 仅接受大写 ISO 代码，此前传入小写（如库表取出的 "jpy"）会抛异常并被静默兜底为默认 CNY，导致 JPY 按 2 位精度换算产生 100 倍错误。现 getCurrency 统一 trim + toUpperCase(Locale.ROOT) 归一化（用 ROOT 而非默认 Locale，避免土耳其语环境下 i→İ 的误转），大小写与首尾空白均不再影响解析。
+
 # 2026.0900.0001版本升级说明
 uw-httpclient 对称补齐写方法（POST/PUT/PATCH/DELETE）的请求体能力，新增 BodyQuery（请求体 + queryParam）系列；uw-ai 新增积点计费体系与结构化输出自校正；uw-common 新增全局审批状态 AuditState；同步升级 Spring Boot 4.1.1 / Spring Cloud 2025.1.3 / nacos-client 3.3.0-BETA。
 

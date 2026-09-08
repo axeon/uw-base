@@ -3,6 +3,8 @@ package uw.common.util;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Locale;
+
 public class MoneyUtilsTest {
 
     // ==================== 静态方法：加减 ====================
@@ -628,6 +630,132 @@ public class MoneyUtilsTest {
         }
     }
 
+    @Test
+    void testCurrencyCodeCaseInsensitive() {
+        // 库表/接口可能传入小写代码，Currency.getInstance 仅接受大写；
+        // 若静默回落默认CNY，JPY会按2位精度换算导致100倍错误
+        Assertions.assertEquals(0, CurrencyUtils.getMinorUnit("jpy"));
+        Assertions.assertEquals(0, CurrencyUtils.getMinorUnit("Jpy"));
+        Assertions.assertEquals(0, CurrencyUtils.getMinorUnit(" jpy "));
+        Assertions.assertEquals(3, CurrencyUtils.getMinorUnit("kwd"));
+        Assertions.assertEquals(1000, CurrencyUtils.getScale("kwd"));
+        Assertions.assertEquals(15000, MoneyUtils.exchange(10000, "150", "usd", "jpy"));
+        Assertions.assertEquals("1000", MoneyUtils.toMajor(1000, "jpy"));
+    }
+
+    @Test
+    void testCurrencyCodeCaseInsensitiveUnderTurkishLocale() {
+        // 土耳其locale下 "i".toUpperCase() 会得到 "İ"，必须用 Locale.ROOT
+        Locale old = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+            Assertions.assertEquals(0, CurrencyUtils.getMinorUnit("jpy"));
+            Assertions.assertEquals(2, CurrencyUtils.getMinorUnit("cny"));
+        } finally {
+            Locale.setDefault(old);
+        }
+    }
+
+    @Test
+    void testGetCurrencyInvalidStillFallsBack() {
+        Assertions.assertNull(CurrencyUtils.getCurrency("bad"));
+        Assertions.assertNull(CurrencyUtils.getCurrency(null));
+        Assertions.assertEquals(CurrencyUtils.CURRENCY_DEFAULT,
+                CurrencyUtils.getCurrency("bad", CurrencyUtils.CURRENCY_DEFAULT));
+        Assertions.assertEquals(CurrencyUtils.CURRENCY_DEFAULT,
+                CurrencyUtils.getCurrency(null, CurrencyUtils.CURRENCY_DEFAULT));
+    }
+
+    // ==================== 大额精度（回归防护） ====================
+
+    @Test
+    void testMultiplyRateLargeAmountNoPrecisionLoss() {
+        // 19位金额：DECIMAL64仅16位有效数字，若指定MathContext会静默截断
+        long amount = 1234567890123456789L;
+        Assertions.assertEquals(amount, MoneyUtils.multiplyRate(amount, "1.0"),
+                "String倍率不得因有效数字上限而截断大额");
+        Assertions.assertEquals(amount, MoneyUtils.multiplyRate(amount, 1.0),
+                "double倍率不得因有效数字上限而截断大额");
+    }
+
+    @Test
+    void testExchangeLargeAmountNoPrecisionLoss() {
+        long amount = 1234567890123456789L;
+        Assertions.assertEquals(amount, MoneyUtils.exchange(amount, "1", "CNY", "CNY"),
+                "同精度换算不得截断大额");
+        // 精确期望值由BigDecimal独立计算，避免与被测实现同源
+        java.math.BigDecimal expected = java.math.BigDecimal.valueOf(amount)
+                .multiply(new java.math.BigDecimal("2"))
+                .divide(java.math.BigDecimal.valueOf(100), 0, java.math.RoundingMode.HALF_UP);
+        Assertions.assertEquals(expected.longValueExact(),
+                MoneyUtils.exchange(amount, "2", "CNY", "JPY"),
+                "降精度换算不得截断大额");
+    }
+
+    @Test
+    void testExchangeNonTerminatingDecimalNoException() {
+        // 降精度走除法分支，必须显式指定scale，否则无终止小数抛ArithmeticException
+        Assertions.assertDoesNotThrow(
+                () -> MoneyUtils.exchange(1234567, "0.3333333333333333333333", "USD", "JPY"));
+        Assertions.assertDoesNotThrow(
+                () -> MoneyUtils.exchange(1, "0.07", "USD", "JPY"));
+    }
+
+    @Test
+    void testExchangeOverflowThrows() {
+        // 溢出必须显式抛出而非静默回绕
+        Assertions.assertThrows(ArithmeticException.class,
+                () -> MoneyUtils.exchange(Long.MAX_VALUE, "2", "CNY", "CNY"));
+    }
+
+    @Test
+    void testExchangeInvalidRate() {
+        Assertions.assertThrows(NullPointerException.class,
+                () -> MoneyUtils.exchange(100, null, "USD", "JPY"));
+        Assertions.assertThrows(NumberFormatException.class,
+                () -> MoneyUtils.exchange(100, "abc", "USD", "JPY"));
+    }
+
+    @Test
+    void testToMajorFourDigitCurrency() {
+        // CLF 为4位币种，验证查表上界
+        Assertions.assertEquals("1.2345", MoneyUtils.toMajor(12345, "CLF"));
+        Assertions.assertEquals(12345, MoneyUtils.fromMajor("1.2345", "CLF"));
+    }
+
+    @Test
+    void testFromMajorEmptyDecimalPart() {
+        // "1." 小数部分为空，不得因 Long.parseLong("") 抛NumberFormatException
+        Assertions.assertEquals(100, MoneyUtils.fromMajor("1.", "CNY"));
+        Assertions.assertEquals(100, MoneyUtils.fromMajor("100.", "JPY"));
+    }
+
+    @Test
+    void testFromMajorLeadingDot() {
+        Assertions.assertEquals(50, MoneyUtils.fromMajor(".5", "CNY"));
+        Assertions.assertEquals(-50, MoneyUtils.fromMajor("-.5", "CNY"));
+    }
+
+    // ==================== Chain：equals/hashCode 契约 ====================
+
+    @Test
+    void testChainHashSetDedupByCurrency() {
+        java.util.Set<MoneyUtils.Chain> set = new java.util.HashSet<>();
+        set.add(MoneyUtils.of(100, "CNY"));
+        set.add(MoneyUtils.of(100, "USD"));
+        set.add(MoneyUtils.of(100, "CNY"));
+        Assertions.assertEquals(2, set.size(), "同额不同币种不得被去重");
+    }
+
+    @Test
+    void testChainNullCurrencyFallsBackToCny() {
+        Assertions.assertEquals("CNY",
+                MoneyUtils.of(100, (java.util.Currency) null).currency().getCurrencyCode());
+        Assertions.assertEquals("CNY",
+                MoneyUtils.of(100, (String) null).currency().getCurrencyCode());
+        Assertions.assertEquals("1.00", MoneyUtils.toMajor(100, (String) null));
+    }
+
     // ==================== Chain：创建与结算 ====================
 
     @Test
@@ -973,9 +1101,11 @@ public class MoneyUtilsTest {
 
     @Test
     void testChainToString() {
-        Assertions.assertEquals("1.99", MoneyUtils.of(199).toString());
-        Assertions.assertEquals("0.00", MoneyUtils.of(0).toString());
-        Assertions.assertEquals("-1.00", MoneyUtils.of(-100).toString());
+        // toString 输出主单位金额 + 币种代码，便于日志排查串币问题
+        Assertions.assertEquals("1.99 CNY", MoneyUtils.of(199).toString());
+        Assertions.assertEquals("0.00 CNY", MoneyUtils.of(0).toString());
+        Assertions.assertEquals("-1.00 CNY", MoneyUtils.of(-100).toString());
+        Assertions.assertEquals("1000 JPY", MoneyUtils.of(1000, "JPY").toString());
     }
 
     // ==================== Chain：复杂链式场景 ====================
@@ -1119,5 +1249,304 @@ public class MoneyUtilsTest {
         Assertions.assertEquals(0, MoneyUtils.divideRate(1, 3.0));
         // 3分 / 3.0 = 1
         Assertions.assertEquals(1, MoneyUtils.divideRate(3, 3.0));
+    }
+
+    // ==================== 多币种：最小单位精度 ====================
+
+    @Test
+    void testCurrencyMinorUnit() {
+        // 2位币种（180种，占绝大多数）
+        Assertions.assertEquals(2, CurrencyUtils.getMinorUnit("CNY"));
+        Assertions.assertEquals(2, CurrencyUtils.getMinorUnit("USD"));
+        Assertions.assertEquals(2, CurrencyUtils.getMinorUnit("HKD"));
+        // 0位币种（日韩越，旅游行业高频市场）
+        Assertions.assertEquals(0, CurrencyUtils.getMinorUnit("JPY"));
+        Assertions.assertEquals(0, CurrencyUtils.getMinorUnit("KRW"));
+        Assertions.assertEquals(0, CurrencyUtils.getMinorUnit("VND"));
+        // 3位币种（中东北非第纳尔系）
+        Assertions.assertEquals(3, CurrencyUtils.getMinorUnit("KWD"));
+        Assertions.assertEquals(3, CurrencyUtils.getMinorUnit("BHD"));
+        Assertions.assertEquals(3, CurrencyUtils.getMinorUnit("OMR"));
+    }
+
+    @Test
+    void testCurrencyScale() {
+        Assertions.assertEquals(100, CurrencyUtils.getScale("CNY"));
+        Assertions.assertEquals(1, CurrencyUtils.getScale("JPY"));
+        Assertions.assertEquals(1000, CurrencyUtils.getScale("KWD"));
+        // 非法币种回落默认CNY
+        Assertions.assertEquals(100, CurrencyUtils.getScale("NOT_A_CURRENCY"));
+        Assertions.assertEquals(100, CurrencyUtils.getScale((String) null));
+    }
+
+    @Test
+    void testCurrencyMinorUnitNonCirculating() {
+        // 黄金等非流通代码 JDK 返回 -1，须归一化为 0 避免负指数
+        Assertions.assertEquals(0, CurrencyUtils.getMinorUnit("XAU"));
+        Assertions.assertEquals(1, CurrencyUtils.getScale("XAU"));
+    }
+
+    @Test
+    void testMinorUnitMatchesIso4217() {
+        // 守护：本类换算比例须与 JDK 的 ISO 4217 数据一致
+        for (java.util.Currency c : CurrencyUtils.getAvailableCurrencies()) {
+            int expected = Math.max(c.getDefaultFractionDigits(), 0);
+            Assertions.assertEquals(expected, CurrencyUtils.getMinorUnit(c),
+                    "minorUnit mismatch for " + c.getCurrencyCode());
+        }
+    }
+
+    // ==================== 多币种：toMajor / fromMajor ====================
+
+    @Test
+    void testToMajorTwoDigits() {
+        Assertions.assertEquals("19.99", MoneyUtils.toMajor(1999, "CNY"));
+        Assertions.assertEquals("0.09", MoneyUtils.toMajor(9, "USD"));
+        Assertions.assertEquals("0.00", MoneyUtils.toMajor(0, "CNY"));
+        Assertions.assertEquals("-19.99", MoneyUtils.toMajor(-1999, "CNY"));
+    }
+
+    @Test
+    void testToMajorZeroDigits() {
+        // 日元无小数概念，最小单位即主单位
+        Assertions.assertEquals("1000", MoneyUtils.toMajor(1000, "JPY"));
+        Assertions.assertEquals("0", MoneyUtils.toMajor(0, "JPY"));
+        Assertions.assertEquals("-1000", MoneyUtils.toMajor(-1000, "KRW"));
+    }
+
+    @Test
+    void testToMajorThreeDigits() {
+        // 科威特第纳尔千分位
+        Assertions.assertEquals("1.999", MoneyUtils.toMajor(1999, "KWD"));
+        Assertions.assertEquals("0.009", MoneyUtils.toMajor(9, "KWD"));
+        Assertions.assertEquals("0.099", MoneyUtils.toMajor(99, "BHD"));
+        Assertions.assertEquals("-1.999", MoneyUtils.toMajor(-1999, "KWD"));
+    }
+
+    @Test
+    void testToMajorLongMinValue() {
+        // Long.MIN_VALUE 绝对值溢出，须保证不抛异常且符号正确
+        String s = MoneyUtils.toMajor(Long.MIN_VALUE, "CNY");
+        Assertions.assertTrue(s.startsWith("-"), "expected negative: " + s);
+        String j = MoneyUtils.toMajor(Long.MIN_VALUE, "JPY");
+        Assertions.assertEquals(Long.toString(Long.MIN_VALUE), j);
+    }
+
+    @Test
+    void testFromMajorTwoDigits() {
+        Assertions.assertEquals(1999, MoneyUtils.fromMajor("19.99", "CNY"));
+        Assertions.assertEquals(190, MoneyUtils.fromMajor("1.9", "CNY"));
+        Assertions.assertEquals(500, MoneyUtils.fromMajor("5", "CNY"));
+        Assertions.assertEquals(-1999, MoneyUtils.fromMajor("-19.99", "USD"));
+    }
+
+    @Test
+    void testFromMajorZeroDigits() {
+        Assertions.assertEquals(1000, MoneyUtils.fromMajor("1000", "JPY"));
+        Assertions.assertEquals(0, MoneyUtils.fromMajor("0", "JPY"));
+        Assertions.assertEquals(-500, MoneyUtils.fromMajor("-500", "KRW"));
+    }
+
+    @Test
+    void testFromMajorThreeDigits() {
+        Assertions.assertEquals(1999, MoneyUtils.fromMajor("1.999", "KWD"));
+        // 补零：1.9 第纳尔 = 1900 费尔（而非190）
+        Assertions.assertEquals(1900, MoneyUtils.fromMajor("1.9", "KWD"));
+        Assertions.assertEquals(1000, MoneyUtils.fromMajor("1", "KWD"));
+    }
+
+    @Test
+    void testFromMajorScaleExceeded() {
+        // 超出币种精度 fail-closed，不静默截断
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> MoneyUtils.fromMajor("1.999", "CNY"));
+        // 日元不接受任何小数
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> MoneyUtils.fromMajor("1.5", "JPY"));
+        // 第纳尔不接受4位小数
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> MoneyUtils.fromMajor("1.9999", "KWD"));
+    }
+
+    @Test
+    void testFromMajorInvalid() {
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> MoneyUtils.fromMajor(null, "CNY"));
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> MoneyUtils.fromMajor("", "CNY"));
+    }
+
+    @Test
+    void testMajorRoundTripAllPrecisions() {
+        String[] currencies = {"CNY", "USD", "JPY", "KRW", "KWD", "BHD"};
+        long[] values = {0, 1, 9, 10, 99, 100, 999, 1000, 1999, -1, -99, -1999};
+        for (String cur : currencies) {
+            for (long v : values) {
+                Assertions.assertEquals(v, MoneyUtils.fromMajor(MoneyUtils.toMajor(v, cur), cur),
+                        "round trip failed for " + v + " " + cur);
+            }
+        }
+    }
+
+    @Test
+    void testToYuanDelegatesToMajor() {
+        // 旧API与新API在CNY下必须完全等价
+        long[] values = {0, 1, 9, 10, 99, 100, 199, 10000, 999999, -199, -1};
+        for (long v : values) {
+            Assertions.assertEquals(MoneyUtils.toMajor(v, "CNY"), MoneyUtils.toYuan(v));
+            Assertions.assertEquals(MoneyUtils.fromMajor(MoneyUtils.toYuan(v), "CNY"),
+                    MoneyUtils.fromYuan(MoneyUtils.toYuan(v)));
+        }
+    }
+
+    // ==================== 多币种：汇率换算 ====================
+
+    @Test
+    void testExchangeSamePrecision() {
+        // 精度相同，修正因子为1，退化为普通乘法
+        // 100.00 USD × 7.2 = 720.00 CNY
+        Assertions.assertEquals(72000, MoneyUtils.exchange(10000, "7.2", "USD", "CNY"));
+        Assertions.assertEquals(MoneyUtils.multiplyRate(10000, "7.2"),
+                MoneyUtils.exchange(10000, "7.2", "USD", "CNY"));
+    }
+
+    @Test
+    void testExchangeToLowerPrecision() {
+        // USD(2位) → JPY(0位)，汇率150：100.00美元 = 15000日元
+        // 未修正会得到 1500000（150万日元），差100倍
+        Assertions.assertEquals(15000, MoneyUtils.exchange(10000, "150", "USD", "JPY"));
+        // 1.00美元 = 150日元
+        Assertions.assertEquals(150, MoneyUtils.exchange(100, "150", "USD", "JPY"));
+    }
+
+    @Test
+    void testExchangeToHigherPrecision() {
+        // JPY(0位) → USD(2位)，汇率0.0067：15000日元 ≈ 100.50美元
+        Assertions.assertEquals(10050, MoneyUtils.exchange(15000, "0.0067", "JPY", "USD"));
+        // CNY(2位) → KWD(3位)，汇率0.043：100.00元 = 4.300第纳尔
+        Assertions.assertEquals(4300, MoneyUtils.exchange(10000, "0.043", "CNY", "KWD"));
+    }
+
+    @Test
+    void testExchangeThreeDigitCurrency() {
+        // KWD(3位) → CNY(2位)，汇率23.6：1.000第纳尔 = 23.60元
+        Assertions.assertEquals(2360, MoneyUtils.exchange(1000, "23.6", "KWD", "CNY"));
+    }
+
+    @Test
+    void testExchangeSameCurrency() {
+        // 同币种汇率1，原值返回
+        Assertions.assertEquals(10000, MoneyUtils.exchange(10000, "1", "CNY", "CNY"));
+        Assertions.assertEquals(1000, MoneyUtils.exchange(1000, "1", "JPY", "JPY"));
+    }
+
+    @Test
+    void testExchangeZeroAndNegative() {
+        Assertions.assertEquals(0, MoneyUtils.exchange(0, "150", "USD", "JPY"));
+        Assertions.assertEquals(-15000, MoneyUtils.exchange(-10000, "150", "USD", "JPY"));
+    }
+
+    @Test
+    void testExchangeRounding() {
+        // 1日元 × 0.0067 = 0.0067 → 四舍五入到0（精度差修正后）
+        Assertions.assertEquals(1, MoneyUtils.exchange(1, "0.0067", "JPY", "USD"));
+    }
+
+    @Test
+    void testExchangeRoundTripAcrossPrecision() {
+        // USD → JPY → USD 往返，允许舍入误差
+        long usd = 10000;
+        long jpy = MoneyUtils.exchange(usd, "150", "USD", "JPY");
+        long back = MoneyUtils.exchange(jpy, "0.0066667", "JPY", "USD");
+        Assertions.assertTrue(Math.abs(usd - back) <= 2,
+                "round trip error too large: " + Math.abs(usd - back));
+    }
+
+    // ==================== 多币种：Chain ====================
+
+    @Test
+    void testChainWithCurrency() {
+        Assertions.assertEquals("1000", MoneyUtils.of(1000, "JPY").major());
+        Assertions.assertEquals("1.999", MoneyUtils.of(1999, "KWD").major());
+        Assertions.assertEquals("19.99", MoneyUtils.of(1999, "CNY").major());
+        // 缺省币种为CNY，旧行为不变
+        Assertions.assertEquals("19.99", MoneyUtils.of(1999).major());
+        Assertions.assertEquals("19.99", MoneyUtils.of(1999).yuan());
+    }
+
+    @Test
+    void testChainCurrencyAccessor() {
+        Assertions.assertEquals("JPY", MoneyUtils.of(1000, "JPY").currency().getCurrencyCode());
+        Assertions.assertEquals("CNY", MoneyUtils.of(1000).currency().getCurrencyCode());
+        // 非法币种回落CNY
+        Assertions.assertEquals("CNY", MoneyUtils.of(1000, "BAD").currency().getCurrencyCode());
+    }
+
+    @Test
+    void testChainMinorAlias() {
+        Assertions.assertEquals(1000, MoneyUtils.of(1000, "JPY").minor());
+        Assertions.assertEquals(MoneyUtils.of(1999).cent(), MoneyUtils.of(1999).minor());
+    }
+
+    @Test
+    void testChainOfMajor() {
+        Assertions.assertEquals(1999, MoneyUtils.ofMajor("19.99", "CNY").cent());
+        Assertions.assertEquals(1000, MoneyUtils.ofMajor("1000", "JPY").cent());
+        Assertions.assertEquals(1999, MoneyUtils.ofMajor("1.999", "KWD").cent());
+    }
+
+    @Test
+    void testChainCurrencyMismatchThrows() {
+        // 防串币：不同币种运算直接抛异常
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> MoneyUtils.of(100, "CNY").add(MoneyUtils.of(100, "USD")));
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> MoneyUtils.of(100, "CNY").subtract(MoneyUtils.of(100, "JPY")));
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> MoneyUtils.of(100, "CNY").gt(MoneyUtils.of(100, "USD")));
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> MoneyUtils.of(100, "CNY").lte(MoneyUtils.of(100, "USD")));
+    }
+
+    @Test
+    void testChainSameCurrencyOpsStillWork() {
+        Assertions.assertEquals(300,
+                MoneyUtils.of(100, "JPY").add(MoneyUtils.of(200, "JPY")).cent());
+        Assertions.assertTrue(MoneyUtils.of(200, "JPY").gt(MoneyUtils.of(100, "JPY")));
+    }
+
+    @Test
+    void testChainEqualsConsidersCurrency() {
+        // equals 对币种不一致返回 false（不抛异常，符合 Object.equals 约定）
+        Assertions.assertEquals(MoneyUtils.of(100, "CNY"), MoneyUtils.of(100, "CNY"));
+        Assertions.assertNotEquals(MoneyUtils.of(100, "CNY"), MoneyUtils.of(100, "USD"));
+        Assertions.assertNotEquals(MoneyUtils.of(100, "CNY").hashCode(),
+                MoneyUtils.of(100, "USD").hashCode());
+    }
+
+    @Test
+    void testChainExchangeTo() {
+        // 链式跨币种换算，返回新Chain且币种已切换
+        MoneyUtils.Chain jpy = MoneyUtils.of(10000, "USD").exchangeTo("150", "JPY");
+        Assertions.assertEquals(15000, jpy.cent());
+        Assertions.assertEquals("JPY", jpy.currency().getCurrencyCode());
+        Assertions.assertEquals("15000", jpy.major());
+    }
+
+    @Test
+    void testChainExchangeToThenCompute() {
+        // 换算后继续链式运算：100.00美元换日元后加500日元手续费
+        long total = MoneyUtils.of(10000, "USD")
+                .exchangeTo("150", "JPY")
+                .add(500)
+                .cent();
+        Assertions.assertEquals(15500, total);
+    }
+
+    @Test
+    void testChainArithmeticUnaffectedByCurrency() {
+        // 币种不影响整数运算本身，仅影响结算展示
+        Assertions.assertEquals(30000, MoneyUtils.of(10000, "JPY").multiply(3).cent());
+        Assertions.assertEquals(850, MoneyUtils.of(10000, "KWD").multiplyBps(850).cent());
     }
 }

@@ -530,3 +530,11 @@ ResponseData<AiModelApiVo> api = AiClientHelper.getModelApiByCode("openai-prod")
 ## 许可证
 
 [Apache License 2.0](../LICENSE)
+
+## 模型配置缓存字段
+
+`AiModelConfigVo` 的读取字段统一为 `creditCacheRead`、`priceCacheRead`；写入字段为 `creditCacheWrite`、`priceCacheWrite`。服务端与 SDK 同批升级，不再输出旧 `creditCached` / `priceCached` 字段。
+
+`creditCacheRead` 和 `creditCacheWrite` 分别是每千缓存读取/写入 token 的毫积点分量，最终按 `input + output - cache_read + cache_write` 计费。输入量已包含缓存读写，因此不能把完整缓存写入价填入写入参数，否则会与基础输入重复收费。`priceCacheRead` / `priceCacheWrite` 是分/百万 token 的完整参考价，不参与扣款。
+
+四个计费参数和四个 `priceXXX` 参考价均使用 `int`，参考价默认 0，表示未配置。SDK 将它们序列化为 JSON 整数，调用方也应提交 JSON 整数。服务端沿用框架现有的 JSON 绑定规则，没有新增严格反序列化校验；`int` 类型本身不保证拒绝小数或数字字符串。缓存始终进入计费，不提供状态开关，不区分 5m/1h。

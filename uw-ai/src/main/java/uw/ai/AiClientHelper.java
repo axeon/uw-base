@@ -264,38 +264,38 @@ public class AiClientHelper {
     }
 
     /**
-     * 给 saas 充值 AI 积点（ 可为负=回收）。
+     * 给 SaaS 充值 AI 积点（可为负=回收；RPC 入参单位为积点，余额返回单位为毫积点）。
      *
-     * @param param 充值参数
-     * @return 充值后的余额
+     * @param param 充值参数，界面提交毫积点时由调用方负责换算
+     * @return 充值后的余额，金额单位为毫积点
      */
     public static ResponseData<AiCreditBalanceVo> rechargeSaasCredits(AiCreditRechargeParam param) {
         return aiCreditRpc.recharge(param);
     }
 
     /**
-     * 查询 saas AI 积点 余额。
+     * 查询 SaaS AI 积点余额。
      *
      * @param saasId 租户
-     * @return 余额
+     * @return 余额，金额单位为毫积点
      */
     public static ResponseData<AiCreditBalanceVo> getSaasCreditsBalance(long saasId) {
         return aiCreditRpc.getBalance(saasId);
     }
 
     /**
-     * 查询员工 AI 积点限额（周期已过时按重置后口径返回）。
+     * 查询员工 AI 积点限额（周期已过时按重置后口径返回，金额单位为毫积点）。
      *
      * @param saasId 租户
      * @param userId 员工
-     * @return 员工限额（无行=未开通 AI 授权，data 为空）
+     * @return 员工限额（单位为毫积点；无行=未开通 AI 授权，data 为空）
      */
     public static ResponseData<AiCreditLimitVo> getUserCreditsLimit(long saasId, long userId) {
         return aiCreditRpc.getUserLimit(saasId, userId);
     }
 
     /**
-     * 清零员工当前周期已用 AI 积点（立即重置）。
+     * 清零员工当前周期已用 AI 积点（立即重置；返回金额单位为毫积点）。
      *
      * @param saasId 租户
      * @param userId 员工

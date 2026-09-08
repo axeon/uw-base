@@ -1,9 +1,12 @@
 package uw.ai.test;
 
+import tools.jackson.databind.JsonNode;
 import uw.ai.util.BeanOutputConverter;
 import uw.ai.vo.AiImageGenerateParam;
+import uw.ai.vo.AiModelConfigVo;
 import uw.ai.vo.AiTranslateListParam;
 import uw.ai.vo.AiTranslateMapParam;
+import uw.common.util.JsonUtils;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,6 +19,7 @@ import java.util.List;
  *   <li>翻译参数 Builder 的 configCode 透传（原 Builder 缺失 configCode）</li>
  *   <li>图片参数 Builder 的 prompt → userPrompt 映射</li>
  *   <li>BeanOutputConverter.cleanJson 的 markdown / think 标签清洗</li>
+ *   <li>缓存计费参数与参考价的 JSON 整数序列化及往返</li>
  * </ul>
  * 用法：直接运行 main，全部通过输出"全部通过"，失败抛 AssertionError。
  * <p>
@@ -29,8 +33,16 @@ import java.util.List;
  */
 public class UwAiRegressionTest {
 
+    /**
+     * 已通过的断言数量。
+     */
     private static int passed = 0;
 
+    /**
+     * 执行全部无网络回归测试。
+     *
+     * @param args 命令行参数，本测试不使用
+     */
     public static void main(String[] args) {
         testTranslateListParamConfigCode();
         testTranslateMapParamConfigCode();
@@ -39,6 +51,7 @@ public class UwAiRegressionTest {
         testCleanJsonPlain();
         testCleanJsonMarkdown();
         testCleanJsonThinkTag();
+        testCacheIntegerContract();
         System.out.println("全部通过，共 " + passed + " 项。");
     }
 
@@ -135,6 +148,35 @@ public class UwAiRegressionTest {
         assertEquals("{\"a\":1}", out, "think 标签清洗结果不符");
     }
 
+    /**
+     * 验证缓存参数序列化为 JSON 整数，并在往返后保持原值。
+     */
+    static void testCacheIntegerContract() {
+        for (int value : new int[]{0, 250, Integer.MAX_VALUE}) {
+            AiModelConfigVo model = new AiModelConfigVo();
+            model.setCreditCacheRead(value);
+            model.setPriceCacheRead(value);
+            model.setCreditCacheWrite(value);
+            model.setPriceCacheWrite(value);
+            String json = JsonUtils.toString(model);
+            JsonNode node = JsonUtils.parse(json, JsonNode.class);
+            assertEquals(true, node.path("creditCacheWrite").isIntegralNumber(), "写入费率必须是整数JSON");
+            assertEquals(true, node.path("priceCacheWrite").isIntegralNumber(), "写入参考价必须是整数JSON");
+            AiModelConfigVo restored = JsonUtils.parse(json, AiModelConfigVo.class);
+            assertEquals(value, restored.getCreditCacheWrite(), "写入参数往返");
+            assertEquals(value, restored.getPriceCacheWrite(), "参考价格往返");
+            assertEquals(value, restored.getCreditCacheRead(), "读取参数往返");
+        }
+    }
+
+    /**
+     * 断言两个对象相等，并累计通过数量。
+     *
+     * @param expected 期望值，可为 null
+     * @param actual 实际值，可为 null
+     * @param msg 断言失败时的说明
+     * @throws AssertionError 实际值与期望值不等时抛出
+     */
     private static void assertEquals(Object expected, Object actual, String msg) {
         boolean ok = (expected == null) ? actual == null : expected.equals(actual);
         if (!ok) {
@@ -143,6 +185,14 @@ public class UwAiRegressionTest {
         passed++;
     }
 
+    /**
+     * 断言两个长整数相等，并累计通过数量。
+     *
+     * @param expected 期望值
+     * @param actual 实际值
+     * @param msg 断言失败时的说明
+     * @throws AssertionError 实际值与期望值不等时抛出
+     */
     private static void assertEquals(long expected, long actual, String msg) {
         if (expected != actual) {
             throw new AssertionError(msg + "，期望=[" + expected + "]，实际=[" + actual + "]");
@@ -150,6 +200,14 @@ public class UwAiRegressionTest {
         passed++;
     }
 
+    /**
+     * 断言两个整数相等，并累计通过数量。
+     *
+     * @param expected 期望值
+     * @param actual 实际值
+     * @param msg 断言失败时的说明
+     * @throws AssertionError 实际值与期望值不等时抛出
+     */
     private static void assertEquals(int expected, int actual, String msg) {
         if (expected != actual) {
             throw new AssertionError(msg + "，期望=[" + expected + "]，实际=[" + actual + "]");

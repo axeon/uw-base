@@ -27,9 +27,9 @@ public class AiCreditBalanceVo {
     private long creditsUsed;
 
     /**
-     * 剩余(=grant-used,毫积点,负数=欠费)
+     * 剩余(=creditsAll-creditsUsed，单位为毫积点，负数=欠费；界面展示时除以1000为积点)
      */
-    @Schema(title = "剩余", description = "剩余(=grant-used,毫积点,负数=欠费)")
+    @Schema(title = "剩余", description = "剩余(=creditsAll-creditsUsed，单位为毫积点，负数=欠费)")
     private long remaining;
 
     public long getSaasId() {

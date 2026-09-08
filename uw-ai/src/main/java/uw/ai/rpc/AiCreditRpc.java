@@ -11,10 +11,10 @@ import uw.common.response.ResponseData;
 public interface AiCreditRpc {
 
     /**
-     * 给 saas 充值积点（tokens 可为负=回收）。
+     * 给 SaaS 充值积点（credits 可为负=回收；RPC 入参单位为积点，服务端转为毫积点存储）。
      *
-     * @param param 充值参数（saasId + tokens + remark）
-     * @return 充值后的余额
+     * @param param 充值参数（saasId + credits + remark）
+     * @return 充值后的余额，字段金额单位为毫积点
      */
     ResponseData<AiCreditBalanceVo> recharge(AiCreditRechargeParam param);
 
@@ -22,7 +22,7 @@ public interface AiCreditRpc {
      * 查询 saas 余额。
      *
      * @param saasId 租户
-     * @return 余额（无余额行时 grant/used/remaining 均为 0）
+     * @return 余额（无余额行时 creditsAll/creditsUsed/creditsRemaining 均为0，单位为毫积点）
      */
     ResponseData<AiCreditBalanceVo> getBalance(long saasId);
 
@@ -31,7 +31,7 @@ public interface AiCreditRpc {
      *
      * @param saasId 租户
      * @param userId 员工
-     * @return 员工限额（无行=未开通 AI 授权，data 为空）
+     * @return 员工限额（单位为毫积点；无行=未开通 AI 授权，data 为空）
      */
     ResponseData<AiCreditLimitVo> getUserLimit(long saasId, long userId);
 

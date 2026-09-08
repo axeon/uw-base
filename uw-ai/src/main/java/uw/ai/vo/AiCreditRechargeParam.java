@@ -15,10 +15,9 @@ public class AiCreditRechargeParam {
     private long saasId;
 
     /**
-     * 充值积点数(负数=回收)。单位：HTTP 充值申请入口收毫积点(前端已×1000)；
-     * RPC 直充入口收积点，由服务端×1000转毫积点入库
+     * 充值毫积点(负数=回收)。HTTP 充值申请入口接收毫积点（界面输入积点后×1000）；
      */
-    @Schema(title = "充值积点数", description = "充值积点数(负数=回收;HTTP入口=毫积点,RPC入口=积点)")
+    @Schema(title = "充值毫积点", description = "HTTP入口单位为毫积点，RPC入口单位为积点；负数表示回收")
     private long credits;
 
     /**

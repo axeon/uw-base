@@ -7,7 +7,9 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 分表路由与跨分表查询工具。
@@ -19,8 +21,9 @@ import java.util.List;
  *       {@link #getTableNameByDate(String, Date)}</li>
  * </ul>
  *
- * <p>并提供建跨区间按天分表的 UNION ALL 内层查询拼装 {@link #unionAllShards}，
- * 用于报表类跨天查询，避免只按起始日期推单一表名而漏掉区间内其它分表数据。</p>
+ * <p>并提供建跨区间日期分表的 UNION ALL 内层查询拼装 {@link #unionAllShards}，
+ * 用于报表类跨区间查询，避免只按起始日期推单一表名而漏掉区间内其它分表数据；
+ * 拼装前对迭代取到的分表名做保序去重，兼容 day/month/year 任一分片规则。</p>
  *
  * @author axeon
  */
@@ -97,10 +100,12 @@ public class ShardingTableUtils {
     }
 
     /**
-     * 构建跨区间按天分表的 UNION ALL 内层查询：遍历 [startDate,endDate] 覆盖的所有分表，
+     * 构建跨区间日期分表的 UNION ALL 内层查询：遍历 [startDate,endDate] 闭区间覆盖的所有分表，
      * 每表一段 "SELECT innerSelect FROM 分表 WHERE create_date&gt;=? AND create_date&lt;=? [extraCond]"，用 UNION ALL 连接。
-     * <p>用于跨天报表查询，避免单表（仅按 startDate 推表名）漏掉 endDate 侧分表数据。
+     * <p>用于跨区间报表查询，避免单表（仅按 startDate 推表名）漏掉 endDate 侧分表数据。
      * 每张分表都会追加 startDate/endDate + extraCondParams 到 params。</p>
+     * <p>分表名按天迭代收集后经 LinkedHashSet 保序去重：每张分表只 UNION 一次且按时间先后排列，
+     * 兼容 day/month/year 任一分片规则及未配置分片的表（多天区间收敛为单表）。</p>
      *
      * @param tableName       分表基础名（如 task_runner_stats）
      * @param startDate       区间开始
@@ -115,15 +120,20 @@ public class ShardingTableUtils {
                                         List<Object> params, String extraCond, Object... extraCondParams) {
         LocalDate startLocal = startDate.toInstant().atZone(defaultZoneId).toLocalDate();
         LocalDate endLocal = endDate.toInstant().atZone(defaultZoneId).toLocalDate();
+        // 按天迭代收集分表名，保序去重保证每表只 UNION 一次（month/year 分片与未分片表多天命中同一表）
+        Set<String> shardTables = new LinkedHashSet<>();
+        for (LocalDate d = startLocal; !d.isAfter(endLocal); d = d.plusDays(1)) {
+            shardTables.add(getTableNameByDate(tableName, d));
+        }
         StringBuilder sb = new StringBuilder();
         boolean first = true;
-        for (LocalDate d = startLocal; !d.isAfter(endLocal); d = d.plusDays(1)) {
+        for (String shardTable : shardTables) {
             if (!first) {
                 sb.append(" UNION ALL ");
             }
             first = false;
             sb.append("SELECT ").append(innerSelect)
-                    .append(" FROM ").append(getTableNameByDate(tableName, d))
+                    .append(" FROM ").append(shardTable)
                     .append(" WHERE create_date >= ? AND create_date <= ?");
             if (extraCond != null && !extraCond.isEmpty()) {
                 sb.append(" ").append(extraCond);
@@ -136,7 +146,7 @@ public class ShardingTableUtils {
                 }
             }
         }
-        if (first) {
+        if (shardTables.isEmpty()) {
             // 区间为空（startDate>endDate）兜底：返回空结果集，避免空 SQL
             sb.append("SELECT ").append(innerSelect).append(" FROM ").append(getTableNameByDate(tableName, startLocal))
                     .append(" WHERE 1=0");

@@ -1,19 +1,33 @@
+### Maven ###
 target/
-!.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+.flattened-pom.xml
+pom.xml.*
+dependency-reduced-pom.xml
+release.properties
+buildNumber.properties
+.mvn/timing.properties
+!.mvn/wrapper/maven-wrapper.jar
+
+### Java ###
+*.class
+*.ctxt
+.mtj.tmp/
+*.log
+logs/
+hs_err_pid*
+replay_pid*
 
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
-*.iws
+.idea/
 *.iml
+*.iws
 *.ipr
 
-### Eclipse ###
+### Eclipse / STS ###
 .apt_generated
+.apt_generated_tests/
 .classpath
 .factorypath
 .project
@@ -34,12 +48,11 @@ build/
 ### VS Code ###
 .vscode/
 
-### Mac OS ###
-.DS_Store
+### Claude Code 本地个人配置（settings.json 可共享，不入库）###
+.claude/settings.local.json
 
-.flattened-pom.xml
-/.idea/inspectionProfiles/Project_Default.xml
-/.idea/.gitignore
-/.idea/encodings.xml
-/.idea/misc.xml
-/.idea/vcs.xml
+### OS ###
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini

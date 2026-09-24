@@ -141,17 +141,24 @@ public final class ConnectionManager {
         if (dataSource != null) {
             return dataSource;
         }
-        return DATA_SOURCE_MAP.computeIfAbsent(poolName, (key) -> {
+        HikariDataSource builtDataSource = DATA_SOURCE_MAP.computeIfAbsent(poolName, (key) -> {
             HikariDataSource hikariDataSource = buildHikariDataSource(poolName, driver, url, username, password, testSql,
                     connMin, connMax, connIdleTimeout, connBusyTimeout, connMaxAge);
             // 注册成功,初始化方言
             SOURCE_DIALECT_MAP.put(key, DialectManager.getDialectByDriverClassName(driver));
-            if (StringUtils.isNotBlank(aliasName)) {
-                DATA_SOURCE_MAP.put(aliasName, hikariDataSource);
-            }
             // 启动连接池
             return hikariDataSource;
+            //alias 注册移出 computeIfAbsent 回调：CHM 禁止在 mappingFunction 内修改同一 map
+            //（alias 键与池名键同 bin 时 Java 9+ 抛 IllegalStateException: Recursive update——概率性
+            //冷启动建池失败，Java 8 时代遗留写法）
         });
+        if (StringUtils.isNotBlank(aliasName)) {
+            //必须用 put 覆盖而非 putIfAbsent：destroyConnectionPool 只 remove 池名、不清理指向同一
+            //实例的 alias 条目（残留指向已 close 的旧池），池重建时靠 put 覆盖完成"别名自愈"
+            //（MydbConnManager 换主/改址/恢复重连的集群名路由依赖此语义）。
+            DATA_SOURCE_MAP.put(aliasName, builtDataSource);
+        }
+        return builtDataSource;
     }
 
     /**

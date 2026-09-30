@@ -11,9 +11,9 @@ import org.apache.commons.lang3.StringUtils;
  * <p><b>驱动识别规则</b>：对驱动类名做关键字包含匹配（大小写敏感，因驱动类名本身规范），匹配优先级如下：</p>
  * <ol>
  *   <li>含 {@code "mysql"}    → {@link MySQLDialect}（驱动如 {@code com.mysql.cj.jdbc.Driver}）</li>
+ *   <li>含 {@code "postgresql"}→ {@link PostgreSQLDialect}（驱动如 {@code org.postgresql.Driver}）</li>
  *   <li>含 {@code "oracle"}   → {@link OracleDialect}（驱动如 {@code oracle.jdbc.driver.OracleDriver}）</li>
  *   <li>含 {@code "sqlserver"}→ {@link SqlServerDialect}（驱动如 {@code com.microsoft.sqlserver.jdbc.SQLServerDriver}）</li>
- *   <li>含 {@code "postgresql"}→ {@link PostgreSQLDialect}（驱动如 {@code org.postgresql.Driver}）</li>
  *   <li>其他 / 空 / 未匹配     → {@link MySQLDialect}（兜底，因 MySQL 分页语法适用面最广）</li>
  * </ol>
  *
@@ -47,7 +47,7 @@ public class DialectManager {
     /**
      * 根据 JDBC 驱动类名获取对应的方言。
      *
-     * <p>匹配规则：按 mysql → oracle → sqlserver → postgresql 的顺序对驱动类名做包含匹配，
+     * <p>匹配规则：按 mysql → postgresql → oracle → sqlserver 的顺序对驱动类名做包含匹配，
      * 命中即返回对应方言；驱动类名为空或均未命中时返回 {@link MySQLDialect} 作为兜底。</p>
      *
      * @param driverClassName JDBC 驱动类名（如 {@code com.mysql.cj.jdbc.Driver}），可为 null/空
@@ -57,14 +57,13 @@ public class DialectManager {
         if (StringUtils.isNotBlank(driverClassName)) {
             if (driverClassName.contains("mysql")) {
                 return MYSQL_DIALECT;
+            } else if (driverClassName.contains("postgresql")) {
+                return POSTGRESQL_DIALECT;
             } else if (driverClassName.contains("oracle")) {
                 return ORACLE_DIALECT;
             } else if (driverClassName.contains("sqlserver")) {
                 return SQLSERVER_DIALECT;
-            } else if (driverClassName.contains("postgresql")) {
-                return POSTGRESQL_DIALECT;
             }
-
         }
         return MYSQL_DIALECT;
     }

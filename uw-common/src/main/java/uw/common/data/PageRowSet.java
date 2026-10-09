@@ -515,7 +515,25 @@ public class PageRowSet implements Serializable {
         if (data == null) {
             return null;
         }
-        return (java.util.Date) data;
+        //时间列类型适配：mysql driver 8.x 的 getObject 对 DATETIME 返回 LocalDateTime（裸强转
+        //java.util.Date 会 ClassCastException——曾致 operator 投影读取在 last_reconcile_date
+        //有值后每拍自毁）；Timestamp/Date 原样或转毫秒。
+        if (data instanceof java.util.Date) {
+            return (java.util.Date) data;
+        }
+        if (data instanceof java.time.LocalDateTime) {
+            return java.util.Date.from(((java.time.LocalDateTime) data)
+                    .atZone(java.time.ZoneId.systemDefault()).toInstant());
+        }
+        if (data instanceof java.time.LocalDate) {
+            return java.util.Date.from(((java.time.LocalDate) data)
+                    .atStartOfDay(java.time.ZoneId.systemDefault()).toInstant());
+        }
+        if (data instanceof java.time.LocalTime) {
+            return java.util.Date.from(((java.time.LocalTime) data)
+                    .atDate(java.time.LocalDate.EPOCH).atZone(java.time.ZoneId.systemDefault()).toInstant());
+        }
+        return null;
     }
 
     // ===== 列名位置查找 =====

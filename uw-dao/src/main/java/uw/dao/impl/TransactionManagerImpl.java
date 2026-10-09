@@ -66,7 +66,11 @@ public class TransactionManagerImpl implements TransactionManager {
             return;
         }
         StringBuilder errorMsg = new StringBuilder();
-        for (Connection conn : connMap.values()) {
+        //状态复位先于异常抛出：失败也必须复位（线程驻留的 TM 毒化会让该线程后续请求取到已关连接）。
+        this.autoCommit = true;
+        HashMap<String, Connection> current = connMap;
+        connMap = null;
+        for (Connection conn : current.values()) {
             try {
                 conn.commit();
                 conn.setAutoCommit(true);
@@ -83,8 +87,6 @@ public class TransactionManagerImpl implements TransactionManager {
         if (!errorMsg.isEmpty()) {
             throw new TransactionException("TransactionException in TransactionManagerImpl.java: commit()!" + errorMsg.toString());
         }
-        this.autoCommit = true;
-        connMap = null;
     }
 
     /**
@@ -183,7 +185,11 @@ public class TransactionManagerImpl implements TransactionManager {
             return;
         }
         StringBuilder errorMsg = new StringBuilder();
-        for (Connection conn : connMap.values()) {
+        //状态复位先于异常抛出（同 commit：防线程驻留 TM 毒化）。
+        this.autoCommit = true;
+        HashMap<String, Connection> current = connMap;
+        connMap = null;
+        for (Connection conn : current.values()) {
             try {
                 conn.rollback();
                 conn.setAutoCommit(true);
@@ -200,8 +206,6 @@ public class TransactionManagerImpl implements TransactionManager {
         if (!errorMsg.isEmpty()) {
             throw new TransactionException("TransactionException in TransactionManagerImpl.java: rollback()!" + errorMsg.toString());
         }
-        this.autoCommit = true;
-        connMap = null;
     }
 
     /**

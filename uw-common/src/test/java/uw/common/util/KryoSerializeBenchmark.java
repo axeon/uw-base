@@ -29,6 +29,12 @@ import java.util.concurrent.TimeUnit;
  * 运行方式：执行 main，依次以 1/20/50 线程运行。
  *
  * <h3>实测结果（JDK 25.0.1、JMH 1.37、单机，Throughput ops/ms，200条随机数据）</h3>
+ * <p>
+ * <b>2026-10-10 注册表扩充复测（JDK 25.0.3，同机 before/after 各两轮）</b>：newKryo 增补并发/原子类型
+ * serializer 注册后各路径吞吐无回归——单线程 obj 对（反射路径，最敏感）加迭代复测持平
+ * （serialize 2083→2038 带内重叠、deserialize 1611→1606 持平；首轮 5% 偏差为机器漂移，
+ * 判别实验消除）；manual/ks（手工原语路径）与 20 线程档均在误差带内。注册表增大对
+ * Registration 查询是 O(1) 哈希命中，仅在 Kryo 实例构造期多 10 次 register 调用（池化摊销后不可测）。
  * <pre>
  * Benchmark               线程=1     线程=20      线程=50
  * objSerialize            1500       3369         2166      // 反射写（走池）

@@ -1,6 +1,11 @@
 package uw.common.util;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoException;
+import com.esotericsoftware.kryo.Serializer;
+import com.esotericsoftware.kryo.serializers.CollectionSerializer;
+import com.esotericsoftware.kryo.serializers.DefaultSerializers;
+import com.esotericsoftware.kryo.serializers.MapSerializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import org.jctools.queues.MpmcArrayQueue;
@@ -17,10 +22,24 @@ import java.io.OutputStream;
 import java.lang.reflect.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerArray;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.DoubleAdder;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -234,14 +253,45 @@ public class KryoUtils {
         kryo.register(HashMap.class);
         kryo.register(LinkedHashMap.class);
         kryo.register(TreeMap.class);
-        kryo.register(ConcurrentHashMap.class);
+        //并发容器与原子类型：显式 serializer 按 public API 读写快照——FieldSerializer 反射其内部字段
+        //（如 ConcurrentHashMap 的 Node[] table、AtomicInteger 的 value）在 JDK17+ 强封装下抛
+        //InaccessibleObjectException（module java.base does not "opens" 对应包），任何含此类字段的
+        //缓存值序列化必失败（Kryo #885 定性 by-design，5.4.0+ 提供手动注册）。
+        kryo.register(ConcurrentHashMap.class, new MapSerializer());
+        kryo.register(ConcurrentSkipListMap.class, new DefaultSerializers.ConcurrentSkipListMapSerializer());
+        kryo.register(CopyOnWriteArrayList.class, new CollectionSerializer());
+        kryo.register(AtomicBoolean.class, new DefaultSerializers.AtomicBooleanSerializer());
+        kryo.register(AtomicInteger.class, new DefaultSerializers.AtomicIntegerSerializer());
+        kryo.register(AtomicLong.class, new DefaultSerializers.AtomicLongSerializer());
+        kryo.register(AtomicReference.class, new DefaultSerializers.AtomicReferenceSerializer());
+        kryo.register(LongAdder.class, new LongAdderSerializer());
+        kryo.register(DoubleAdder.class, new DoubleAdderSerializer());
+        kryo.register(AtomicIntegerArray.class, new AtomicIntegerArraySerializer());
+        kryo.register(AtomicLongArray.class, new AtomicLongArraySerializer());
+        //UUID / Pattern：Kryo 内置有专用 serializer 但默认表不映射，裸用会走 FieldSerializer
+        //当场抛 InaccessibleObjectException（mostSigBits / pattern 字段，JDK17+ 强封装——实测实证），
+        //必须显式注册；Pattern 见缓存场景=路由规则预编译正则。
+        kryo.register(UUID.class, new DefaultSerializers.UUIDSerializer());
+        kryo.register(Pattern.class, new DefaultSerializers.PatternSerializer());
+        //注意：Throwable 及其子类不可序列化（backtrace 反射炸且子类构造各异无法根治，Kryo 官方
+        //同立场）——缓存值应存 String message，勿存异常对象。
         kryo.register(HashSet.class);
         kryo.register(LinkedHashSet.class);
+        //高频数组（DTO/缓存值常见；显式注册走注册 ID，未注册时每值携带完整类名）
+        kryo.register(String[].class);
+        kryo.register(byte[].class);
+        kryo.register(int[].class);
+        kryo.register(long[].class);
+        kryo.register(Object[].class);
         // 时间类型
         kryo.register(Date.class);
         kryo.register(LocalDate.class);
         kryo.register(LocalTime.class);
         kryo.register(LocalDateTime.class);
+        kryo.register(Instant.class);
+        kryo.register(Duration.class);
+        kryo.register(ZonedDateTime.class);
+        kryo.register(OffsetDateTime.class);
         // 自定义类型
         kryo.register(PageList.class);
         kryo.register(PageRowSet.class);
@@ -548,7 +598,7 @@ public class KryoUtils {
      * @param dataCls 目标类型，必须提供公开无参构造
      * @param <T>     目标类型
      * @return 反射创建并填充后的实例；data 为 null/空时返回 null
-     * @throws com.esotericsoftware.kryo.KryoException 目标类无法实例化时包装抛出
+     * @throws KryoException 目标类无法实例化时包装抛出
      * @see #deserializeData(byte[], KryoData)
      * @see KryoData
      */
@@ -561,7 +611,7 @@ public class KryoUtils {
         try {
             instance = (T) dataCls.getDeclaredConstructor().newInstance();
         } catch (ReflectiveOperationException e) {
-            throw new com.esotericsoftware.kryo.KryoException(
+            throw new KryoException(
                     "Cannot new instance of " + dataCls.getName() + " for deserializeData: " + e.getMessage(), e);
         }
         final Input input = new Input(data);
@@ -909,4 +959,86 @@ public class KryoUtils {
 
     }
 
+
+
+    /**
+     * {@link LongAdder} 序列化器：无读值的 public API，以 {@code sum()} 快照落盘、
+     * 反序列化重建后累加回填（热计数器的近似语义，Kryo 无官方实现）。
+     */
+    private static class LongAdderSerializer extends Serializer<LongAdder> {
+        @Override
+        public void write(Kryo kryo, Output output, LongAdder object) {
+            output.writeVarLong(object.sum(), false);
+        }
+
+        @Override
+        public LongAdder read(Kryo kryo, Input input, Class<? extends LongAdder> type) {
+            LongAdder adder = new LongAdder();
+            adder.add(input.readVarLong(false));
+            return adder;
+        }
+    }
+
+    /**
+     * {@link DoubleAdder} 序列化器：同 {@link LongAdderSerializer} 的 {@code sum()} 快照语义。
+     */
+    private static class DoubleAdderSerializer extends Serializer<DoubleAdder> {
+        @Override
+        public void write(Kryo kryo, Output output, DoubleAdder object) {
+            output.writeDouble(object.sum());
+        }
+
+        @Override
+        public DoubleAdder read(Kryo kryo, Input input, Class<? extends DoubleAdder> type) {
+            DoubleAdder adder = new DoubleAdder();
+            adder.add(input.readDouble());
+            return adder;
+        }
+    }
+
+    /**
+     * {@link AtomicIntegerArray} 序列化器：长度+逐元素（get/set public API，避开反射）。
+     */
+    private static class AtomicIntegerArraySerializer extends Serializer<AtomicIntegerArray> {
+        @Override
+        public void write(Kryo kryo, Output output, AtomicIntegerArray object) {
+            output.writeVarInt(object.length(), false);
+            for (int i = 0; i < object.length(); i++) {
+                output.writeInt(object.get(i), false);
+            }
+        }
+
+        @Override
+        public AtomicIntegerArray read(Kryo kryo, Input input, Class<? extends AtomicIntegerArray> type) {
+            int length = input.readVarInt(false);
+            AtomicIntegerArray array = new AtomicIntegerArray(length);
+            for (int i = 0; i < length; i++) {
+                array.set(i, input.readInt(false));
+            }
+            return array;
+        }
+    }
+
+    /**
+     * {@link AtomicLongArray} 序列化器：同 {@link AtomicIntegerArraySerializer} 逐元素读写。
+     */
+    private static class AtomicLongArraySerializer extends Serializer<AtomicLongArray> {
+        @Override
+        public void write(Kryo kryo, Output output, AtomicLongArray object) {
+            output.writeVarInt(object.length(), false);
+            for (int i = 0; i < object.length(); i++) {
+                output.writeLong(object.get(i), false);
+            }
+        }
+
+        @Override
+        public AtomicLongArray read(Kryo kryo, Input input, Class<? extends AtomicLongArray> type) {
+            int length = input.readVarInt(false);
+            AtomicLongArray array = new AtomicLongArray(length);
+            for (int i = 0; i < length; i++) {
+                array.set(i, input.readLong(false));
+            }
+            return array;
+        }
+    }
 }

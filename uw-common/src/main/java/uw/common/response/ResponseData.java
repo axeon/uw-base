@@ -714,9 +714,13 @@ public class ResponseData<T> {
     }
 
     /**
-     * 成功时执行。
+     * 成功时执行，<b>返回值替换整个链</b>：返回 {@code function.apply(data)} 的结果。
+     * <p>
+     * 陷阱警示：lambda 返回 null 时链式结果为 null（不是本对象），后续 {@code .isError()} 即 NPE——
+     * 副作用场景（遍历行集等）请用 Consumer/Runnable 重载（返回 {@code this.raw()} 天然安全），
+     * 或语句式调用本方法且不接收返回值。
      *
-     * @param function
+     * @param function 成功分支的变换函数（返回值成为链的新头）
      * @param <R>
      * @return
      */

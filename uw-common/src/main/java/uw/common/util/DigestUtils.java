@@ -33,6 +33,40 @@ public class DigestUtils {
     }
 
     /**
+     * 摘要签名（原始字节出参）：UTF-8 编码消息 → 摘要原始字节。
+     * <p>
+     * KDF/密钥派生等需要 byte[] 直连的场景用本方法（sign/signHex 的字符串出参需 Base64/Hex
+     * 往返，无谓且改变字节语义）。
+     *
+     * @param msg       需要Digest的原始字符串
+     * @param algorithm Digest算法类型
+     * @return 摘要原始字节
+     * @throws IllegalArgumentException 当Digest类型无效时抛出
+     */
+    public static byte[] digest(String msg, Algorithm algorithm) {
+        return digest(msg.getBytes(StandardCharsets.UTF_8), algorithm);
+    }
+
+    /**
+     * 摘要签名（字节进出参）：原始字节 → 摘要原始字节。
+     *
+     * @param data      原始字节
+     * @param algorithm Digest算法类型
+     * @return 摘要原始字节
+     * @throws IllegalArgumentException 当Digest类型无效时抛出
+     */
+    public static byte[] digest(byte[] data, Algorithm algorithm) {
+        if (algorithm == null) {
+            throw new IllegalArgumentException("Digest类型不能为空");
+        }
+        try {
+            return MessageDigest.getInstance(algorithm.getAlgorithm()).digest(data);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalArgumentException("无效的Digest类型: " + algorithm, e);
+        }
+    }
+
+    /**
      * Digest工具（支持多种安全算法）.
      *
      * @param msg

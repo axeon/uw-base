@@ -10,7 +10,7 @@
         uw-common 通用组件。
     </description>
     <parent>
-        <groupId>com.umtone</groupId>
+        <groupId>pub.xili</groupId>
         <artifactId>uw-base</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>

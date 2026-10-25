@@ -8,7 +8,7 @@
     <name>uw-common-app</name>
     <description>uw-common-app</description>
     <parent>
-        <groupId>com.umtone</groupId>
+        <groupId>pub.xili</groupId>
         <artifactId>uw-base</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -21,19 +21,19 @@
         </dependency>
         <!-- ============ 自研框架 uw-* ============ -->
         <dependency>
-            <groupId>com.umtone</groupId>
+            <groupId>pub.xili</groupId>
             <artifactId>uw-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.umtone</groupId>
+            <groupId>pub.xili</groupId>
             <artifactId>uw-dao</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.umtone</groupId>
+            <groupId>pub.xili</groupId>
             <artifactId>uw-auth-service</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.umtone</groupId>
+            <groupId>pub.xili</groupId>
             <artifactId>uw-nacos-client</artifactId>
         </dependency>
         <!-- ============ 测试依赖 ============ -->

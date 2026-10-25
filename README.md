@@ -343,9 +343,9 @@ MyDB服务客户端，用于访问MyDB数据服务。
 
 ```xml
 <parent>
-  <groupId>com.umtone</groupId>
+  <groupId>pub.xili</groupId>
   <artifactId>uw-base</artifactId>
-  <version>2026.0900.0006</version>
+  <version>2026.1000.0000</version>
   <relativePath/>
 </parent>
 
@@ -359,25 +359,25 @@ MyDB服务客户端，用于访问MyDB数据服务。
 <dependencies>
     <!-- 基础工具 -->
     <dependency>
-        <groupId>com.umtone</groupId>
+        <groupId>pub.xili</groupId>
         <artifactId>uw-common</artifactId>
     </dependency>
     
     <!-- 数据访问 -->
     <dependency>
-        <groupId>com.umtone</groupId>
+        <groupId>pub.xili</groupId>
         <artifactId>uw-dao</artifactId>
     </dependency>
     
     <!-- 缓存 -->
     <dependency>
-        <groupId>com.umtone</groupId>
+        <groupId>pub.xili</groupId>
         <artifactId>uw-cache</artifactId>
     </dependency>
     
     <!-- 认证授权 -->
     <dependency>
-        <groupId>com.umtone</groupId>
+        <groupId>pub.xili</groupId>
         <artifactId>uw-auth-service</artifactId>
     </dependency>
 </dependencies>

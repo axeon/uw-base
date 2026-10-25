@@ -17,7 +17,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.umtone</groupId>
+    <groupId>pub.xili</groupId>
     <artifactId>uw-nacos-client</artifactId>
 </dependency>
 ```

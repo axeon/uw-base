@@ -8,7 +8,7 @@
     <name>uw-auth-client</name>
     <description>uw-auth client side implements with Spring Boot</description>
     <parent>
-        <groupId>com.umtone</groupId>
+        <groupId>pub.xili</groupId>
         <artifactId>uw-base</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -41,7 +41,7 @@
         </dependency>
         <!-- ============ 自研框架 uw-* ============ -->
         <dependency>
-            <groupId>com.umtone</groupId>
+            <groupId>pub.xili</groupId>
             <artifactId>uw-common</artifactId>
         </dependency>
         <!-- ============ 第三方业务 SDK ============ -->

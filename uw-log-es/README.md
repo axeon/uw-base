@@ -19,7 +19,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.umtone</groupId>
+    <groupId>pub.xili</groupId>
     <artifactId>uw-log-es</artifactId>
     <version>${project.version}</version>
 </dependency>

@@ -39,7 +39,7 @@ RestClient 路径底层基于 **Apache HttpClient 5** 连接池。
 
 ```xml
 <dependency>
-    <groupId>com.umtone</groupId>
+    <groupId>pub.xili</groupId>
     <artifactId>uw-auth-client</artifactId>
     <version>${uw-auth-client.version}</version>
 </dependency>

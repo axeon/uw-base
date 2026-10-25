@@ -27,7 +27,7 @@ uw-task 是一个分布式任务框架，基于 Spring Boot + RabbitMQ + Redis �
 
 ```xml
 <dependency>
-    <groupId>com.umtone</groupId>
+    <groupId>pub.xili</groupId>
     <artifactId>uw-task</artifactId>
     <version>${version}</version>
 </dependency>

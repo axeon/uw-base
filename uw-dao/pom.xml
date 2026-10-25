@@ -8,7 +8,7 @@
     <name>uw-dao</name>
     <description>uw-dao is a simple and easy to used dao lib in JAVA</description>
     <parent>
-        <groupId>com.umtone</groupId>
+        <groupId>pub.xili</groupId>
         <artifactId>uw-base</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -22,7 +22,7 @@
         </dependency>
         <!-- ============ 自研框架 uw-* ============ -->
         <dependency>
-            <groupId>com.umtone</groupId>
+            <groupId>pub.xili</groupId>
             <artifactId>uw-common</artifactId>
         </dependency>
         <!-- ============ 第三方业务 SDK ============ -->

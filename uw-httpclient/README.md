@@ -121,7 +121,7 @@ RuntimeException
 
 ```xml
 <dependency>
-    <groupId>com.umtone</groupId>
+    <groupId>pub.xili</groupId>
     <artifactId>uw-httpclient</artifactId>
     <version>${uw-httpclient.version}</version>
 </dependency>

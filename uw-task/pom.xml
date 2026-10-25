@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <packaging>jar</packaging>
-    <groupId>com.umtone</groupId>
+    <groupId>pub.xili</groupId>
     <artifactId>uw-task</artifactId>
     <version>${uw-task.version}</version>
     <name>uw-task</name>
@@ -12,7 +12,7 @@
     </description>
 
     <parent>
-        <groupId>com.umtone</groupId>
+        <groupId>pub.xili</groupId>
         <artifactId>uw-base</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -30,11 +30,11 @@
         </dependency>
         <!-- ============ 自研框架 uw-* ============ -->
         <dependency>
-            <groupId>com.umtone</groupId>
+            <groupId>pub.xili</groupId>
             <artifactId>uw-auth-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.umtone</groupId>
+            <groupId>pub.xili</groupId>
             <artifactId>uw-log-es</artifactId>
         </dependency>
         <!-- ============ 通用工具库 ============ -->

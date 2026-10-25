@@ -12,7 +12,7 @@
     </description>
 
     <parent>
-        <groupId>com.umtone</groupId>
+        <groupId>pub.xili</groupId>
         <artifactId>uw-base</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -21,19 +21,19 @@
     <dependencies>
         <!-- ============ 自研框架 uw-* ============ -->
         <dependency>
-            <groupId>com.umtone</groupId>
+            <groupId>pub.xili</groupId>
             <artifactId>uw-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.umtone</groupId>
+            <groupId>pub.xili</groupId>
             <artifactId>uw-auth-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.umtone</groupId>
+            <groupId>pub.xili</groupId>
             <artifactId>uw-httpclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.umtone</groupId>
+            <groupId>pub.xili</groupId>
             <artifactId>uw-cache</artifactId>
         </dependency>
         <!-- ============ 第三方业务 SDK ============ -->

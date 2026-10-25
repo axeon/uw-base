@@ -8,7 +8,7 @@
     <name>uw-httpclient</name>
     <description>Http请求接口基础工具包</description>
     <parent>
-        <groupId>com.umtone</groupId>
+        <groupId>pub.xili</groupId>
         <artifactId>uw-base</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -17,7 +17,7 @@
     <dependencies>
         <!-- ============ 自研框架 uw-* ============ -->
         <dependency>
-            <groupId>com.umtone</groupId>
+            <groupId>pub.xili</groupId>
             <artifactId>uw-common</artifactId>
         </dependency>
         <!-- ============ 第三方业务 SDK ============ -->

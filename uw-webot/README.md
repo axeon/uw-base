@@ -155,7 +155,7 @@ BrowserBotPool (单例)
 
 ```xml
 <dependency>
-    <groupId>com.umtone</groupId>
+    <groupId>pub.xili</groupId>
     <artifactId>uw-webot</artifactId>
     <version>1.0.0</version>
 </dependency>

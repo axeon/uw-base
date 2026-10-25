@@ -27,7 +27,7 @@ uw-oauth2-client是一个轻量级的OAuth2客户端库，提供多平台OAuth2�
 
 ```xml
 <dependency>
-    <groupId>com.umtone</groupId>
+    <groupId>pub.xili</groupId>
     <artifactId>uw-oauth2-client</artifactId>
 </dependency>
 ```

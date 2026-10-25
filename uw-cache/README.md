@@ -38,7 +38,7 @@ uw-cache是一个基于caffeine和redis的缓存库。提供cache、locker、cou
 
 ```xml
 <dependency>
-    <groupId>com.umtone</groupId>
+    <groupId>pub.xili</groupId>
     <artifactId>uw-cache</artifactId>
     <version>${uw-cache.version}</version>
 </dependency>

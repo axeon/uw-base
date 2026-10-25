@@ -67,7 +67,7 @@ uw-auth-center 认证中心交互，实现 Token 验证、权限检查、操作�
 
 ```xml
 <dependency>
-    <groupId>com.umtone</groupId>
+    <groupId>pub.xili</groupId>
     <artifactId>uw-auth-service</artifactId>
     <version>${uw-auth-service.version}</version>
 </dependency>

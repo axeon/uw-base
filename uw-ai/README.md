@@ -69,7 +69,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.umtone</groupId>
+    <groupId>pub.xili</groupId>
     <artifactId>uw-ai</artifactId>
     <version>${uw-ai.version}</version>
 </dependency>

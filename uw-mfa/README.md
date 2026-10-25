@@ -15,7 +15,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.umtone</groupId>
+    <groupId>pub.xili</groupId>
     <artifactId>uw-mfa</artifactId>
     <version>${uw-mfa.version}</version>
 </dependency>

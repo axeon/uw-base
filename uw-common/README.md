@@ -6,7 +6,7 @@ uw-common 通用组件库。提供响应封装、分页容器、日期/货币/�
 
 ```xml
 <dependency>
-    <groupId>com.umtone</groupId>
+    <groupId>pub.xili</groupId>
     <artifactId>uw-common</artifactId>
     <version>${uw-common.version}</version>
 </dependency>

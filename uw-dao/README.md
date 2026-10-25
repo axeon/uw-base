@@ -120,7 +120,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.umtone</groupId>
+    <groupId>pub.xili</groupId>
     <artifactId>uw-dao</artifactId>
     <version>${uw-dao.version}</version>
 </dependency>

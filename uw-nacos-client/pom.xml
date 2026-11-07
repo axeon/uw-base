@@ -6,7 +6,7 @@
     <artifactId>uw-nacos-client</artifactId>
     <version>${uw-nacos-client.version}</version>
     <name>uw-nacos-client</name>
-    <description>uw-nacos-client: Nacos 注册发现与配置中心封装，脱离 Spring Cloud Alibaba，fork 自 SCA 2025.1.x。
+    <description>uw-nacos-client: Nacos 注册发现与配置中心封装，脱离 Spring Cloud Alibaba。
     </description>
 
     <parent>

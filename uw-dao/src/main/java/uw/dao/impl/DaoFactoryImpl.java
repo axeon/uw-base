@@ -34,15 +34,16 @@ public class DaoFactoryImpl extends DaoFactory {
     private static final Logger log = LoggerFactory.getLogger(DaoFactoryImpl.class);
 
     /**
-     * 批量更新实例（ThreadLocal：isBatch/pstmtMap 非线程安全，同事务管理器隔离）。
+     * 批量更新实例（普通字段，随本实例生命周期存亡）。
+     * 静态共享实例上开事务=多线程互踩事务状态（无 ThreadLocal 保护），由调用规约禁止。
      */
-    private final ThreadLocal<BatchUpdateManagerImpl> batchUpdateManager = ThreadLocal.withInitial(() -> new BatchUpdateManagerImpl(this));
+    private final BatchUpdateManagerImpl batchUpdateManager = new BatchUpdateManagerImpl(this);
 
     /**
-     * 事务处理实例（ThreadLocal：事务状态 autoCommit/connMap 非线程安全，单实例跨线程共享会
-     * 互相践踏连接映射与提交边界——每线程独立事务管理器，commit/rollback 后状态复位可复用）。
+     * 事务处理实例（普通字段，随本实例生命周期存亡；commit/rollback 后状态复位可复用——
+     * 同一短命实例上连续多轮事务安全）。约束同上：勿在跨线程共享实例上开事务。
      */
-    private final ThreadLocal<TransactionManagerImpl> transactionManager = ThreadLocal.withInitial(TransactionManagerImpl::new);
+    private final TransactionManagerImpl transactionManager = new TransactionManagerImpl();
 
     /**
      * 统计信息.
@@ -90,7 +91,7 @@ public class DaoFactoryImpl extends DaoFactory {
      */
     @Override
     public BatchUpdateManager beginBatchUpdate() {
-        BatchUpdateManagerImpl bm = batchUpdateManager.get();
+        BatchUpdateManagerImpl bm = batchUpdateManager;
         bm.startBatchUpdate();
         return bm;
     }
@@ -102,7 +103,7 @@ public class DaoFactoryImpl extends DaoFactory {
      */
     @Override
     public TransactionManager beginTransaction() {
-        TransactionManagerImpl tm = transactionManager.get();
+        TransactionManagerImpl tm = transactionManager;
         tm.startTransaction();
         return tm;
     }
@@ -132,7 +133,7 @@ public class DaoFactoryImpl extends DaoFactory {
      */
     @Override
     public Connection getConnection(String configName) throws SQLException {
-        return transactionManager.get().getConnection(configName);
+        return transactionManager.getConnection(configName);
     }
 
     /**
@@ -145,7 +146,7 @@ public class DaoFactoryImpl extends DaoFactory {
      */
     @Override
     public Connection getConnection(String table, String access) throws SQLException {
-        return transactionManager.get().getConnection(table, access);
+        return transactionManager.getConnection(table, access);
     }
 
     /**
@@ -157,7 +158,7 @@ public class DaoFactoryImpl extends DaoFactory {
      */
     @Override
     public String getConnectionName(String table, String access) {
-        return transactionManager.get().getConnName(table, access);
+        return transactionManager.getConnName(table, access);
     }
 
     /**
@@ -167,7 +168,7 @@ public class DaoFactoryImpl extends DaoFactory {
      */
     @Override
     public int getInvokeCount() {
-        return transactionManager.get().getInvokeCount();
+        return transactionManager.getInvokeCount();
     }
 
     /**
@@ -1480,7 +1481,7 @@ public class DaoFactoryImpl extends DaoFactory {
      * @return BatchupdateManagerImpl对象
      */
     BatchUpdateManagerImpl getBatchUpdateController() {
-        return batchUpdateManager.get();
+        return batchUpdateManager;
     }
 
     /**
@@ -1489,6 +1490,6 @@ public class DaoFactoryImpl extends DaoFactory {
      * @return TransactionManagerImpl对象
      */
     TransactionManagerImpl getTransactionController() {
-        return transactionManager.get();
+        return transactionManager;
     }
 }

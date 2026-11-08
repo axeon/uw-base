@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <revision>2026.1000.0001</revision>
+        <revision>2026.1000.0003</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>25</java.version>
@@ -25,21 +25,21 @@
         <uw-auth-client.version>6.2.30</uw-auth-client.version>
         <uw-auth-service.version>6.2.81</uw-auth-service.version>
         <uw-cache.version>1.2.108</uw-cache.version>
-        <uw-common.version>1.1.118</uw-common.version>
+        <uw-common.version>1.1.119</uw-common.version>
         <uw-common-app.version>1.1.116</uw-common-app.version>
         <uw-dao.version>5.3.60</uw-dao.version>
         <uw-gateway-client.version>1.1.16</uw-gateway-client.version>
-        <uw-httpclient.version>2.3.8</uw-httpclient.version>
+        <uw-httpclient.version>2.3.9</uw-httpclient.version>
         <uw-log-es.version>3.1.108</uw-log-es.version>
         <uw-logback-es.version>3.1.102</uw-logback-es.version>
-        <uw-mfa.version>1.1.72</uw-mfa.version>
+        <uw-mfa.version>1.1.73</uw-mfa.version>
         <uw-mydb-client.version>1.1.36</uw-mydb-client.version>
         <uw-nacos-client.version>1.0.5</uw-nacos-client.version>
         <uw-notify-client.version>1.1.35</uw-notify-client.version>
-        <uw-oauth2-client.version>1.1.35</uw-oauth2-client.version>
+        <uw-oauth2-client.version>1.1.36</uw-oauth2-client.version>
         <uw-task.version>5.1.136</uw-task.version>
         <uw-tinyurl-client.version>1.1.35</uw-tinyurl-client.version>
-        <uw-webot.version>1.0.16</uw-webot.version>
+        <uw-webot.version>1.0.17</uw-webot.version>
     </properties>
 
     <dependencyManagement>
@@ -212,6 +212,11 @@
                 <version>5.3.2</version>
             </dependency>
             <dependency>
+                <groupId>com.microsoft.playwright</groupId>
+                <artifactId>playwright</artifactId>
+                <version>1.58.0</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.zxing</groupId>
                 <artifactId>core</artifactId>
                 <version>3.5.3</version>
@@ -265,32 +270,58 @@
     </modules>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <!-- flatten（pluginManagement）：仅对显式声明本插件的模块生效——uw-base 19 个子模块声明后
+                     得此配置，叶子 jar 以 standalone 形态发布（oss+direct：无 parent 引用、依赖版本全内联、
+                     optional/scope 语义保留、licenses/developers/scm 齐全），Central 消费方零 parent 链。
+                     下游项目（uw-ops-center 等）不声明本插件即不执行，不再被波及生成 .flattened-pom.xml。 -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>1.8.0</version>
+                    <configuration>
+                        <updatePomFile>true</updatePomFile>
+                        <flattenMode>oss</flattenMode>
+                        <flattenDependencyMode>direct</flattenDependencyMode>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>flatten</id>
+                            <phase>process-resources</phase>
+                            <goals>
+                                <goal>flatten</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>flatten.clean</id>
+                            <phase>clean</phase>
+                            <goals>
+                                <goal>clean</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
-            <!-- flatten: 把 ${revision} 拍平到 install 的 pom，供 center 独立编译时解析 parent。-->
+            <!-- 根 pom 自身声明并覆盖模式：resolveCiFriendliesOnly（仅解析 ${revision}，parent/DM/modules/build
+                 全保）。本 pom 被 uw-ops-center 等下游当 parent 引用，DM 是下游版本解析的唯一来源——
+                 oss 形态对根 pom 是残缺产物（仅剩坐标+licenses/developers/scm，丢 parent/DM/modules），
+                 261108 实测 1330B 产物本地 install 污染 ~/.m2 致下游 13 依赖 version missing 构建断裂。
+                 standalone 只属于叶子模块（走 pluginManagement 配置）。
+                 inherited=false：本声明不向子模块/下游传播——否则 parent plugins 的显式配置会覆盖
+                 pluginManagement，子模块拿不到 oss+direct、下游还会被波及生成 .flattened-pom.xml；
+                 根 pom 自身不受影响。Central 发布根 pom 亦走本形态（licenses/developers/scm 源 pom 已具）。 -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>flatten-maven-plugin</artifactId>
-                <version>1.7.0</version>
+                <inherited>false</inherited>
                 <configuration>
-                    <updatePomFile>true</updatePomFile>
                     <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                    <!-- inherited=插件默认语义（依赖版本按 DM 标准解析，pom 结构不动），显式压掉 pluginManagement 的 direct -->
+                    <flattenDependencyMode>inherited</flattenDependencyMode>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>flatten</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>flatten</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>flatten.clean</id>
-                        <phase>clean</phase>
-                        <goals>
-                            <goal>clean</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
@@ -331,31 +362,6 @@
             <id>release-uw</id>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>flatten-maven-plugin</artifactId>
-                        <version>1.7.0</version>
-                        <configuration>
-                            <updatePomFile>true</updatePomFile>
-                            <flattenMode>resolveCiFriendliesOnly</flattenMode>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>flatten</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>flatten</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>flatten.clean</id>
-                                <phase>clean</phase>
-                                <goals>
-                                    <goal>clean</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
                     <!--   central发布插件    -->
                     <plugin>
                         <groupId>org.sonatype.central</groupId>

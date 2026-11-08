@@ -30,4 +30,15 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <!-- flatten：声明激活 pluginManagement 的配置（oss+direct standalone 发布形态），把 ${revision}
+                 拍平到 install/deploy 的 pom。 -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

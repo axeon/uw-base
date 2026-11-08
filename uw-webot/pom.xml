@@ -39,7 +39,6 @@
         <dependency>
             <groupId>com.microsoft.playwright</groupId>
             <artifactId>playwright</artifactId>
-            <version>1.58.0</version>
         </dependency>
         <!-- ============ 测试依赖 ============ -->
         <dependency>
@@ -48,5 +47,16 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- flatten：声明激活 pluginManagement 的配置（oss+direct standalone 发布形态），把 ${revision}
+                 拍平到 install/deploy 的 pom。 -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

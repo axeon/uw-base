@@ -201,7 +201,7 @@ public JsonInterfaceHelper(HttpConfig httpConfig,
 此外提供基于 OkHttp 原生 `Request` 的基础方法，用于更灵活的场景：
 
 - `requestForData(Request)` / `requestForEntity(Request, Class)`：传入自定义 Request。
-- `getOkHttpClient()`：直接获取底层 OkHttpClient，可自由操作（兜底方案）。
+- `getOkHttpClient()`：直接获取底层 OkHttpClient，可自由操作（兜底方案）。直连发起的调用同样经过内部计数拦截器，计数挂在该 Call 自身上、随 Call 回收，不在客户端残留任何状态（直连调用不产出 `HttpData`，也就没有 `retryCount`）。
 
 ##### HttpConfig 配置
 
@@ -393,7 +393,7 @@ A: 遵循 `{method}{Form|Body|FormFile|BodyQuery}{ForData|ForEntity}` 规律：�
 A: 从 `HttpData` 取：`data.getResponseHeaders()` 返回大小写不敏感的 `Map<String, List<String>>`（同名多值头用 List 表达）；`HttpDefaultData` 还提供 `getResponseHeader(name)` 取单个首值。详见「获取响应头与请求耗时」章节。
 
 **Q: `retryCount` 统计的是哪种重试？为什么 `retryOnConnectionFailure=false` 时也可能 >0？**
-A: `retryCount = 物理网络请求次数 - 1`，由内部网络拦截器统计，**自动启用**。它包含两类：
+A: `retryCount = 物理网络请求次数 - 1`，由内部网络拦截器统计，**自动启用**；计数挂在每个 Call 自身的 tag 上，随 Call 回收，拦截器无状态。它包含两类：
 1. 连接失败重试（仅 `retryOnConnectionFailure=true` 时发生）；
 2. follow-up（重定向 301/302/307、401 认证挑战等），由 OkHttp 内部 `RetryAndFollowUpInterceptor` 处理，**与 `retryOnConnectionFailure` 无关**。
 

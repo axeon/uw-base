@@ -14,6 +14,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -51,6 +52,17 @@ public class DaoService {
      * 数据集合.
      */
     private static ArrayList<SqlExecuteStats> dataList = new ArrayList<>();
+
+    /**
+     * dataList容量上限：触顶后丢弃新统计（统计通道允许有损，不允许无界增长撑爆堆）。
+     * 正常写入节拍（30秒一批）远低于此值，触顶即代表写库侧已停滞。
+     */
+    private static final int MAX_STATS_LIST_SIZE = 20000;
+
+    /**
+     * 因触顶被丢弃的统计条数（换出列表时结算告警，避免逐条打日志刷屏）.
+     */
+    private static final AtomicLong droppedStatsCount = new AtomicLong();
 
     /**
      * pageLog的写入锁.
@@ -95,11 +107,11 @@ public class DaoService {
                 });
                 if (enableSqlStats) {
                     checkForCreatesStatsTable();
-                    executorService.scheduleAtFixedRate(new StatsLogWriteTask(), 1, 30, TimeUnit.SECONDS);
-                    executorService.scheduleAtFixedRate(new StatsCleanDataTask(), 3600, 86400, TimeUnit.SECONDS);
+                    executorService.scheduleAtFixedRate(safeScheduleTask("StatsLogWriteTask", new StatsLogWriteTask()), 1, 20, TimeUnit.SECONDS);
+                    executorService.scheduleAtFixedRate(safeScheduleTask("StatsCleanDataTask", new StatsCleanDataTask()), 3600, 86400, TimeUnit.SECONDS);
                 }
                 if (enableTableShard) {
-                    executorService.scheduleAtFixedRate(new TableShardingTask(), 5, 3600, TimeUnit.SECONDS);
+                    executorService.scheduleAtFixedRate(safeScheduleTask("TableShardingTask", new TableShardingTask()), 5, 3600, TimeUnit.SECONDS);
                 }
             }
         }
@@ -135,7 +147,11 @@ public class DaoService {
             ses.initActionDate();
             locker.lock();
             try {
-                dataList.add(ses);
+                if (dataList.size() < MAX_STATS_LIST_SIZE) {
+                    dataList.add(ses);
+                } else {
+                    droppedStatsCount.incrementAndGet();
+                }
             } finally {
                 locker.unlock();
             }
@@ -148,7 +164,7 @@ public class DaoService {
      * @return 列表
      */
     static ArrayList<SqlExecuteStats> getStatsList() {
-        ArrayList<SqlExecuteStats> list = null;
+        ArrayList<SqlExecuteStats> list;
         locker.lock();
         try {
             list = dataList;
@@ -156,7 +172,30 @@ public class DaoService {
         } finally {
             locker.unlock();
         }
+        long dropped = droppedStatsCount.getAndSet(0);
+        if (dropped > 0) {
+            logger.warn("dao sql stats list is full (max {}), dropped {} stats entries.", MAX_STATS_LIST_SIZE, dropped);
+        }
         return list;
+    }
+
+    /**
+     * 包装调度任务，捕获全部Throwable（含Error）：scheduleAtFixedRate的任务一旦抛出未捕获Throwable，
+     * 后续调度会被静默取消，该任务从此停摆（如StatsLogWriteTask停摆会导致dataList无人换出、无界增长）。
+     * 此包装保证调度存活，异常细节进日志。
+     *
+     * @param taskName 任务名（用于日志定位）
+     * @param task     被包装的任务
+     * @return 包装后的Runnable
+     */
+    private static Runnable safeScheduleTask(String taskName, Runnable task) {
+        return () -> {
+            try {
+                task.run();
+            } catch (Throwable t) {
+                logger.error("{} run failed, schedule must survive.", taskName, t);
+            }
+        };
     }
 
     /**

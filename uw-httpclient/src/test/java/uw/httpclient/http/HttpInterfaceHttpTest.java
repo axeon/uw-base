@@ -3,6 +3,9 @@ package uw.httpclient.http;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import okhttp3.Call;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -10,6 +13,7 @@ import uw.httpclient.json.JsonInterfaceHelper;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.ref.WeakReference;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -625,21 +629,53 @@ public class HttpInterfaceHttpTest {
         @Override public okhttp3.Interceptor.Chain withReadTimeout(int timeout, java.util.concurrent.TimeUnit unit) { return this; }
         @Override public int writeTimeoutMillis() { return 0; }
         @Override public okhttp3.Interceptor.Chain withWriteTimeout(int timeout, java.util.concurrent.TimeUnit unit) { return this; }
+        // okhttp 5.5.x 起 Interceptor.Chain 新增的 per-request 配置覆写族与事件监听（桩一律返回默认值，
+        // RetryCounter 只触达 call()/request()/proceed()，以下方法不被调用）。
+        @Override public boolean getFollowSslRedirects() { return false; }
+        @Override public boolean getFollowRedirects() { return false; }
+        @Override public okhttp3.Dns getDns() { return null; }
+        @Override public okhttp3.Interceptor.Chain withDns(okhttp3.Dns dns) { return this; }
+        @Override public javax.net.SocketFactory getSocketFactory() { return null; }
+        @Override public okhttp3.Interceptor.Chain withSocketFactory(javax.net.SocketFactory socketFactory) { return this; }
+        @Override public boolean getRetryOnConnectionFailure() { return false; }
+        @Override public okhttp3.Interceptor.Chain withRetryOnConnectionFailure(boolean retryOnConnectionFailure) { return this; }
+        @Override public okhttp3.Authenticator getAuthenticator() { return null; }
+        @Override public okhttp3.Interceptor.Chain withAuthenticator(okhttp3.Authenticator authenticator) { return this; }
+        @Override public okhttp3.CookieJar getCookieJar() { return null; }
+        @Override public okhttp3.Interceptor.Chain withCookieJar(okhttp3.CookieJar cookieJar) { return this; }
+        @Override public okhttp3.Cache getCache() { return null; }
+        @Override public okhttp3.Interceptor.Chain withCache(okhttp3.Cache cache) { return this; }
+        @Override public java.net.Proxy getProxy() { return null; }
+        @Override public okhttp3.Interceptor.Chain withProxy(java.net.Proxy proxy) { return this; }
+        @Override public java.net.ProxySelector getProxySelector() { return null; }
+        @Override public okhttp3.Interceptor.Chain withProxySelector(java.net.ProxySelector proxySelector) { return this; }
+        @Override public okhttp3.Authenticator getProxyAuthenticator() { return null; }
+        @Override public okhttp3.Interceptor.Chain withProxyAuthenticator(okhttp3.Authenticator proxyAuthenticator) { return this; }
+        @Override public javax.net.ssl.SSLSocketFactory getSslSocketFactoryOrNull() { return null; }
+        @Override public okhttp3.Interceptor.Chain withSslSocketFactory(javax.net.ssl.SSLSocketFactory socketFactory, javax.net.ssl.X509TrustManager trustManager) { return this; }
+        @Override public javax.net.ssl.X509TrustManager getX509TrustManagerOrNull() { return null; }
+        @Override public javax.net.ssl.HostnameVerifier getHostnameVerifier() { return null; }
+        @Override public okhttp3.Interceptor.Chain withHostnameVerifier(javax.net.ssl.HostnameVerifier hostnameVerifier) { return this; }
+        @Override public okhttp3.CertificatePinner getCertificatePinner() { return null; }
+        @Override public okhttp3.Interceptor.Chain withCertificatePinner(okhttp3.CertificatePinner certificatePinner) { return this; }
+        @Override public okhttp3.ConnectionPool getConnectionPool() { return null; }
+        @Override public okhttp3.Interceptor.Chain withConnectionPool(okhttp3.ConnectionPool connectionPool) { return this; }
+        @Override public okhttp3.EventListener getEventListener() { return okhttp3.EventListener.NONE; }
     }
 
     @Test
     public void testRetryCounterSingleProceed() throws Exception {
-        // 单次 proceed（无重试/无 follow-up）→ retryCount = 0，且 consume 后清理（再 consume 仍为 0）
+        // 单次 proceed（无重试/无 follow-up）→ retryCount = 0；读取无副作用（重复读结果一致）
         okhttp3.OkHttpClient client = new okhttp3.OkHttpClient();
         okhttp3.Request req = new okhttp3.Request.Builder().url("http://127.0.0.1:1/x").build();
         okhttp3.Call call = client.newCall(req);
         okhttp3.Response resp = new okhttp3.Response.Builder().request(req).protocol(okhttp3.Protocol.HTTP_1_1)
                 .code(200).message("OK").build();
-        HttpInterface.RetryCounter rc = new HttpInterface.RetryCounter();
-        rc.intercept(new FakeChain(call, req, resp));
-        assertEquals(0, rc.consumeRetryCount(call));
-        // 清理后再取，不报错、不返回脏值
-        assertEquals(0, rc.consumeRetryCount(call));
+        HttpInterface.RetryCounter.INSTANCE.intercept(new FakeChain(call, req, resp));
+        assertEquals(0, HttpInterface.RetryCounter.retryCountOf(call));
+        assertEquals(0, HttpInterface.RetryCounter.retryCountOf(call));
+        // 未经过拦截器的 Call（全局兜底 client 场景）没有计数 tag → 0
+        assertEquals(0, HttpInterface.RetryCounter.retryCountOf(client.newCall(req)));
     }
 
     @Test
@@ -650,29 +686,64 @@ public class HttpInterfaceHttpTest {
         okhttp3.Call call = client.newCall(req);
         okhttp3.Response resp = new okhttp3.Response.Builder().request(req).protocol(okhttp3.Protocol.HTTP_1_1)
                 .code(200).message("OK").build();
-        HttpInterface.RetryCounter rc = new HttpInterface.RetryCounter();
         FakeChain chain = new FakeChain(call, req, resp);
-        rc.intercept(chain);
-        rc.intercept(chain);
-        rc.intercept(chain);
-        assertEquals(2, rc.consumeRetryCount(call));
+        HttpInterface.RetryCounter.INSTANCE.intercept(chain);
+        HttpInterface.RetryCounter.INSTANCE.intercept(chain);
+        HttpInterface.RetryCounter.INSTANCE.intercept(chain);
+        assertEquals(2, HttpInterface.RetryCounter.retryCountOf(call));
     }
 
     @Test
     public void testRetryCounterIsolationBetweenCalls() throws Exception {
-        // 不同 Call 的计数互不干扰（验证以 Call 为 key 的隔离性）
+        // 不同 Call 的计数互不干扰（计数挂在各自 Call 的 tag 上）
         okhttp3.OkHttpClient client = new okhttp3.OkHttpClient();
         okhttp3.Request req = new okhttp3.Request.Builder().url("http://127.0.0.1:1/x").build();
         okhttp3.Call callA = client.newCall(req);
         okhttp3.Call callB = client.newCall(req);
         okhttp3.Response resp = new okhttp3.Response.Builder().request(req).protocol(okhttp3.Protocol.HTTP_1_1)
                 .code(200).message("OK").build();
-        HttpInterface.RetryCounter rc = new HttpInterface.RetryCounter();
-        rc.intercept(new FakeChain(callA, req, resp));
-        rc.intercept(new FakeChain(callA, req, resp)); // callA proceed 2 次
-        rc.intercept(new FakeChain(callB, req, resp)); // callB proceed 1 次
-        assertEquals(1, rc.consumeRetryCount(callA));
-        assertEquals(0, rc.consumeRetryCount(callB));
+        HttpInterface.RetryCounter.INSTANCE.intercept(new FakeChain(callA, req, resp));
+        HttpInterface.RetryCounter.INSTANCE.intercept(new FakeChain(callA, req, resp)); // callA proceed 2 次
+        HttpInterface.RetryCounter.INSTANCE.intercept(new FakeChain(callB, req, resp)); // callB proceed 1 次
+        assertEquals(1, HttpInterface.RetryCounter.retryCountOf(callA));
+        assertEquals(0, HttpInterface.RetryCounter.retryCountOf(callB));
+    }
+
+    @Test
+    public void testDirectNewCallRetainsNoCallState() throws Exception {
+        // 回归（261111 ops-agent 堆耗尽）：绕过 HttpInterface 请求方法、直接 getOkHttpClient().newCall()
+        // 的调用同样经过内部计数拦截器，请求结束后拦截器不得继续持有该 Call——旧实现以 Call 为键记入
+        // 全局 Map、只在 HttpInterface 自有请求路径清理，直连调用的条目连同 Request（URL/头/请求体）永不移除。
+        // 客户端在整个判定期间保持可达（对应 agent 的 static 单例 agentClient）：客户端本身被回收时
+        // 其内部状态随之消失，测不出泄漏。
+        JsonInterfaceHelper client = helper();
+        WeakReference<Call> ref = executeDirectCall(client, base + "/direct");
+        assertTrue("直连 newCall 的 Call 在请求结束后应可被回收", awaitCollected(ref, 10_000L));
+        assertNotNull(client.getOkHttpClient());
+    }
+
+    /**
+     * 直连 OkHttpClient 执行一次请求并只返回 Call 的弱引用（强引用随本方法栈帧结束）。
+     */
+    private static WeakReference<Call> executeDirectCall(HttpInterface httpInterface, String url) throws IOException {
+        Request request = new Request.Builder().url(url).build();
+        Call call = httpInterface.getOkHttpClient().newCall(request);
+        try (Response response = call.execute()) {
+            assertEquals(200, response.code());
+        }
+        return new WeakReference<>(call);
+    }
+
+    /**
+     * 反复触发 GC 直到弱引用被清除或超时。
+     */
+    private static boolean awaitCollected(WeakReference<?> ref, long timeoutMillis) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeoutMillis;
+        while (ref.get() != null && System.currentTimeMillis() < deadline) {
+            System.gc();
+            Thread.sleep(20L);
+        }
+        return ref.get() == null;
     }
 
 

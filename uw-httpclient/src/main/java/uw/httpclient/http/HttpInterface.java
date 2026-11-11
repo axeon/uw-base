@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -76,10 +75,6 @@ public class HttpInterface {
      * 默认请求头（来自 HttpConfig，可能为 null），所有请求自动追加，业务传入同名头覆盖默认值。
      */
     private final java.util.Map<String, String> defaultHeaders;
-    /**
-     * 重试/重定向计数器（内部网络拦截器），统计每个 Call 的物理网络请求次数。
-     */
-    private final RetryCounter retryCounter;
 
 
     /**
@@ -122,9 +117,9 @@ public class HttpInterface {
             // 重试/重定向观测：无条件注入内部网络拦截器，按 Call 统计每次物理网络请求次数。
             // retryCount = proceed 次数 - 1，含连接失败重试（retryOnConnectionFailure=true 时）与
             // follow-up（重定向/认证挑战，由 OkHttp 内部 RetryAndFollowUpInterceptor 处理，
-            // 与 retryOnConnectionFailure 无关）。开销可忽略（一次 ConcurrentHashMap 原子操作）。
-            this.retryCounter = new RetryCounter();
-            okHttpClientBuilder.addNetworkInterceptor(this.retryCounter);
+            // 与 retryOnConnectionFailure 无关）。计数挂在 Call 自身的 tag 上随 Call 回收，拦截器无状态，
+            // 经 getOkHttpClient() 直连发起的调用同样不残留任何状态。
+            okHttpClientBuilder.addNetworkInterceptor(RetryCounter.INSTANCE);
             // 使用独立的dispatcher，避免newBuilder()共享全局dispatcher导致并发放大配置互相串扰。
             Dispatcher dispatcher = new Dispatcher();
             if (httpConfig.getMaxRequestsPerHost() > 0) {
@@ -139,7 +134,6 @@ public class HttpInterface {
             this.okHttpClient = globalOkHttpClient;
             // 未配置 HttpConfig 时走全局共享 client，无法为其注入实例级拦截器，retryCount 恒为 0。
             // （globalOkHttpClient 本身 retryOnConnectionFailure=false，但走全局兜底的场景一般也不需要诊断）
-            this.retryCounter = null;
         }
         this.httpDataCls = httpDataCls;
         if (httpDataLogLevel == null) {
@@ -3456,25 +3450,9 @@ public class HttpInterface {
         } catch (IOException e) {
             throw new HttpRequestException(e.getMessage(), e);
         } finally {
-            // 记录本次 Call 的重试/重定向次数（网络拦截器在每次 proceed 时递增），事后清理。
-            httpData.setRetryCount(retryCountOf(call));
+            // 记录本次 Call 的重试/重定向次数（网络拦截器在每次 proceed 时递增；请求抛 IOException 时为已发生的次数）。
+            httpData.setRetryCount(RetryCounter.retryCountOf(call));
         }
-    }
-
-    /**
-     * 取一个 Call 的重试/重定向次数（proceed 次数 - 1），并清理计数器条目。
-     * <p>
-     * retryCounter 为 null（走全局 client 的兜底场景）时返回 0。
-     * 请求抛 IOException 时网络拦截器仍可能已记录部分 proceed，finally 中也会清理，避免泄漏。
-     *
-     * @param call OkHttp Call。
-     * @return 重试次数，0 表示无重试。
-     */
-    private int retryCountOf(okhttp3.Call call) {
-        if (this.retryCounter == null) {
-            return 0;
-        }
-        return this.retryCounter.consumeRetryCount(call);
     }
 
     /**
@@ -3594,44 +3572,57 @@ public class HttpInterface {
 
     /**
      * 重试/重定向计数器：作为内部网络拦截器注入 OkHttpClient，
-     * 按每个 {@link okhttp3.Call} 统计物理网络请求次数（含连接失败重试与 follow-up）。
+     * 按每个 {@link Call} 统计物理网络请求次数（含连接失败重试与 follow-up）。
      * <p>
      * <b>计数语义</b>：网络拦截器在每次真实网络请求（含重试与重定向后的 follow-up）时进入一次，
      * 故对一次 Call 的 {@code proceed} 次数即物理网络请求次数，重试/重定向次数 = proceed 次数 - 1。
      * <p>
-     * <b>线程模型</b>：以 {@code Call} 实例为 key（OkHttp 单次调用全程复用同一 Call 实例），
-     * 用 {@link ConcurrentHashMap} + {@link AtomicInteger} 保证并发安全；
-     * {@link #consumeRetryCount(okhttp3.Call)} 在请求结束后取出次数并删除条目，避免泄漏。
+     * <b>状态归属</b>：计数挂在 Call 自身的 tag 上（{@code Call.tag(Class, Function0)}，OkHttp 以原子引用
+     * computeIfAbsent 挂载，并发安全），生命周期与 Call 一致、随 Call 回收；拦截器本身无状态，单例共享。
+     * 不得改回以 Call 为键的外部 Map：经 {@link HttpInterface#getOkHttpClient()} 直连发起的调用同样经过本
+     * 拦截器，却不走 HttpInterface 的请求方法与收尾路径，外部 Map 的条目将连同 Request（URL/头/请求体）
+     * 永久驻留（261111 uw-ops-agent 128m 堆约 62 小时耗尽的根因）。
      * <p>
-     * 包级可见以便单元测试（模拟多次 proceed 验证计数与清理）。
+     * 包级可见以便单元测试。
      */
     static final class RetryCounter implements Interceptor {
 
-        private final ConcurrentHashMap<okhttp3.Call, AtomicInteger> counts =
-                new ConcurrentHashMap<>();
+        /**
+         * 无状态单例（全部 HttpInterface 实例共享）。
+         */
+        static final RetryCounter INSTANCE = new RetryCounter();
+
+        private RetryCounter() {
+        }
 
         @Override
         public Response intercept(Chain chain) throws IOException {
-            okhttp3.Call call = chain.call();
             // proceed 前先递增：本次 proceed 计为该 Call 的第 N 次物理网络请求。
-            counts.computeIfAbsent(call, k -> new AtomicInteger()).incrementAndGet();
+            chain.call().tag(ProceedTally.class, ProceedTally::new).proceeds.incrementAndGet();
             return chain.proceed(chain.request());
         }
 
         /**
-         * 取出指定 Call 的重试/重定向次数（proceed 次数 - 1），并删除计数条目。
-         * <p>
-         * min(0) 防御异常情况下计数缺失（如拦截器未触发即返回）时出现负数。
+         * 取指定 Call 的重试/重定向次数（proceed 次数 - 1）。读取无副作用；未经过本拦截器的 Call
+         * （如走全局兜底 client）没有计数 tag，返回 0。
          *
          * @param call OkHttp Call。
          * @return 重试/重定向次数，0 表示无重试。
          */
-        int consumeRetryCount(okhttp3.Call call) {
-            AtomicInteger n = counts.remove(call);
-            if (n == null) {
-                return 0;
-            }
-            return Math.max(0, n.get() - 1);
+        static int retryCountOf(Call call) {
+            ProceedTally tally = call.tag(ProceedTally.class);
+            return tally == null ? 0 : tally.proceeds.get() - 1;
         }
+    }
+
+    /**
+     * 单个 Call 的物理网络请求次数：Call tag 的值类型（私有类型作 key，不与业务方挂的 tag 冲突）。
+     */
+    static final class ProceedTally {
+
+        /**
+         * proceed 次数（tag 挂载即递增，读到时至少为 1）。
+         */
+        final AtomicInteger proceeds = new AtomicInteger();
     }
 }

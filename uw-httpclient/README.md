@@ -77,9 +77,6 @@ uw-httpclient
 ├── exception/
 │   ├── HttpRequestException   extends TaskPartnerException（网络/接口方错误）
 │   └── DataMapperException    extends TaskDataException（序列化/数据错误）
-└── uw.task.exception/         桥接副本（避免强依赖 uw-task，详见类 javadoc）
-    ├── TaskDataException
-    └── TaskPartnerException
 ```
 
 #### 异常体系
@@ -98,7 +95,7 @@ RuntimeException
 - **`DataMapperException`**：序列化/反序列化失败，属"内部数据原因"，uw-task 通常不重试（重试也是同样的数据错误）。
 - `Processor` 抛出的 `DataMapperException` 会**直接冒泡**，不被本库吞掉或改写异常类型，交由上层（uw-task / 业务）按正确分类处理。
 
-> `uw.task.exception` 包下的两个异常类是本库为避免强依赖 uw-task 而保留的**同名桥接副本**。运行在 uw-task 环境时，类加载器优先加载 uw-task 提供的同名类，异常分类语义生效；独立运行时回退到本地副本，仍可作为普通 RuntimeException 使用。
+> `TaskDataException` / `TaskPartnerException` 位于 **uw-common**（包名 `uw.task.exception`）。本库与 uw-task 都依赖 uw-common，共用这一份，本库无需依赖 uw-task。
 
 #### 环境要求
 
@@ -400,10 +397,10 @@ A: `retryCount = 物理网络请求次数 - 1`，由内部网络拦截器统计�
 所以即便 `retryOnConnectionFailure=false`，只要发生了重定向跟随，`retryCount` 就会 >0。未配置 `HttpConfig`（走全局兜底 client）时 `retryCount` 恒为 0（该场景未注入计数拦截器）。
 
 **Q: OkHttp 4.x 升级到 5.x 需要注意什么？**
-A: 5.x 对 4.12 的稳定 API 保持**二进制兼容**，`okhttp3.*` 包名不变，下游代码零改动。唯一注意点：5.0+ 把单一 jar 拆成了 `okhttp-jvm`（服务端）和 `okhttp-android`，Maven Central 上的主 `okhttp` artifact 变为空 jar，**服务端必须用 `okhttp-jvm`**（本库已采用）。
+A: 5.x 对 4.12 的稳定 API 保持**二进制兼容**，`okhttp3.*` 包名不变，下游代码零改动。唯一注意点：5.0+ 把单一 jar 拆成了 `okhttp-jvm`（服务端）和 `okhttp-android`，Maven Central 上的主 `okhttp` artifact 变为空 jar，**服务端必须用 `okhttp-jvm`**（本库已采用）。三方库（如 minio）依赖的主 `okhttp` 由 uw-base 依赖管理固定为与 `okhttp-jvm` 同一版本。
 
-**Q: 为什么 `uw-httpclient` 里会有 `uw.task.exception` 这个包？**
-A: 这是避免强依赖 uw-task 的**同名桥接副本**。本库的 `DataMapperException` / `HttpRequestException` 分别继承 `TaskDataException` / `TaskPartnerException`，以便在 uw-task 环境被正确分类处理；但作为底层库不应强依赖 uw-task。运行时类加载器会优先加载 uw-task 的同名类，独立运行则回退到本地副本。详见对应类的 javadoc。
+**Q: `TaskDataException` / `TaskPartnerException` 在哪个模块？**
+A: 在 uw-common，包名为 `uw.task.exception`。本库的 `DataMapperException` / `HttpRequestException` 分别继承它们，uw-task 按它们区分"数据错误不重试 / 合作方错误重试"；两边都依赖 uw-common，全平台只有一份。
 
 **Q: `HttpDataProcessor` 里两个 `requestProcess` 有什么区别？**
 A: `requestProcess(String, Map, Map)` 只能拿到业务侧传入的原始参数（requestBody/formData/headers）；`requestProcess(okhttp3.Request)` 是默认空实现，覆写后可拿到**构建完成的 Request**（含已合并的业务头与 `defaultHeaders`、最终解析的 `HttpUrl`、method、body 引用）。两者都**不含** OkHttp 网络层注入的头（`Host`/`Content-Length`/`Connection`/`Cookie` 等），那些头只在**网络拦截器**里可见。

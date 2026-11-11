@@ -16,30 +16,32 @@
     </parent>
 
     <properties>
-        <revision>2026.1000.0008</revision>
+        <revision>2026.1000.0009</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>25</java.version>
         <spring-cloud.version>2025.1.4</spring-cloud.version>
-        <uw-ai.version>1.1.53</uw-ai.version>
-        <uw-auth-client.version>6.2.33</uw-auth-client.version>
-        <uw-auth-service.version>6.2.85</uw-auth-service.version>
-        <uw-cache.version>1.2.111</uw-cache.version>
-        <uw-common.version>1.1.123</uw-common.version>
-        <uw-common-app.version>1.1.119</uw-common-app.version>
-        <uw-dao.version>5.3.63</uw-dao.version>
-        <uw-gateway-client.version>1.1.19</uw-gateway-client.version>
-        <uw-httpclient.version>2.3.12</uw-httpclient.version>
-        <uw-log-es.version>3.1.111</uw-log-es.version>
-        <uw-logback-es.version>3.1.106</uw-logback-es.version>
-        <uw-mfa.version>1.1.76</uw-mfa.version>
-        <uw-mydb-client.version>1.1.39</uw-mydb-client.version>
-        <uw-nacos-client.version>1.0.9</uw-nacos-client.version>
-        <uw-notify-client.version>1.1.38</uw-notify-client.version>
-        <uw-oauth2-client.version>1.1.39</uw-oauth2-client.version>
-        <uw-task.version>5.1.139</uw-task.version>
-        <uw-tinyurl-client.version>1.1.38</uw-tinyurl-client.version>
-        <uw-webot.version>1.0.20</uw-webot.version>
+        <okhttp.version>5.5.1</okhttp.version>
+        <swagger.version>2.2.55</swagger.version>
+        <uw-ai.version>1.1.54</uw-ai.version>
+        <uw-auth-client.version>6.2.34</uw-auth-client.version>
+        <uw-auth-service.version>6.2.86</uw-auth-service.version>
+        <uw-cache.version>1.2.112</uw-cache.version>
+        <uw-common.version>1.1.124</uw-common.version>
+        <uw-common-app.version>1.1.120</uw-common-app.version>
+        <uw-dao.version>5.3.64</uw-dao.version>
+        <uw-gateway-client.version>1.1.20</uw-gateway-client.version>
+        <uw-httpclient.version>2.3.13</uw-httpclient.version>
+        <uw-log-es.version>3.1.112</uw-log-es.version>
+        <uw-logback-es.version>3.1.107</uw-logback-es.version>
+        <uw-mfa.version>1.1.77</uw-mfa.version>
+        <uw-mydb-client.version>1.1.40</uw-mydb-client.version>
+        <uw-nacos-client.version>1.0.10</uw-nacos-client.version>
+        <uw-notify-client.version>1.1.39</uw-notify-client.version>
+        <uw-oauth2-client.version>1.1.40</uw-oauth2-client.version>
+        <uw-task.version>5.1.140</uw-task.version>
+        <uw-tinyurl-client.version>1.1.39</uw-tinyurl-client.version>
+        <uw-webot.version>1.0.21</uw-webot.version>
     </properties>
 
     <dependencyManagement>
@@ -151,15 +153,51 @@
                 <artifactId>uw-webot</artifactId>
                 <version>${uw-webot.version}</version>
             </dependency>
+            <!-- 同一个库会出现的坐标全部直接固定到同一版本（以下 okhttp、swagger 两族同此规则）：
+                 DM 按坐标固定版本，不识别"不同坐标是同一个库/装同一批类"，只固定其中一个坐标时，其余坐标的版本落到
+                 导入的 BOM 或传递依赖上。直接条目优先级高于一切导入的 BOM（含 Spring Cloud），与声明顺序无关，
+                 下游只有在自己 pom 里再写一条才能覆盖。 -->
+            <!-- springdoc 与它的 swagger 引擎必须用 springdoc 配套版本（3.2.0 配 swagger 2.2.55），升级 springdoc 时同步改
+                 swagger.version。uw-* 模块用 swagger-annotations，springdoc 用 *-jakarta，注解与引擎必须同版本：260714 只固定了
+                 swagger-annotations 2.2.50，springdoc 3.0.3 自带引擎为 2.2.47，错配致查询参数输出错误的空默认值。
+                 同版本下两种风格的注解类字节一致。 -->
             <dependency>
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-                <version>3.0.2</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-annotations</artifactId>
-                <version>2.2.52</version>
+                <version>${swagger.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations-jakarta</artifactId>
+                <version>${swagger.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-core-jakarta</artifactId>
+                <version>${swagger.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-models-jakarta</artifactId>
+                <version>${swagger.version}</version>
+            </dependency>
+            <!-- okhttp 5.x 的类在 okhttp-jvm，okhttp 主构件是空壳（minio 等三方库依赖它）：261111 只固定了 okhttp-jvm，
+                 okhttp 被 Spring Cloud 导入的 okhttp-bom 固定为 4.12.0，4.x 与 5.x 两份 okhttp3.* 同进 fat jar，
+                 运行期 NoSuchMethodError（center 事故：Call.tag）。 -->
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${okhttp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp-jvm</artifactId>
+                <version>${okhttp.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -205,11 +243,6 @@
                 <groupId>com.github.stuxuhai</groupId>
                 <artifactId>jpinyin</artifactId>
                 <version>1.1.8</version>
-            </dependency>
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>okhttp-jvm</artifactId>
-                <version>5.5.1</version>
             </dependency>
             <dependency>
                 <groupId>com.microsoft.playwright</groupId>
@@ -322,6 +355,43 @@
                     <!-- inherited=插件默认语义（依赖版本按 DM 标准解析，pom 结构不动），显式压掉 pluginManagement 的 direct -->
                     <flattenDependencyMode>inherited</flattenDependencyMode>
                 </configuration>
+            </plugin>
+            <!-- 构建期防线：同名类出现在多个构件且内容不同即失败（okhttp 4.x/5.x 双份 okhttp3.Call、javax 与 jakarta 版
+                 swagger-core 等，单测拦不住），弥补 DM 只按坐标固定版本、看不到跨坐标同名类的盲区。
+                 随继承生效于 19 个子模块与以本 pom 为 parent 的下游，validate 阶段执行（版本由 Spring Boot 管理）。
+                 范围=进 Spring Boot fat jar 的 compile/runtime/provided；字节码完全相同的重复放行；不设例外清单，
+                 重复应从源头删除或 exclusion 排除。临时跳过：-Denforcer.skip=true。 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>extra-enforcer-rules</artifactId>
+                        <version>1.12.1</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>ban-duplicate-classes</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <banDuplicateClasses>
+                                    <scopes>
+                                        <scope>compile</scope>
+                                        <scope>runtime</scope>
+                                        <scope>provided</scope>
+                                    </scopes>
+                                    <findAllDuplicates>true</findAllDuplicates>
+                                    <ignoreWhenIdentical>true</ignoreWhenIdentical>
+                                </banDuplicateClasses>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

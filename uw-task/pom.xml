@@ -31,10 +31,6 @@
         <!-- ============ 自研框架 uw-* ============ -->
         <dependency>
             <groupId>pub.xili</groupId>
-            <artifactId>uw-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>pub.xili</groupId>
             <artifactId>uw-auth-client</artifactId>
         </dependency>
         <dependency>

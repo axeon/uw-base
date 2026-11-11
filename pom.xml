@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <revision>2026.1000.0009</revision>
+        <revision>2026.1000.0010</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>25</java.version>
@@ -27,11 +27,11 @@
         <uw-auth-client.version>6.2.34</uw-auth-client.version>
         <uw-auth-service.version>6.2.86</uw-auth-service.version>
         <uw-cache.version>1.2.112</uw-cache.version>
-        <uw-common.version>1.1.124</uw-common.version>
+        <uw-common.version>1.1.125</uw-common.version>
         <uw-common-app.version>1.1.120</uw-common-app.version>
         <uw-dao.version>5.3.64</uw-dao.version>
         <uw-gateway-client.version>1.1.20</uw-gateway-client.version>
-        <uw-httpclient.version>2.3.13</uw-httpclient.version>
+        <uw-httpclient.version>2.3.14</uw-httpclient.version>
         <uw-log-es.version>3.1.112</uw-log-es.version>
         <uw-logback-es.version>3.1.107</uw-logback-es.version>
         <uw-mfa.version>1.1.77</uw-mfa.version>
@@ -39,7 +39,7 @@
         <uw-nacos-client.version>1.0.10</uw-nacos-client.version>
         <uw-notify-client.version>1.1.39</uw-notify-client.version>
         <uw-oauth2-client.version>1.1.40</uw-oauth2-client.version>
-        <uw-task.version>5.1.140</uw-task.version>
+        <uw-task.version>5.1.141</uw-task.version>
         <uw-tinyurl-client.version>1.1.39</uw-tinyurl-client.version>
         <uw-webot.version>1.0.21</uw-webot.version>
     </properties>
@@ -52,11 +52,6 @@
                 <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.alibaba.nacos</groupId>
-                <artifactId>nacos-client</artifactId>
-                <version>3.3.0</version>
             </dependency>
             <dependency>
                 <groupId>pub.xili</groupId>
@@ -152,6 +147,11 @@
                 <groupId>pub.xili</groupId>
                 <artifactId>uw-webot</artifactId>
                 <version>${uw-webot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-client</artifactId>
+                <version>3.3.0</version>
             </dependency>
             <!-- 同一个库会出现的坐标全部直接固定到同一版本（以下 okhttp、swagger 两族同此规则）：
                  DM 按坐标固定版本，不识别"不同坐标是同一个库/装同一批类"，只固定其中一个坐标时，其余坐标的版本落到
@@ -359,8 +359,8 @@
             <!-- 构建期防线：同名类出现在多个构件且内容不同即失败（okhttp 4.x/5.x 双份 okhttp3.Call、javax 与 jakarta 版
                  swagger-core 等，单测拦不住），弥补 DM 只按坐标固定版本、看不到跨坐标同名类的盲区。
                  随继承生效于 19 个子模块与以本 pom 为 parent 的下游，validate 阶段执行（版本由 Spring Boot 管理）。
-                 范围=进 Spring Boot fat jar 的 compile/runtime/provided；字节码完全相同的重复放行；不设例外清单，
-                 重复应从源头删除或 exclusion 排除。临时跳过：-Denforcer.skip=true。 -->
+                 范围=进 Spring Boot fat jar 的 compile/runtime/provided；字节码完全相同的重复放行。重复应从源头删除或
+                 exclusion 排除，ignoreClasses 只登记设计如此的同名副本（逐类写明原因）。临时跳过：-Denforcer.skip=true。 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
@@ -387,6 +387,12 @@
                                     </scopes>
                                     <findAllDuplicates>true</findAllDuplicates>
                                     <ignoreWhenIdentical>true</ignoreWhenIdentical>
+                                    <ignoreClasses>
+                                        <!-- uw-httpclient 内置的 uw-task 同包桥接副本（使其不依赖 uw-task，设计如此）：与 uw-task 原类
+                                             签名与字节码指令一致，仅源码注释不同致行号表不同 -->
+                                        <ignoreClass>uw.task.exception.TaskDataException</ignoreClass>
+                                        <ignoreClass>uw.task.exception.TaskPartnerException</ignoreClass>
+                                    </ignoreClasses>
                                 </banDuplicateClasses>
                             </rules>
                         </configuration>

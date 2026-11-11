@@ -1,13 +1,18 @@
 # uw-task 集成测试配置：扮演"业务方应用"，连真实 RabbitMQ + Redis + task-center。
-# 前提：192.168.88.21 的 RabbitMQ(5672)/Redis(6380) 可达，且 task-center（默认 http://uw-task-center）可达——
+# 前提：dev（10.0.0.10）的 nacos(8848)/RabbitMQ(5672)/Redis(6380) 可达，且 task-center（默认 http://uw-task-center）可达——
 # listener container 由 task-center 下发的 runner 配置驱动启动，task-center 不可达则 sendToQueue 的消息不会被消费。
+# 凭据经环境变量注入，勿提交明文：NACOS_USERNAME/NACOS_PASSWORD（可选 NACOS_NAMESPACE，缺省 dev）、
+# UW_TEST_RABBITMQ_PASSWORD、UW_TEST_REDIS_PASSWORD。
 spring:
   application:
     name: uw-task-test
   cloud:
     nacos:
       discovery:
-        server-addr: 192.168.88.21:8848
+        server-addr: 10.0.0.10:8848
+        username: ${NACOS_USERNAME}
+        password: ${NACOS_PASSWORD}
+        namespace: ${NACOS_NAMESPACE:dev}
         ip: 127.0.0.1
         register-enabled: false  # 只发现 auth-center/task-center 服务，不注册自己
 
@@ -24,23 +29,23 @@ uw:
     run-target: default
     croner-thread-num: 5
     # task-center 地址。默认 http://uw-task-center，你的环境需能解析该域名（内网 DNS / hosts）。
-    # 若 task-center 部署在别处，改成实际地址（如 http://192.168.88.21:8080）。
+    # 若 task-center 部署在别处，改成实际地址（如 http://10.0.0.10:10010）。
     task-center-host: http://uw-task-center
     rabbitmq:
-      host: 192.168.88.21
+      host: 10.0.0.10
       port: 5672
       username: rabbit
-      password: 23Dl4uLzlJZVnIlbiyMd7AcR7kzrL4DG
+      password: ${UW_TEST_RABBITMQ_PASSWORD}
       # publisher-confirm-type: correlated  # 测试：关掉 confirm，验证 RPC/sendToQueue 是否依赖它
       virtual-host: /
       ssl:
         enabled: false
     redis:
       database: 7
-      host: 192.168.88.21
+      host: 10.0.0.10
       port: 6380
       username: ${REDIS_USERNAME:}
-      password: Ah8mm6tgE0vSv2aadIELqdHAAohgbFYl
+      password: ${UW_TEST_REDIS_PASSWORD}
       lettuce:
         pool:
           max-active: 200
@@ -50,17 +55,6 @@ uw:
       timeout: 30s
       ssl:
         enabled: false
-
-auth:
-  client:
-    login-id: rpc
-    login-pass: JhFiROEPUJkbt9x92TL3IldDwPqRtuHg
-
-log:
-  es:
-    server: http://192.168.88.21:9200
-    username: elastic
-    password: Few20Dk1zuSVZcdzxhOYMG1kp95XVzPj
 
 logging:
   level:

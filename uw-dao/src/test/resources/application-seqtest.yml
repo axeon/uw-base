@@ -1,11 +1,12 @@
+# 连 dev（10.0.0.10）；密码经环境变量注入（UW_TEST_REDIS_PASSWORD / UW_TEST_MYSQL_PASSWORD），勿提交明文。
 uw:
   dao:
     conn-pool:
       root:
         driver: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://192.168.88.21:3308/uw_auth
+        url: jdbc:mysql://10.0.0.10:3308/uw_auth
         username: uw
-        password: GGmvbPEzWdETXSKeXDAOocXAjyQtGLR9
+        password: ${UW_TEST_MYSQL_PASSWORD}
         min-conn: 3
         max-conn: 100
         conn-idle-timeout: 180
@@ -13,9 +14,9 @@ uw:
         conn-max-age: 600
     redis:
       database: 5
-      host: 192.168.88.21
+      host: 10.0.0.10
       port: 6380
-      password: Ah8mm6tgE0vSv2aadIELqdHAAohgbFYl
+      password: ${UW_TEST_REDIS_PASSWORD}
       lettuce:
         pool:
           max-active: 200

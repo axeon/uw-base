@@ -7,8 +7,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
+import java.io.Serial;
 import java.io.StringReader;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * Properties 配置参数盒子。
@@ -25,12 +33,15 @@ import java.util.Properties;
 public class PropertyBox {
 
     /**
-     * 空的配置参数盒子（内部 Properties 为空实例，作为工厂失败与空输入的安全默认值）。
+     * 空的配置参数盒子（工厂失败与空输入的安全默认值），所有取值恒返默认值。
      * <p>
-     * 共享单例：所有取值恒返默认值；{@link #getProperties()} 返回的空 Properties 不可修改
-     * （修改会污染全部 EMPTY 引用方）。
+     * 共享单例，结构性只读：内部载体对全部变更入口（put/setProperty/load/remove/clear/compute 族及视图删除）
+     * 抛 {@link UnsupportedOperationException}——共享实例一旦被某调用方原地写入，变量会串入全部空输入的
+     * 读取方，故违规写入在写入点立即失败，而不是静默扩散。需要可写变量表的调用方先取私有副本：
+     * {@code new Properties()} 后 {@code putAll(box.getProperties())}，或
+     * {@code (Properties) box.getProperties().clone()}（EMPTY 的 clone 返回普通可写 Properties）。
      */
-    public static final PropertyBox EMPTY = new PropertyBox(new Properties());
+    public static final PropertyBox EMPTY = new PropertyBox(new ReadOnlyProperties());
 
     /**
      * 日志记录器。
@@ -73,7 +84,7 @@ public class PropertyBox {
 
     /**
      * 从输入流加载（Properties 文本格式，流由调用方关闭）。
-     * 流为 null 或读取失败降级为 {@link #EMPTY}（null 属常态输入不告警，IO 失败记 WARN）。
+     * 流为 null 或读取失败降级为 {@link #EMPTY}（null 属常态输入不告警，IO 失败/文本损坏记 WARN）。
      *
      * @param in 配置输入流（classpath 资源、socket、文件流等）
      * @return 配置盒子
@@ -85,7 +96,8 @@ public class PropertyBox {
         Properties properties = new Properties();
         try {
             properties.load(in);
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
+            //文本损坏（畸形 unicode 转义）由 Properties.load 抛 IllegalArgumentException 而非 IOException，须一并降级。
             log.warn("PropertyBox load from stream failed: {}", e.toString());
             return EMPTY;
         }
@@ -94,7 +106,8 @@ public class PropertyBox {
 
     /**
      * 从字符串加载（Properties 文本格式，行分隔的 key=value）。
-     * 空白输入（含 null，DB 空列属常态）返回 {@link #EMPTY} 不告警；文本损坏记 WARN 并返回 {@link #EMPTY}。
+     * 空白输入（含 null，DB 空列属常态）返回 {@link #EMPTY} 不告警；文本损坏（如畸形 unicode 转义）
+     * 记 WARN 并返回 {@link #EMPTY}。
      *
      * @param text Properties 文本（如 "amqp=5676\nmgmt=15676"）
      * @return 配置盒子
@@ -106,7 +119,8 @@ public class PropertyBox {
         Properties properties = new Properties();
         try {
             properties.load(new StringReader(text));
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
+            //文本损坏（畸形 unicode 转义）由 Properties.load 抛 IllegalArgumentException 而非 IOException，须一并降级。
             log.warn("PropertyBox load from string failed: {}", e.toString());
             return EMPTY;
         }
@@ -124,7 +138,12 @@ public class PropertyBox {
     }
 
     /**
-     * @return 持有的原始 Properties（共享引用——键值遍历/整包复用场景；修改即修改盒子本身）
+     * 获取持有的原始 Properties（共享引用——键值遍历/整包复用场景；修改即修改盒子本身）。
+     * <p>
+     * {@link #EMPTY} 返回只读实例（变更抛 {@link UnsupportedOperationException}）；工厂对空白/失败输入
+     * 返回的正是 EMPTY，故需要写入时一律先取私有副本，勿在返回值上原地修改。
+     *
+     * @return 持有的 Properties
      */
     public Properties getProperties() {
         return properties;
@@ -260,6 +279,137 @@ public class PropertyBox {
             return Boolean.parseBoolean(value.trim());
         }
         return defaultValue;
+    }
+
+    /**
+     * 只读 Properties：{@link #EMPTY} 的内部载体，恒为空。
+     * <p>
+     * 封堵面=JDK Properties 全部公开变更入口（Properties 已覆写 Hashtable 全部公开方法并委托内部 Map，
+     * 故逐一覆写即完整）：写入族（put/putAll/putIfAbsent/setProperty/load/loadFromXML/replace/replaceAll/
+     * compute 族/merge）与删除族（remove/clear）抛 {@link UnsupportedOperationException}；keySet/values/entrySet
+     * 包为不可修改视图。{@link #clone()} 返回普通可写 Properties——副本即调用方私有，应当可写，
+     * 不能让"克隆出只读对象"把私有副本惯用法也拦住。
+     */
+    private static final class ReadOnlyProperties extends Properties {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        /**
+         * 构造只读变更异常（固定文案，指明正确用法）。
+         *
+         * @return 异常
+         */
+        private static UnsupportedOperationException readOnly() {
+            return new UnsupportedOperationException("PropertyBox.EMPTY is shared and read-only, copy it before modifying.");
+        }
+
+        @Override
+        public Object setProperty(String key, String value) {
+            throw readOnly();
+        }
+
+        @Override
+        public void load(Reader reader) {
+            throw readOnly();
+        }
+
+        @Override
+        public void load(InputStream inStream) {
+            throw readOnly();
+        }
+
+        @Override
+        public void loadFromXML(InputStream in) {
+            throw readOnly();
+        }
+
+        @Override
+        public Object put(Object key, Object value) {
+            throw readOnly();
+        }
+
+        @Override
+        public void putAll(Map<?, ?> t) {
+            throw readOnly();
+        }
+
+        @Override
+        public Object putIfAbsent(Object key, Object value) {
+            throw readOnly();
+        }
+
+        @Override
+        public Object remove(Object key) {
+            throw readOnly();
+        }
+
+        @Override
+        public boolean remove(Object key, Object value) {
+            throw readOnly();
+        }
+
+        @Override
+        public void clear() {
+            throw readOnly();
+        }
+
+        @Override
+        public Object replace(Object key, Object value) {
+            throw readOnly();
+        }
+
+        @Override
+        public boolean replace(Object key, Object oldValue, Object newValue) {
+            throw readOnly();
+        }
+
+        @Override
+        public void replaceAll(BiFunction<? super Object, ? super Object, ?> function) {
+            throw readOnly();
+        }
+
+        @Override
+        public Object computeIfAbsent(Object key, Function<? super Object, ?> mappingFunction) {
+            throw readOnly();
+        }
+
+        @Override
+        public Object computeIfPresent(Object key, BiFunction<? super Object, ? super Object, ?> remappingFunction) {
+            throw readOnly();
+        }
+
+        @Override
+        public Object compute(Object key, BiFunction<? super Object, ? super Object, ?> remappingFunction) {
+            throw readOnly();
+        }
+
+        @Override
+        public Object merge(Object key, Object value, BiFunction<? super Object, ? super Object, ?> remappingFunction) {
+            throw readOnly();
+        }
+
+        @Override
+        public Set<Object> keySet() {
+            return Collections.unmodifiableSet(super.keySet());
+        }
+
+        @Override
+        public Collection<Object> values() {
+            return Collections.unmodifiableCollection(super.values());
+        }
+
+        @Override
+        public Set<Map.Entry<Object, Object>> entrySet() {
+            return Collections.unmodifiableSet(super.entrySet());
+        }
+
+        @Override
+        public Object clone() {
+            Properties copy = new Properties();
+            copy.putAll(this);
+            return copy;
+        }
     }
 
 }

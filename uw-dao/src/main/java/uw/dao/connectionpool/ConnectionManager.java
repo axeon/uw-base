@@ -138,8 +138,14 @@ public final class ConnectionManager {
     public static synchronized HikariDataSource initConnectionPool(String poolName, String aliasName, String driver, String url, String username, String password, String testSql
             , int connMin, int connMax, int connIdleTimeout, int connBusyTimeout, int connMaxAge) {
         HikariDataSource dataSource = DATA_SOURCE_MAP.get(poolName);
-        if (dataSource != null) {
+        if (dataSource != null && dataSource.isRunning()) {
             return dataSource;
+        }
+        //已关闭实例（destroyConnectionPool 只 remove 池名键、集群级 alias 键残留指向同一已 close
+        //实例——destroy 集群名即 close 掉 server 级池共享实例）必须先清键再走重建，否则懒加载
+        //永远拿回死池（261116 演练实证：拓扑对账销毁后 stats 采集每分钟 has been closed 永不自愈）
+        if (dataSource != null) {
+            DATA_SOURCE_MAP.remove(poolName, dataSource);
         }
         HikariDataSource builtDataSource = DATA_SOURCE_MAP.computeIfAbsent(poolName, (key) -> {
             HikariDataSource hikariDataSource = buildHikariDataSource(poolName, driver, url, username, password, testSql,

@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 3, time = 5, timeUnit = TimeUnit.SECONDS, batchSize = -1)
 public class BenchmarkIPHashTest {
 
-    public static final String IP_ADDRESS = "192.168.88.21";
+    public static final String IP_ADDRESS = "10.0.0.10";
 
     public BenchmarkIPHashTest() {
     }

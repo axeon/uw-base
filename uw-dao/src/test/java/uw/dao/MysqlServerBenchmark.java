@@ -40,7 +40,7 @@ public class MysqlServerBenchmark {
         DaoConfig.ConnPool pool = new DaoConfig.ConnPool();
         DaoConfig.ConnPoolConfig poolConfig = new DaoConfig.ConnPoolConfig();
         poolConfig.setDriver("com.mysql.cj.jdbc.Driver");
-        poolConfig.setUrl("jdbc:mysql://192.168.88.21:3308/uw_auth?zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true");
+        poolConfig.setUrl("jdbc:mysql://10.0.0.10:3308/uw_auth?zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true");
         poolConfig.setUsername("root");
         poolConfig.setPassword("mysqlRootPassword");
         poolConfig.setMinConn(10);

@@ -1,6 +1,5 @@
 package uw.log.es;
 
-import com.google.common.base.Stopwatch;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -10,7 +9,6 @@ import uw.log.es.service.LogService;
 import uw.log.es.vo.LogInterface;
 import uw.log.es.vo.LogInterfaceOrder;
 
-import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -38,7 +36,7 @@ public class LogClientWriteModeTest {
 
     @Test
     public void testWriteLog() throws Exception {
-        Stopwatch stopwatch = Stopwatch.createStarted();
+        long startTime = System.currentTimeMillis();
         for (int i = 0; i < 1000; i++) {
             LogInterface logInterface = new LogInterface();
             logInterface.setInterfaceType(1);
@@ -54,7 +52,7 @@ public class LogClientWriteModeTest {
             logInterface.setResponseBody("吃了");
             logClient.log(logInterface);
         }
-        System.out.println("----" + stopwatch.elapsed(TimeUnit.MILLISECONDS));
+        System.out.println("----" + (System.currentTimeMillis() - startTime));
     }
 
 

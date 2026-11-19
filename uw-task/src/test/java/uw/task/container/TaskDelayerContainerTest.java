@@ -1,10 +1,10 @@
 package uw.task.container;
 
 import org.junit.jupiter.api.Test;
+
 import uw.task.api.TaskApiClient;
 import uw.task.conf.TaskMetaInfoManager;
 import uw.task.conf.TaskProperties;
-import uw.task.util.TaskGlobalRateLimiter;
 import uw.task.util.TaskLocalRateLimiter;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,15 +22,15 @@ class TaskDelayerContainerTest {
 
 
     /**
-     * 构造不抛异常（自建 RedisTemplate + mock 连接工厂）。
+     * 构造不抛异常（自建 RedisTemplate + mock 连接工厂；限速/发号走 uw-kv static 家族，无需注入）。
      */
     @Test
     void constructWithoutException() {
         TaskProperties props = new TaskProperties();
         TaskDelayerContainer container = new TaskDelayerContainer(
                 props, mock(TaskApiClient.class), mock(TaskMetaInfoManager.class),
-                mock(TaskLocalRateLimiter.class), mock(TaskGlobalRateLimiter.class),
-                mock(uw.task.util.TaskSequenceManager.class), mock(org.springframework.data.redis.connection.RedisConnectionFactory.class),
+                mock(TaskLocalRateLimiter.class),
+                mock(org.springframework.data.redis.connection.RedisConnectionFactory.class),
                 mock(uw.task.TaskListenerManager.class));
         assertThat(container).isNotNull();
     }

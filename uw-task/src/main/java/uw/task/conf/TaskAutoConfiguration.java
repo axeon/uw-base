@@ -1,7 +1,6 @@
 package uw.task.conf;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import io.lettuce.core.resource.ClientResources;
+import uw.common.util.ThreadFactoryBuilder;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +25,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestClient;
-import uw.common.util.RedisConnectionFactoryBuilder;
+import uw.kv.conf.UwKvAutoConfiguration;
+import uw.kv.GlobalLeaderElector;
 import uw.log.es.LogClient;
 import uw.task.TaskFactory;
 import uw.task.TaskListenerManager;
@@ -38,10 +38,7 @@ import uw.task.converter.TaskMessageConverter;
 import uw.task.entity.TaskCronerLog;
 import uw.task.entity.TaskDelayerLog;
 import uw.task.entity.TaskRunnerLog;
-import uw.task.util.TaskGlobalLocker;
-import uw.task.util.TaskGlobalRateLimiter;
 import uw.task.util.TaskLocalRateLimiter;
-import uw.task.util.TaskSequenceManager;
 
 import java.time.Duration;
 import java.util.concurrent.Executors;
@@ -62,7 +59,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Configuration
 @EnableScheduling
 @EnableConfigurationProperties({TaskProperties.class})
-@AutoConfigureAfter({DataRedisAutoConfiguration.class, RabbitAutoConfiguration.class})
+@AutoConfigureAfter({DataRedisAutoConfiguration.class, RabbitAutoConfiguration.class, UwKvAutoConfiguration.class})
 public class TaskAutoConfiguration {
     /**
      * 日志器。
@@ -100,9 +97,9 @@ public class TaskAutoConfiguration {
     private TaskDelayerContainer taskDelayerContainer;
 
     /**
-     * Leader选举器
+     * Leader选举锁 key（GlobalLeaderElector 注册制，static 调用）。
      */
-    private TaskGlobalLocker taskGlobalLocker;
+    private String leaderLockKey;
     /**
      * 内部自持任务。
      */
@@ -112,11 +109,6 @@ public class TaskAutoConfiguration {
      * 任务专用 RabbitMQ 连接工厂（应用就绪后按 runner 数动态调 channelCacheSize）。
      */
     private CachingConnectionFactory taskRabbitConnectionFactory;
-
-    /**
-     * 任务专用 Redis 连接工厂（手工 new，destroy 时需自行关闭）。
-     */
-    private RedisConnectionFactory taskRedisConnectionFactory;
 
     /**
      * channelCacheSize 系数：每个 runner（队列）对应的 channel cache 基数（覆盖 publisher 并发 + listener channel + 余量）。
@@ -173,7 +165,7 @@ public class TaskAutoConfiguration {
             // 三类对称：仅 enable-registry=true 的执行主机才启动任务（Delayer 自此与 Runner/Croner 一致，不再无视 enableRegistry）。
             //task自持任务
             if (taskServiceRegistrar.isEnableRegistry()) {
-                scheduledExecutorService = Executors.newScheduledThreadPool(3, new ThreadFactoryBuilder().setDaemon(true).setNameFormat("uw-task-service-%d").build());
+                scheduledExecutorService = Executors.newScheduledThreadPool(3, ThreadFactoryBuilder.of("uw-task-service-%d").daemon().build());
                 //主机报告任务
                 scheduledExecutorService.scheduleAtFixedRate(() -> {
                     try {
@@ -185,13 +177,13 @@ public class TaskAutoConfiguration {
                 //选举任务
                 scheduledExecutorService.scheduleAtFixedRate(() -> {
                     try {
-                        taskGlobalLocker.checkLeader();
+                        GlobalLeaderElector.checkLeader(leaderLockKey);
                     } catch (Throwable e) {
                         log.error("checkLeader scheduled task error!", e);
                     }
                 }, 0, 60, TimeUnit.SECONDS);
             } else {
-                scheduledExecutorService = Executors.newScheduledThreadPool(1, new ThreadFactoryBuilder().setDaemon(true).setNameFormat("uw-task-service-%d").build());
+                scheduledExecutorService = Executors.newScheduledThreadPool(1, ThreadFactoryBuilder.of("uw-task-service-%d").daemon().build());
             }
             //配置更新任务
             scheduledExecutorService.scheduleAtFixedRate(() -> {
@@ -240,17 +232,11 @@ public class TaskAutoConfiguration {
                 taskDelayerContainer.destroyAll();
             }
         }
-        // 关闭任务专用 RabbitMQ / Redis 连接工厂：二者均为 taskFactory Bean 内手工 new 的 DisposableBean，
+        // 关闭任务专用 RabbitMQ 连接工厂：taskFactory Bean 内手工 new 的 DisposableBean，
         // 非 Spring 管理，Spring 不会代为销毁，优雅关闭场景下不关会残留连接。
+        // Redis 连接由 uw-kv 的 kvRedisConnectionFactory Bean 提供，生命周期归 Spring 管理，无需在此关闭。
         if (taskRabbitConnectionFactory != null) {
             taskRabbitConnectionFactory.destroy();
-        }
-        if (taskRedisConnectionFactory != null) {
-            try {
-                ((org.springframework.beans.factory.DisposableBean) taskRedisConnectionFactory).destroy();
-            } catch (Exception e) {
-                log.error("关闭 taskRedisConnectionFactory 失败", e);
-            }
         }
     }
 
@@ -343,47 +329,44 @@ public class TaskAutoConfiguration {
     /**
      * 声明 TaskFactory bean
      *
-     * @param context             Spring 应用上下文（扫描任务 bean）
+     * @param context              Spring 应用上下文（扫描任务 bean）
      * @param taskProperties       任务全局配置
      * @param taskListenerManager  任务监听管理器
      * @param authRestClient       鉴权 RestClient（调 task-center）
-     * @param clientResources      Lettuce 客户端资源
+     * @param kvRedisConnectionFactory uw-kv 框架协调层 Redis 连接工厂（限速/发号/Leader/延迟队列共用）
      * @param logClient            ES 日志客户端
      * @return TaskFactory bean
      */
     @Bean
     TaskFactory taskFactory(final ApplicationContext context, final TaskProperties taskProperties, final TaskListenerManager taskListenerManager,
-                            @Qualifier("authRestClient") final RestClient authRestClient, final ClientResources clientResources, final LogClient logClient) {
+                            @Qualifier("authRestClient") final RestClient authRestClient, @Qualifier("kvRedisConnectionFactory") final RedisConnectionFactory kvRedisConnectionFactory, final LogClient logClient) {
         // task自定义的rabbit连接工厂
         taskRabbitConnectionFactory = (CachingConnectionFactory) getTaskRabbitConnectionFactory(taskProperties.getRabbitmq());
-        // task自定义的redis连接工厂
-        taskRedisConnectionFactory = RedisConnectionFactoryBuilder.build(taskProperties.getRedis(), clientResources);
         // 本地限速器。
         TaskLocalRateLimiter taskLocalRateLimiter = new TaskLocalRateLimiter();
-        // 全局限速器
-        TaskGlobalRateLimiter taskGlobalRateLimiter = new TaskGlobalRateLimiter(taskRedisConnectionFactory);
-        // 全局sequence管理器
-        TaskSequenceManager taskSequenceManager = new TaskSequenceManager(taskRedisConnectionFactory);
+        // 全局限速/发号走 uw-kv static 家族（GlobalFixedWindowRateLimiter/GlobalSequence），域隔离由 name 前缀编码。
         // 任务交互API
         TaskApiClient taskApiClient = new TaskApiClient(taskProperties, authRestClient, logClient);
         // rabbit模板
         RabbitTemplate rabbitTemplate = getTaskRabbitTemplate(taskRabbitConnectionFactory);
         // rabbit管理器
         RabbitAdmin rabbitAdmin = new RabbitAdmin(taskRabbitConnectionFactory);
-        // Leader选举器
-        taskGlobalLocker = new TaskGlobalLocker(taskRedisConnectionFactory, taskProperties);
+        // Leader选举注册（uw-kv GlobalLeaderElector 注册制：稳定实例标识跨重启续期；原 uw-task-locker: 锁 key 90s TTL 自动过期，无迁移）
+        leaderLockKey = "uw-task-locker:" + taskProperties.getTaskProject();
+        GlobalLeaderElector.config(leaderLockKey,
+                taskProperties.getAppName() + ":" + taskProperties.getAppVersion() + "@" + taskProperties.getAppHost() + ":" + taskProperties.getAppPort());
         // 任务信息管理器。
         taskMetaInfoManager = new TaskMetaInfoManager(context, taskProperties);
         // 队列任务容器。
-        taskRunnerContainer = new TaskRunnerContainer(taskProperties, taskApiClient, taskMetaInfoManager, taskLocalRateLimiter, taskGlobalRateLimiter, taskListenerManager, rabbitAdmin, taskRabbitConnectionFactory);
+        taskRunnerContainer = new TaskRunnerContainer(taskProperties, taskApiClient, taskMetaInfoManager, taskLocalRateLimiter, taskListenerManager, rabbitAdmin, taskRabbitConnectionFactory);
         // 延迟任务容器：多实例竞争 zset poll，本地模式自启动（扫描 TaskDelayer + initConfig）
-        taskDelayerContainer = new TaskDelayerContainer(taskProperties, taskApiClient, taskMetaInfoManager, taskLocalRateLimiter, taskGlobalRateLimiter, taskSequenceManager, taskRedisConnectionFactory, taskListenerManager);
+        taskDelayerContainer = new TaskDelayerContainer(taskProperties, taskApiClient, taskMetaInfoManager, taskLocalRateLimiter, kvRedisConnectionFactory, taskListenerManager);
         // 定时任务容器。
-        taskCronerContainer = new TaskCronerContainer(taskProperties, taskApiClient, taskMetaInfoManager, taskSequenceManager, taskGlobalLocker, taskListenerManager);
+        taskCronerContainer = new TaskCronerContainer(taskProperties, taskApiClient, taskMetaInfoManager, taskListenerManager);
         // 初始化TaskServerConfig
         taskServiceRegistrar = new TaskServiceRegistrar(taskProperties, taskApiClient, taskRunnerContainer, taskCronerContainer, taskDelayerContainer, taskMetaInfoManager);
         // 返回TaskScheduler
-        TaskFactory taskFactory = new TaskFactory(taskProperties, rabbitTemplate, taskRunnerContainer, taskSequenceManager, taskMetaInfoManager, taskDelayerContainer);
+        TaskFactory taskFactory = new TaskFactory(taskProperties, rabbitTemplate, taskRunnerContainer, taskMetaInfoManager, taskDelayerContainer);
         return taskFactory;
     }
 }

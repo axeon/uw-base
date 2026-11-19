@@ -1,0 +1,15 @@
+# 连 dev（10.0.0.10）的 Redis；密码经环境变量 UW_TEST_REDIS_PASSWORD 注入，勿提交明文。
+uw:
+  kv:
+    redis:
+      database: 9
+      host: 10.0.0.10
+      port: 6380
+      password: ${UW_TEST_REDIS_PASSWORD}
+      lettuce:
+        pool:
+          max-active: 100
+          max-idle: 8
+          max-wait: 5000ms
+          min-idle: 1
+      timeout: 30s

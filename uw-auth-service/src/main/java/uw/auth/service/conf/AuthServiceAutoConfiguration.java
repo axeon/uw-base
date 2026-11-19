@@ -1,6 +1,6 @@
 package uw.auth.service.conf;
 
-import com.google.common.base.Splitter;
+import uw.common.util.StringTools;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,7 +103,7 @@ public class AuthServiceAutoConfiguration {
         registrationBean.setName("AuthServiceFilter");
         registrationBean.setOrder(TOKEN_FILTER_ORDER);
         if (StringUtils.isNotBlank(authServiceProperties.getAuthProtectedPaths())) {
-            registrationBean.setUrlPatterns(Splitter.on(",").trimResults().omitEmptyStrings().splitToList(authServiceProperties.getAuthProtectedPaths()));
+            registrationBean.setUrlPatterns(StringTools.splitToStringList(authServiceProperties.getAuthProtectedPaths(), ","));
         }
         return registrationBean;
     }

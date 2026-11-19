@@ -3,7 +3,6 @@ package uw.task.conf;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.amqp.autoconfigure.RabbitProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.data.redis.autoconfigure.DataRedisProperties;
 
 /**
  * 任务配置类。
@@ -151,11 +150,6 @@ public class TaskProperties {
      * 组队列预取数量
      */
     private int queueGroupPriorityPrefetchNum = 1;
-
-    /**
-     * Redis配置
-     */
-    private DataRedisProperties redis = new DataRedisProperties();
 
     /**
      * Rabbit MQ配置
@@ -360,14 +354,6 @@ public class TaskProperties {
 
     public void setQueueGroupPriorityPrefetchNum(int queueGroupPriorityPrefetchNum) {
         this.queueGroupPriorityPrefetchNum = queueGroupPriorityPrefetchNum;
-    }
-
-    public DataRedisProperties getRedis() {
-        return redis;
-    }
-
-    public void setRedis(DataRedisProperties redis) {
-        this.redis = redis;
     }
 
     public RabbitProperties getRabbitmq() {

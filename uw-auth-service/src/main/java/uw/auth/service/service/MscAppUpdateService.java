@@ -1,7 +1,7 @@
 package uw.auth.service.service;
 
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import uw.common.util.ThreadFactoryBuilder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.PreDestroy;
@@ -134,7 +134,7 @@ public class MscAppUpdateService {
     public void init() {
         logger.info("uw-auth-service registry started!");
         //使用2个线程：registry与reportStatus互相独立，避免单线程下注册重试阻塞状态上报（踢人指令下发）。
-        scheduledExecutorService = Executors.newScheduledThreadPool(2, new ThreadFactoryBuilder().setDaemon(true).setNameFormat("uw-auth-registry-%d").build());
+        scheduledExecutorService = Executors.newScheduledThreadPool(2, ThreadFactoryBuilder.of("uw-auth-registry-%d").daemon().build());
         // 异步执行注册，避免阻塞ApplicationReadyEvent主线程。
         scheduledExecutorService.schedule(this::registryWithRetry, 0, TimeUnit.SECONDS);
         // 定时上报状态，同时会顺带补发注册与处理踢人指令。

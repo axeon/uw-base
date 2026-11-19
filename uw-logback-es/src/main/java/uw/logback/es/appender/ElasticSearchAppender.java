@@ -3,7 +3,7 @@ package uw.logback.es.appender;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import uw.common.util.ThreadFactoryBuilder;
 import okhttp3.Credentials;
 import okhttp3.Request;
 import org.apache.commons.lang3.StringUtils;
@@ -560,7 +560,7 @@ public class ElasticSearchAppender<Event extends ILoggingEvent> extends Unsynchr
         }
         this.needBasicAuth = StringUtils.isNotBlank(esUsername) && StringUtils.isNotBlank(esPassword);
         batchExecutor = new ThreadPoolExecutor(1, maxBatchThreads, 30, TimeUnit.SECONDS, new ArrayBlockingQueue<>(maxBatchQueueSize),
-                new ThreadFactoryBuilder().setDaemon(true).setNameFormat("logback-es-batch-%d").build(), (r, executor) -> addError("Logback ES Batch Task " + r.toString() + " rejected from " + executor.toString()));
+                ThreadFactoryBuilder.of("logback-es-batch-%d").daemon().build(), (r, executor) -> addError("Logback ES Batch Task " + r.toString() + " rejected from " + executor.toString()));
 
         daemonExporter = new ElasticsearchDaemonExporter();
         daemonExporter.setName("logback-es-monitor");

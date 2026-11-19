@@ -9,6 +9,8 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
+
+import uw.kv.GlobalFixedWindowRateLimiter;
 import uw.common.util.ExceptionUtils;
 import uw.common.util.SystemClock;
 import uw.task.TaskData;
@@ -23,7 +25,6 @@ import uw.task.entity.TaskRunnerConfig;
 import uw.task.entity.TaskRunnerLog;
 import uw.task.entity.TaskRunnerStats;
 import uw.task.listener.TaskRunnerListener;
-import uw.task.util.TaskGlobalRateLimiter;
 import uw.task.util.TaskLocalRateLimiter;
 import uw.task.util.TaskRateLimitHelper;
 import uw.task.util.TaskStatsService;
@@ -70,7 +71,6 @@ public class TaskRunnerContainer {
     /**
      * 全局流量限制服务
      */
-    private final TaskGlobalRateLimiter taskGlobalRateLimiter;
 
     /**
      * 监听管理器。
@@ -99,19 +99,17 @@ public class TaskRunnerContainer {
      * @param taskApiClient         服务端任务 API 客户端（发送日志等）
      * @param taskMetaInfoManager   任务元信息管理器（runner 实例与配置索引）
      * @param taskLocalRateLimiter  进程内限速器（LOCAL 系列限速）
-     * @param taskGlobalRateLimiter 全局限速器（GLOBAL 系列限速，基于 Redis）
      * @param taskListenerManager   任务监听管理器（pre/postExecute 回调）
      * @param rabbitAdmin           RabbitMQ 管理器（声明队列/交换机/绑定 + 查询积压）
      * @param taskConnectionFactory 任务专用 RabbitMQ 连接工厂（队列监听容器用）
      */
     public TaskRunnerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskMetaInfoManager taskMetaInfoManager,
-                               TaskLocalRateLimiter taskLocalRateLimiter, TaskGlobalRateLimiter taskGlobalRateLimiter, TaskListenerManager taskListenerManager,
+                               TaskLocalRateLimiter taskLocalRateLimiter, TaskListenerManager taskListenerManager,
                                RabbitAdmin rabbitAdmin, ConnectionFactory taskConnectionFactory) {
         this.taskProperties = taskProperties;
         this.taskApiClient = taskApiClient;
         this.taskMetaInfoManager = taskMetaInfoManager;
         this.taskLocalRateLimiter = taskLocalRateLimiter;
-        this.taskGlobalRateLimiter = taskGlobalRateLimiter;
         this.taskListenerManager = taskListenerManager;
         this.rabbitAdmin = rabbitAdmin;
         this.taskConnectionFactory = taskConnectionFactory;
@@ -234,7 +232,7 @@ public class TaskRunnerContainer {
                 } else {
                     // GLOBAL 系列：限流 key 见 buildGlobalLocker，等待循环见 acquireGlobalWithWait
                     String locker = TaskRateLimitHelper.buildGlobalLocker(rateLimitType, taskClass, rateLimitTag, taskProperties.getAppHost());
-                    rateLimitPassed = TaskRateLimitHelper.acquireGlobalWithWait(taskGlobalRateLimiter, locker, rateLimitValue, rateLimitTime, rateLimitWait);
+                    rateLimitPassed = TaskRateLimitHelper.acquireGlobalWithWait(locker, rateLimitValue, rateLimitTime, rateLimitWait);
                 }
             }
         }

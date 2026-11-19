@@ -1,6 +1,5 @@
 package uw.log.es;
 
-import com.google.common.base.Stopwatch;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.util.Lists;
 import org.junit.BeforeClass;
@@ -11,7 +10,6 @@ import uw.log.es.vo.LogInterface;
 import uw.log.es.vo.LogInterfaceOrder;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -38,7 +36,7 @@ public class LogClientReadModeTest {
     @Test
     public void testLogTestData() {
         int count = 0;
-        Stopwatch stopwatch = Stopwatch.createStarted();
+        long startTime = System.currentTimeMillis();
         while (count < 10000) {
             LogInterface logInterface = new LogInterface();
             logInterface.setInterfaceType(1);
@@ -60,7 +58,7 @@ public class LogClientReadModeTest {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        System.out.println("elapsed wall time " + stopwatch.elapsed(TimeUnit.MILLISECONDS));
+        System.out.println("elapsed wall time " + (System.currentTimeMillis() - startTime));
     }
 
     @Test

@@ -99,8 +99,8 @@ public class SequenceFactory {
 
     /**
      * 判断是否启用 Fusion（Redis）发号器。
-     * <p>条件：配置了 Redis 且 Fusion 已成功初始化（注入了 Redis 操作句柄）。
-     * 当配置了 Redis 但初始化失败（Redis 不可用、构造异常）时，自动降级到 DaoSequenceFactory，
+     * <p>条件：配置了 uw.dao.redis（发号池专用连接）且 Fusion 已成功初始化。
+     * 初始化失败（Redis 不可用、构造异常）时，自动降级到 DaoSequenceFactory，
      * 保证全局发号不因 Redis 故障而瘫痪。</p>
      *
      * @return true 表示使用 FusionSequenceFactory

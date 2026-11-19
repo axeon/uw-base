@@ -40,6 +40,7 @@ uw:
       virtual-host: /
       ssl:
         enabled: false
+  kv:
     redis:
       database: 7
       host: 10.0.0.10

@@ -1,6 +1,6 @@
 package uw.task;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import uw.common.util.ThreadFactoryBuilder;
 import com.rabbitmq.client.AMQP;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -9,6 +9,8 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+
+import uw.kv.GlobalSequence;
 import uw.common.util.SystemClock;
 import uw.task.conf.TaskMetaInfoManager;
 import uw.task.conf.TaskProperties;
@@ -16,7 +18,6 @@ import uw.task.container.TaskDelayerContainer;
 import uw.task.container.TaskRunnerLocalExecutor;
 import uw.task.container.TaskRunnerContainer;
 import uw.task.exception.TaskRuntimeException;
-import uw.task.util.TaskSequenceManager;
 
 import java.util.concurrent.*;
 
@@ -51,7 +52,6 @@ public class TaskFactory {
     /**
      * 全局sequence序列，主要用于taskLog日志。
      */
-    private final TaskSequenceManager taskSequenceManager;
     /**
      * 用于本地执行任务的taskConsumer。
      */
@@ -78,21 +78,19 @@ public class TaskFactory {
      * @param taskProperties      任务全局配置（提供线程数上下限等参数）
      * @param rabbitTemplate      RabbitMQ 操作模板
      * @param taskRunnerContainer 队列任务执行容器（本地/RPC 模式实际执行入口）
-     * @param taskSequenceManager 全局发号器（生成 TaskRunnerLog id）
      * @param taskMetaInfoManager 任务元信息管理器（runner 实例与配置索引）
      * @param taskDelayerContainer 延迟任务容器（delayTask 委派给它）
      */
-    public TaskFactory(TaskProperties taskProperties, RabbitTemplate rabbitTemplate, TaskRunnerContainer taskRunnerContainer, TaskSequenceManager taskSequenceManager,
+    public TaskFactory(TaskProperties taskProperties, RabbitTemplate rabbitTemplate, TaskRunnerContainer taskRunnerContainer,
                        TaskMetaInfoManager taskMetaInfoManager, TaskDelayerContainer taskDelayerContainer) {
         this.rabbitTemplate = rabbitTemplate;
         this.taskRunnerContainer = taskRunnerContainer;
-        this.taskSequenceManager = taskSequenceManager;
         this.taskMetaInfoManager = taskMetaInfoManager;
         this.taskDelayerContainer = taskDelayerContainer;
         taskRpcService = new ThreadPoolExecutor(taskProperties.getTaskRpcThreadMinNum(), taskProperties.getTaskRpcThreadMaxNum(), 20L, TimeUnit.SECONDS,
-                new SynchronousQueue<>(), new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskRpc-%d").build(), new ThreadPoolExecutor.CallerRunsPolicy());
+                new SynchronousQueue<>(), ThreadFactoryBuilder.of("TaskRpc-%d").daemon().build(), new ThreadPoolExecutor.CallerRunsPolicy());
         taskQueueService = new ThreadPoolExecutor(taskProperties.getTaskLocalThreadMinNum(), taskProperties.getTaskLocalThreadMaxNum(), 20L, TimeUnit.SECONDS,
-                new SynchronousQueue<>(), new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskQueue-%d").build(), new TaskRunnerLocalExecutor.SendToQueuePolicy());
+                new SynchronousQueue<>(), ThreadFactoryBuilder.of("TaskQueue-%d").daemon().build(), new TaskRunnerLocalExecutor.SendToQueuePolicy());
         INSTANCE = this;
     }
 
@@ -189,7 +187,7 @@ public class TaskFactory {
      */
     @SuppressWarnings("unchecked")
     public <TP, RD> TaskData<TP, RD> runTask(final TaskData<TP, RD> taskData) {
-        taskData.setId(taskSequenceManager.nextId("TaskRunnerLog"));
+        taskData.setId(GlobalSequence.nextId("uw-task-TaskRunnerLog"));
         taskData.setQueueDate(SystemClock.nowDate());
         // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
         if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && taskMetaInfoManager.checkRunnerRunLocal(taskData)) {
@@ -223,7 +221,7 @@ public class TaskFactory {
      */
     @SuppressWarnings("unchecked")
     public <TP, RD> TaskData<TP, RD> runTaskLocal(final TaskData<TP, RD> taskData) {
-        taskData.setId(taskSequenceManager.nextId("TaskRunnerLog"));
+        taskData.setId(GlobalSequence.nextId("uw-task-TaskRunnerLog"));
         taskData.setQueueDate(SystemClock.nowDate());
         // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
         if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && taskMetaInfoManager.checkRunnerRunLocal(taskData)) {
@@ -253,7 +251,7 @@ public class TaskFactory {
      */
     @SuppressWarnings("unchecked")
     public <TP, RD> Future<TaskData<TP, RD>> runTaskAsync(final TaskData<TP, RD> taskData) {
-        taskData.setId(taskSequenceManager.nextId("TaskRunnerLog"));
+        taskData.setId(GlobalSequence.nextId("uw-task-TaskRunnerLog"));
         taskData.setQueueDate(SystemClock.nowDate());
 
         // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
@@ -365,7 +363,7 @@ public class TaskFactory {
      * @return Message 发送的队列信息
      */
     private Message buildTaskQueueMessage(final TaskData taskData) {
-        taskData.setId(taskSequenceManager.nextId("TaskRunnerLog"));
+        taskData.setId(GlobalSequence.nextId("uw-task-TaskRunnerLog"));
         taskData.setQueueDate(SystemClock.nowDate());
         // 发队列的消息体必须是 GLOBAL，消费端 process 依赖此值判定走限速/重试链路，
         // getFitQueue 也依赖 GLOBAL 判定 TTL 队列。但调用方传入的 taskData 可能被复用

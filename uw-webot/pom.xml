@@ -25,7 +25,7 @@
         <!-- ============ 自研框架 uw-* ============ -->
         <dependency>
             <groupId>pub.xili</groupId>
-            <artifactId>uw-cache</artifactId>
+            <artifactId>uw-kv</artifactId>
         </dependency>
         <dependency>
             <groupId>pub.xili</groupId>

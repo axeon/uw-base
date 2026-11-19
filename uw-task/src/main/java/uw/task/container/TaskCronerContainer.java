@@ -1,10 +1,13 @@
 package uw.task.container;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import uw.common.util.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
+
+import uw.kv.GlobalSequence;
+import uw.kv.GlobalLeaderElector;
 import uw.common.util.ExceptionUtils;
 import uw.common.util.SystemClock;
 import uw.task.TaskCroner;
@@ -19,8 +22,6 @@ import uw.task.entity.TaskCronerLog;
 import uw.task.exception.TaskDataException;
 import uw.task.exception.TaskPartnerException;
 import uw.task.listener.TaskCronerListener;
-import uw.task.util.TaskGlobalLocker;
-import uw.task.util.TaskSequenceManager;
 import uw.task.util.TaskStatsService;
 
 import java.time.Instant;
@@ -37,7 +38,7 @@ import java.util.concurrent.ScheduledFuture;
  * 定时任务容器：基于 Spring {@link org.springframework.scheduling.TaskScheduler} + {@link CronTrigger} 调度 {@link TaskCroner}。
  *
  * <p>每个 TaskCronerConfig 对应一个 {@link ScheduledFuture}，缓存在 {@link #cronerTasks} 中。
- * {@code RUN_TYPE_SINGLETON} 的任务仅在 Leader 实例上执行（通过 {@link TaskGlobalLocker#isLeader()} 判定）。
+ * {@code RUN_TYPE_SINGLETON} 的任务仅在 Leader 实例上执行（通过 {@link GlobalLeaderElector#isLeader()} 判定）。
  * 执行结果、统计、下次计划时间在 TriggerTask 回调中统一落库。</p>
  *
  * @author axeon
@@ -76,11 +77,9 @@ public class TaskCronerContainer {
     /**
      * 全局序列发生器。
      */
-    private final TaskSequenceManager taskSequenceManager;
     /**
      * 全局任务锁。
      */
-    private final TaskGlobalLocker taskGlobalLocker;
     /**
      * 监听管理器。
      */
@@ -94,23 +93,19 @@ public class TaskCronerContainer {
      * @param taskProperties       任务全局配置
      * @param taskApiClient        服务端任务 API 客户端
      * @param taskMetaInfoManager  任务元信息管理器（提供 getCronerConfigKey 计算配置键）
-     * @param taskSequenceManager  全局发号器（生成 TaskCronerLog id）
-     * @param taskGlobalLocker     全局 Leader 锁（SINGLETON 任务用）
      * @param taskListenerManager  任务监听管理器（pre/postExecute 回调）
      */
-    public TaskCronerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskMetaInfoManager taskMetaInfoManager, TaskSequenceManager taskSequenceManager,
-                               TaskGlobalLocker taskGlobalLocker, TaskListenerManager taskListenerManager) {
+    public TaskCronerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskMetaInfoManager taskMetaInfoManager,
+                               TaskListenerManager taskListenerManager) {
         this.taskProperties = taskProperties;
         this.taskApiClient = taskApiClient;
         this.taskMetaInfoManager = taskMetaInfoManager;
-        this.taskSequenceManager = taskSequenceManager;
-        this.taskGlobalLocker = taskGlobalLocker;
         this.taskListenerManager = taskListenerManager;
         // 如果禁用任务注册，则croner线程数按 1 计，节省资源。
         // 注意：不回写 taskProperties，避免篡改共享配置对象影响其他读取方。
         int cronerThreadNum = taskProperties.isEnableRegistry() ? taskProperties.getCronerThreadNum() : 1;
         executorService = Executors.newScheduledThreadPool(cronerThreadNum,
-                new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskCroner-%d").build());
+                ThreadFactoryBuilder.of("TaskCroner-%d").daemon().build());
         log.info("TaskCronerContainer start with [{}] threads...", cronerThreadNum);
         taskScheduler = new ConcurrentTaskScheduler(executorService);
     }
@@ -157,7 +152,7 @@ public class TaskCronerContainer {
 
         ScheduledFuture<?> future = this.taskScheduler.schedule(() -> {
             // 判断全局唯一条件
-            if (taskCronerConfig.getRunType() == TaskCronerConfig.RUN_TYPE_SINGLETON && !taskGlobalLocker.isLeader()) {
+            if (taskCronerConfig.getRunType() == TaskCronerConfig.RUN_TYPE_SINGLETON && !GlobalLeaderElector.isLeader(taskProperties.getTaskProject())) {
                 if (log.isDebugEnabled()) {
                     log.debug("定时任务全局单实例运行时非Leader身份，直接返回。。。");
                 }
@@ -167,7 +162,7 @@ public class TaskCronerContainer {
             TaskCronerLog taskCronerLog = new TaskCronerLog(taskCronerConfig.getLogLevel(), taskCronerConfig.getLogLimitSize());
             logHolder[0] = taskCronerLog;
             try {
-                taskCronerLog.setId(taskSequenceManager.nextId("TaskCronerLog"));
+                taskCronerLog.setId(GlobalSequence.nextId("uw-task-TaskCronerLog"));
             } catch (Exception e) {
                 // Redis 故障致 nextId 失败：id 保持 0，trigger 回调的 id>0 守门会跳过日志落库（统计已无条件上报）；
                 // 此处 WARN 让运维可见（不抛出，runTask 仍执行，避免 Redis 抖动静默吞掉整轮调度且无任何痕迹）

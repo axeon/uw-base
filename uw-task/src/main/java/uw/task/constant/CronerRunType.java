@@ -1,6 +1,7 @@
 package uw.task.constant;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import uw.kv.GlobalLeaderElector;
 
 /**
  * 定时任务运行类型。
@@ -8,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
  * <p>决定同一个定时任务配置在多实例（多主机）环境下如何被调度执行：
  * <ul>
  *   <li>{@link #ANYWAY}：所有匹配 runTarget 的主机都会执行，不做全局唯一性约束；</li>
- *   <li>{@link #SINGLETON}：全局唯一执行，由 {@link uw.task.util.TaskGlobalLocker} 选出的 Leader
+ *   <li>{@link #SINGLETON}：全局唯一执行，由 {@link GlobalLeaderElector} 选出的 Leader
  *       主机独占运行，其余主机直接跳过。</li>
  * </ul>
  * 序列化为 OBJECT 形态（含 value/label），便于前端展示与服务端存储。</p>

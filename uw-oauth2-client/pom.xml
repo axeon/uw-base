@@ -34,7 +34,7 @@
         </dependency>
         <dependency>
             <groupId>pub.xili</groupId>
-            <artifactId>uw-cache</artifactId>
+            <artifactId>uw-kv</artifactId>
         </dependency>
         <!-- ============ 第三方业务 SDK ============ -->
         <dependency>

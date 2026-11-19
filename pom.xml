@@ -16,32 +16,32 @@
     </parent>
 
     <properties>
-        <revision>2026.1000.0011</revision>
+        <revision>2026.1000.0012</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>25</java.version>
         <spring-cloud.version>2025.1.4</spring-cloud.version>
         <okhttp.version>5.5.1</okhttp.version>
         <swagger.version>2.2.55</swagger.version>
-        <uw-ai.version>1.1.55</uw-ai.version>
-        <uw-auth-client.version>6.2.35</uw-auth-client.version>
-        <uw-auth-service.version>6.2.86</uw-auth-service.version>
-        <uw-cache.version>1.2.112</uw-cache.version>
-        <uw-common.version>1.1.125</uw-common.version>
-        <uw-common-app.version>1.1.120</uw-common-app.version>
-        <uw-dao.version>5.3.66</uw-dao.version>
-        <uw-gateway-client.version>1.1.20</uw-gateway-client.version>
-        <uw-httpclient.version>2.3.15</uw-httpclient.version>
-        <uw-log-es.version>3.1.112</uw-log-es.version>
-        <uw-logback-es.version>3.1.107</uw-logback-es.version>
-        <uw-mfa.version>1.1.80</uw-mfa.version>
-        <uw-mydb-client.version>1.1.50</uw-mydb-client.version>
-        <uw-nacos-client.version>1.0.10</uw-nacos-client.version>
-        <uw-notify-client.version>1.1.50</uw-notify-client.version>
-        <uw-oauth2-client.version>1.1.50</uw-oauth2-client.version>
-        <uw-task.version>5.1.150</uw-task.version>
-        <uw-tinyurl-client.version>1.1.50</uw-tinyurl-client.version>
-        <uw-webot.version>1.0.21</uw-webot.version>
+        <uw-ai.version>1.1.56</uw-ai.version>
+        <uw-auth-client.version>6.2.36</uw-auth-client.version>
+        <uw-auth-service.version>6.2.87</uw-auth-service.version>
+        <uw-kv.version>1.5.0</uw-kv.version>
+        <uw-common.version>1.1.126</uw-common.version>
+        <uw-common-app.version>1.1.121</uw-common-app.version>
+        <uw-dao.version>5.3.68</uw-dao.version>
+        <uw-gateway-client.version>1.1.21</uw-gateway-client.version>
+        <uw-httpclient.version>2.3.16</uw-httpclient.version>
+        <uw-log-es.version>3.1.113</uw-log-es.version>
+        <uw-logback-es.version>3.1.108</uw-logback-es.version>
+        <uw-mfa.version>1.1.81</uw-mfa.version>
+        <uw-mydb-client.version>1.1.51</uw-mydb-client.version>
+        <uw-nacos-client.version>1.0.11</uw-nacos-client.version>
+        <uw-notify-client.version>1.1.51</uw-notify-client.version>
+        <uw-oauth2-client.version>1.1.51</uw-oauth2-client.version>
+        <uw-task.version>5.1.151</uw-task.version>
+        <uw-tinyurl-client.version>1.1.51</uw-tinyurl-client.version>
+        <uw-webot.version>1.0.22</uw-webot.version>
     </properties>
 
     <dependencyManagement>
@@ -70,8 +70,8 @@
             </dependency>
             <dependency>
                 <groupId>pub.xili</groupId>
-                <artifactId>uw-cache</artifactId>
-                <version>${uw-cache.version}</version>
+                <artifactId>uw-kv</artifactId>
+                <version>${uw-kv.version}</version>
             </dependency>
             <dependency>
                 <groupId>pub.xili</groupId>
@@ -205,11 +205,6 @@
                 <version>3.20.0</version>
             </dependency>
             <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>33.6.0-jre</version>
-            </dependency>
-            <dependency>
                 <groupId>org.reflections</groupId>
                 <artifactId>reflections</artifactId>
                 <version>0.10.2</version>
@@ -284,7 +279,7 @@
         <module>uw-ai</module>
         <module>uw-auth-client</module>
         <module>uw-auth-service</module>
-        <module>uw-cache</module>
+        <module>uw-kv</module>
         <module>uw-common</module>
         <module>uw-common-app</module>
         <module>uw-dao</module>

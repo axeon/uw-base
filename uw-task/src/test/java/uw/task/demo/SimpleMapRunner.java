@@ -1,6 +1,6 @@
 package uw.task.demo;
 
-import com.google.common.collect.Maps;
+import java.util.HashMap;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import uw.task.TaskData;
@@ -18,8 +18,8 @@ public class SimpleMapRunner extends SimpleBaseMapRunner {
 
         SimpleMapRunner runner = new SimpleMapRunner();
         TaskData<Map<String, String>, Map<String, String>> taskData = new TaskData<>();
-        taskData.setTaskParam(Maps.newHashMap());
-        taskData.setResultData(Maps.newHashMap());
+        taskData.setTaskParam(new HashMap<>());
+        taskData.setResultData(new HashMap<>());
         taskData.setTaskClass("uw.task.demo.SimpleMapRunner");
 
 

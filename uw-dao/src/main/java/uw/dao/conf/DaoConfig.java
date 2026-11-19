@@ -36,9 +36,10 @@ public class DaoConfig {
     private SqlStatsConfig sqlStats = new SqlStatsConfig();
 
     /**
-     * Redis配置
+     * Redis配置（发号池专用连接，uw.dao.redis.*；null=不启用 Fusion 发号，降级纯 DB 发号）。
      */
     private DataRedisProperties redis = null;
+
     /**
      * 生产环境命名列表
      */

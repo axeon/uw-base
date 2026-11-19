@@ -1,5 +1,7 @@
 package uw.task.util;
 
+
+import uw.kv.GlobalFixedWindowRateLimiter;
 import uw.common.util.SystemClock;
 import uw.task.entity.TaskRunnerConfig;
 
@@ -9,12 +11,12 @@ import uw.task.entity.TaskRunnerConfig;
 public class TaskRateLimitHelper {
 
     /**
-     * 构建 GLOBAL 限速的 locker key。
-     * <p>限流 key 拼接规则：
+     * 构建 GLOBAL 限速的 locker（name，交由 {@link GlobalFixedWindowRateLimiter} 统一加 uw-rate: key 前缀）。
+     * <p>name 拼接规则（统一以 "uw-task-" 域前缀开头，与其他应用域的配额池隔离）：
      * <ul>
-     *   <li>GLOBAL_TASK* 系列（TASK/TASK_TAG/TASK_HOST/TASK_TAG_HOST）：key 含 taskClass 前缀，
+     *   <li>GLOBAL_TASK* 系列（TASK/TASK_TAG/TASK_HOST/TASK_TAG_HOST）：name 含 taskClass 前缀，
      *       即"按任务隔离"配额；</li>
-     *   <li>GLOBAL_TAG / GLOBAL_HOST / GLOBAL_TAG_HOST：key 不含 taskClass，
+     *   <li>GLOBAL_TAG / GLOBAL_HOST / GLOBAL_TAG_HOST：name 不含 taskClass，
      *       即"跨任务共享"配额——多个不同 task 只要 tag/host 相同即共享同一限流池。
      *       这是限流的常见场景（如多个任务都对接同一第三方接口，需共享 QPS 上限）。</li>
      * </ul>
@@ -26,6 +28,20 @@ public class TaskRateLimitHelper {
      * @return locker key 字符串
      */
     public static String buildGlobalLocker(int type, String taskClass, String rateLimitTag, String host) {
+        String name = buildGlobalLockerName(type, taskClass, rateLimitTag, host);
+        return "uw-task-" + name;
+    }
+
+    /**
+     * 构建 GLOBAL 限速的裸 name（不含域前缀，原拼接逻辑）。
+     *
+     * @param type          限速类型（RATE_LIMIT_GLOBAL_*）
+     * @param taskClass     任务类名
+     * @param rateLimitTag  限速 TAG
+     * @param host          主机标识
+     * @return 裸 name 字符串
+     */
+    private static String buildGlobalLockerName(int type, String taskClass, String rateLimitTag, String host) {
         boolean taskScoped = type == TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK
                 || type == TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_TAG
                 || type == TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_HOST
@@ -85,17 +101,17 @@ public class TaskRateLimitHelper {
      * 超时返回 false。统一 TaskRunner / TaskDelayer 的 GLOBAL 限速等待循环。
      * <p>rateLimitWait 为 int（秒），乘 1000L 转毫秒用 long 字面量避免 int 溢出。</p>
      *
-     * @param limiter 全局限速器
-     * @param locker  限流 key（由 {@link #buildGlobalLocker} 构造）
+     * @param locker  限流 key（由 {@link #buildGlobalLocker} 构造，已含 uw-task- 域前缀）
      * @param value   限速值
      * @param time    限速窗口（秒）
      * @param waitSec 最大等待秒数（rateLimitWait）
      * @return true=获得配额；false=等待超时未通过
      */
-    public static boolean acquireGlobalWithWait(TaskGlobalRateLimiter limiter, String locker, int value, int time, int waitSec) {
+    public static boolean acquireGlobalWithWait(String locker, int value, int time, int waitSec) {
         long end = SystemClock.now() + waitSec * 1000L;
+        long windowMillis = time * 1000L;
         while (SystemClock.now() <= end) {
-            long waitMillis = limiter.tryAcquire(locker, value, time, 1);
+            long waitMillis = GlobalFixedWindowRateLimiter.tryAcquire(locker, value, windowMillis, 1);
             if (waitMillis == 0) {
                 return true;
             }

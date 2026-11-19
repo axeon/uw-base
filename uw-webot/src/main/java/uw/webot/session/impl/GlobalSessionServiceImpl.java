@@ -2,7 +2,7 @@ package uw.webot.session.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.cache.FusionCache;
+import uw.kv.FusionCache;
 import uw.webot.WebotSession;
 import uw.webot.conf.WebotProperties;
 import uw.webot.session.SessionService;

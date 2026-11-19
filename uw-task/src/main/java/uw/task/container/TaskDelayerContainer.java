@@ -7,6 +7,9 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+import uw.kv.GlobalFixedWindowRateLimiter;
+import uw.kv.GlobalSequence;
 import uw.common.util.ExceptionUtils;
 import uw.common.util.KryoUtils;
 import uw.common.util.LimitedVirtualThreadExecutor;
@@ -93,11 +96,9 @@ public class TaskDelayerContainer {
     /**
      * 全局限速器（GLOBAL 系列限速，基于 Redis）。
      */
-    private final TaskGlobalRateLimiter taskGlobalRateLimiter;
     /**
      * 全局发号器（生成 TaskDelayerLog id，resubmit 换新 id 用）。
      */
-    private final TaskSequenceManager taskSequenceManager;
     /**
      * Redis 操作模板，key 用 String 序列化、value 用 byte[]（Kryo 序列化 TaskData）。
      */
@@ -134,18 +135,14 @@ public class TaskDelayerContainer {
      * @param taskApiClient          服务端任务 API 客户端
      * @param taskMetaInfoManager    任务元信息管理器（提供 Delayer 实例索引与 configKey）
      * @param taskLocalRateLimiter   进程内限速器
-     * @param taskGlobalRateLimiter  全局限速器
-     * @param taskSequenceManager    全局发号器
      * @param redisConnectionFactory Redis 连接工厂（构建 zset 操作模板）
      * @param taskListenerManager    任务监听管理器（execute 后回调 TaskDelayerListener）
      */
-    public TaskDelayerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskMetaInfoManager taskMetaInfoManager, TaskLocalRateLimiter taskLocalRateLimiter, TaskGlobalRateLimiter taskGlobalRateLimiter, TaskSequenceManager taskSequenceManager, RedisConnectionFactory redisConnectionFactory, TaskListenerManager taskListenerManager) {
+    public TaskDelayerContainer(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskMetaInfoManager taskMetaInfoManager, TaskLocalRateLimiter taskLocalRateLimiter, RedisConnectionFactory redisConnectionFactory, TaskListenerManager taskListenerManager) {
         this.taskProperties = taskProperties;
         this.taskApiClient = taskApiClient;
         this.taskMetaInfoManager = taskMetaInfoManager;
         this.taskLocalRateLimiter = taskLocalRateLimiter;
-        this.taskGlobalRateLimiter = taskGlobalRateLimiter;
-        this.taskSequenceManager = taskSequenceManager;
         this.taskListenerManager = taskListenerManager;
         this.redisTemplate = new RedisTemplate<>();
         this.redisTemplate.setKeySerializer(new StringRedisSerializer());
@@ -248,7 +245,7 @@ public class TaskDelayerContainer {
      * @param task 延迟任务数据（taskClass/taskDelay/taskParam 必填，其余可选）
      */
     public void submit(TaskData<?, ?> task) {
-        task.setId(taskSequenceManager.nextId("TaskDelayerLog"));
+        task.setId(GlobalSequence.nextId("uw-task-TaskDelayerLog"));
         task.setQueueDate(SystemClock.nowDate());
         if (task.getRunTarget() == null) {
             task.setRunTarget(taskProperties.getRunTarget());
@@ -671,7 +668,7 @@ public class TaskDelayerContainer {
     private void resubmit(TaskData task, long delayMillis) {
         TaskData copy = task.copy();
         // 重试使用新 id，避免与原任务同 id 导致 ES 日志互相覆盖（对齐 TaskRunner 重试 setId）
-        copy.setId(taskSequenceManager.nextId("TaskDelayerLog"));
+        copy.setId(GlobalSequence.nextId("uw-task-TaskDelayerLog"));
         copy.cleanForRetry();
         copy.setRefObject(null);
         copy.setQueueDate(SystemClock.nowDate());
@@ -707,7 +704,7 @@ public class TaskDelayerContainer {
         } else {
             // GLOBAL 系列：限流 key 见 buildGlobalLocker，等待循环见 acquireGlobalWithWait（虚拟线程 park 不占载体）
             String locker = TaskRateLimitHelper.buildGlobalLocker(type, taskClass, tag, taskProperties.getAppHost());
-            return TaskRateLimitHelper.acquireGlobalWithWait(taskGlobalRateLimiter, locker, value, time, config.getRateLimitWait());
+            return TaskRateLimitHelper.acquireGlobalWithWait(locker, value, time, config.getRateLimitWait());
         }
     }
 

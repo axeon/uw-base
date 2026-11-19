@@ -1,9 +1,9 @@
 package uw.log.es.service;
 
+import uw.common.util.StringTools;
 import tools.jackson.core.io.JsonStringEncoder;
 import tools.jackson.databind.JavaType;
-import com.google.common.base.CaseFormat;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import uw.common.util.ThreadFactoryBuilder;
 import okhttp3.Credentials;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -187,7 +187,7 @@ public class LogService {
         if (mode == LogClientProperties.LogMode.READ_WRITE) {
             this.logState = true;
             batchExecutor = new ThreadPoolExecutor(1, maxBatchThreads, 30, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(maxBatchQueueSize),
-                    new ThreadFactoryBuilder().setDaemon(true).setNameFormat("log-es-batch-%d").build(), new RejectedExecutionHandler() {
+                    ThreadFactoryBuilder.of("log-es-batch-%d").daemon().build(), new RejectedExecutionHandler() {
                 @Override
                 public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                     log.error("Log ES Batch Task {} rejected from {}", r.toString(), executor.toString());
@@ -655,10 +655,10 @@ public class LogService {
             lastIndex++;
             String canonicalPath = className.substring(0, lastIndex);
             String logVoName = className.substring(lastIndex);
-            indexName = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, logVoName);
+            indexName = StringTools.toSnakeCase(logVoName);
             indexName = canonicalPath + indexName;
         } else {
-            indexName = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, className);
+            indexName = StringTools.toSnakeCase(className);
         }
         return indexName;
     }

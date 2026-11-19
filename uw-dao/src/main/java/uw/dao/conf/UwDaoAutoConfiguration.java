@@ -122,7 +122,7 @@ public class UwDaoAutoConfiguration {
             daoConfig.getTableShard().put(DaoService.STATS_BASE_TABLE, config);
         }
         DaoService.start();
-        //处理Sequence问题。
+        //处理Sequence问题：发号池用 dao 专属 Redis 连接（uw.dao.redis.*，独立故障域——DB 发号是关键路径，
         if (daoConfig.getRedis() != null) {
             log.info("uw-dao FusionSequenceFactory init! ");
             RedisTemplate<String, Long> redisTemplate = new RedisTemplate<>();

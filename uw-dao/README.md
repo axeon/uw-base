@@ -1136,3 +1136,7 @@ uw:
 ## 许可证
 
 [Apache License 2.0](../LICENSE)
+
+## 配置热更新（nacos）
+
+`uw.dao.*` 原地重绑：连接路由/分表映射/环境标记**即时生效**（清路由缓存）；连接池参数变更告警需重启。入口：`UwDaoProperties`（属性）+ `DaoPropertiesManager`（静态访问）。

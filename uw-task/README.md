@@ -532,3 +532,7 @@ DelayTask zset / 序列发号 / Leader 选举 / 全局限速共用 uw-task **私
 - AMQP 1.0 不支持事务（本框架应用层重试，无影响）
 - `receive()` 拉模式在 1.0 下会静默吞消息（超时后链路仍持 credit），禁用
 - Boot 4.2 starter 语义：依赖 `spring-boot-starter-rabbitmq`（经典 0-9-1）+ 显式 `spring-rabbitmq-client`（1.0）
+
+## 配置热更新（nacos）
+
+`uw.task.*` 支持原地热更新：task-center-host、重试延时等**运行期读取项即时生效**；协议探测、连接工厂、执行器并发上限为启动期定死，变更需重启。

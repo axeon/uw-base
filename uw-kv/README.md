@@ -597,3 +597,7 @@ public static boolean delete(Class entityType, Object counterId)
  */
 public static long getAndDelete(Class entityType, Object counterId)
 ```
+
+## Bean 面
+
+对外仅 `kvRedisConnectionFactory` 一个 bean（`defaultCandidate=false`，不作宿主 by-type 注入默认候选，不干扰业务 Redis）；Global*/FusionCache 静态门面与失效通知订阅不占 bean。

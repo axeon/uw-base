@@ -1,3 +1,24 @@
+# 2026.1000.0015 版本升级说明
+
+uw-task 5.2.0 终态重构 + 全仓 bean 收敛 + nacos 热更新 + 命名一致化（19 模块全部 +1，uw-task 5.2.0 首发）。
+
+## uw-task（5.2.0，形态重写）
+1. croner 自续期调度：纯虚拟线程（每 croner 一个 sleeping VT + active 门闩 + synchronized 防孤儿续期），弃用 Spring TaskScheduler Trigger 通道；修正原版缺陷（onPostExecute 回调时 resultData/finishDate 未就位、runTask 体内 scheduleDate 不可见）。
+2. 延时路由单源化：TaskAmqpOps.supportsNativeDelay() 自述能力（091 恒 false → 延时任务自动转 Redis zset 搬运），协议实现与路由不可能错位。
+3. TaskAutoConfiguration 单 bean 化：对外仅 taskFactory 一个 bean（TaskListenerManager 经 TaskFactory.getListenerManager() 暴露），TaskLifecycleBootstrap 并入配置类 SmartLifecycle，Transfer↔SendCenter 互指经装配期回填破环。
+4. 全量 VT 化：rpc/local 池改 LimitedVirtualThreadExecutor（VT+并发上限背压），删除 croner-thread-num / task-rpc-min-thread-num / task-local-min-thread-num 配置，两个 max 值语义改为纯并发上限。
+5. TaskSendListener 投递侧监听（onDelaySubmit/onSendFail）+ 投递重试日志降噪；initContact() 默认空联系人。
+
+## 全仓治理
+1. bean 收敛：uw-kv 12 bean→1（Global* 静态门面内化 + kvRedisConnectionFactory defaultCandidate=false 防宿主冲突）；uw-auth-service AuthServiceHelper 锚点内联。
+2. nacos 热更新：9 个模块内联 PropertiesRefresher（EnvironmentChangeEvent 原地重绑保实例，静态 Helper 自动生效）；uw-dao 含清路由缓存 + 连接池差异告警（查表配置即时生效、连接池参数需重启）。
+3. 命名一致化：DaoConfig→UwDaoProperties、DaoConfigManager→DaoPropertiesManager（移 util 包）、conf 下 Properties/AutoConfiguration 全部 Uw 前缀（14 类 69 文件）、LimitedVirtualThreadExecutor.CallPolicy→RejectedPolicy（方法 rejectedExecution 对齐 JDK）。
+4. Deprecated 清零：AllEncompassingFormHttpMessageConverter→FormHttpMessageConverter、nacos 两常量字面量化、AutoServiceRegistration 局部 suppress（上游无替代）。
+5. 批量：14 模块 spring-boot-configuration-processor、16 模块 CHANGELOG、oauth2-client QrCodeTest 既有 2E 修复。
+
+## 测试
+全仓 673 run / 0 fail / 0 err / 17 skip（dev 凭据）+ FullFlowE2ETest 真实 broker 2/0/0。
+
 # 2026.0900.0006版本升级说明
 uw-common 的 MoneyUtils 与 CurrencyUtils 打通，金额计量口径由硬编码「分」升级为币种感知的「最小货币单位」，支持 ISO 4217 全部精度（0/2/3/4 位），修复跨精度币种汇率换算的量级错误、大额金额精度截断与币种代码大小写陷阱；修复 uw_common / uw_validate 国际化资源错置导致的 i18n 全面失效。
 

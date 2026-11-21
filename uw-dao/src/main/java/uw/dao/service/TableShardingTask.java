@@ -6,9 +6,9 @@ import uw.dao.DaoFactory;
 import uw.common.data.PageRowSet;
 import uw.dao.SequenceFactory;
 import uw.dao.TransactionException;
-import uw.dao.conf.DaoConfig;
-import uw.dao.conf.DaoConfig.TableShardConfig;
-import uw.dao.conf.DaoConfigManager;
+import uw.dao.conf.UwDaoProperties;
+import uw.dao.conf.UwDaoProperties.TableShardConfig;
+import uw.dao.util.DaoPropertiesManager;
 import uw.dao.util.DaoStringUtils;
 import uw.dao.util.ShardingTableUtils;
 
@@ -38,7 +38,7 @@ public class TableShardingTask implements Runnable {
     /**
      * dao配置文件。
      */
-    private static final DaoConfig DAO_CONFIG = DaoConfigManager.getConfig();
+    private static final UwDaoProperties DAO_CONFIG = DaoPropertiesManager.getProperties();
     /**
      * DAOFactory对象.
      */

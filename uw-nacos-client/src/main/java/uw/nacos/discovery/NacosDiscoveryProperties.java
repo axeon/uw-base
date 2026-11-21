@@ -856,7 +856,7 @@ public class NacosDiscoveryProperties {
 		properties.put(USERNAME, Objects.toString(username, ""));
 		properties.put(PASSWORD, Objects.toString(password, ""));
 		properties.put(NAMESPACE, namespace);
-		properties.put(UtilAndComs.NACOS_NAMING_LOG_NAME, logName);
+		properties.put("com.alibaba.nacos.naming.log.filename", logName);
 
 		if (endpoint.contains(":")) {
 			int index = endpoint.indexOf(":");

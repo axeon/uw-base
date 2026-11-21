@@ -10,7 +10,7 @@ import uw.dao.DataEntity;
 import uw.common.data.PageList;
 import uw.dao.DataUpdateInfo;
 import uw.dao.TransactionException;
-import uw.dao.conf.DaoConfigManager;
+import uw.dao.util.DaoPropertiesManager;
 import uw.dao.connectionpool.ConnectionManager;
 import uw.dao.dialect.Dialect;
 import uw.dao.util.DaoReflectUtils;
@@ -67,7 +67,7 @@ public class EntityCommandImpl {
         }
 
         if (StringUtils.isBlank(connName)) {
-            connName = DaoConfigManager.getRouteMapping(tableName, "write");
+            connName = DaoPropertiesManager.getRouteMapping(tableName, "write");
         }
         StringBuilder sb = new StringBuilder();
         // 写入所有的列
@@ -165,7 +165,7 @@ public class EntityCommandImpl {
             tableName = emi.getTableName();
         }
         if (StringUtils.isBlank(connName)) {
-            connName = DaoConfigManager.getRouteMapping(tableName, "write");
+            connName = DaoPropertiesManager.getRouteMapping(tableName, "write");
         }
         StringBuilder sb = new StringBuilder();
         // 写入所有的列
@@ -265,7 +265,7 @@ public class EntityCommandImpl {
         }
 
         if (StringUtils.isBlank(connName)) {
-            connName = DaoConfigManager.getRouteMapping(tableName, "write");
+            connName = DaoPropertiesManager.getRouteMapping(tableName, "write");
         }
         StringBuilder sb = new StringBuilder();
         List<FieldMetaInfo> pks = emi.getPkList();
@@ -455,7 +455,7 @@ public class EntityCommandImpl {
         }
 
         if (connName == null || connName.isEmpty()) {
-            connName = DaoConfigManager.getRouteMapping(tableName, "write");
+            connName = DaoPropertiesManager.getRouteMapping(tableName, "write");
         }
         StringBuilder sb = new StringBuilder(256);
         DataUpdateInfo dataUpdateInfo = entity.GET_UPDATED_INFO();
@@ -557,7 +557,7 @@ public class EntityCommandImpl {
 
         if (StringUtils.isBlank(connName)) {
             // load 本质为读操作，路由到读库；未配置读库时 getRouteMapping 会自动回退到写库
-            connName = DaoConfigManager.getRouteMapping(tableName, "read");
+            connName = DaoPropertiesManager.getRouteMapping(tableName, "read");
         }
 
         StringBuilder sb = new StringBuilder();

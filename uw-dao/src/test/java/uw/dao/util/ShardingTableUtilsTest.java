@@ -4,9 +4,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import uw.dao.conf.DaoConfig;
-import uw.dao.conf.DaoConfig.TableShardConfig;
-import uw.dao.conf.DaoConfigManager;
+import uw.dao.conf.UwDaoProperties;
+import uw.dao.conf.UwDaoProperties.TableShardConfig;
+import uw.dao.util.DaoPropertiesManager;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>核心不变式：按天迭代收集表名后每张分表只 UNION 一次且按时间先后保序——
  * month/year 分片规则与未配置分片的表在多天区间内均收敛到去重后的表集合。</p>
  *
- * <p>纯单元测试，不依赖 Spring/数据库：通过 {@link DaoConfigManager#setConfig} 注入
+ * <p>纯单元测试，不依赖 Spring/数据库：通过 {@link DaoPropertiesManager#setConfig} 注入
  * 分片配置，测试结束后恢复原配置，避免影响同模块其它测试。</p>
  *
  * @author axeon
@@ -42,12 +42,12 @@ class ShardingTableUtilsTest {
     /**
      * 原有配置，测试结束后恢复。
      */
-    private DaoConfig originConfig;
+    private UwDaoProperties originConfig;
 
     @BeforeEach
     void setUp() {
-        originConfig = DaoConfigManager.getConfig();
-        DaoConfig config = new DaoConfig();
+        originConfig = DaoPropertiesManager.getProperties();
+        UwDaoProperties config = new UwDaoProperties();
         TableShardConfig monthShard = new TableShardConfig();
         monthShard.setShardType("date");
         monthShard.setShardRule("month");
@@ -56,12 +56,12 @@ class ShardingTableUtilsTest {
         dayShard.setShardType("date");
         dayShard.setShardRule("day");
         config.getTableShard().put(DAY_TABLE, dayShard);
-        DaoConfigManager.setConfig(config);
+        DaoPropertiesManager.updateProperties(config);
     }
 
     @AfterEach
     void tearDown() {
-        DaoConfigManager.setConfig(originConfig);
+        DaoPropertiesManager.updateProperties(originConfig);
     }
 
     /**

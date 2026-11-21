@@ -14,7 +14,7 @@ import org.springframework.web.servlet.HandlerExecutionChain;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import uw.auth.service.AuthServiceHelper;
 import uw.auth.service.annotation.MscPermDeclare;
-import uw.auth.service.conf.AuthServiceProperties;
+import uw.auth.service.conf.UwAuthServiceProperties;
 import uw.auth.service.constant.ActionLog;
 import uw.auth.service.constant.AuthServiceConstants;
 import uw.auth.service.constant.AuthType;
@@ -67,7 +67,7 @@ public class AuthServiceFilter implements Filter {
     /**
      * AuthService配置文件。
      */
-    private final AuthServiceProperties authServiceProperties;
+    private final UwAuthServiceProperties authServiceProperties;
     /**
      * 请求映射处理器。
      */
@@ -98,7 +98,7 @@ public class AuthServiceFilter implements Filter {
     private String[] ipProtectedPaths;
 
 
-    public AuthServiceFilter(final AuthServiceProperties authServiceProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping, HandlerExceptionResolver exceptionResolver,
+    public AuthServiceFilter(final UwAuthServiceProperties authServiceProperties, final RequestMappingHandlerMapping requestMappingHandlerMapping, HandlerExceptionResolver exceptionResolver,
                              final MscAuthPermService authPermService, final LogClient logClient, final AuthCriticalLogStorage authCriticalLogStorage) {
         this.authServiceProperties = authServiceProperties;
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;

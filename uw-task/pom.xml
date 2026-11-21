@@ -8,7 +8,7 @@
     <version>${uw-task.version}</version>
     <name>uw-task</name>
     <description>
-        uw-task包是一个分布式任务框架，通过uw-task可以快速构建基于docker的分布式任务体系，同时支持基于influx的任务运维监控。
+        uw-task 双协议演进版（AMQP 0-9-1/1.0 启动期自动判定 + classic/quorum 队列可选 + RabbitMQ 4.4 原生延迟消息）。
     </description>
 
     <parent>
@@ -19,20 +19,32 @@
     </parent>
 
     <dependencies>
+        <!-- nacos 热更新支持（EnvironmentChangeEvent，optional：无 spring-cloud 环境不装配监听） -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-context</artifactId>
+            <optional>true</optional>
+        </dependency>
         <!-- ============ Spring 生态 ============ -->
+        <!-- IDE 配置补全/校验元数据（uw.task.* 全部配置项，仅编译期注解处理器，不入运行时依赖） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-amqp</artifactId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-rabbitmq</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.amqp</groupId>
+            <artifactId>spring-rabbitmq-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
         <!-- ============ 自研框架 uw-* ============ -->
-        <dependency>
-            <groupId>pub.xili</groupId>
-            <artifactId>uw-kv</artifactId>
-        </dependency>
         <dependency>
             <groupId>pub.xili</groupId>
             <artifactId>uw-auth-client</artifactId>

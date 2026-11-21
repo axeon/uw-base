@@ -7,8 +7,8 @@ import uw.common.response.ResponseData;
 import uw.common.util.DateTools;
 import uw.dao.DaoManager;
 import uw.dao.vo.QueryParamResult;
-import uw.dao.conf.DaoConfig.TableShardConfig;
-import uw.dao.conf.DaoConfigManager;
+import uw.dao.conf.UwDaoProperties.TableShardConfig;
+import uw.dao.util.DaoPropertiesManager;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -59,7 +59,7 @@ public class ShardingTableUtils {
      * @return 表名
      */
     public static String getTableNameById(String tableName, long id) {
-        TableShardConfig config = DaoConfigManager.getTableShardingConfig(tableName);
+        TableShardConfig config = DaoPropertiesManager.getTableShardingConfig(tableName);
         if (config != null && "id".equalsIgnoreCase(config.getShardType())) {
             long batchSize = Long.parseLong(config.getShardRule());
             return tableName + "_" + (id / batchSize);
@@ -75,7 +75,7 @@ public class ShardingTableUtils {
      * @return 表名
      */
     public static String getTableNameByDate(String tableName, LocalDate date) {
-        TableShardConfig config = DaoConfigManager.getTableShardingConfig(tableName);
+        TableShardConfig config = DaoPropertiesManager.getTableShardingConfig(tableName);
         if (config != null && "date".equalsIgnoreCase(config.getShardType())) {
             switch (config.getShardRule()) {
                 case "day":
@@ -207,7 +207,7 @@ public class ShardingTableUtils {
         //当期窗口免探测：窗口全落当期分表且启用自动预建（当期表必然存在）
         if (windowTables.size() == 1) {
             String currentShard = getTableNameByDate(tableName, LocalDate.now());
-            TableShardConfig config = DaoConfigManager.getTableShardingConfig(tableName);
+            TableShardConfig config = DaoPropertiesManager.getTableShardingConfig(tableName);
             if (windowTables.contains(currentShard) && (config == null || config.isAutoGen())) {
                 return windowTables.toArray(new String[0]);
             }

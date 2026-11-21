@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.dao.TransactionException;
 import uw.dao.TransactionManager;
-import uw.dao.conf.DaoConfigManager;
+import uw.dao.util.DaoPropertiesManager;
 import uw.dao.connectionpool.ConnectionManager;
 
 import java.sql.Connection;
@@ -138,7 +138,7 @@ public class TransactionManagerImpl implements TransactionManager {
      * @return 连接名
      */
     public String getConnName(String table, String access) {
-        return DaoConfigManager.getRouteMapping(table, access);
+        return DaoPropertiesManager.getRouteMapping(table, access);
     }
 
     /**

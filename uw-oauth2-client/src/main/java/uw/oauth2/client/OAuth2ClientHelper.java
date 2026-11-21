@@ -4,7 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.response.ResponseData;
-import uw.oauth2.client.conf.OAuth2ClientProperties;
+import uw.oauth2.client.conf.UwOAuth2ClientProperties;
 import uw.oauth2.client.constant.OAuth2ClientAuthStatus;
 import uw.oauth2.client.constant.OAuth2ClientResponseCode;
 import uw.oauth2.client.provider.*;
@@ -46,18 +46,18 @@ public class OAuth2ClientHelper {
     /**
      * OAuth2客户端配置。
      */
-    private static OAuth2ClientProperties properties;
+    private static UwOAuth2ClientProperties properties;
 
     /**
      * 构造函数。
      *
      * @param properties OAuth2客户端配置。
      */
-    public OAuth2ClientHelper(OAuth2ClientProperties properties) {
+    public OAuth2ClientHelper(UwOAuth2ClientProperties properties) {
         OAuth2ClientHelper.properties = properties;
         // 过滤掉无效的Provider配置。
         OAuth2ClientHelper.properties.getProviders().entrySet().removeIf(entry -> {
-            OAuth2ClientProperties.ProviderConfig config = entry.getValue();
+            UwOAuth2ClientProperties.ProviderConfig config = entry.getValue();
             return config == null || StringUtils.isBlank(config.getClientId());
         });
         // 遍历配置中的所有Provider。
@@ -78,7 +78,7 @@ public class OAuth2ClientHelper {
      * @param qrcodeUri      二维码URL。
      * @return Provider实例。
      */
-    private static OAuth2Provider createProvider(String providerCode, OAuth2ClientProperties.ProviderConfig providerConfig, String redirectUri, String qrcodeUri) {
+    private static OAuth2Provider createProvider(String providerCode, UwOAuth2ClientProperties.ProviderConfig providerConfig, String redirectUri, String qrcodeUri) {
         // 根据Provider名称选择不同的实现。
         return switch (providerCode.toLowerCase()) {
             case "google", "github" ->
@@ -133,7 +133,7 @@ public class OAuth2ClientHelper {
      *
      * @return Provider配置Map（只读视图）。
      */
-    public static Map<String, OAuth2ClientProperties.ProviderConfig> getConfigMap() {
+    public static Map<String, UwOAuth2ClientProperties.ProviderConfig> getConfigMap() {
         return Collections.unmodifiableMap(properties.getProviders());
     }
 

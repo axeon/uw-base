@@ -3,10 +3,8 @@ package uw.task.conf;
 import org.springframework.context.ApplicationContext;
 import uw.task.TaskCroner;
 import uw.task.TaskData;
-import uw.task.TaskDelayer;
 import uw.task.TaskRunner;
 import uw.task.entity.TaskCronerConfig;
-import uw.task.entity.TaskDelayerConfig;
 import uw.task.entity.TaskRunnerConfig;
 
 import java.util.Map;
@@ -30,11 +28,6 @@ public class TaskMetaInfoManager {
     private final Map<String, TaskCroner> cronerInstanceMap = new ConcurrentHashMap<>();
 
     /**
-     * Delayer任务实例缓存。
-     */
-    private final Map<String, TaskDelayer<?, ?>> delayerInstanceMap = new ConcurrentHashMap<>();
-
-    /**
      * Runner任务配置缓存
      */
     private final ConcurrentHashMap<String, TaskRunnerConfig> runnerConfigMap = new ConcurrentHashMap<>();
@@ -45,21 +38,16 @@ public class TaskMetaInfoManager {
     private final ConcurrentHashMap<String, TaskCronerConfig> cronerConfigMap = new ConcurrentHashMap<>();
 
     /**
-     * Delayer任务配置缓存。
-     */
-    private final ConcurrentHashMap<String, TaskDelayerConfig> delayerConfigMap = new ConcurrentHashMap<>();
-
-    /**
      * 任务配置。
      */
-    private final TaskProperties taskProperties;
+    private final UwTaskProperties taskProperties;
 
     /**
      * 应用上下文。
      */
     private final ApplicationContext context;
 
-    public TaskMetaInfoManager(ApplicationContext context, TaskProperties taskProperties) {
+    public TaskMetaInfoManager(ApplicationContext context, UwTaskProperties taskProperties) {
         this.context = context;
         this.taskProperties = taskProperties;
     }
@@ -145,48 +133,6 @@ public class TaskMetaInfoManager {
      *
      * @return 延迟任务实例 Map
      */
-    public Map<String, TaskDelayer<?, ?>> getDelayerInstanceMap() {
-        return delayerInstanceMap;
-    }
-
-    /**
-     * 获取指定 taskClass 的延迟任务实例。
-     *
-     * @param delayerCls taskClass 全限定名
-     * @return 任务实例，无匹配时返回 null
-     */
-    public TaskDelayer<?, ?> getDelayerInstance(String delayerCls) {
-        return delayerInstanceMap.get(delayerCls);
-    }
-
-    /**
-     * 设置延迟任务配置。
-     *
-     * @param delayerConfigKey 配置键（见 {@link #getConfigKey}）
-     * @param config           延迟任务配置
-     */
-    public void setDelayerConfig(String delayerConfigKey, TaskDelayerConfig config) {
-        delayerConfigMap.put(delayerConfigKey, config);
-    }
-
-    /**
-     * 移除延迟任务配置。
-     *
-     * @param delayerConfigKey 配置键（见 {@link #getConfigKey}）
-     */
-    public void removeDelayerConfig(String delayerConfigKey) {
-        delayerConfigMap.remove(delayerConfigKey);
-    }
-
-    /**
-     * 获取延迟任务配置 Map（key 为配置键，见 {@link #getConfigKey}）。
-     *
-     * @return 延迟任务配置 Map
-     */
-    public ConcurrentHashMap<String, TaskDelayerConfig> getDelayerConfigMap() {
-        return delayerConfigMap;
-    }
-
     /**
      * 获取队列任务配置 Map（key 为配置键，见 {@link #getRunnerConfigKey}）。
      *
@@ -226,13 +172,6 @@ public class TaskMetaInfoManager {
             String taskClass = taskRunner.getClass().getName();
             runnerInstanceMap.put(taskClass, taskRunner);
         }
-        // 设置当前主机上所有的TaskDelayer
-        Map<String, TaskDelayer> delayerMap = context.getBeansOfType(TaskDelayer.class);
-        for (Map.Entry<String, TaskDelayer> kv : delayerMap.entrySet()) {
-            TaskDelayer taskDelayer = kv.getValue();
-            String taskClass = taskDelayer.getClass().getName();
-            delayerInstanceMap.put(taskClass, taskDelayer);
-        }
     }
 
     /**
@@ -247,8 +186,9 @@ public class TaskMetaInfoManager {
 
     /**
      * 客户端发送任务到队列时，通过此方法获取合适的队列。
-     * <p>根据服务端配置匹配配置键（taskClass#taskTag$runTarget），无 taskTag 时宽松匹配；
-     * 再按队列类型（任务级/组级/项目级）映射出最终队列名。延迟任务且 runType=GLOBAL 时返回 TTL 队列名。</p>
+     * <p>根据服务端配置匹配配置键（taskClass#taskTag$runTarget），无 taskTag 时宽松匹配，
+     * 映射出任务级队列名。延迟语义由消息层承载（1.0 原生 x-opt-delivery-time 或消费端线程内延时），
+     * 不再使用 TTL+DLX 队列。</p>
      *
      * @param data 任务数据
      * @return 匹配到的队列名
@@ -270,10 +210,7 @@ public class TaskMetaInfoManager {
             }
         }
         if (config != null) {
-            String queueName = getQueueNameByConfig(config);
-            // 只有开启了延时队列并且发送队列异步进行才会返回TTL队列名称
-            return config.getDelayType() == TaskRunnerConfig.TYPE_DELAY_ON && data.getRunType() == TaskData.RUN_TYPE_GLOBAL && data.getTaskDelay() > 0 ?
-                    getTTLQueueName(queueName) : queueName;
+            return getQueueNameByConfig(config);
         } else {
             throw new RuntimeException("No matching task config: taskClass = " + data.getTaskClass());
         }
@@ -332,17 +269,6 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 获取 Delayer 配置的 key：taskClass#taskTag$runTarget。
-     * <p>多实例维度与 Runner 一致（taskTag），区别于 Croner 的 taskParam。</p>
-     *
-     * @param config 延迟任务配置
-     * @return 配置键
-     */
-    public String getDelayerConfigKey(TaskDelayerConfig config) {
-        return getConfigKey(config.getTaskClass(), config.getTaskTag(), config.getRunTarget());
-    }
-
-    /**
      * 由 taskData 计算配置键：taskClass#taskTag$runTarget（与 {@link #getRunnerConfigKey} 同构）。
      *
      * @param data 任务数据
@@ -354,7 +280,6 @@ public class TaskMetaInfoManager {
 
     /**
      * 通用配置键：taskClass#taskTag$runTarget（null 维度当空串）。
-     * <p>供以 taskTag 作为多实例维度的任务（Runner / Delayer）复用，避免各容器各自拼接。</p>
      *
      * @param taskClass 任务类全限定名
      * @param taskTag   任务标签（多实例区分，可空）
@@ -367,61 +292,15 @@ public class TaskMetaInfoManager {
 
 
     /**
-     * 根据 runner 配置的队列类型，计算出实际队列名。
+     * 计算实际队列名：全部为任务级队列（taskClass#taskTag$runTarget）。
+     * 队列形态（classic/quorum）由 {@link TaskRunnerConfig#getQueueType()} 在声明期决定，不影响队列命名。
      *
      * @param config 队列任务配置
-     * @return 队列名（任务级/组级/项目级，依 queueType 而定）
+     * @return 队列名（任务级）
      */
     public String getQueueNameByConfig(TaskRunnerConfig config) {
-        return switch (config.getQueueType()) {
-            case TaskRunnerConfig.TYPE_QUEUE_TASK -> getRunnerConfigKey(config);
-            case TaskRunnerConfig.TYPE_QUEUE_GROUP_PRIORITY ->
-                    getGroupQueueName(config.getTaskClass(), "priority", config.getRunTarget());
-            case TaskRunnerConfig.TYPE_QUEUE_GROUP ->
-                    getGroupQueueName(config.getTaskClass(), "default", config.getRunTarget());
-            case TaskRunnerConfig.TYPE_QUEUE_PROJECT_PRIORITY ->
-                    taskProperties.getTaskProject() + "@priority$" + config.getRunTarget();
-            default -> taskProperties.getTaskProject() + "$" + config.getRunTarget();
-        };
+        return getRunnerConfigKey(config);
     }
 
-    /**
-     * 获取ttl队列名称
-     *
-     * @param queueName 队列名
-     * @return ttl队列名
-     */
-    public String getTTLQueueName(String queueName) {
-        return queueName + '*';
-    }
-
-    /**
-     * 是否是 TTL 队列名称（以 '*' 结尾）。
-     *
-     * @param queueName 队列名
-     * @return 是 TTL 队列返回 true，否则 false
-     */
-    public boolean isTTLQueueName(String queueName) {
-        return queueName.endsWith("*");
-    }
-
-
-    /**
-     * 根据任务类所在的包，计算任务组队列名：{包名}@{type}${runTarget}。
-     *
-     * @param taskClass  任务类全限定名
-     * @param type       队列类型标识（如 "default"、"priority"）
-     * @param runTarget  运行目标
-     * @return 任务组队列名；taskClass 无包名时原样返回
-     */
-    public String getGroupQueueName(String taskClass, String type, String runTarget) {
-        if (taskClass != null) {
-            int pos = taskClass.lastIndexOf('.');
-            if (pos > -1) {
-                return taskClass.substring(0, pos) + "@" + type + "$" + runTarget;
-            }
-        }
-        return taskClass;
-    }
 
 }

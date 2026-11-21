@@ -17,7 +17,7 @@ import java.util.*;
  *   <li>DSL 查询、SQL 转 DSL、scroll 游标查询；</li>
  *   <li>聚合结果与分页结果的映射工具方法。</li>
  * </ul>
- * 通过 {@link LogClientAutoConfiguration} 由 Spring 自动装配，业务侧一般通过 {@link #getInstance()} 获取全局单例。
+ * 通过 {@link UwLogEsAutoConfiguration} 由 Spring 自动装配，业务侧一般通过 {@link #getInstance()} 获取全局单例。
  */
 public class LogClient {
 
@@ -25,7 +25,7 @@ public class LogClient {
 
     /**
      * 提供一个静态实例化对象，便于各种调用。
-     * <p>由 {@link LogClientAutoConfiguration} 在构造时注入，业务侧通过 {@link #getInstance()} 读取。
+     * <p>由 {@link UwLogEsAutoConfiguration} 在构造时注入，业务侧通过 {@link #getInstance()} 读取。
      */
     private static volatile LogClient INSTANCE = null;
 

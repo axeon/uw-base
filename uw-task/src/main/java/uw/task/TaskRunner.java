@@ -1,6 +1,8 @@
 package uw.task;
 
 import uw.task.entity.TaskContact;
+import uw.task.exception.TaskDataException;
+import uw.task.exception.TaskPartnerException;
 import uw.task.entity.TaskRunnerConfig;
 
 /**
@@ -17,8 +19,8 @@ public abstract class TaskRunner<TP, RD> {
     /**
      * 执行任务。
      * 业务层面的异常请根据实际情况手动抛出以下受识别的异常：
-     * 1. {@link uw.task.exception.TaskPartnerException} 任务合作方异常，此异常会引发任务重试。
-     * 2. {@link uw.task.exception.TaskDataException} 任务数据异常，此异常不会引发任务重试。
+     * 1. {@link TaskPartnerException} 任务合作方异常，此异常会引发任务重试。
+     * 2. {@link TaskDataException} 任务数据异常，此异常不会引发任务重试。
      * ！！！其它未捕获异常一律认为是程序异常，不会引发任务重试。
      *
      * @param taskData 数据
@@ -36,8 +38,12 @@ public abstract class TaskRunner<TP, RD> {
 
     /**
      * 初始化联系人信息
+     * <p>默认返回空联系人（无报警需求的任务无需覆写）；空联系人不影响本地降级启动，
+     * 仅意味着报警通知无接收方。</p>
      *
      * @return TaskContact联系人信息
      */
-    public abstract TaskContact initContact();
+    public TaskContact initContact() {
+        return new TaskContact();
+    }
 }

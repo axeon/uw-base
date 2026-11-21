@@ -3,7 +3,7 @@ package uw.oauth2.client.provider;
 import org.springframework.web.util.UriUtils;
 import uw.common.response.ResponseData;
 import uw.common.util.JsonUtils;
-import uw.oauth2.client.conf.OAuth2ClientProperties;
+import uw.oauth2.client.conf.UwOAuth2ClientProperties;
 import uw.oauth2.client.vo.OAuth2Token;
 import uw.oauth2.client.vo.OAuth2UserInfo;
 
@@ -14,12 +14,12 @@ import java.nio.charset.StandardCharsets;
  */
 class WechatOAuth2ProviderTest {
 
-    private static OAuth2ClientProperties.ProviderConfig config;
+    private static UwOAuth2ClientProperties.ProviderConfig config;
     private static WechatOAuth2Provider provider;
 
     static {
         // 初始化配置
-        config = new OAuth2ClientProperties.ProviderConfig();
+        config = new UwOAuth2ClientProperties.ProviderConfig();
         config.setClientId("");
         config.setClientSecret("");
         config.setAuthUri("https://open.weixin.qq.com/connect/qrconnect");

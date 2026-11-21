@@ -10,7 +10,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import uw.dao.DaoFactory;
 import uw.dao.SeqTestApplication;
-import uw.dao.conf.DaoConfigManager;
+import uw.dao.util.DaoPropertiesManager;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -57,7 +57,7 @@ class FusionSequenceFactoryTest {
     void cleanup() {
         // 清理 DB 测试 seq 行
         try {
-            String rootConn = DaoConfigManager.getRouteMapping("sys_seq", "write");
+            String rootConn = DaoPropertiesManager.getRouteMapping("sys_seq", "write");
             daoFactory.execute(rootConn, "delete from sys_seq where seq_name like ?", new Object[]{SEQ_PREFIX + "%"});
         } catch (Exception e) {
             // 忽略

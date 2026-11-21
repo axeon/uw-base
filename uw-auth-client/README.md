@@ -58,7 +58,7 @@ RestClient 路径底层基于 **Apache HttpClient 5** 连接池。
 | uw-common                 | 同基线版本                     | 提供 `ResponseData` / `SystemClock`              |
 
 > 本 Starter 引入了 `spring-boot-starter-webflux` 以提供 `WebClient`。在 Servlet 宿主应用中，
-> `AuthClientExcludeAutoConfigProcessor` 会自动排除 `ClientHttpConnectorAutoConfiguration`，
+> `UwAuthClientExcludeAutoConfigProcessor` 会自动排除 `ClientHttpConnectorAutoConfiguration`，
 > 避免与 Spring Boot 的响应式连接器自动配置冲突（详见 [Spring Cloud 模式](#spring-cloud-模式)）。
 
 ---
@@ -220,7 +220,7 @@ public class MyReactiveService {
 > 向同名 Builder Bean 槽贡献实例。Spring Cloud 的 BPP 通过 `findAnnotationOnBean` 按 Bean 名识别注解，
 > 与定义所在的配置类无关，因此该写法可被正确增强。
 
-> **WebFlux 冲突规避**：`AuthClientExcludeAutoConfigProcessor`（通过 `META-INF/spring.factories`
+> **WebFlux 冲突规避**：`UwAuthClientExcludeAutoConfigProcessor`（通过 `META-INF/spring.factories`
 > 注册为 `EnvironmentPostProcessor`）会在 bootstrap 早期将 `ClientHttpConnectorAutoConfiguration`
 > 加入 `spring.autoconfigure.exclude`，避免 Spring Boot WebFlux 自动配置与本库的 WebClient 配置冲突。
 > 它会合并宿主已配置的 exclude 并去重，不会覆盖宿主既有配置。
@@ -311,9 +311,9 @@ A：这两个属性带有默认值（`unknown`），正常不会报错。若仍�
 ```
 uw.auth.client
 ├── conf/
-│   ├── AuthClientAutoConfiguration     # @AutoConfiguration，注册所有 Bean；内嵌 CloudLoadBalancedConfig / PlainBuilderConfig
+│   ├── UwAuthClientAutoConfiguration     # @AutoConfiguration，注册所有 Bean；内嵌 CloudLoadBalancedConfig / PlainBuilderConfig
 │   ├── AuthClientExcludeAutoConfigProcessor  # EnvironmentPostProcessor（spring.factories 注册），排除 WebFlux 冲突配置
-│   └── AuthClientProperties            # @ConfigurationProperties(prefix="uw.auth.client")
+│   └── UwAuthClientProperties            # @ConfigurationProperties(prefix="uw.auth.client")
 ├── constant/
 │   ├── AuthClientConstants             # HTTP 状态码常量（200/401/402/403/426/498/503）
 │   └── LoginType                       # 登录类型枚举（value/label），含分类工具方法
@@ -338,7 +338,7 @@ uw.auth.client
 3. **Apache HttpClient 5**：底层使用 `httpclient5` + `PoolingHttpClientConnectionManager`，高并发场景下连接池参数需按实际 RPC 规模调整。
 
 4. **WebFlux 冲突规避**：引入 `spring-boot-starter-webflux` 但同时是 Servlet 应用时，
-   `AuthClientExcludeAutoConfigProcessor` 自动排除 `ClientHttpConnectorAutoConfiguration`。
+   `UwAuthClientExcludeAutoConfigProcessor` 自动排除 `ClientHttpConnectorAutoConfiguration`。
 
 5. **Spring Cloud 开关**：`enable-spring-cloud` 通过 `@ConditionalOnProperty` 在两个内嵌配置类间切换 Builder 是否标注
    `@LoadBalanced`，支持无 Spring Cloud 环境的直连模式。

@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.dao.DaoFactory;
 import uw.dao.TransactionException;
-import uw.dao.conf.DaoConfigManager;
+import uw.dao.util.DaoPropertiesManager;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -71,7 +71,7 @@ public class StatsCleanDataTask implements Runnable {
         // 默认保留100天数据
         int keepDays = 100;
         try {
-            keepDays = DaoConfigManager.getConfig().getSqlStats().getDataKeepDays();
+            keepDays = DaoPropertiesManager.getProperties().getSqlStats().getDataKeepDays();
         } catch (Throwable ignored) {
         }
         LocalDate cutoffDate = LocalDate.now().minusDays(keepDays);

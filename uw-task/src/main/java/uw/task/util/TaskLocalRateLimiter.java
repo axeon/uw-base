@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 进程内固定窗口限速器（uw-common {@link FixedWindowRateLimiter} 的任务域薄壳）。
  *
  * <p>限流作用域为单个 JVM 实例，不跨进程共享配额。算法为固定窗口：窗口边界对齐墙钟网格，
- * 与全局限速（{@code uw.kv.GlobalFixedWindowRateLimiter}）语义一致——同配置下本地/全局行为可互推。
+ * 与全局限速（{@code TaskGlobalRateLimiter}）语义一致——同配置下本地/全局行为可互推。
  * 历史实现为 Guava 令牌桶（平滑匀速），已按限速器家族统一裁决切换为固定窗口：允许攒 burst 的令牌桶
  * 语义退役，Guava RateLimiter 依赖归零。</p>
  *

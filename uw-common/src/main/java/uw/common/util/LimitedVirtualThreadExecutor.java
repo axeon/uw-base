@@ -20,8 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   <li><b>并发限制</b>：通过 {@link Semaphore} 限制最大并发数（{@code maxConcurrency}），超过则排队或拒绝。</li>
  *   <li><b>有界队列缓冲</b>：{@code queueCapacity > 0} 时启用（无锁 {@link MpmcArrayQueue}），
  *       worker 完成后从队列接力取下一个任务（μs 级），消除"等外部 submit"的空窗。
- *       {@code queueCapacity = 0} 时不缓冲，满则直接走 {@link CallPolicy}。</li>
- *   <li><b>调用策略</b>：当并发满（且队列满，若有）时，委托 {@link CallPolicy} 决定行为
+ *       {@code queueCapacity = 0} 时不缓冲，满则直接走 {@link RejectedPolicy}。</li>
+ *   <li><b>调用策略</b>：当并发满（且队列满，若有）时，委托 {@link RejectedPolicy} 决定行为
  *      （阻塞等待 / 调用者执行 / 丢弃 / 快速失败），与 JDK {@code RejectedExecutionHandler} 对齐。</li>
  *   <li><b>虚拟线程</b>：每个 worker 是独立虚拟线程，IO 阻塞时不占平台载体线程。</li>
  * </ul>
@@ -32,8 +32,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   <li><b>队列模式（{@code queueCapacity > 0}）</b>：submit 先 {@code tryAcquire}，
  *       成功则起 worker 虚拟线程跑<b>接力循环</b>（跑完当前 task 后 {@code queue.poll} 取下一个，
  *       有则继续不 release，无则 release）；Semaphore 满则 {@code offer} 到无锁队列；
- *       队列也满则走 {@link CallPolicy}。</li>
- *   <li><b>快速模式（{@code queueCapacity = 0}）</b>：无队列缓冲，Semaphore 满则直接走 {@link CallPolicy}。</li>
+ *       队列也满则走 {@link RejectedPolicy}。</li>
+ *   <li><b>快速模式（{@code queueCapacity = 0}）</b>：无队列缓冲，Semaphore 满则直接走 {@link RejectedPolicy}。</li>
  * </ul>
  *
  * <h3>关闭语义（对齐 JDK {@code ThreadPoolExecutor}）</h3>
@@ -60,7 +60,7 @@ public class LimitedVirtualThreadExecutor {
     /**
      * 调用策略：并发满（且队列满，若有）时的处理行为。与 JDK {@code RejectedExecutionHandler} 对齐。
      */
-    private final CallPolicy callPolicy;
+    private final RejectedPolicy callPolicy;
 
     /**
      * 正在执行的任务数（worker 活跃数）。
@@ -68,7 +68,7 @@ public class LimitedVirtualThreadExecutor {
     private final AtomicInteger activeCount = new AtomicInteger(0);
 
     /**
-     * 被拒绝的任务数（走 CallPolicy 拒绝的，不含队列缓冲的）。
+     * 被拒绝的任务数（走 RejectedPolicy 拒绝的，不含队列缓冲的）。
      */
     private final AtomicInteger rejectedCount = new AtomicInteger(0);
 
@@ -116,7 +116,7 @@ public class LimitedVirtualThreadExecutor {
      * @param maxConcurrency   最大并发数（必须 > 0）
      * @param callPolicy       调用策略（null 则默认 {@link CallerRunsPolicy}）
      */
-    public LimitedVirtualThreadExecutor(String threadNamePrefix, int maxConcurrency, CallPolicy callPolicy) {
+    public LimitedVirtualThreadExecutor(String threadNamePrefix, int maxConcurrency, RejectedPolicy callPolicy) {
         this(threadNamePrefix, maxConcurrency, 0, callPolicy);
     }
 
@@ -139,7 +139,7 @@ public class LimitedVirtualThreadExecutor {
      * @param queueCapacity    队列容量（> 0 启用队列模式；= 0 快速模式）
      * @param callPolicy       调用策略（null 则默认 {@link CallerRunsPolicy}）
      */
-    public LimitedVirtualThreadExecutor(String threadNamePrefix, int maxConcurrency, int queueCapacity, CallPolicy callPolicy) {
+    public LimitedVirtualThreadExecutor(String threadNamePrefix, int maxConcurrency, int queueCapacity, RejectedPolicy callPolicy) {
         if (threadNamePrefix == null || threadNamePrefix.isEmpty()) {
             threadNamePrefix = "LimitedVirtualThreadExecutor-";
         }
@@ -164,12 +164,12 @@ public class LimitedVirtualThreadExecutor {
      * 提交任务执行。
      * <p>
      * <b>队列模式</b>：先 {@code tryAcquire}，成功则起 worker 虚拟线程跑接力循环；
-     * Semaphore 满则 {@code offer} 到无锁队列；队列也满则走 {@link CallPolicy}。<br>
-     * <b>快速模式</b>：直接走 {@link CallPolicy}（Semaphore 满时由策略决定行为）。
+     * Semaphore 满则 {@code offer} 到无锁队列；队列也满则走 {@link RejectedPolicy}。<br>
+     * <b>快速模式</b>：直接走 {@link RejectedPolicy}（Semaphore 满时由策略决定行为）。
      * </p>
      *
      * @param task 待执行任务（不可为 null）
-     * @throws RejectedExecutionException 如果 CallPolicy 选择拒绝
+     * @throws RejectedExecutionException 如果 RejectedPolicy 选择拒绝
      * @throws IllegalStateException      执行器已关闭
      */
     public void submit(Runnable task) {
@@ -185,19 +185,19 @@ public class LimitedVirtualThreadExecutor {
                 // 补偿：应对"所有 worker 已退出"的竞态，确保有 worker 消费此任务
                 drainQueueIfPresent();
             } else {
-                // 队列也满 → 走 CallPolicy（与 JDK ThreadPoolExecutor 一致：pool+queue 满则走 RejectedExecutionHandler）
+                // 队列也满 → 走 RejectedPolicy（与 JDK ThreadPoolExecutor 一致：pool+queue 满则走 RejectedExecutionHandler）
                 try {
-                    callPolicy.execute(executor, semaphore, task);
+                    callPolicy.rejectedExecution(executor, semaphore, task);
                 } catch (RejectedExecutionException e) {
                     rejectedCount.incrementAndGet();
                     throw e;
                 }
             }
         } else {
-            // 快速模式：wrap + 委托 CallPolicy
+            // 快速模式：wrap + 委托 RejectedPolicy
             Runnable wrapped = wrap(task);
             try {
-                callPolicy.execute(executor, semaphore, wrapped);
+                callPolicy.rejectedExecution(executor, semaphore, wrapped);
             } catch (RejectedExecutionException e) {
                 rejectedCount.incrementAndGet();
                 throw e;
@@ -403,7 +403,7 @@ public class LimitedVirtualThreadExecutor {
     }
 
     /**
-     * 返回累计被拒绝的任务数（走 {@link CallPolicy} 拒绝的）。
+     * 返回累计被拒绝的任务数（走 {@link RejectedPolicy} 拒绝的）。
      *
      * @return 被拒绝的任务总数
      */
@@ -454,17 +454,17 @@ public class LimitedVirtualThreadExecutor {
      * <p>对齐 JDK {@code RejectedExecutionHandler} 的设计，由调用方选择拒绝/阻塞/调用者执行等行为。</p>
      */
     @FunctionalInterface
-    public interface CallPolicy {
+    public interface RejectedPolicy {
 
         /**
-         * 处理无法立即执行的任务。
+         * 处理无法立即执行的任务（并发与队列均满时回调，对齐 JDK {@code RejectedExecutionHandler.rejectedExecution}）。
          *
          * @param executor  虚拟线程执行器
          * @param semaphore 背压信号量
          * @param task      待执行的任务
          * @throws RejectedExecutionException 如果策略选择拒绝
          */
-        void execute(ExecutorService executor, Semaphore semaphore, Runnable task) throws RejectedExecutionException;
+        void rejectedExecution(ExecutorService executor, Semaphore semaphore, Runnable task) throws RejectedExecutionException;
     }
 
     /**
@@ -472,9 +472,9 @@ public class LimitedVirtualThreadExecutor {
      * <p>对齐 JDK {@code ThreadPoolExecutor} 的"不丢弃"语义，
      * 用阻塞代替丢弃——调用线程挂起直到有空位。适合入队线程可阻塞的场景（如 poll 线程）。</p>
      */
-    public static class BlockPolicy implements CallPolicy {
+    public static class BlockPolicy implements RejectedPolicy {
         @Override
-        public void execute(ExecutorService executor, Semaphore semaphore, Runnable task) {
+        public void rejectedExecution(ExecutorService executor, Semaphore semaphore, Runnable task) {
             try {
                 semaphore.acquire();
                 safeSubmit(task, semaphore, executor);
@@ -490,9 +490,9 @@ public class LimitedVirtualThreadExecutor {
      * <p>对齐 JDK {@code ThreadPoolExecutor.CallerRunsPolicy}。提供背压：
      * 调用线程被占用执行任务，自然减缓提交速率。</p>
      */
-    public static class CallerRunsPolicy implements CallPolicy {
+    public static class CallerRunsPolicy implements RejectedPolicy {
         @Override
-        public void execute(ExecutorService executor, Semaphore semaphore, Runnable task) {
+        public void rejectedExecution(ExecutorService executor, Semaphore semaphore, Runnable task) {
             if (!semaphore.tryAcquire()) {
                 task.run();
             } else {
@@ -505,9 +505,9 @@ public class LimitedVirtualThreadExecutor {
      * 策略：丢弃任务——静默不执行。
      * <p>对齐 JDK {@code ThreadPoolExecutor.DiscardPolicy}。</p>
      */
-    public static class DiscardPolicy implements CallPolicy {
+    public static class DiscardPolicy implements RejectedPolicy {
         @Override
-        public void execute(ExecutorService executor, Semaphore semaphore, Runnable task) {
+        public void rejectedExecution(ExecutorService executor, Semaphore semaphore, Runnable task) {
             if (semaphore.tryAcquire()) {
                 safeSubmit(task, semaphore, executor);
             }
@@ -520,9 +520,9 @@ public class LimitedVirtualThreadExecutor {
      * <p>对齐 JDK {@code ThreadPoolExecutor.AbortPolicy}（默认策略）。
      * 调用方需 catch 处理（如写回 zset 重试）。</p>
      */
-    public static class FailFastPolicy implements CallPolicy {
+    public static class FailFastPolicy implements RejectedPolicy {
         @Override
-        public void execute(ExecutorService executor, Semaphore semaphore, Runnable task) {
+        public void rejectedExecution(ExecutorService executor, Semaphore semaphore, Runnable task) {
             if (!semaphore.tryAcquire()) {
                 throw new RejectedExecutionException("Concurrency limit reached");
             }

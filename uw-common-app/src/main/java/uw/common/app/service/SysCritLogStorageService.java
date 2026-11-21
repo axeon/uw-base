@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import jakarta.annotation.PreDestroy;
 import uw.auth.service.log.AuthCriticalLogStorage;
 import uw.auth.service.vo.MscActionLog;
-import uw.common.app.conf.CommonAppProperties;
+import uw.common.app.conf.UwCommonAppProperties;
 import uw.common.app.entity.SysCritLog;
 import uw.dao.DaoFactory;
 
@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * 鉴权关键日志写数据库的服务。
  * <p>
- * Bean 由 {@link uw.common.app.conf.CommonAppAutoConfiguration} 统一注册（@Primary），
+ * Bean 由 {@link uw.common.app.conf.UwCommonAppAutoConfiguration} 统一注册（@Primary），
  * 此处不再标注 @Service，避免与 AutoConfig 重复注册同名 bean。
  */
 public class SysCritLogStorageService implements AuthCriticalLogStorage {
@@ -37,7 +37,7 @@ public class SysCritLogStorageService implements AuthCriticalLogStorage {
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
     /**
-     * 是否记录 CritLog（取自 {@link CommonAppProperties#isEnableCritLog()}）。
+     * 是否记录 CritLog（取自 {@link UwCommonAppProperties#isEnableCritLog()}）。
      */
     private final boolean enableCritLog;
 
@@ -46,7 +46,7 @@ public class SysCritLogStorageService implements AuthCriticalLogStorage {
      *
      * @param uwAppBaseProperties 通用应用配置
      */
-    public SysCritLogStorageService(CommonAppProperties uwAppBaseProperties) {
+    public SysCritLogStorageService(UwCommonAppProperties uwAppBaseProperties) {
         enableCritLog = uwAppBaseProperties.isEnableCritLog();
     }
 

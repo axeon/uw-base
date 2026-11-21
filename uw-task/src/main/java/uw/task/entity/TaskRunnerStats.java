@@ -2,12 +2,13 @@ package uw.task.entity;
 
 
 import java.io.Serializable;
+import uw.task.util.TaskStatsService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 队列任务执行统计聚合。
  *
- * <p>按 taskId 在 {@link uw.task.util.TaskStatsService} 中聚合单次或多次队列任务执行的计数与耗时，
+ * <p>按 taskId 在 {@link TaskStatsService} 中聚合单次或多次队列任务执行的计数与耗时，
  * 周期性随主机状态报告上报至 task-center 后清空，并附带上报瞬间的队列长度与消费者数。
  * 所有计数/耗时字段为 {@link AtomicInteger}，支持多消费者线程并发累加。</p>
  */

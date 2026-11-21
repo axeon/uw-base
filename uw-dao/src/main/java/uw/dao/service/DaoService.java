@@ -4,8 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.dao.DaoFactory;
 import uw.dao.TransactionException;
-import uw.dao.conf.DaoConfig;
-import uw.dao.conf.DaoConfigManager;
+import uw.dao.conf.UwDaoProperties;
+import uw.dao.util.DaoPropertiesManager;
 import uw.dao.vo.SqlExecuteStats;
 
 import java.util.ArrayList;
@@ -90,10 +90,10 @@ public class DaoService {
     public static void start() {
         if (isStarted.compareAndSet(false, true)) {
             //获取配置。
-            DaoConfig config = DaoConfigManager.getConfig();
+            UwDaoProperties config = DaoPropertiesManager.getProperties();
             enableSqlStats = config.getSqlStats().isEnable();
             enableTableShard = config.getTableShard().size() > 0;
-            sqlCostMin = DaoConfigManager.getConfig().getSqlStats().getSqlCostMin();
+            sqlCostMin = DaoPropertiesManager.getProperties().getSqlStats().getSqlCostMin();
             //检测是否需要启动后台服务。
             if (enableSqlStats || enableTableShard) {
                 executorService = Executors.newScheduledThreadPool(1, new ThreadFactory() {

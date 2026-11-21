@@ -6,7 +6,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import uw.auth.client.vo.TokenResponse;
-import uw.auth.service.conf.AuthServiceProperties;
+import uw.auth.service.conf.UwAuthServiceProperties;
 import uw.auth.service.rpc.AuthServiceRpc;
 import uw.auth.service.token.AuthTokenData;
 import uw.auth.service.vo.MscUserGroupVo;
@@ -25,10 +25,10 @@ import java.util.List;
  */
 public class AuthServiceRpcImpl implements AuthServiceRpc {
 
-    private final AuthServiceProperties authServiceProperties;
+    private final UwAuthServiceProperties authServiceProperties;
     private final RestClient authRestClient;
 
-    public AuthServiceRpcImpl(final AuthServiceProperties authServiceProperties, final RestClient authRestClient) {
+    public AuthServiceRpcImpl(final UwAuthServiceProperties authServiceProperties, final RestClient authRestClient) {
         this.authServiceProperties = authServiceProperties;
         this.authRestClient = authRestClient;
     }

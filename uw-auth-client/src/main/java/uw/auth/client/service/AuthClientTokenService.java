@@ -8,7 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
-import uw.auth.client.conf.AuthClientProperties;
+import uw.auth.client.conf.UwAuthClientProperties;
 import uw.auth.client.constant.LoginType;
 import uw.auth.client.vo.LoginRequest;
 import uw.auth.client.vo.TokenResponse;
@@ -32,7 +32,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *   <li>字段均使用{@code volatile}修饰，保证写锁释放后读锁线程立即可见</li>
  * </ul>
  *
- * @see AuthClientProperties
+ * @see UwAuthClientProperties
  */
 public class AuthClientTokenService {
 
@@ -51,7 +51,7 @@ public class AuthClientTokenService {
     /**
      * 认证客户端配置，包含认证中心地址、登录凭证等信息。
      */
-    private final AuthClientProperties authClientProperties;
+    private final UwAuthClientProperties authClientProperties;
 
     /**
      * 用于调用认证中心登录/刷新接口的HTTP客户端。
@@ -99,7 +99,7 @@ public class AuthClientTokenService {
      * @param authClientProperties 认证客户端配置
      * @param restClient           用于调用认证中心的RestClient
      */
-    public AuthClientTokenService(AuthClientProperties authClientProperties, RestClient restClient) {
+    public AuthClientTokenService(UwAuthClientProperties authClientProperties, RestClient restClient) {
         this.authClientProperties = authClientProperties;
         this.restClient = restClient;
     }

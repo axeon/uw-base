@@ -1,2 +1,2 @@
 org.springframework.boot.EnvironmentPostProcessor=\
-uw.auth.client.conf.AuthClientExcludeAutoConfigProcessor
+uw.auth.client.conf.UwAuthClientExcludeAutoConfigProcessor

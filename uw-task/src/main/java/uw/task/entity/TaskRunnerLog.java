@@ -1,5 +1,6 @@
 package uw.task.entity;
 
+import java.io.Serializable;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +20,7 @@ import java.util.Date;
  * @author axeon
  */
 @JsonIgnoreProperties({"taskData"})
-public class TaskRunnerLog extends LogBaseVo implements java.io.Serializable {
+public class TaskRunnerLog extends LogBaseVo implements Serializable {
 
     /**
      * 日志器。

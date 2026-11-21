@@ -9,7 +9,7 @@ import uw.common.data.PageRowSet;
 import uw.common.dto.PageQueryParam;
 import uw.common.dto.QueryParam;
 import uw.dao.*;
-import uw.dao.conf.DaoConfigManager;
+import uw.dao.util.DaoPropertiesManager;
 import uw.dao.service.DaoService;
 import uw.dao.util.EntityMetaUtils;
 import uw.dao.util.QueryParamUtils;
@@ -421,7 +421,7 @@ public class DaoFactoryImpl extends DaoFactory {
             tableName = emi.getTableName();
         }
         if (StringUtils.isBlank(connName)) {
-            connName = DaoConfigManager.getRouteMapping(tableName, "write");
+            connName = DaoPropertiesManager.getRouteMapping(tableName, "write");
         }
         StringBuilder sb = new StringBuilder(128 + queryParamResult.getSql().length());
         DataUpdateInfo dataUpdateInfo = entity.GET_UPDATED_INFO();
@@ -547,7 +547,7 @@ public class DaoFactoryImpl extends DaoFactory {
             tableName = emi.getTableName();
         }
         if (StringUtils.isBlank(connName)) {
-            connName = DaoConfigManager.getRouteMapping(tableName, "write");
+            connName = DaoPropertiesManager.getRouteMapping(tableName, "write");
         }
         String sb = "delete from " + tableName + queryParamResult.getSql();
         return SQLCommandImpl.executeSQL(this, connName, sb, queryParamResult.getParamList());

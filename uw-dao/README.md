@@ -86,7 +86,7 @@
                         │
               ConnectionManager (HikariCP)
                         │
-              DaoConfigManager (路由表/分表配置)
+              DaoPropertiesManager (路由表/分表配置)
 
 后台服务 (DaoService, 单守护线程)
   ├── TableShardingTask    -- 每 3600s 预建分片表
@@ -913,7 +913,7 @@ for (String table : allTables) {
 ```
 
 > **设计建议**：业务侧的清理任务在运行时应先判断该表是否配置了分表
-> （`DaoConfigManager.getTableShardingConfig(tableName) != null`），未分表走基表高效批量删除，
+> （`DaoPropertiesManager.getTableShardingConfig(tableName) != null`），未分表走基表高效批量删除，
 > 已分表则遍历分表。避免写成只认基表的死代码——一旦后续运维启用分表，清理任务会静默失效。
 
 ---

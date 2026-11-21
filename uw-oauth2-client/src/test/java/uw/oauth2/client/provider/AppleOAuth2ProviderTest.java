@@ -2,7 +2,7 @@ package uw.oauth2.client.provider;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import uw.oauth2.client.conf.OAuth2ClientProperties;
+import uw.oauth2.client.conf.UwOAuth2ClientProperties;
 
 import java.util.Date;
 
@@ -11,12 +11,12 @@ import java.util.Date;
  */
 class AppleOAuth2ProviderTest {
 
-    private static OAuth2ClientProperties.ProviderConfig config;
+    private static UwOAuth2ClientProperties.ProviderConfig config;
     private static AppleOAuth2Provider provider;
 
     static {
         // 初始化配置
-        config = new OAuth2ClientProperties.ProviderConfig();
+        config = new UwOAuth2ClientProperties.ProviderConfig();
         config.setClientId("");
         config.setClientSecret(null);
         config.setAuthUri("https://appleid.apple.com/auth/authorize");

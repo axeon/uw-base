@@ -1,11 +1,12 @@
 package uw.task.constant;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import uw.task.TaskData;
 
 /**
  * 任务重试类型。
  *
- * <p>对应 {@link uw.task.TaskData#getRetryType()}，决定任务失败后是否由框架自动重试：
+ * <p>对应 {@link TaskData#getRetryType()}，决定任务失败后是否由框架自动重试：
  * <ul>
  *   <li>{@link #AUTO}：自动重试（默认），失败后按 retryTimes 配置由框架自动重新派发；</li>
  *   <li>{@link #MANUAL}：仅人工重试，框架不做自动重试。</li>

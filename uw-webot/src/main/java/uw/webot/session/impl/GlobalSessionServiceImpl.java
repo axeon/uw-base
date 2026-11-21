@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.kv.FusionCache;
 import uw.webot.WebotSession;
-import uw.webot.conf.WebotProperties;
+import uw.webot.conf.UwWebotProperties;
 import uw.webot.session.SessionService;
 
 import java.time.Duration;
@@ -22,7 +22,7 @@ public class GlobalSessionServiceImpl implements SessionService {
 
     private static final String CACHE_NAME = "uw-webot-session";
 
-    public GlobalSessionServiceImpl(WebotProperties.SessionProperties sessionProperties) {
+    public GlobalSessionServiceImpl(UwWebotProperties.SessionProperties sessionProperties) {
         FusionCache.config(FusionCache.Config.builder(CACHE_NAME).localCacheMaxNum(1000).globalCache(sessionProperties.isDistributed()).build());
         log.info("GlobalSessionServiceImpl initialized with cacheName: {}", CACHE_NAME);
     }

@@ -4,7 +4,7 @@ uw-task 是一个分布式任务框架，基于 Spring Boot + RabbitMQ + Redis�
 
 1. 基于 Spring Boot 实现，依赖 RabbitMQ（任务派发）与 Redis（全局限速 / Leader 选举 / 发号）。
 2. 完全分布式，支持混合云，可指定主机或指定集群（runTarget）运行。
-3. 支持定时任务（cron 表达式），支持服务端动态配置，支持全局单例（Leader）运行。
+3. 支持定时任务（TaskCroner，cron 表达式），支持服务端动态配置，支持全局单例（Leader）运行。
 4. 支持队列任务，多维流量控制、错误重试、服务端动态配置。
 5. 支持 RPC 风格调用（同步/异步），支持错误重试与服务端动态配置。
 6. 支持按失败率、等待超时、运行超时、队列堆积等多规则报警。
@@ -54,6 +54,8 @@ TaskRunner 是**单例**（Spring Bean），类的属性被多线程共享。`co
 | `runTaskLocal` | 仅本地 | **是** | 有 | **抛异常** | 强制本机执行，不允许远程 |
 | `runTaskAsync` | AUTO 自动选 | 否（Future） | 有（get 时） | 回退远程 RPC | 异步拿结果，注意线程池 |
 | `runQueue` | 本地优先，否则入队 | 否 | 无 | 入队 | 高频短任务优化，省 MQ |
+
+> **延时任务**（`taskDelay > 0`）：上述 5 个方法**完全等同**——统一走自动路由（quorum+1.0/4.4→MQ 原生延迟，否则→Redis zset 搬运），同步语义（runTask 等）对延时任务不成立，投递后立即返回。
 
 **快速选型决策树**：
 
@@ -150,11 +152,14 @@ TaskRunner 是**单例**（Spring Bean），类的属性被多线程共享。`co
 
 设 `retryTimes = N` 时，**总计执行 N+1 次**（1 次初始 + N 次重试）。重试延时按执行轮次线性递增。LOCAL/RPC 模式在本地重跑，GLOBAL 模式重新入队。
 
-#### 14. uw-task 的延时队列如何使用？
+#### 14. uw-task 的延时任务如何使用？（5.2.0 全自动化）
 
-将 `TaskRunnerConfig` 的 `delayType` 设为 `1`（`TYPE_DELAY_ON`）开启。发送带 `taskDelay` 的任务时，框架会投递到 TTL 队列，到期后经死信转发到业务队列。
+无需任何配置：`TaskData.taskDelay > 0` 即延时任务（`sendToQueue/runQueue/runTask` 三入口等同）。载体自动路由——
 
-注意：基于死信队列实现，存在**长延时任务阻塞短延时任务**的问题。不推荐大范围使用——小负载可轮询数据库，大负载可用 `uw-cache: GlobalSortedSet`。
+- **quorum 队列 + 1.0 + RabbitMQ 4.4+**：MQ 消息级原生延迟（`x-opt-delivery-time`），到期自动可见即执行，精度 ~0.5s、无队头阻塞、任意时长可用；
+- **其余（classic 队列 / 091 / 低版本 broker）**：Redis zset 搬运（Leader 单例 mover，到期自动转投目标队列）。
+
+观测：`taskFactory.getDelayBacklogSize(queueName)` / `getDelayBacklogTotal()` 查询 zset 侧积压。
 
 #### 15. 多实例任务如何配置？
 
@@ -165,4 +170,4 @@ TaskRunner 是**单例**（Spring Bean），类的属性被多线程共享。`co
 
 #### 16. 全局单例定时任务（SINGLETON）如何保证唯一执行？
 
-`TaskCronerConfig.RUN_TYPE_SINGLETON` 的任务通过 Redis Leader 锁选举唯一 Leader 主机执行，其余主机跳过。Leader 任期 90 秒、续期 60 秒，掉线后最长 90 秒由其他主机接管。Redis 短暂抖动期间原 Leader 按本地快照继续执行（接受极小概率双跑），**关键业务需配合幂等**。
+`TaskCronerConfig.RUN_TYPE_SINGLETON` 的任务通过 Redis Leader 锁选举（uw-task 私有 `TaskLeaderElector`，key=uw-task-leader:）唯一 Leader 主机执行，其余主机跳过；延时搬运 mover 同样仅 Leader 实例运行。Leader 任期 90 秒、续期 60 秒，掉线后最长 90 秒由其他主机接管。Redis 短暂抖动期间原 Leader 按本地快照继续执行（接受极小概率双跑），**关键业务需配合幂等**。

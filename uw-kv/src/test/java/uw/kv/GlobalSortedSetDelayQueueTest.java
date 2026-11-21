@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.io.Serializable;
@@ -34,6 +35,7 @@ class GlobalSortedSetDelayQueueTest {
      */
     @SpringBootConfiguration
     @EnableAutoConfiguration
+    @Import(uw.kv.conf.KvTestTemplateConfig.class)
     static class TestApp {
     }
 

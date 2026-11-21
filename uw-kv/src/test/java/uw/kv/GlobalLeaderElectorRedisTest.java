@@ -4,6 +4,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,6 +41,7 @@ class GlobalLeaderElectorRedisTest {
     private static final String LOCK_B = "test-leader:" + System.currentTimeMillis() + ":b";
 
     @Autowired
+    @Qualifier("kvRedisConnectionFactory")
     private RedisConnectionFactory kvRedisConnectionFactory;
 
     private StringRedisTemplate stringRedisTemplate;

@@ -7,8 +7,9 @@ import uw.task.TaskFactory;
 import uw.task.conf.TaskMetaInfoManager;
 import uw.task.exception.TaskRuntimeException;
 
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Semaphore;
+import uw.common.util.LimitedVirtualThreadExecutor;
 
 /**
  * 为了优化执行一些队列任务，使它支持本地线程化运行，以提高效率。
@@ -73,19 +74,21 @@ public class TaskRunnerLocalExecutor implements Runnable {
     }
 
     /**
-     * 当本地队列线程池满时，拒绝策略：将任务直接转发到 MQ 队列，由远端消费者兜底处理。
+     * 本地队列执行器（VT+并发上限+有界缓冲）满载时的溢出策略：将任务直接转发到 MQ 队列，由远端消费者兜底处理。
+     * <p>队列模式（queueCapacity&gt;0）下 RejectedPolicy 收到的是原始 Runnable，instanceof 判定可靠。</p>
      */
-    public static class SendToQueuePolicy implements RejectedExecutionHandler {
+    public static class SendToQueuePolicy implements LimitedVirtualThreadExecutor.RejectedPolicy {
 
         /**
-         * 线程池拒绝任务时回调：若是本地队列任务则转投 MQ。
+         * 并发与缓冲均满时回调：若是本地队列任务则转投 MQ（不抛异常、不阻塞提交线程）。
          *
-         * @param r        被拒绝的任务
-         * @param executor 拒绝该任务的线程池
+         * @param executor  虚拟线程执行器（未使用）
+         * @param semaphore 背压信号量（未使用）
+         * @param task      被溢出的任务
          */
         @Override
-        public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-            if (r instanceof TaskRunnerLocalExecutor e) {
+        public void rejectedExecution(ExecutorService executor, Semaphore semaphore, Runnable task) {
+            if (task instanceof TaskRunnerLocalExecutor e) {
                 e.sendToQueue();
             }
         }

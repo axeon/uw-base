@@ -21,7 +21,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.util.StringUtils;
 
 import static com.alibaba.nacos.api.PropertyKeyConst.ACCESS_KEY;
-import static com.alibaba.nacos.api.PropertyKeyConst.CLUSTER_NAME;
 import static com.alibaba.nacos.api.PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT;
 import static com.alibaba.nacos.api.PropertyKeyConst.CONFIG_RETRY_TIME;
 import static com.alibaba.nacos.api.PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG;
@@ -458,7 +457,7 @@ public class NacosConfigProperties {
 		properties.put(NAMESPACE, this.resolveNamespace());
 		properties.put(ACCESS_KEY, Objects.toString(this.accessKey, ""));
 		properties.put(SECRET_KEY, Objects.toString(this.secretKey, ""));
-		properties.put(CLUSTER_NAME, Objects.toString(this.clusterName, ""));
+		properties.put("clusterName", Objects.toString(this.clusterName, ""));
 		properties.put(MAX_RETRY, Objects.toString(this.maxRetry, ""));
 		properties.put(CONFIG_LONG_POLL_TIMEOUT,
 				Objects.toString(this.configLongPollTimeout, ""));

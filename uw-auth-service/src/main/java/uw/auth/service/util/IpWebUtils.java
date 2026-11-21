@@ -28,7 +28,7 @@ public class IpWebUtils {
     private static volatile List<IpMatchUtils.IpRange> trustedProxyRanges;
 
     /**
-     * 初始化可信代理列表。由 AuthServiceAutoConfiguration 在启动时调用。
+     * 初始化可信代理列表。由 UwAuthServiceAutoConfiguration 在启动时调用。
      *
      * @param trustedProxies 逗号分隔的可信代理IP/CIDR列表
      */

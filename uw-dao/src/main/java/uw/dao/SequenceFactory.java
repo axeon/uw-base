@@ -1,6 +1,6 @@
 package uw.dao;
 
-import uw.dao.conf.DaoConfigManager;
+import uw.dao.util.DaoPropertiesManager;
 import uw.dao.sequence.DaoSequenceFactory;
 import uw.dao.sequence.FusionSequenceFactory;
 
@@ -106,8 +106,8 @@ public class SequenceFactory {
      * @return true 表示使用 FusionSequenceFactory
      */
     private static boolean useFusion() {
-        return DaoConfigManager.getConfig() != null
-                && DaoConfigManager.getConfig().getRedis() != null
+        return DaoPropertiesManager.getProperties() != null
+                && DaoPropertiesManager.getProperties().getRedis() != null
                 && FusionSequenceFactory.isAvailable();
     }
 

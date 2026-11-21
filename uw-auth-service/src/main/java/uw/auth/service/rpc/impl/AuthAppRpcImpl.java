@@ -1,7 +1,7 @@
 package uw.auth.service.rpc.impl;
 
 import org.springframework.web.client.RestClient;
-import uw.auth.service.conf.AuthServiceProperties;
+import uw.auth.service.conf.UwAuthServiceProperties;
 import uw.auth.service.rpc.AuthAppRpc;
 import uw.auth.service.vo.*;
 import uw.common.response.ResponseData;
@@ -16,10 +16,10 @@ import uw.common.response.ResponseData;
  */
 public class AuthAppRpcImpl implements AuthAppRpc {
 
-    private final AuthServiceProperties authServiceProperties;
+    private final UwAuthServiceProperties authServiceProperties;
     private final RestClient authRestClient;
 
-    public AuthAppRpcImpl(final AuthServiceProperties authServiceProperties, final RestClient authRestClient) {
+    public AuthAppRpcImpl(final UwAuthServiceProperties authServiceProperties, final RestClient authRestClient) {
         this.authServiceProperties = authServiceProperties;
         this.authRestClient = authRestClient;
     }

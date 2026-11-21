@@ -15,7 +15,7 @@ import uw.httpclient.http.HttpData;
 import uw.httpclient.http.HttpInterface;
 import uw.httpclient.json.JsonInterfaceHelper;
 import uw.httpclient.util.SSLContextUtils;
-import uw.oauth2.client.conf.OAuth2ClientProperties;
+import uw.oauth2.client.conf.UwOAuth2ClientProperties;
 import uw.oauth2.client.constant.OAuth2ClientAuthStatus;
 import uw.oauth2.client.constant.OAuth2ClientAuthType;
 import uw.oauth2.client.constant.OAuth2ClientResponseCode;
@@ -69,7 +69,7 @@ public abstract class AbstractOAuth2Provider implements OAuth2Provider {
     /**
      * Provider配置（clientId/secret及各平台URL）。
      */
-    protected final OAuth2ClientProperties.ProviderConfig providerConfig;
+    protected final UwOAuth2ClientProperties.ProviderConfig providerConfig;
 
     /**
      * 重定向URI，接收第三方授权回调。
@@ -89,7 +89,7 @@ public abstract class AbstractOAuth2Provider implements OAuth2Provider {
      * @param redirectUri    重定向URI
      * @param qrcodeUri      二维码URI
      */
-    protected AbstractOAuth2Provider(String providerCode, OAuth2ClientProperties.ProviderConfig providerConfig, String redirectUri, String qrcodeUri) {
+    protected AbstractOAuth2Provider(String providerCode, UwOAuth2ClientProperties.ProviderConfig providerConfig, String redirectUri, String qrcodeUri) {
         this.providerCode = providerCode;
         this.providerConfig = providerConfig;
         this.redirectUri = redirectUri;
@@ -222,7 +222,7 @@ public abstract class AbstractOAuth2Provider implements OAuth2Provider {
      * @return 配置信息
      */
     @Override
-    public OAuth2ClientProperties.ProviderConfig getProviderConfig() {
+    public UwOAuth2ClientProperties.ProviderConfig getProviderConfig() {
         return providerConfig;
     }
 

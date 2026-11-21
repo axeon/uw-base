@@ -19,7 +19,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import org.springframework.web.util.pattern.PathPattern;
 import uw.auth.service.AuthServiceHelper;
 import uw.auth.service.annotation.MscPermDeclare;
-import uw.auth.service.conf.AuthServiceProperties;
+import uw.auth.service.conf.UwAuthServiceProperties;
 import uw.auth.service.constant.AuthType;
 import uw.auth.service.constant.UserType;
 import uw.auth.service.filter.AuthServiceFilter;
@@ -57,7 +57,7 @@ public class MscAppUpdateService {
     /**
      * 相关配置
      */
-    private final AuthServiceProperties authServiceProperties;
+    private final UwAuthServiceProperties authServiceProperties;
 
     /**
      * 注册Rpc 接口
@@ -117,7 +117,7 @@ public class MscAppUpdateService {
      * @param authAppRpc
      * @param authPermService
      */
-    public MscAppUpdateService(final ApplicationContext applicationContext, final RequestMappingHandlerMapping requestMappingHandlerMapping, final AuthServiceProperties authServiceProperties, final AuthAppRpc authAppRpc, final MscAuthPermService authPermService) {
+    public MscAppUpdateService(final ApplicationContext applicationContext, final RequestMappingHandlerMapping requestMappingHandlerMapping, final UwAuthServiceProperties authServiceProperties, final AuthAppRpc authAppRpc, final MscAuthPermService authPermService) {
         this.authServiceProperties = authServiceProperties;
         this.authAppRpc = authAppRpc;
         this.authPermService = authPermService;

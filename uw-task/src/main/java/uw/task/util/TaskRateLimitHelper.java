@@ -1,7 +1,7 @@
 package uw.task.util;
 
 
-import uw.kv.GlobalFixedWindowRateLimiter;
+import uw.task.util.TaskGlobalRateLimiter;
 import uw.common.util.SystemClock;
 import uw.task.entity.TaskRunnerConfig;
 
@@ -11,7 +11,7 @@ import uw.task.entity.TaskRunnerConfig;
 public class TaskRateLimitHelper {
 
     /**
-     * 构建 GLOBAL 限速的 locker（name，交由 {@link GlobalFixedWindowRateLimiter} 统一加 uw-rate: key 前缀）。
+     * 构建 GLOBAL 限速的 locker（name，交由 {@link TaskGlobalRateLimiter} 统一加 uw-rate: key 前缀）。
      * <p>name 拼接规则（统一以 "uw-task-" 域前缀开头，与其他应用域的配额池隔离）：
      * <ul>
      *   <li>GLOBAL_TASK* 系列（TASK/TASK_TAG/TASK_HOST/TASK_TAG_HOST）：name 含 taskClass 前缀，
@@ -98,7 +98,7 @@ public class TaskRateLimitHelper {
 
     /**
      * GLOBAL 限速等待：在 waitSec 内循环 tryAcquire，命中(返回 0)即返回 true，否则 sleep 到下个窗口后重试，
-     * 超时返回 false。统一 TaskRunner / TaskDelayer 的 GLOBAL 限速等待循环。
+     * 超时返回 false。TaskRunner 的 GLOBAL 限速等待循环。
      * <p>rateLimitWait 为 int（秒），乘 1000L 转毫秒用 long 字面量避免 int 溢出。</p>
      *
      * @param locker  限流 key（由 {@link #buildGlobalLocker} 构造，已含 uw-task- 域前缀）
@@ -111,7 +111,7 @@ public class TaskRateLimitHelper {
         long end = SystemClock.now() + waitSec * 1000L;
         long windowMillis = time * 1000L;
         while (SystemClock.now() <= end) {
-            long waitMillis = GlobalFixedWindowRateLimiter.tryAcquire(locker, value, windowMillis, 1);
+            long waitMillis = TaskGlobalRateLimiter.tryAcquire(locker, value, windowMillis, 1);
             if (waitMillis == 0) {
                 return true;
             }

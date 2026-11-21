@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.dao.DaoFactory;
 import uw.common.data.PageRowSet;
-import uw.dao.conf.DaoConfigManager;
+import uw.dao.util.DaoPropertiesManager;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -261,7 +261,7 @@ public class DaoSequenceFactory {
      * @return {@code [old, newId]}；重试耗尽返回 null
      */
     private long[] reserveBlockImpl(long step) {
-        String connName = DaoConfigManager.getRouteMapping("sys_seq", "write");
+        String connName = DaoPropertiesManager.getRouteMapping("sys_seq", "write");
         for (int i = 0; i < MAX_RETRY_TIMES; i++) {
             try {
                 PageRowSet ds = dao.queryForRowSet(connName, LOAD_SEQ, new Object[]{seqName});
@@ -309,7 +309,7 @@ public class DaoSequenceFactory {
     private boolean resetSequenceId(long initSeq, int incrementNum) {
         boolean success = false;
         try {
-            String connName = DaoConfigManager.getRouteMapping("sys_seq", "write");
+            String connName = DaoPropertiesManager.getRouteMapping("sys_seq", "write");
             int effectedNum = dao.execute(connName, RESET_SEQ, new Object[]{initSeq, incrementNum, seqName});
             if (effectedNum == 0) {
                 // 行不存在（该 seq 从未发过号），直接 INSERT 建行为目标值（upsert 语义）

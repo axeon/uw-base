@@ -1,11 +1,12 @@
 package uw.task.listener;
 
 import uw.task.entity.TaskCronerLog;
+import uw.task.TaskListenerManager;
 
 /**
  * 定时任务（TaskCroner）的监听器。
  *
- * <p>实现此接口并通过 {@link uw.task.TaskListenerManager#addCronerListener(TaskCronerListener)} 注册后，
+ * <p>实现此接口并通过 {@link TaskListenerManager#addCronerListener(TaskCronerListener)} 注册后，
  * 框架在每次定时任务执行的前后会回调对应方法，可用于埋点、链路追踪、自定义指标采集等。
  * 监听器内抛出的异常会被框架吞掉（仅记录日志），不会影响任务执行流程。</p>
  *

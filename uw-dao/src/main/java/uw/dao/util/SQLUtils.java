@@ -1,11 +1,11 @@
 package uw.dao.util;
 
-import uw.dao.conf.DaoConfigManager;
+import uw.dao.util.DaoPropertiesManager;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static uw.dao.conf.DaoConfigManager.ROOT_CONN_NAME;
+import static uw.dao.util.DaoPropertiesManager.ROOT_CONN_NAME;
 
 /**
  * SQL工具类，根据SQL语句提取目标表名并路由到对应的数据库连接。
@@ -43,7 +43,7 @@ public class SQLUtils {
      * @return 路由后的数据库连接名称
      */
     public static String getConnNameFromSQL(String sql) {
-        if (DaoConfigManager.checkOnlyRootPool()) {
+        if (DaoPropertiesManager.checkOnlyRootPool()) {
             return ROOT_CONN_NAME;
         }
         sql = sql.trim();
@@ -62,7 +62,7 @@ public class SQLUtils {
         } else if (lower.startsWith("create")) {
             table = extractTableName(sql, CREATE_TABLE_PATTERN);
         }
-        return DaoConfigManager.getRouteMapping(table, access);
+        return DaoPropertiesManager.getRouteMapping(table, access);
     }
 
 }

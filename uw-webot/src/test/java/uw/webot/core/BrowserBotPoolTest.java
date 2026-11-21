@@ -5,7 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import uw.webot.WebotSession;
-import uw.webot.conf.WebotProperties;
+import uw.webot.conf.UwWebotProperties;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -20,12 +20,12 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class BrowserBotPoolTest {
 
-    private WebotProperties properties;
+    private UwWebotProperties properties;
     private BrowserBotPool instancePool;
 
     @BeforeEach
     void setUp() throws Exception {
-        properties = new WebotProperties();
+        properties = new UwWebotProperties();
         properties.getBotPool().setMaxBrowsersPerGroup(2);
         properties.getBotPool().setMaxTabsPerBrowser(5);
 

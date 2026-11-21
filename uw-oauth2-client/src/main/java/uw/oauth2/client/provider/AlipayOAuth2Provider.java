@@ -3,7 +3,7 @@ package uw.oauth2.client.provider;
 import uw.common.response.ResponseData;
 import uw.common.util.JsonUtils;
 import uw.httpclient.http.HttpData;
-import uw.oauth2.client.conf.OAuth2ClientProperties;
+import uw.oauth2.client.conf.UwOAuth2ClientProperties;
 import uw.oauth2.client.constant.OAuth2ClientAuthStatus;
 import uw.oauth2.client.constant.OAuth2ClientResponseCode;
 import uw.oauth2.client.vo.OAuth2Token;
@@ -35,7 +35,7 @@ public class AlipayOAuth2Provider extends AbstractOAuth2Provider {
      * @param redirectUri    重定向URI
      * @param qrcodeUri      二维码URI
      */
-    public AlipayOAuth2Provider(String providerCode, OAuth2ClientProperties.ProviderConfig providerConfig, String redirectUri, String qrcodeUri) {
+    public AlipayOAuth2Provider(String providerCode, UwOAuth2ClientProperties.ProviderConfig providerConfig, String redirectUri, String qrcodeUri) {
         super(providerCode, providerConfig, redirectUri, qrcodeUri);
     }
 

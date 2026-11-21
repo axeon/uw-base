@@ -16,6 +16,18 @@
     </parent>
 
     <dependencies>
+        <!-- nacos 热更新支持（EnvironmentChangeEvent，optional：无 spring-cloud 环境不装配监听） -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-context</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <!-- IDE 配置补全/校验元数据（仅编译期注解处理器，不入运行时依赖） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
         <!-- ============ Spring 生态 ============ -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

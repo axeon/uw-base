@@ -20,6 +20,11 @@ import org.springframework.util.StringUtils;
  * {@link NacosRegistration} 注册到 Nacos（通过 {@link NacosServiceRegistry}），在关闭时自动摘除。
  * 监听 {@link NacosDiscoveryInfoChangedEvent}，发现信息变更时先 {@code stop()} 再 {@code start()}
  * 重新完成注册。{@code start()}/{@code stop()} 行为由父类提供。
+ * </p>
+ *
+ * <p><b>上游弃用说明</b>：父类 {@code AbstractAutoServiceRegistration}（spring-cloud-commons 5.x）整体标记
+ * forRemoval，{@code getPort()}/{@code getConfiguration()} 等成员均已弃用且无替代 API——涉及方法局部
+ * {@code @SuppressWarnings("deprecation")} 压制并留此说明，待官方给出正式替代后整体迁移。</p>
  */
 public class NacosAutoServiceRegistration
 		extends AbstractAutoServiceRegistration<Registration> {
@@ -99,6 +104,7 @@ public class NacosAutoServiceRegistration
 	/**
 	 * @return 配置对象（即 Nacos 服务发现配置属性），供父类诊断/展示使用
 	 */
+	@SuppressWarnings("deprecation")
 	@Override
 	protected Object getConfiguration() {
 		return this.registration.getNacosDiscoveryProperties();

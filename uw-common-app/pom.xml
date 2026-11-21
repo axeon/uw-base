@@ -14,6 +14,12 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <dependencies>
+        <!-- IDE 配置补全/校验元数据（仅编译期注解处理器，不入运行时依赖） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
         <!-- ============ Spring 生态 ============ -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

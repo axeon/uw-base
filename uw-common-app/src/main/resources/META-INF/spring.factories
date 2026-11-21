@@ -3,4 +3,4 @@
 # Spring Boot 4.0 起 EnvironmentPostProcessor 包路径从 org.springframework.boot.env 迁到
 # org.springframework.boot（旧路径已 @Deprecated(since=4.0,forRemoval=true)，4.2 移除）。
 org.springframework.boot.EnvironmentPostProcessor=\
-uw.common.app.conf.CommonAppEnvPostProcessor
+uw.common.app.conf.UwCommonAppEnvPostProcessor

@@ -50,10 +50,10 @@ public class EchoRunner extends TaskRunner<String, String> {
         TaskRunnerConfig config = new TaskRunnerConfig();
         config.setTaskClass(getClass().getName());
         // 任务级队列：每个 EchoRunner 一个独立队列
-        config.setQueueType(TaskRunnerConfig.TYPE_QUEUE_TASK);
+        config.setQueueType(TaskRunnerConfig.QUEUE_TYPE_CLASSIC);
         config.setConsumerNum(2);
         config.setPrefetchNum(1);
-        // delayType / rateLimitType 用默认（OFF / NONE）
+        // rateLimitType 用默认（NONE）
         return config;
     }
 

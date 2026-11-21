@@ -10,6 +10,7 @@ import uw.common.util.KryoUtils;
 import uw.task.TaskData;
 
 import java.nio.charset.StandardCharsets;
+import com.esotericsoftware.kryo.KryoSerializable;
 
 /**
  * 用于spring-amqp的消息转换器。
@@ -17,7 +18,7 @@ import java.nio.charset.StandardCharsets;
  * 序列化/反序列化委托给 {@link KryoUtils}。当前场景下消息体固定为 {@link TaskData}，
  * 故两端类型已知，用 {@link KryoUtils#serialize(Object)} / {@link KryoUtils#deserialize(byte[], Class)}
  * （不带外层类信息），比 writeClassAndObject 更省体积。
- * TaskData 实现 {@link com.esotericsoftware.kryo.KryoSerializable} 自写原语字段，
+ * TaskData 实现 {@link KryoSerializable} 自写原语字段，
  * refObject 不参与序列化（内存态字段），taskParam/resultData 用 writeClassAndObject 携带类型。
  *
  * @author axeon

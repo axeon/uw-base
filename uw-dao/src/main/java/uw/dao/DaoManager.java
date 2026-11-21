@@ -7,7 +7,7 @@ import uw.common.data.PageRowSet;
 import uw.common.dto.PageQueryParam;
 import uw.common.dto.QueryParam;
 import uw.common.response.ResponseData;
-import uw.dao.conf.DaoConfigManager;
+import uw.dao.util.DaoPropertiesManager;
 import uw.dao.constant.DaoResponseCode;
 import uw.dao.vo.QueryParamResult;
 import uw.dao.vo.SqlExecuteStats;
@@ -1711,7 +1711,7 @@ public class DaoManager {
         // 记录错误日志
         logger.error(e.getMessage(), e);
         // 生产环境，只返回错误码，不返回错误信息，防止攻击者获取到敏感信息
-        if (DaoConfigManager.isProdProfile()) {
+        if (DaoPropertiesManager.isProdProfile()) {
             return ResponseData.error(data, DaoResponseCode.TRANSACTION_ERROR);
         } else {
             return ResponseData.error(data, DaoResponseCode.TRANSACTION_ERROR.getCode(), DaoResponseCode.TRANSACTION_ERROR.getLocalizedMessage() + e.getMessage());

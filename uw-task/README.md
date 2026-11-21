@@ -2,25 +2,28 @@
 
 ## 简介
 
-uw-task 是一个分布式任务框架，基于 Spring Boot + RabbitMQ + Redis 实现，可快速构建分布式任务体系，支持定时任务（TaskCroner）与队列任务（TaskRunner），并提供任务运维监控、动态配置与多规则报警。
+uw-task 是一个分布式任务框架，基于 Spring Boot + RabbitMQ + Redis 实现，可快速构建分布式任务体系，支持定时任务（TaskCroner）与队列任务（TaskRunner，含延时语义），并提供任务运维监控、动态配置与多规则报警。
+
+**5.2.0 双协议重写版**：AMQP 0-9-1 / 1.0 启动期自动判定、队列形态 classic/quorum 可选、RabbitMQ 4.4+ 原生延迟消息、私有 Redis 连接（详见文末「双协议与队列形态」章）。
 
 配合服务端 [uw-task-center](../../uw-task-center) 使用：任务执行主机向 task-center 注册、上报状态、拉取动态配置；task-center 负责配置管理、统计汇总与报警分发。
 
 ## 主要特性
 
 1. 基于 Spring Boot 实现，依赖 RabbitMQ（任务派发）与 Redis（全局限速 / Leader 选举 / 序列发号）。
+1b. **AMQP 双协议自动判定**：启动期探测（协议头握手+版本解析，纯 amqp 端口，无管理端口依赖），1.0 可用走 1.0（含原生延迟消息），否则 091——云托管/自建全兼容，零配置。
 2. 完全分布式，支持混合云，可指定主机或指定集群（runTarget）运行。
 3. 支持定时任务（cron 表达式），支持服务端动态配置，支持全局单例（Leader）运行。
 4. 支持队列任务，提供多维流量控制（本地/全局、按进程/主机/TAG/TASK 组合）、错误重试、服务端动态配置。
-5. 支持延迟任务（TaskDelayer）：与 TaskCroner/TaskRunner 对等的第三种任务类型，基于 Redis zset 多实例竞争 poll、到期即取即执行——无队头阻塞、长延时不阻塞短延时、重启不丢存量；支持限速、错误重试与服务端动态配置。替代经典的 MQ TTL + 死信延迟队列。
+5. 延时任务全自动化（5.2.0）：`taskDelay > 0` 即延时任务，无需独立类型——1.0+RabbitMQ 4.4+ 且队列形态为 quorum 时走 **MQ 消息级原生延迟**（x-opt-delivery-time，到期自动可见即执行）；否则自动降级 **Redis zset 搬运**（到期自动转投目标队列）。无队头阻塞、长延时不阻塞短延时、重启不丢存量。
 6. 支持 RPC 风格调用（同步/异步），支持错误重试与服务端动态配置。
 7. 支持按失败率、等待超时、运行超时、队列堆积、延迟超时等多规则的任务报警。
 
 ## 版本要求
 
 - JDK 25+
-- Spring Boot 4.1.x
-- RabbitMQ 4.3+
+- Spring Boot 4.2.x
+- RabbitMQ 3.8+（091 兼容面；1.0 与原生延迟需 4.0+/4.4+，启动期自动判定）
 - Redis 8.x+
 
 ## maven 引入
@@ -33,7 +36,7 @@ uw-task 是一个分布式任务框架，基于 Spring Boot + RabbitMQ + Redis �
 </dependency>
 ```
 
-引入后由 `TaskAutoConfiguration` 自动装配，无需额外 `@EnableXxx`。
+引入后由 `UwTaskAutoConfiguration` 自动装配，无需额外 `@EnableXxx`。
 
 ## 应用配置
 
@@ -50,25 +53,23 @@ uw:
     task-project: com.demo.task
     # 运行目标，用于识别任务执行集群，默认 default
     run-target: default
-    # croner 调度线程数，默认 5，建议按实际 croner 任务数 * 70% 设置
-    croner-thread-num: 3
-    # RPC 线程池：用于执行 RPC 调用，如不使用 rpc 建议设为 1，否则按最大并发量 * 10% 设置
-    task-rpc-min-thread-num: 1
+    # runTaskAsync 在途执行并发上限（虚拟线程背压闸门，满时提交线程自行执行）
     task-rpc-max-thread-num: 60
-    # 本地队列线程池：用于运行本地队列任务
-    task-local-min-thread-num: 1
+    # runQueue 本地执行并发上限（虚拟线程背压闸门，缓冲也满时溢出到 MQ）
     task-local-max-thread-num: 60
     # 队列任务重试延时（毫秒），默认 2 秒
     task-queue-retry-delay: 2000
     # RPC 任务重试延时（毫秒），默认 100 毫秒
     task-rpc-retry-delay: 100
 
-    # RabbitMQ（task 使用独立的连接工厂，与业务 MQ 隔离）
+    # RabbitMQ（task 使用独立的连接工厂，与业务 MQ 隔离；协议启动期自动判定，无需配置版本）
     rabbitmq:
       host: 127.0.0.1
       port: 5672
       username: guest
       password: guest
+      # 集群（可选）：配置 addresses 后 host/port 被忽略，探测与两协议连接均遍历地址列表
+      # addresses: node1:5672,node2:5672,node3:5672
     # Redis（task 使用独立的连接工厂）
     redis:
       database: 0
@@ -183,107 +184,27 @@ public class DemoTask extends TaskRunner<DemoTaskParam, String> {
 }
 ```
 
-## 延迟任务（TaskDelayer）
+## 延时任务（taskDelay，全自动化）
 
-延迟任务在指定时刻到期后触发执行，适用于订单超时关闭、定时提醒、重试回调等"X 秒/分钟后做某事"的场景。它与 TaskCroner/TaskRunner 对等，是 uw-task 的第三种任务类型，基于 **Redis zset 多实例竞争 poll** 实现，不依赖 RabbitMQ、不入内存队列。
-
-实现 `TaskDelayer<TP, RD>` 抽象类（载体复用 `TaskData`，与 TaskRunner 一致），实现三个方法：
+5.2.0 起**没有独立的延迟任务类型**（TaskDelayer/delayTask 已退役）：任何 TaskRunner 任务设置 `TaskData.taskDelay > 0` 即为延时任务，投递入口统一且自动路由：
 
 ```java
-@Component
-public class OrderTimeoutCloseTask extends TaskDelayer<OrderTimeoutParam, Void> {
-
-    @Override
-    public void run(TaskData<OrderTimeoutParam, Void> task) throws Exception {
-        OrderTimeoutParam param = task.getTaskParam();
-        orderService.closeIfUnpaid(param.getOrderId());
-    }
-
-    @Override
-    public TaskDelayerConfig initConfig() {
-        TaskDelayerConfig config = new TaskDelayerConfig();
-        config.setTaskName("订单超时关闭");
-        config.setTaskDesc("下单 30 分钟未支付自动关闭");
-        config.setConsumerNum(5);            // 执行并发数（虚拟线程 + Semaphore）
-        config.setPollInterval(3);           // zset poll 间隔（秒），命中连续 poll、空才 sleep
-        config.setPrefetchNum(50);           // 单次 poll 最大条数
-        // 限速（常量复用 TaskRunnerConfig.RATE_LIMIT_*，语义同队列任务）
-        config.setRateLimitType(TaskRunnerConfig.RATE_LIMIT_NONE);
-        config.setRateLimitValue(100);
-        config.setRateLimitTime(60);
-        // 重试次数（N → 总计执行 N+1 次）
-        config.setRetryTimesByPartner(3);    // 合作方异常重试
-        config.setRetryTimesByOverrated(3);  // 连续限速超限放弃次数上限（防死循环）
-        // 报警阈值（毫秒）
-        config.setAlertFailRate(10);
-        config.setAlertRunTimeout(1000);
-        config.setAlertWaitTimeout(5000);  // 实际执行晚于 runAt 的平均超时报警（Delayer 特有）
-        return config;
-    }
-
-    @Override
-    public TaskContact initContact() {
-        return TaskContact.builder("订单服务负责人").email("order@example.com").build();
-    }
-}
+// 三种写法对延时任务完全等同（内部统一走 sendToQueue 的自动路由）
+taskFactory.sendToQueue(taskData);   // taskData.taskDelay = 5000
+taskFactory.runQueue(taskData);      // 同上
+taskFactory.runTask(taskData);       // 同上（延时任务放弃同步 RPC 语义，异步投递后立即返回）
 ```
 
-### 投递延迟任务
+**路由规则（启动期探测一次，运行期不变）**：
 
-通过 `TaskFactory.delayTask(taskData)` 投递——与 `sendToQueue` 对称，完全异步、无返回值。`taskDelay` 为延迟毫秒数，框架据此计算 zset 的到期 score（= `queueDate + taskDelay`）：
+| 条件 | 执行载体 |
+|---|---|
+| 1.0 可用 且 RabbitMQ ≥ 4.4 且 `queueType = QUEUE_TYPE_QUORUM` | **MQ 原生延迟**：消息级 `x-opt-delivery-time`（绝对时间戳），到期自动可见由消费者执行——零搬运、精度 ~0.5s |
+| 其余（091/低版本/classic 队列） | **Redis zset 搬运**：写 `uw-task-delay:{queueName}`（score=到期时间），搬运器 Lua 原子 pop 到期任务自动转投目标 MQ 队列（delay 清零），由对应 runner 消费执行；搬运器为 Leader 单例执行（选主切换重叠窗口由 Lua 原子 pop 兜底去重），分片队列名经 Redis 注册表跨实例共享，MQ 故障时写回重试（上限 20 次） |
 
-```java
-@Autowired
-private TaskFactory taskFactory;
-
-public void submitOrderTimeout(long orderId) {
-    TaskData<OrderTimeoutParam, Void> taskData = TaskData
-        .<OrderTimeoutParam, Void>builder(OrderTimeoutCloseTask.class)
-        .taskParam(new OrderTimeoutParam(orderId))
-        .taskDelay(30 * 60 * 1000L)         // 30 分钟后执行
-        .refId(orderId)
-        .build();
-    taskFactory.delayTask(taskData);
-}
-```
-
-### TaskDelayerConfig 配置项
-
-| 属性 | 默认 | 说明 |
-|------|------|------|
-| `pollInterval` | 3 | zset poll 间隔（秒）。命中数据则连续 poll，仅空才 sleep——命中后的吞吐不受此值约束 |
-| `prefetchNum` | 50 | 单次 poll 最大条数；实际取 `min(此值, 空闲并发许可数)`，绝不取超过当前可执行并发数 |
-| `consumerNum` | 1 | 执行并发数（虚拟线程池 + Semaphore 限并发） |
-| `rateLimitType` / `rateLimitValue` / `rateLimitTime` / `rateLimitWait` | — | 限速配置，常量与语义同 `TaskRunnerConfig`（见"流量控制功能"） |
-| `retryTimesByPartner` | 0 | 合作方异常重试次数（N → 总计执行 N+1 次） |
-| `retryTimesByOverrated` | 3 | 连续限速超限后放弃的次数上限（防死循环），超限则标记 `STATE_FAIL_CONFIG` |
-| `retryTimesByProgram` | 0 | 程序异常重试次数（默认 0 不重试，与 Runner 一致） |
-| `alertFailRate` / `alertFailProgramRate` / `alertFailPartnerRate` | — | 失败率报警阈值（百分比） |
-| `alertRunTimeout` | — | 平均运行耗时报警阈值（毫秒） |
-| `alertWaitTimeout` | — | Delayer 语义为"延迟超时"（实际执行晚于 `runAt` 的平均毫秒），区别于 Runner/Croner 的队列等待超时；建议 > `pollInterval` × 1000 |
-| `logLevel` / `logLimitSize` | 0 / 0 | 日志级别（`TaskDelayerConfig.TASK_LOG_TYPE_*`）与字符串字段大小限制 |
-
-### 执行机制
-
-- **载体**：Redis zset，key = `uw-task-delayer:` + configKey（`taskClass + taskTag + runTarget`），score = 到期时间戳，member = Kryo 序列化的 `TaskData`。**不依赖 RabbitMQ、不入内存队列**。
-- **到期取出**：每个 uw-task 实例独立 poll 同一 zset，通过 Lua 脚本原子地 `ZRANGEBYSCORE + ZREM` 取出到期任务（多实例竞争消费，天然分布式、无重复执行）。
-- **即取即执行**：取出后立即提交虚拟线程执行（无内存队列缓冲）；并发许可耗尽时本次跳过 poll、任务留 zset，worker 空闲后再取（反压，不撑爆内存）。
-- **崩溃窗口**：仅在途 + 单次 poll 批量级别（≤ consumerNum），重启后 zset 存量任务照常到期执行，不丢任务。
-- **限速 / 重试 / 异常分类**：与 TaskRunner 一致（见"任务内异常处理"与"重试机制"）。业务失败重试按指数退避（1s/2s/4s…封顶 60s）换新 id 后重新写回 zset；限速超限按 `rateLimitWait` 重新调度。
-
-> 与队列任务的差异：队列任务（TaskRunner）经 RabbitMQ 派发、靠消费者拉取；延迟任务（TaskDelayer）由各执行主机主动 poll 共享 zset，**无需 MQ、无队头阻塞**，长延时与短延时任务互不影响。
+延时任务的限速/重试/日志/统计全部由 TaskRunner 消费端统一承担（与即时任务完全一致），无独立的 Delayer 配置/监听器/日志类型。
 
 ### 适用场景与选型
-
-TaskDelayer 基于 Redis zset poll、到期即取即执行，精度高（默认 `pollInterval=3s`），适合**分钟级**延时任务——下单 30 分钟未支付关单、几分钟后回调通知、短时指数退避重试等"X 秒/分钟后做某事"的场景。
-
-但任务在到期前会一直驻留 Redis zset，**不适合天级别及以上的长延时**：海量未来任务长期占用 Redis 内存，poll 线程也在反复空扫到期数据。长延时场景应改用 **TaskCroner 定时扫描数据库**：在业务表上记录到期时间，用 TaskCroner 周期性扫描 `WHERE expire_time <= NOW()` 的记录，命中后触发执行。DB 天然持久化、可分页/游标增量扫描、重启不丢，是长延时的正确载体。
-
-| 延时量级 | 推荐方案 | 载体 | 触发精度 |
-|---|---|---|---|
-| 分钟级（秒 ~ 小时） | TaskDelayer | Redis zset | 高（`pollInterval`，默认 3s） |
-| 天级别及以上 | TaskCroner 扫表 | 业务数据库 | 取决于 cron 周期（如每分钟扫一次） |
-
 ## 任务内异常处理
 
 为支持监控与重试，`runTask` 抛出的异常分三类，框架据此设置任务状态：
@@ -310,7 +231,7 @@ private TaskFactory taskFactory;
 
 完全异步，无返回值。任务投递到 RabbitMQ 队列，由具备匹配 runner 的远端主机消费。
 
-> 延迟任务请改用 `delayTask(taskData)`（投递到 Redis zset，不经 MQ），详见「延迟任务（TaskDelayer）」章节。
+> 需"X 时间后执行"直接给任务设置 `taskDelay`（自动路由），无需独立类型。
 
 ### 2. `runQueue(taskData)` — 本地队列优先
 
@@ -391,7 +312,7 @@ TaskData<MyParam, MyResult> data = TaskData.<MyParam, MyResult>builder(DemoTask.
 | `taskTag` | 调用方 | 任务标签，用于多实例区分 |
 | `runTarget` | 调用方 | 运行目标，默认 default |
 | `rateLimitTag` | 调用方 | 限速 TAG（推荐设为接口配置 ID） |
-| `taskDelay` | 调用方 | 延迟毫秒数：`delayTask` 据此计算 Redis zset 到期 score（TaskDelayer）；队列任务配 `delayType=TYPE_DELAY_ON` 时走 MQ 延时 |
+| `taskDelay` | 调用方 | 延迟毫秒数：>0 即延时任务，载体自动路由（quorum+1.0/4.4→MQ 原生延迟；否则→Redis zset 搬运） |
 | `refId`/`refSubId`/`refTag` | 调用方 | 关联信息，用于第三方统计 |
 | `refObject` | 调用方 | 关联对象，不入库，可通过 Listener 访问 |
 | `id`/`queueDate`/`consumeDate`/`runDate`/`finishDate`/`runType`/`ranTimes`/`state`/`errorInfo`/`resultData` | 框架 | 由框架自动设置 |
@@ -431,17 +352,29 @@ TaskData<MyParam, MyResult> data = TaskData.<MyParam, MyResult>builder(DemoTask.
 | `rateLimitWait` | 30 | 触发限速时最长等待秒数，超时仍不足则放弃任务（标记 STATE_FAIL_CONFIG） |
 | `retryTimesByOverrated` | 0 | 超限流重试次数（N → 总计执行 N+1 次） |
 
+### 并发与背压（per-queue 单一来源）
+
+背压控制**按队列独立设置**（TaskRunnerConfig，center 动态下发、tune 在线生效）：
+
+- `consumerNum`：**执行线程数**（并发执行 consumerNum 路；091=消费者线程弹性伸缩；1.0=LimitedVirtualThreadExecutor 的 Semaphore 上限 + pause/unpause 消费者，两协议语义对齐）
+- `prefetchNum`：在途未确认窗口/缓冲（091=未 ack 上限；1.0=credit，settle 在执行完成后才释放——1.0 分发经 credit 可超前投递，执行通道把并发收敛回 consumerNum）
+
+**全局并发线程数 = Σ(各队列 consumerNum)**——多队列规模下由各队列配置面规划总量贴合下游容量（配置治理问题，框架不设全局暗闸：全局信号量会造成热点队列饿死其他队列的跨队列干扰，与每任务独立配置并发的模型冲突）。
+
+虚拟线程只解决"等待不占平台线程"（限速 sleep/park 零成本），**不做背压**——背压由 prefetch/credit 承载（broker 停发），限速超限走 CONFIG 重投退避。
+
 ## 重试机制
 
 任务失败后，按 `retryType`（默认 `AUTO`）与失败类型决定是否重试：
 
 - `STATE_FAIL_PARTNER`（合作方异常）：按 `retryTimesByPartner` 重试。
 - `STATE_FAIL_CONFIG`（超限流）：按 `retryTimesByOverrated` 重试。
-- `STATE_FAIL_PROGRAM` / `STATE_FAIL_DATA`：不重试。
+- `STATE_FAIL_PROGRAM`：按 `retryTimesByProgram` 重试（默认 0=不重试）。
+- `STATE_FAIL_DATA`：不重试。
 
 设 `retryTimes = N` 时，**总计执行 N+1 次**（1 次初始 + N 次重试）。重试延时按执行轮次线性递增：队列任务为 `ranTimes * taskQueueRetryDelay`，RPC 任务为 `ranTimes * taskRpcRetryDelay`。LOCAL/RPC 模式在本地重跑，GLOBAL 模式重新入队。
 
-延迟任务（TaskDelayer）的重试语义相同，区别在于重试方式：业务失败重试（PARTNER / PROGRAM）按指数退避（`min(1000 << (ranTimes-1), 60000)` = 1s/2s/4s…封顶 60s）换新 id 后重新写回 Redis zset；超限流（`STATE_FAIL_CONFIG`）按 `rateLimitWait` 秒数重新调度。重试次数分别受 `retryTimesByPartner` / `retryTimesByProgram` / `retryTimesByOverrated` 控制。
+延时任务（taskDelay>0）的重试语义与队列任务完全一致（同一消费端执行）：业务失败（PARTNER / PROGRAM）重试经延时路由实现指数退避（1s/2s/4s…封顶 60s）；超限流（`STATE_FAIL_CONFIG`）按 `rateLimitWait` 秒数重新调度。重试次数分别受 `retryTimesByPartner` / `retryTimesByProgram` / `retryTimesByOverrated` 控制（均默认 0=不重试）。
 
 ## 多实例运行
 
@@ -470,7 +403,7 @@ TaskData<MyParam, MyResult> data = TaskData.<MyParam, MyResult>builder(DemoTask.
 
 ## center 不可用降级与恢复
 
-uw-task 客户端在 uw-task-center 不可用时，三套任务（TaskCroner / TaskRunner / TaskDelayer）均可用 `initConfig` 本地默认配置继续运行；center 恢复后自动同步服务端动态配置。
+uw-task 客户端在 uw-task-center 不可用时，两类任务（TaskCroner / TaskRunner）均可用 `initConfig` 本地默认配置继续运行；center 恢复后自动同步服务端动态配置。
 
 ### 降级触发（lazy，非启动即降级）
 
@@ -485,7 +418,7 @@ uw-task 客户端在 uw-task-center 不可用时，三套任务（TaskCroner / T
 
 center 恢复后，`updateConfig`（每 60s）拉取成功 → 用 center 配置覆盖降级配置：
 
-- **TaskCroner / TaskDelayer**：按 configKey 覆盖（停旧调度/handle + 启新），不清内存 map
+- **TaskCroner**：按 configKey 覆盖（停旧调度 + 启新），不清内存 map
 - **TaskRunner**：销毁降级 listener（MQ 未 ack 消息自动重新入队）+ 用 center 配置重建 listener
 
 ### 不丢任务 / 不丢数据保障
@@ -494,13 +427,13 @@ center 恢复后，`updateConfig`（每 60s）拉取成功 → 用 center 配置
 |---|---|---|
 ···| TaskCroner | `stop` 用 `cancel(false)` 不中断在途 | 正在执行的 croner 跑完，新调度接管 |
 | TaskRunner | 销毁 listener → 重建 | RabbitMQ 未 ack 消息重新入队（broker 持久化） |
-| TaskDelayer | `handle.stop` drain（等在途 worker，30s 超时 shutdownNow 兜底） | 任务在 Redis zset 持久化；poll 线程已 pop 未投递的写回 zset |
+| 延时搬运器 | Leader 失去身份时 mover 完成当前批次后退出 | 任务在 Redis zset 持久化；新 Leader 接续搬运（注册表跨实例共享分片） |
 
 > **TaskCroner.runTask 需幂等**：配置覆盖/降级切换用 `cancel(false)` 让上一次执行跑完 + 新调度接管。若 cron 间隔 < 单次执行时长，old 与 new 可能短暂重叠并发执行——runTask 必须幂等（定时任务本应如此）。
 
 ### enableRegistry 与降级
 
-`enable-registry=false` 的主机（仅任务调用方）不执行任务、不参与降级启动。三套任务对此**对称**——TaskDelayer 也遵循 enableRegistry（与 TaskRunner/TaskCroner 一致）。
+`enable-registry=false` 的主机（仅任务调用方）不执行任务、不参与降级启动与 Leader 选举。
 
 ## 常见问题
 
@@ -516,9 +449,9 @@ center 恢复后，`updateConfig`（每 60s）拉取成功 → 用 center 配置
 
 **关于 uw-task 的延时队列任务**
 
-uw-task 现提供专用的延迟任务类型 `TaskDelayer`（基于 Redis zset 多实例竞争 poll，到期即取即执行，无队头阻塞、长延时不阻塞短延时、重启不丢存量），**推荐优先使用** `TaskFactory.delayTask()` 投递延迟任务，详见「延迟任务（TaskDelayer）」章节。
+uw-task 5.2.0 起延时与队列任务统一为 TaskRunner 一种类型（`taskDelay > 0` 即延时，自动路由 MQ 原生延迟 / Redis zset 搬运），详见「延时任务（taskDelay，全自动化）」章节。
 
-TaskRunner 的 MQ 延时队列（`delayType=TYPE_DELAY_ON`，基于 RabbitMQ TTL + 死信）仍保留兼容，但存在**长延时任务阻塞短延时任务**的固有问题，仅建议在短延时（如 ≤ 60 秒）且量小的场景使用。延迟任务请用 TaskDelayer，小负载场景也可直接轮询数据库，均可有效降低资源消耗。
+TaskRunner 的队列任务延时：quorum 队列 + 1.0/4.4 下为 MQ 消息级原生延迟（无队头阻塞，任意时长可用）；其余走 zset 搬运自动转投。延时任务用 taskDelay（自动路由），小负载场景也可直接轮询数据库，均可有效降低资源消耗。
 
 **调用方线程会被阻塞的场景（重要）**
 
@@ -529,3 +462,73 @@ uw-task 的部分操作是同步阻塞的，直接在调用线程执行，务必
 3. 队列任务全局限速（`RATE_LIMIT_GLOBAL_*`）：触发限速时，消费者线程会在 `rateLimitWait` 内轮询等待配额，期间该消费者不消费下一条消息。若限速配置激进（等待长、配额小），会导致并发消费者数虚高却实际空转、消息堆积。
 
 建议：高频调用走 `runQueue`（本地队列线程池执行，满则降级入队）；限速场景优先评估 `rateLimitWait` 与并发消费者数的比例，必要时改用进程内限速（`RATE_LIMIT_LOCAL*`）或调小等待时间。
+
+## 双协议与队列形态（5.2.0）
+
+### 协议自动判定（启动期一次定死，运行期不切换）
+
+探测全部经 **amqp 端口本身**完成（`uw.task.rabbitmq.port`），**与管理端口彻底解耦**：
+
+| 检测项 | 手段 |
+|---|---|
+| AMQP 1.0 是否可用 | 对 amqp 端口发 1.0 协议头（`AMQP\0\1\0\0`），对端回 major=1 即支持（RabbitMQ 4.x 双协议同端口协商，无独立 5673） |
+| RabbitMQ 版本号 | 0-9-1 握手 `connection.start` 帧 server-properties 的 `product`/`version` 字段（非 RabbitMQ 对端判级跳过） |
+
+决策：1.0 可用 → 走 1.0；仅 091 → 走 091。启动日志打印判定依据。探测不能用纯 TCP 连通性（云安全组可能对任意端口 SYN 代答）。
+
+### 队列形态与持久化语义
+
+`TaskRunnerConfig.queueType`：`QUEUE_TYPE_QUORUM=1`（**默认**）/ `QUEUE_TYPE_CLASSIC=0`。两种队列可并存。
+
+| 队列形态 | 持久化 | 说明 |
+|---|---|---|
+| **quorum（默认）** | **恒持久化，Raft WAL 每批必 fsync**，无"不写盘"选项（单机亦然——保住不停机扩 3 节点能力）；`deliveryMode` 标志被 RabbitMQ 忽略 | 数据安全 + 原生延迟消息唯一载体（延时任务路由判定=queueType 单一来源） |
+| **classic** | **消息默认 NON_PERSISTENT 不写盘**（驻内存，吞吐内存级；broker 崩溃/重启丢消息） | 单副本、无复制；仅接受单副本风险的高频任务选用 |
+
+### 吞吐实测（RabbitMQ 4.4.1 单容器，持久化消息，单线程发送）
+
+| 组合 | 230B | ~1KB |
+|---|---|---|
+| 091 + classic | **95,366 msg/s** | 6,947 |
+| 1.0 + classic | 26,193 | **8,147** |
+| 091 + quorum | 21,731 | 6,281 |
+| 1.0 + quorum | 26,524 | 7,196 |
+
+小消息即时消费 classic+091 最快；quorum 上 1.0 反超 091（延迟队列配 1.0+quorum 最优）；≥1KB 后磁盘带宽成为瓶颈。
+
+### 性能调优
+
+broker 侧（运维必做，放入 rabbit 编排模板，必须是独立 `/etc/rabbitmq/advanced.config` 纯 Erlang 项式文件）：
+
+```erlang
+[{rabbit, [
+  {max_incoming_window, 5000},
+  {max_link_credit, 2000},
+  {max_queue_credit, 5000}
+]},
+{ra, [
+  {wal_max_batch_size, 131072},  %% WAL 批上限（默认32768）：quorum 吞吐主杠杆
+  {wal_compute_checksums, true},
+  {wal_sync_method, datasync}
+]}].
+```
+
+实测增益：091+quorum 230B 21.7k→**116.3k msg/s（5.4 倍，反超 classic）**。注意 `wal_max_batch_size` 调大提高内存占用，与 `vm_memory_high_watermark` 联动观察。quorum **不存在"不写盘"选项**（Raft 安全性本体），挂载去 barrier（barrier=0）= 假 fsync，掉电丢 WAL 且可能损坏文件系统，**禁止**。
+
+客户端侧（已内置，无需配置）：proton-j2 单 Connection 单 IO 线程是发送瓶颈，Rabbit100Ops 内置发送连接池（默认 4，`-Duw.task.rabbit100.send-pool-size=N` 可调），fire-and-forget（与 091 无 confirm 语义对齐）。
+
+### 私有 Redis（与 uw-kv 完全隔离）
+
+DelayTask zset / 序列发号 / Leader 选举 / 全局限速共用 uw-task **私有 Redis 连接**（`uw.task.redis.*` 嵌套 Boot 原生 DataRedisProperties，默认继承 Spring Boot Redis 属性，连接经 `RedisConnectionFactoryBuilder` 构建，对齐 uw-mfa/uw-kv 模式）。
+
+私有组件（uw.task.util，init(factory) 注入）：`TaskSequence`（号段发号，key=uw-task-seq:）、`TaskLeaderElector`（选举，key=uw-task-leader:）、`TaskGlobalRateLimiter`（固定窗口限速，key=uw-task-rate:）——不依赖 uw-kv 的 Global* 静态家族，连接与 key 空间双隔离，故障域互不影响。
+
+### 集群连接
+
+`uw.task.rabbitmq.addresses: n1:5672,n2:5672,...` 配置后 host/port 被忽略——探测逐节点握手取首个响应；091 走 setAddresses；1.0 走 uris()（amqp:// URI，客户端 AddressSelector 轮询 + Recovery 故障转移），发送连接池每连接独立选点。
+
+### 已知边界
+
+- AMQP 1.0 不支持事务（本框架应用层重试，无影响）
+- `receive()` 拉模式在 1.0 下会静默吞消息（超时后链路仍持 credit），禁用
+- Boot 4.2 starter 语义：依赖 `spring-boot-starter-rabbitmq`（经典 0-9-1）+ 显式 `spring-rabbitmq-client`（1.0）

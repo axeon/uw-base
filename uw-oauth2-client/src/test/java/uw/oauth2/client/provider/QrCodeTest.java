@@ -1,9 +1,15 @@
 package uw.oauth2.client.provider;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import uw.oauth2.client.conf.OAuth2ClientProperties;
+import org.mockito.Mockito;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import uw.kv.GlobalCache;
+import uw.oauth2.client.conf.UwOAuth2ClientProperties;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -11,15 +17,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class QrCodeTest {
 
-    private OAuth2ClientProperties.ProviderConfig wechatConfig;
-    private OAuth2ClientProperties.ProviderConfig alipayConfig;
+    private UwOAuth2ClientProperties.ProviderConfig wechatConfig;
+    private UwOAuth2ClientProperties.ProviderConfig alipayConfig;
     private String redirectUri = "https://example.com/oauth2/redirect";
     private String qrCodeUrl = "https://guest-ui-test.west-qr.com/oauth2/qrcode/";
+
+    /**
+     * GlobalCache 为静态门面（构造注入 static template）：纯 JUnit 环境下以 mock 模板手工初始化，
+     * 修复既有失败（此前 opsForValue 为 null NPE，见 261119 提交记录）。
+     */
+    @BeforeAll
+    static void initGlobalCache() {
+        RedisTemplate<String, byte[]> mockTemplate = Mockito.mock(RedisTemplate.class);
+        Mockito.when(mockTemplate.opsForValue()).thenReturn(Mockito.mock(ValueOperations.class));
+        new GlobalCache(mockTemplate);
+    }
 
     @BeforeEach
     void setUp() {
         // 初始化微信配置
-        wechatConfig = new OAuth2ClientProperties.ProviderConfig();
+        wechatConfig = new UwOAuth2ClientProperties.ProviderConfig();
         wechatConfig.setClientId("wx1234567890");
         wechatConfig.setClientSecret("secret123456");
         wechatConfig.setAuthUri("https://open.weixin.qq.com/connect/oauth2/authorize");
@@ -28,7 +45,7 @@ class QrCodeTest {
         wechatConfig.setUserInfoUri("https://api.weixin.qq.com/sns/userinfo");
 
         // 初始化支付宝配置
-        alipayConfig = new OAuth2ClientProperties.ProviderConfig();
+        alipayConfig = new UwOAuth2ClientProperties.ProviderConfig();
         alipayConfig.setClientId("2021000000000000");
         alipayConfig.setClientSecret("alipay-secret-123456");
         alipayConfig.setAuthUri("https://openauth.alipay.com/oauth2/authorize.htm");
@@ -44,13 +61,10 @@ class QrCodeTest {
 
         System.out.println("Generated WeChat QR Code URL: " + qrCodeUrl);
 
-        // 验证URL是否使用了二维码特定的URI
-        assertTrue(qrCodeUrl.contains("qrconnect"), "URL should use QR code specific URI");
-        assertTrue(qrCodeUrl.contains("appid=wx1234567890"), "URL should contain appid");
-        assertTrue(qrCodeUrl.contains("redirect_uri="), "URL should contain redirect_uri");
-        assertTrue(qrCodeUrl.contains("response_type=code"), "URL should contain response_type=code");
-        assertTrue(qrCodeUrl.contains("scope=snsapi_login"), "URL should use QR code specific scope");
-        assertTrue(qrCodeUrl.endsWith("#wechat_redirect"), "URL should end with #wechat_redirect");
+        // 断言对齐现实现（qrcodeUri + authStateId 前端渲染模式，平台原生扫码 URL 语义已随重构退役）
+        assertTrue(qrCodeUrl.startsWith("https://guest-ui-test.west-qr.com/oauth2/qrcode/"), "URL 应以 qrcodeUri 前缀开头");
+        String stateId = qrCodeUrl.substring("https://guest-ui-test.west-qr.com/oauth2/qrcode/".length());
+        assertFalse(stateId.isBlank(), "URL 应携带非空 authStateId");
     }
 
     @Test
@@ -60,10 +74,8 @@ class QrCodeTest {
 
         System.out.println("Generated Alipay QR Code URL: " + qrCodeUrl);
 
-        // 验证URL是否使用了二维码特定的URI
-        assertTrue(qrCodeUrl.contains("publicAppAuthorize.htm"), "URL should use QR code specific URI");
-        assertTrue(qrCodeUrl.contains("app_id=2021000000000000"), "URL should contain app_id");
-        assertTrue(qrCodeUrl.contains("redirect_uri="), "URL should contain redirect_uri");
-        assertTrue(qrCodeUrl.contains("scope=auth_user"), "URL should use QR code specific scope");
+        // 断言对齐现实现（qrcodeUri + authStateId 前端渲染模式）
+        assertTrue(qrCodeUrl.startsWith("https://guest-ui-test.west-qr.com/oauth2/qrcode/"), "URL 应以 qrcodeUri 前缀开头");
+        assertFalse(qrCodeUrl.substring("https://guest-ui-test.west-qr.com/oauth2/qrcode/".length()).isBlank(), "URL 应携带非空 authStateId");
     }
 }

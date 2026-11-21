@@ -6,7 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import uw.common.response.ResponseData;
 import uw.common.util.JsonUtils;
 import uw.common.util.SystemClock;
-import uw.oauth2.client.conf.OAuth2ClientProperties;
+import uw.oauth2.client.conf.UwOAuth2ClientProperties;
 import uw.oauth2.client.constant.OAuth2ClientResponseCode;
 import uw.oauth2.client.vo.OAuth2Token;
 import uw.oauth2.client.vo.OAuth2UserInfo;
@@ -49,7 +49,7 @@ public class AppleOAuth2Provider extends AbstractOAuth2Provider {
      * @param redirectUri    重定向URI
      * @param qrcodeUri      二维码URI
      */
-    public AppleOAuth2Provider(String providerCode, OAuth2ClientProperties.ProviderConfig providerConfig, String redirectUri, String qrcodeUri) {
+    public AppleOAuth2Provider(String providerCode, UwOAuth2ClientProperties.ProviderConfig providerConfig, String redirectUri, String qrcodeUri) {
         super(providerCode, providerConfig, redirectUri, qrcodeUri);
     }
 

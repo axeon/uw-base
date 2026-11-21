@@ -34,7 +34,7 @@
 | `localeList` | List&lt;Locale&gt; | 12 种已覆盖语言 | 可选语言列表，参与 Accept-Language 匹配 |
 | `disableSwagger` | boolean | `false` | 是否禁用 Swagger 接口（/v3/api-docs、/swagger-ui） |
 
-> **注**：优雅停机已交由 uw-nacos-client 的 `NacosGracefulShutdownDelegate` 负责（`spring.cloud.nacos.discovery.graceful-shutdown-wait-time` 控制），本模块不再参与。Swagger 禁用与 LB 缓存禁用由 `CommonAppEnvPostProcessor` 在环境准备阶段注入默认项（可被 application.yml 覆盖）。
+> **注**：优雅停机已交由 uw-nacos-client 的 `NacosGracefulShutdownDelegate` 负责（`spring.cloud.nacos.discovery.graceful-shutdown-wait-time` 控制），本模块不再参与。Swagger 禁用与 LB 缓存禁用由 `UwCommonAppEnvPostProcessor` 在环境准备阶段注入默认项（可被 application.yml 覆盖）。
 
 ## 自动化权限注入查询参数
 

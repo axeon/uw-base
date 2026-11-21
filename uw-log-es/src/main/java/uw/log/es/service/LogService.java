@@ -20,7 +20,7 @@ import uw.httpclient.json.JsonInterfaceHelper;
 import uw.httpclient.util.BufferRequestBody;
 import uw.httpclient.util.MediaTypes;
 import uw.httpclient.util.SSLContextUtils;
-import uw.log.es.LogClientProperties;
+import uw.log.es.UwLogEsProperties;
 import uw.log.es.util.IndexConfigVo;
 import uw.log.es.vo.*;
 
@@ -47,7 +47,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *       （{@code maxBytesOfBatch}）触发，提交至 {@link #batchExecutor} 执行 bulk；</li>
  *   <li>日志查询：DSL / SQL 转 DSL / scroll 游标查询。</li>
  * </ul>
- * 构造时根据 {@link LogClientProperties.LogMode} 决定是否启动后台写入链路：
+ * 构造时根据 {@link UwLogEsProperties.LogMode} 决定是否启动后台写入链路：
  * {@code READ_ONLY} 仅支持查询，不创建线程池与守护线程。
  */
 public class LogService {
@@ -161,7 +161,7 @@ public class LogService {
      * @param appName             应用名称
      * @param appHost             应用主机信息
      */
-    public LogService(final LogClientProperties logClientProperties, final String appName, final String appHost) {
+    public LogService(final UwLogEsProperties logClientProperties, final String appName, final String appHost) {
         this.appName = appName;
         this.appHost = appHost;
         this.appInfoOverwrite = logClientProperties.getEs().isAppInfoOverwrite();
@@ -181,10 +181,10 @@ public class LogService {
         this.maxBatchThreads = logClientProperties.getEs().getMaxBatchThreads();
         this.maxBatchQueueSize = logClientProperties.getEs().getMaxBatchQueueSize();
 
-        LogClientProperties.LogMode mode = logClientProperties.getEs().getMode();
+        UwLogEsProperties.LogMode mode = logClientProperties.getEs().getMode();
 
         // 如果
-        if (mode == LogClientProperties.LogMode.READ_WRITE) {
+        if (mode == UwLogEsProperties.LogMode.READ_WRITE) {
             this.logState = true;
             batchExecutor = new ThreadPoolExecutor(1, maxBatchThreads, 30, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(maxBatchQueueSize),
                     ThreadFactoryBuilder.of("log-es-batch-%d").daemon().build(), new RejectedExecutionHandler() {

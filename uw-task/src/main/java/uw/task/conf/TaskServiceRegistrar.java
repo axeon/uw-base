@@ -1,5 +1,6 @@
 package uw.task.conf;
 
+import java.net.InetAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.response.ResponseData;
@@ -7,8 +8,6 @@ import uw.common.util.SystemClock;
 import uw.task.TaskCroner;
 import uw.task.TaskRunner;
 import uw.task.api.TaskApiClient;
-import uw.task.TaskDelayer;
-import uw.task.container.TaskDelayerContainer;
 import uw.task.container.TaskCronerContainer;
 import uw.task.container.TaskRunnerContainer;
 import uw.task.entity.*;
@@ -23,15 +22,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * 任务服务注册器：负责与 task-center 交互，拉取/上传 runner、croner、delayer 三类任务的动态配置，
+ * 任务服务注册器：负责与 task-center 交互，拉取/上传 runner、croner 三类任务的动态配置，
  * 并驱动各自容器的启动、热更新与暂停。
  *
- * <p>由 {@link TaskAutoConfiguration} 的调度线程池周期性调用（默认 60s）：
+ * <p>由 {@link UwTaskAutoConfiguration} 的调度线程池周期性调用（默认 60s）：
  * {@link #updateConfig} 编排三类配置的拉取与刷新，分别委托给三个独立方法——
  * {@link #updateTaskRunnerConfig}（基于 {@link #runnerLastUpdateTime} 增量拉取 runner 配置，首次上传本地默认配置并注册队列监听）、
  * {@link #updateTaskCronerConfig}（基于 {@link #cronerLastUpdateTime} 增量拉取 croner 配置，首次上传本地默认配置并配置调度）、
- * {@link #updateTaskDelayerConfig}（基于 {@link #delayerLastUpdateTime} 增量拉取 delayer 配置，首次上传本地默认配置并启动 poll handle）。
- * 三者各自维护独立的时间戳与 fail-fast，互不影响：runner/croner 拉取失败保留上次配置不更新，delayer 拉取失败仅 warn。
  * {@link #reportHostInfo} 上报 JVM/线程/统计/队列积压等信息。</p>
  *
  * <h3>降级与恢复（center 不可达时）</h3>
@@ -39,7 +36,6 @@ import java.util.concurrent.locks.ReentrantLock;
  * 保证 center 恢复后能按断联前的时间点补拉增量，不丢配置变更窗口。</p>
  * <ul>
  *   <li><b>启动降级</b>：仅首次拉取失败（{@code xxxFirstRun && !xxxDegraded}）触发，用 {@code initConfig()} 本地默认配置
- *       启动（{@code startRunnersLocal}/{@code startCronersLocal}/{@code TaskDelayerContainer#start}）。此时 {@code xxxLastUpdateTime}
  *       仍为初始 0，且降级分支<b>不</b>把 {@code xxxFirstRun} 置 false。center 恢复后 fetch 用 {@code lastUpdateTime=0} 拉全量，
  *       firstRun 块重新执行（upload 缺失配置 + register/configure），按 configKey 覆盖本地降级 config，无残留。</li>
  *   <li><b>运行中断联</b>：非首次拉取失败不触发降级（firstRun 已 false），直接 fail-fast return 保留上次配置，
@@ -47,13 +43,10 @@ import java.util.concurrent.locks.ReentrantLock;
  *   <li><b>无需重置 lastUpdateTime</b>：启动降级必然发生在 {@code lastUpdateTime=0}（初始值），恢复即全量拉取；
  *       运行中断联靠"时间戳不推进"自然补齐增量，两类场景都不需要额外的 lastUpdateTime 重置。</li>
  * </ul>
- * <p>降级标志（{@code runnerDegraded}/{@code cronerDegraded}/{@code delayerDegraded}）单向流转 true→false（仅恢复时置 false），
  * 一旦拉取成功就不再因后续失败重新降级——运行中故障靠 fail-fast 保留配置，避免降级/恢复反复抖动。</p>
  *
  * <h3>主循环增量驱动</h3>
- * <p>{@link #updateTaskRunnerConfig}/{@link #updateTaskCronerConfig}/{@link #updateTaskDelayerConfig} 的主循环<b>只遍历本次 fetch 增量
  * （updatedXxxConfigMap）</b>，不遍历全量 configMap：配置无变化时 fetch 返回空、主循环不遍历，避免每 60s 对全量 config 重复
- * register/configure（Runner 白跑 stillInUse 扫描、Croner 无谓 stop+reschedule 抖动、Delayer 刷"配置已热更新"误报日志）。
  * firstRun 上传的 config（center 没返回过、不在增量里）在 firstRun 分支直接 register/configure 启动。</p>
  *
  * @author axeon
@@ -71,11 +64,6 @@ public class TaskServiceRegistrar {
     private final TaskRunnerContainer taskRunnerContainer;
 
     /**
-     * 延迟任务容器。
-     */
-    private final TaskDelayerContainer taskDelayerContainer;
-
-    /**
      * 定时任务容器。
      */
     private final TaskCronerContainer taskCronerContainer;
@@ -83,7 +71,7 @@ public class TaskServiceRegistrar {
     /**
      * 任务配置。
      */
-    private final TaskProperties taskProperties;
+    private final UwTaskProperties taskProperties;
 
     /**
      * 任务中心 API 客户端。
@@ -96,22 +84,14 @@ public class TaskServiceRegistrar {
     private final TaskMetaInfoManager taskMetaInfoManager;
 
     /**
-     * runner 配置增量拉取时间戳：仅 runner 拉取成功时推进，与 croner/delayer 解耦。
      * 初始值必须=0，用于标识整体加载。
      */
     private volatile long runnerLastUpdateTime = 0;
 
     /**
-     * croner 配置增量拉取时间戳：仅 croner 拉取成功时推进，与 runner/delayer 解耦。
      * 初始值必须=0，用于标识整体加载。
      */
     private volatile long cronerLastUpdateTime = 0;
-
-    /**
-     * 延迟任务增量拉取独立时间戳：仅 delayer 拉取成功时推进，与 runner/croner 的 lastUpdateTime 解耦，
-     * 避免 runner/croner 成功推进后 delayer 拉取失败 导致 delayer 配置变更丢窗。
-     */
-    private volatile long delayerLastUpdateTime = 0;
 
     /**
      * runner 首次启动标志：首次拉取配置成功后上传本地默认配置。
@@ -124,18 +104,11 @@ public class TaskServiceRegistrar {
     private boolean cronerFirstRun = true;
 
     /**
-     * 延迟任务配置首次上传标志。
-     */
-    private boolean delayerFirstRun = true;
-
-    /**
      * 三类任务是否处于本地降级模式（center 不可用时用 initConfig 默认配置启动）。
      * 拉取失败+首次进入降级；拉取成功退出降级（center 配置覆盖/重建）。各自独立，互不影响。
      */
     private volatile boolean runnerDegraded = false;
     private volatile boolean cronerDegraded = false;
-    private volatile boolean delayerDegraded = false;
-
     /**
      * 上次报告结果。
      */
@@ -161,15 +134,13 @@ public class TaskServiceRegistrar {
      * @param taskApiClient        任务中心 API 客户端
      * @param taskRunnerContainer  队列任务容器
      * @param taskCronerContainer  定时任务容器
-     * @param taskDelayerContainer 延迟任务容器
      * @param taskMetaInfoManager  任务元信息管理器
      */
-    public TaskServiceRegistrar(TaskProperties taskProperties, TaskApiClient taskApiClient, TaskRunnerContainer taskRunnerContainer, TaskCronerContainer taskCronerContainer,
-                                TaskDelayerContainer taskDelayerContainer, TaskMetaInfoManager taskMetaInfoManager) {
+    public TaskServiceRegistrar(UwTaskProperties taskProperties, TaskApiClient taskApiClient, TaskRunnerContainer taskRunnerContainer, TaskCronerContainer taskCronerContainer,
+                                TaskMetaInfoManager taskMetaInfoManager) {
         this.taskProperties = taskProperties;
         this.taskRunnerContainer = taskRunnerContainer;
         this.taskCronerContainer = taskCronerContainer;
-        this.taskDelayerContainer = taskDelayerContainer;
         this.taskApiClient = taskApiClient;
         this.taskMetaInfoManager = taskMetaInfoManager;
     }
@@ -186,7 +157,6 @@ public class TaskServiceRegistrar {
 
     /**
      * 注册并刷新当前主机的任务配置。
-     * <p>由调度器每分钟调用：编排 runner/croner/delayer 三类任务配置的拉取与刷新。
      * 各类配置使用独立的时间戳与 fail-fast，互不影响。</p>
      */
     public void updateConfig() {
@@ -197,7 +167,6 @@ public class TaskServiceRegistrar {
             }
             updateTaskRunnerConfig();
             updateTaskCronerConfig();
-            updateTaskDelayerConfig();
         } finally {
             configLock.unlock();
         }
@@ -430,132 +399,14 @@ public class TaskServiceRegistrar {
     }
 
     /**
-     * 拉取并应用 TaskDelayer 配置增量。
-     * <p>从 task-center 拉取 delayer 配置增量，首次启动时上传本地默认配置，
-     * 随后按 taskProject+runTarget 过滤、配置并启动 delayer poll handle。
-     * 独立于 runner/croner 的 fail-fast：delayer 拉取失败仅 warn，不影响主流程。</p>
-     */
-    private void updateTaskDelayerConfig() {
-        long startUpdateTimeMills = SystemClock.now();
-        // 取得有变化的delayer配置列表（增量已合并进 delayerConfigMap，state<1 已 remove + stop）
-        ConcurrentHashMap<String, TaskDelayerConfig> updatedDelayerConfigMap = fetchDelayerConfig();
-        if (updatedDelayerConfigMap == null) {
-            // 注册主机 + 首次拉取失败（从未拿到配置）+ 未降级 → 本地降级启动（initConfig 默认配置）
-            if (taskProperties.isEnableRegistry() && delayerFirstRun && !delayerDegraded) {
-                log.warn("!拉取TaskDelayer配置失败，启用本地降级模式（initConfig 默认配置）！");
-                startDelayersLocal();
-                delayerDegraded = true;
-            }
-            log.warn("!拉取TaskDelayer服务器配置失败!");
-            return;
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("发现服务器端拉取的[{}]个更新的TaskDelayer配置...", updatedDelayerConfigMap.size());
-        }
-        //非后台任务主机，此时可以退出了。
-        if (!taskProperties.isEnableRegistry()) {
-            // 非注册主机也推进时间戳，避免每周期从 0 全量重拉
-            delayerLastUpdateTime = startUpdateTimeMills - 5000;
-            return;
-        }
-        // 降级 → 恢复切换：Delayer configKey 覆盖（主循环 configureTaskDelayer 内 consumerNum 同则热更新、异则 stop old handle drain + new），不清 map
-        if (delayerDegraded) {
-            log.warn("!TaskDelayer center 恢复，从降级模式切换到 center 配置！");
-            delayerDegraded = false;
-        }
-        // 第一次执行初始化操作
-        if (delayerFirstRun) {
-            delayerFirstRun = false;
-            // 初始化delayer
-            for (Map.Entry<String, TaskDelayer<?, ?>> entry : taskMetaInfoManager.getDelayerInstanceMap().entrySet()) {
-                try {
-                    TaskDelayer<?, ?> delayer = entry.getValue();
-                    String taskClass = entry.getKey();
-                    if (log.isDebugEnabled()) {
-                        log.debug("正在初始化TaskDelayer: [{}].", taskClass);
-                    }
-                    TaskDelayerConfig localConfig = delayer.initConfig();
-                    TaskContact contact = delayer.initContact();
-                    if (localConfig == null || contact == null) {
-                        log.warn("!TaskDelayer: [{}]默认配置或联系人信息为空，无法启动！", taskClass);
-                        continue;
-                    }
-                    // 防止有人瞎胡搞，任务参数强制设死。
-                    localConfig.setTaskClass(taskClass);
-                    localConfig.setRunTarget(taskProperties.getRunTarget());
-                    contact.setTaskClass(taskClass);
-                    String configKey = taskMetaInfoManager.getDelayerConfigKey(localConfig);
-                    TaskDelayerConfig serverConfig = updatedDelayerConfigMap.get(configKey);
-                    // 上传配置：center 已有则跳过（对齐 runner/croner 条件首传；服务端按三元组幂等去重）
-                    if (serverConfig == null) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("TaskDelayer: [{}]未找到服务器端配置，上传默认配置...", taskClass);
-                        }
-                        TaskDelayerConfig uploaded = uploadDelayerInfo(localConfig, contact);
-                        // 首次上传的 config 不在 fetch 增量(updatedDelayerConfigMap)里，这里直接 configure 启动 poll handle；
-                        // 后续由下方主循环按 fetch 增量驱动（center 存入后下次拉取会进入增量）
-                        taskDelayerContainer.configureTaskDelayer(uploaded);
-                    }
-                } catch (Exception e) {
-                    log.error(e.getMessage(), e);
-                }
-            }
-        }
-
-        // 只处理本次 fetch 增量（updatedDelayerConfigMap），不遍历全量 delayerConfigMap：
-        // 配置无变化时 fetch 返回空，避免每 60s 对全量 config 调 configureTaskDelayer 刷"配置已热更新"误报日志（兼省 CPU）。
-        // firstRun 上传的 config 已在上方 firstRun 分支直接 configure 启动，不依赖此循环。
-        // state<1 的 config 也在 fetch 增量里（fetchDelayerConfig 已对 state<1 做 removeDelayerConfig+stop，此处 configureTaskDelayer 再走 state<1 分支幂等）
-        for (TaskDelayerConfig taskDelayerConfig : updatedDelayerConfigMap.values()) {
-            //必须是本项目任务，否则跳过
-            if (!taskDelayerConfig.getTaskClass().startsWith(taskProperties.getTaskProject())) {
-                if (log.isDebugEnabled()) {
-                    log.debug("因为TaskProject不匹配，跳过配置ID: [{}], DELAYER: [{}].", taskDelayerConfig.getId(), taskDelayerConfig.getTaskClass());
-                }
-                continue;
-            }
-            //必须是同一个runTarget项目，否则跳过
-            if (!taskDelayerConfig.getRunTarget().equals(taskProperties.getRunTarget())) {
-                if (log.isDebugEnabled()) {
-                    log.debug("因为RunTarget不匹配，跳过配置ID: [{}], DELAYER: [{}].", taskDelayerConfig.getId(), taskDelayerConfig.getTaskClass());
-                }
-                continue;
-            }
-            if (log.isDebugEnabled()) {
-                log.debug("正在加载ID: [{}], DELAYER: [{}].", taskDelayerConfig.getId(), taskDelayerConfig.getTaskClass());
-            }
-            if (taskMetaInfoManager.getDelayerInstance(taskDelayerConfig.getTaskClass()) != null) {
-                // 单条配置异常隔离（对齐 croner 主循环 try-catch），避免一条配置异常中断本轮其余 delayer
-                try {
-                    if (log.isDebugEnabled()) {
-                        log.debug("正在配置ID: [{}], DELAYER: [{}].", taskDelayerConfig.getId(), taskDelayerConfig.getTaskClass());
-                    }
-                    // 启动/热更新任务（configureTaskDelayer 幂等：consumerNum 不变则热更新，变则重建）
-                    taskDelayerContainer.configureTaskDelayer(taskDelayerConfig);
-                } catch (Exception e) {
-                    // 带业务上下文（configId/taskClass），便于排查是哪个 delayer 配置失败
-                    log.error("配置DELAYER异常, ID: [{}], taskClass: [{}]: {}", taskDelayerConfig.getId(), taskDelayerConfig.getTaskClass(), e.getMessage(), e);
-                }
-            } else {
-                log.warn("!未找到匹配的任务类，未能启动配置ID: [{}], DELAYER: [{}].", taskDelayerConfig.getId(), taskDelayerConfig.getTaskClass());
-            }
-        }
-
-        // 执行成功才会更新时间戳
-        // 比对数据库的时候，因为数据库缺少ms值，所以减去5000，提高匹配度。
-        delayerLastUpdateTime = startUpdateTimeMills - 5000;
-    }
-
-    /**
      * 应用关闭(@PreDestroy)时停所有任务，持 configLock 与在途 updateConfig/reportHostInfo 互斥，
-     * 避免 destroyAll 的 clear/destroy 与并发的 registerQueueListener/configureTask 交错（listener 泄漏或写入已销毁容器）。
+     * 避免 shutdown 的 clear/destroy 与并发的 registerQueueListener/configureTask 交错（listener 泄漏或写入已销毁容器）。
      */
-    public void shutdownAllTasks() {
+    public void shutdown() {
         configLock.lock();
         try {
-            taskRunnerContainer.destroyAll();
-            taskCronerContainer.destroyAll();
-            taskDelayerContainer.destroyAll();
+            taskRunnerContainer.shutdown();
+            taskCronerContainer.shutdown();
         } finally {
             configLock.unlock();
         }
@@ -601,24 +452,12 @@ public class TaskServiceRegistrar {
                 }
                 localConfig.setTaskClass(taskClass);
                 localConfig.setRunTarget(taskProperties.getRunTarget());
-                // 降级期间也必须填充 runnerConfigMap：否则同 JVM 业务调 sendToQueue→getFitQueue 找不到配置抛异常（与 Delayer 的 configureTaskDelayer 内 setDelayerConfig 对称）
                 taskMetaInfoManager.setRunnerConfig(taskMetaInfoManager.getRunnerConfigKey(localConfig), localConfig);
                 taskRunnerContainer.registerQueueListener(localConfig);
             } catch (Exception e) {
                 log.error("Runner 本地降级启动失败[{}]: {}", kv.getKey(), e.getMessage(), e);
             }
         }
-    }
-
-    /**
-     * 本地降级启动所有 Delayer（center 不可用时用 initConfig 默认配置启动 poll）。
-     * <p>实现下沉到 {@link TaskDelayerContainer#start()}（遍历实例 initConfig + configureTaskDelayer），
-     * 本方法仅为与 {@link #startRunnersLocal}/{@link #startCronersLocal} 命名对称。
-     * center 恢复后 updateTaskDelayerConfig 检测到 degraded→false，主循环用 center 配置按 configKey 原地覆盖
-     *（consumerNum 同则热更新、异则 stop old handle drain + 重建）。</p>
-     */
-    private void startDelayersLocal() {
-        taskDelayerContainer.start();
     }
 
     /**
@@ -643,7 +482,7 @@ public class TaskServiceRegistrar {
         if (appHost == null || appHost.isEmpty()) {
             // 未接入 nacos（appHost 配置为空）时用本机 IP 兜底，避免上报空 host
             try {
-                appHost = java.net.InetAddress.getLocalHost().getHostAddress();
+                appHost = InetAddress.getLocalHost().getHostAddress();
             } catch (Exception e) {
                 appHost = "";
             }
@@ -654,7 +493,6 @@ public class TaskServiceRegistrar {
         hostStats.setRunTarget(taskProperties.getRunTarget());
         hostStats.setCronerNum(taskMetaInfoManager.getCronerInstanceMap().size());
         hostStats.setRunnerNum(taskMetaInfoManager.getRunnerInstanceMap().size());
-        hostStats.setDelayerNum(taskMetaInfoManager.getDelayerInstanceMap().size());
         //设置内存和线程信息。
         Runtime runtime = Runtime.getRuntime();
         hostStats.setJvmMemMax(runtime.maxMemory());
@@ -668,10 +506,6 @@ public class TaskServiceRegistrar {
         //保存任务统计信息。
         hostStats.setTaskCronerStatsList(TaskStatsService.getCronerStats());
         hostStats.setTaskRunnerStatsList(TaskStatsService.getRunnerStats());
-        java.util.List<TaskDelayerStats> delayerStatsList = TaskStatsService.getDelayerStats();
-        // 填充 zset 积压数与执行线程数（被动查询，stats 本身只累计计数/耗时）
-        taskDelayerContainer.fillDelayerStats(delayerStatsList);
-        hostStats.setTaskDelayerStatsList(delayerStatsList);
         // 查询队列积压信息（queueName 反查 + queueDeclarePassive），委托 TaskRunnerContainer。
         taskRunnerContainer.fillQueueBacklog(hostStats.getTaskRunnerStatsList());
         ResponseData<HostReportResponse> reportResult = taskApiClient.reportHostInfo(hostStats);
@@ -684,27 +518,22 @@ public class TaskServiceRegistrar {
             if (reportResponse != null) {
                 if (reportResponse.getState() == 0 && !hostDisabled) {
                     hostDisabled = true;
-                    log.warn("!本主机被服务端禁用(state=0)，停止所有任务容器（runner/croner/delayer），保留底层线程池以便恢复！");
+                    log.warn("!本主机被服务端禁用(state=0)，停止所有任务容器（runner/croner），保留底层线程池以便恢复！");
                     // 三容器统一 suspendAll（禁用，保池）：runner destroy listener + 清 map；croner cancel future + 清 map；
-                    // delayer stop handle + 清 map。三者均不清底层线程池/连接，解除禁用后可恢复。
                     taskRunnerContainer.suspendAll();
                     taskCronerContainer.suspendAll();
-                    taskDelayerContainer.suspendAll();
                     // 重置降级/首次标志：禁用=全新停机，恢复时按全新启动（fetch 成功用 center 配置，fetch 失败则降级 start），
                     // 避免 degraded 残留导致解除禁用后 fetch 仍失败时降级条件(!degraded)不满足、任务不重启。
                     runnerDegraded = false;
                     cronerDegraded = false;
-                    delayerDegraded = false;
                     runnerFirstRun = true;
                     cronerFirstRun = true;
-                    delayerFirstRun = true;
                 } else if (reportResponse.getState() != 0 && hostDisabled) {
                     hostDisabled = false;
                     log.warn("!本主机已解除禁用，重置增量时间戳并立即全量拉取重新注册所有任务！");
-                    // 重置三类增量时间戳为 0，强制 updateConfig 全量拉取；各容器 map 已在禁用时清空，主循环会重建 listener/调度/handle
+                    // 重置两类增量时间戳为 0，强制 updateConfig 全量拉取；各容器 map 已在禁用时清空，主循环会重建 listener/调度/handle
                     runnerLastUpdateTime = 0;
                     cronerLastUpdateTime = 0;
-                    delayerLastUpdateTime = 0;
                     updateConfig();
                 }
             }
@@ -774,34 +603,6 @@ public class TaskServiceRegistrar {
     }
 
     /**
-     * 从 task-center 增量拉取 delayer 配置（基于 delayerLastUpdateTime），同步更新本地 metaInfo 缓存
-     *（含 state&lt;1 的删除处理：removeDelayerConfig + stop 停止孤儿 handle）。
-     * 拉取失败时返回 null，触发降级/warn（delayer 独立于 runner/croner 的 fail-fast，仅 warn 不影响主流程）。
-     *
-     * @return 本次拉取到的配置 map（configKey -&gt; config）；拉取失败时返回 null
-     */
-    private ConcurrentHashMap<String, TaskDelayerConfig> fetchDelayerConfig() {
-        ConcurrentHashMap<String, TaskDelayerConfig> map = new ConcurrentHashMap<>();
-        ResponseData<List<TaskDelayerConfig>> response = taskApiClient.getTaskDelayerConfigList(taskProperties.getRunTarget(), taskProperties.getTaskProject(), delayerLastUpdateTime);
-        List<TaskDelayerConfig> list = response != null && response.isSuccess() ? response.getData() : null;
-        if (list != null) {
-            for (TaskDelayerConfig config : list) {
-                String key = taskMetaInfoManager.getDelayerConfigKey(config);
-                if (config.getState() < 1) {
-                    taskMetaInfoManager.removeDelayerConfig(key);
-                    // 停掉孤儿 handle：center 删除/禁用(state<1)后，已 poll 的 handle 不应继续消费（对齐 fetchCronerConfig 的 stop）
-                    taskDelayerContainer.stop(key);
-                } else {
-                    taskMetaInfoManager.setDelayerConfig(key, config);
-                }
-                map.put(key, config);
-            }
-            return map;
-        }
-        return null;
-    }
-
-    /**
      * 首次上传 runner 默认配置与联系人信息到 task-center，并将服务端返回的 config 写入本地缓存。
      *
      * @param config  本地默认配置
@@ -832,26 +633,6 @@ public class TaskServiceRegistrar {
         }
         taskApiClient.initTaskContact(contact);
         taskMetaInfoManager.setCronerConfig(taskMetaInfoManager.getCronerConfigKey(config), config);
-        return config;
-    }
-
-    /**
-     * 首次上传 delayer 默认配置与联系人信息到 task-center，并将服务端返回的 config 写入本地缓存。
-     * <p>与 {@link #uploadRunnerInfo}/{@link #uploadCronerInfo} 对称：只写缓存、不启动任务——
-     * handle 启动由同周期主循环（遍历 delayerConfigMap）完成。submit() 校验的是 delayerConfigMap.containsKey，
-     * setDelayerConfig 已满足，故首传与主循环之间不存在"submit 抛异常"窗口。</p>
-     *
-     * @param config  本地默认配置
-     * @param contact 联系人信息
-     * @return 服务端确认后的配置（含分配的 id）
-     */
-    private TaskDelayerConfig uploadDelayerInfo(TaskDelayerConfig config, TaskContact contact) {
-        ResponseData<TaskDelayerConfig> response = taskApiClient.initTaskDelayerConfig(config);
-        if (response != null && response.isSuccess() && response.getData() != null) {
-            config = response.getData();
-        }
-        taskApiClient.initTaskContact(contact);
-        taskMetaInfoManager.setDelayerConfig(taskMetaInfoManager.getDelayerConfigKey(config), config);
         return config;
     }
 

@@ -7,7 +7,7 @@ import java.util.List;
  * 主机状态上报数据。
  *
  * <p>由任务执行主机周期性采集并上报到 task-center（见 {@code TaskServiceRegistrar.reportHostInfo}），
- * 含应用标识、JVM 内存与线程指标、注册的任务数量、以及各任务的执行统计（{@link TaskCronerStats}/{@link TaskRunnerStats}/{@link TaskDelayerStats}）。</p>
+ * 含应用标识、JVM 内存与线程指标、注册的任务数量、以及各任务的执行统计（{@link TaskCronerStats}/{@link TaskRunnerStats}）。</p>
  *
  * @author axeon
  */
@@ -59,10 +59,6 @@ public class TaskHostStats implements Serializable {
      */
     private int runnerNum;
 
-    /**
-     * 延迟任务数量
-     */
-    private int delayerNum;
 
     /**
      * JVM最大内存（Runtime.maxMemory，堆上限）
@@ -110,10 +106,6 @@ public class TaskHostStats implements Serializable {
      */
     private List<TaskRunnerStats> taskRunnerStatsList;
 
-    /**
-     * delayer运行统计信息。
-     */
-    private List<TaskDelayerStats> taskDelayerStatsList;
 
     public long getId() {
         return id;
@@ -187,13 +179,6 @@ public class TaskHostStats implements Serializable {
         this.runnerNum = runnerNum;
     }
 
-    public int getDelayerNum() {
-        return delayerNum;
-    }
-
-    public void setDelayerNum(int delayerNum) {
-        this.delayerNum = delayerNum;
-    }
 
     public long getJvmMemMax() {
         return jvmMemMax;
@@ -267,11 +252,4 @@ public class TaskHostStats implements Serializable {
         this.taskRunnerStatsList = taskRunnerStatsList;
     }
 
-    public List<TaskDelayerStats> getTaskDelayerStatsList() {
-        return taskDelayerStatsList;
-    }
-
-    public void setTaskDelayerStatsList(List<TaskDelayerStats> taskDelayerStatsList) {
-        this.taskDelayerStatsList = taskDelayerStatsList;
-    }
 }

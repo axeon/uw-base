@@ -105,7 +105,7 @@ public class LogClientAggAndPageTest {
     public void testBulkLogFiltersByLogLevel() {
         // 验证 bulkLog 按 logLevel>0 过滤：NONE 级别不写入。
         // 此处仅验证过滤后的列表语义（writeBulkLog 会走到 LogService，但 READ_ONLY 模式下 writeLog 直接返回）。
-        LogClientProperties props = new LogClientProperties();
+        UwLogEsProperties props = new UwLogEsProperties();
         props.getEs().setServer(null); // server 为空 -> logState=false，writeLog 直接返回，不会真正发请求
         LogClient client = new LogClient(new uw.log.es.service.LogService(props, "app", "host"));
         List<LogInterface> list = new ArrayList<>();

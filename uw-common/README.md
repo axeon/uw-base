@@ -226,8 +226,8 @@ long id = SnowflakeIdGenerator.getInstance().generateId();
 
 | 模式 | queueCapacity | 行为 |
 |------|---------------|------|
-| 快速模式 | = 0 | 无队列缓冲，并发满直接走 `CallPolicy` |
-| 队列模式 | > 0 | 有界无锁队列（`MpmcArrayQueue`）缓冲；并发满先入队，队列满才走 `CallPolicy` |
+| 快速模式 | = 0 | 无队列缓冲，并发满直接走 `RejectedPolicy` |
+| 队列模式 | > 0 | 有界无锁队列（`MpmcArrayQueue`）缓冲；并发满先入队，队列满才走 `RejectedPolicy` |
 
 队列模式下 worker 跑**接力循环**：完成当前 task 后非阻塞 `poll` 队列取下一个（有则继续、不释放许可，消除空窗；无则释放退出）。worker 退出与 submit 入队时均有扫尾补偿，保证"入队成功 ⇒ 必有 worker 最终消费"，避免关闭时孤儿任务静默丢失。
 
@@ -238,9 +238,9 @@ long id = SnowflakeIdGenerator.getInstance().generateId();
 | 构造 | 模式 | 默认策略 |
 |------|------|---------|
 | `(threadNamePrefix, maxConcurrency)` | 快速 | `BlockPolicy` |
-| `(threadNamePrefix, maxConcurrency, CallPolicy)` | 快速 | 指定 |
+| `(threadNamePrefix, maxConcurrency, RejectedPolicy)` | 快速 | 指定 |
 | `(threadNamePrefix, maxConcurrency, queueCapacity)` | >0 队列 / =0 快速 | 队列 `FailFastPolicy` / 快速 `BlockPolicy` |
-| `(threadNamePrefix, maxConcurrency, queueCapacity, CallPolicy)` | 全参 | 指定（null→`BlockPolicy`） |
+| `(threadNamePrefix, maxConcurrency, queueCapacity, RejectedPolicy)` | 全参 | 指定（null→`BlockPolicy`） |
 
 **方法**：
 
@@ -258,7 +258,7 @@ long id = SnowflakeIdGenerator.getInstance().generateId();
 
 > `getActiveCount()`（任务执行口径）只数已进入 `run()` 的 worker，不含「已持许可但虚拟线程未 mount 进 `run()`」及接力 poll 间隙的 worker。**勿用 `getMaximumPoolSize() - getActiveCount()` 估算空闲**（会高估），查可立即占用的并发槽位用 `getIdleCount()`，观察实际执行负载用 `getActiveCount()`。
 
-**调用策略**（`CallPolicy`，对齐 JDK `RejectedExecutionHandler`）：`BlockPolicy`（阻塞等待，队列模式默认——提交线程阻塞做自然反压，不拒绝不丢任务）/ `CallerRunsPolicy`（调用者执行，快速模式默认）/ `FailFastPolicy`（抛 `RejectedExecutionException`）/ `DiscardPolicy`（静默丢弃）。
+**调用策略**（`RejectedPolicy`，对齐 JDK `RejectedExecutionHandler`）：`BlockPolicy`（阻塞等待，队列模式默认——提交线程阻塞做自然反压，不拒绝不丢任务）/ `CallerRunsPolicy`（调用者执行，快速模式默认）/ `FailFastPolicy`（抛 `RejectedExecutionException`）/ `DiscardPolicy`（静默丢弃）。
 
 ```java
 // 队列模式：并发 100、队列 1000，队列满则阻塞提交线程（BlockPolicy，自然反压）

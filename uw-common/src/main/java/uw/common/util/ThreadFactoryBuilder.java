@@ -27,10 +27,29 @@ public final class ThreadFactoryBuilder {
 
     public static final class Builder {
 
+        /**
+         * 线程名格式（含 %d 占位，从 0 递增）。
+         */
         private final String nameFormat;
+
+        /**
+         * 是否 daemon 线程（默认非 daemon，与 JDK 一致）。
+         */
         private boolean daemon = false;
+
+        /**
+         * 线程优先级（null=继承默认）。
+         */
         private Integer priority = null;
+
+        /**
+         * 附加线程配置（如 setContextClassLoader），在命名/daemon/优先级设置之后执行；null=无。
+         */
         private Consumer<Thread> configurer = null;
+
+        /**
+         * 未捕获异常处理器（建议挂 error 日志兜底）；null=无。
+         */
         private Thread.UncaughtExceptionHandler uncaughtExceptionHandler = null;
 
         private Builder(String nameFormat) {
@@ -69,6 +88,11 @@ public final class ThreadFactoryBuilder {
             return this;
         }
 
+        /**
+         * 构建线程工厂（不可变快照：捕获当前配置，后续 Builder 变更不影响已构建实例）。
+         *
+         * @return 线程工厂：按 nameFormat 命名（%d 从 0 递增）并应用 daemon/优先级/异常处理器/附加配置
+         */
         public ThreadFactory build() {
             String fmt = nameFormat;
             boolean isDaemon = daemon;
@@ -76,6 +100,9 @@ public final class ThreadFactoryBuilder {
             Consumer<Thread> cfg = configurer;
             Thread.UncaughtExceptionHandler handler = uncaughtExceptionHandler;
             return new ThreadFactory() {
+                /**
+                 * 线程编号发生器（%d 占位取值，从 0 递增）。
+                 */
                 private final AtomicLong index = new AtomicLong();
 
                 @Override

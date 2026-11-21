@@ -1,18 +1,18 @@
 package uw.oauth2.client.provider;
 
-import uw.oauth2.client.conf.OAuth2ClientProperties;
+import uw.oauth2.client.conf.UwOAuth2ClientProperties;
 
 /**
  * StandardOAuth2Provider单元测试
  */
 class GoogleOAuth2ProviderTest {
 
-    private static OAuth2ClientProperties.ProviderConfig config;
+    private static UwOAuth2ClientProperties.ProviderConfig config;
     private static StandardOAuth2Provider provider;
 
     static {
         // 初始化配置
-        config = new OAuth2ClientProperties.ProviderConfig();
+        config = new UwOAuth2ClientProperties.ProviderConfig();
         config.setClientId("");
         config.setClientSecret("");
         config.setAuthUri("https://accounts.google.com/o/oauth2/auth");

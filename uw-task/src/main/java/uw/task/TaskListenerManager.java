@@ -1,8 +1,8 @@
 package uw.task;
 
 import uw.task.listener.TaskCronerListener;
-import uw.task.listener.TaskDelayerListener;
 import uw.task.listener.TaskRunnerListener;
+import uw.task.listener.TaskSendListener;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -25,9 +25,34 @@ public class TaskListenerManager {
     private final List<TaskRunnerListener> runnerListenerList = new CopyOnWriteArrayList<>();
 
     /**
-     * delayer监听器列表。
+     * 投递监听器列表（sendToQueue 投递链路侧）。
      */
-    private final List<TaskDelayerListener> delayerListenerList = new CopyOnWriteArrayList<>();
+    private final List<TaskSendListener> sendListenerList = new CopyOnWriteArrayList<>();
+
+    /**
+     * 加入一个 SendListener.
+     *
+     * @param listener
+     */
+    public void addSendListener(TaskSendListener listener) {
+        sendListenerList.add(listener);
+    }
+
+    /**
+     * 清除 SendListener 列表
+     */
+    public void clearSendListener() {
+        sendListenerList.clear();
+    }
+
+    /**
+     * 获取 Send Listener列表.
+     *
+     * @return
+     */
+    public List<TaskSendListener> getSendListenerList() {
+        return sendListenerList;
+    }
 
     /**
      * 加入一个 CronerListener.
@@ -48,15 +73,6 @@ public class TaskListenerManager {
     }
 
     /**
-     * 添加一个DelayerListener。
-     *
-     * @param listener
-     */
-    public void addDelayerListener(TaskDelayerListener listener) {
-        delayerListenerList.add(listener);
-    }
-
-    /**
      * 清除 CronerListener 列表
      */
     public void clearCronerListener() {
@@ -70,13 +86,6 @@ public class TaskListenerManager {
         runnerListenerList.clear();
     }
 
-
-    /**
-     * 清除DelayerListener列表
-     */
-    public void clearDelayerListener() {
-        delayerListenerList.clear();
-    }
 
     /**
      * 获取Croner Listener列表。
@@ -94,15 +103,6 @@ public class TaskListenerManager {
      */
     public List<TaskRunnerListener> getRunnerListenerList() {
         return runnerListenerList;
-    }
-
-    /**
-     * 获取Delayer Listener列表。
-     *
-     * @return
-     */
-    public List<TaskDelayerListener> getDelayerListenerList() {
-        return delayerListenerList;
     }
 
 

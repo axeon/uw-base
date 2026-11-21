@@ -1,11 +1,12 @@
 package uw.task.entity;
 
 import java.io.Serializable;
+import uw.task.TaskCroner;
 
 /**
  * 定时任务配置。
  *
- * <p>由 {@link uw.task.TaskCroner#initConfig()} 产出默认值，首次注册时上传到 task-center，
+ * <p>由 {@link TaskCroner#initConfig()} 产出默认值，首次注册时上传到 task-center，
  * 之后以服务端下发的动态配置为准。支持多实例：同一 taskClass 通过不同 taskParam 区分。
  * 关键字段：runType（单例/到处运行）、taskCron（cron 表达式）、各类 alertFailRate（报警阈值）。</p>
  *

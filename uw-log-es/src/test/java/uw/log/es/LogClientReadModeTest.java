@@ -21,8 +21,8 @@ public class LogClientReadModeTest {
 
     @BeforeClass
     public static void setUp() {
-        LogClientProperties logClientProperties = new LogClientProperties();
-        LogClientProperties.EsConfig esConfig = new LogClientProperties.EsConfig();
+        UwLogEsProperties logClientProperties = new UwLogEsProperties();
+        UwLogEsProperties.EsConfig esConfig = new UwLogEsProperties.EsConfig();
         esConfig.setServer("http://10.0.0.10:9200");
         esConfig.setUsername("elastic");
         esConfig.setPassword("espasswd");

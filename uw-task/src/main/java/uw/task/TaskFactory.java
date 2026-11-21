@@ -1,28 +1,37 @@
 package uw.task;
 
-import uw.common.util.ThreadFactoryBuilder;
-import com.rabbitmq.client.AMQP;
+import java.util.concurrent.CompletableFuture;
+import uw.task.container.TaskDelayTransferContainer;
+import uw.task.container.TaskSendCenter;
+import uw.common.util.LimitedVirtualThreadExecutor;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessageProperties;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
-import uw.kv.GlobalSequence;
+import uw.task.rabbit.TaskAmqpOps;
+
+
 import uw.common.util.SystemClock;
 import uw.task.conf.TaskMetaInfoManager;
-import uw.task.conf.TaskProperties;
-import uw.task.container.TaskDelayerContainer;
+import uw.task.util.TaskSequence;
+import uw.task.conf.UwTaskProperties;
+import uw.task.constant.TaskConstants;
+import uw.task.converter.TaskMessageConverter;
 import uw.task.container.TaskRunnerLocalExecutor;
 import uw.task.container.TaskRunnerContainer;
 import uw.task.exception.TaskRuntimeException;
 
-import java.util.concurrent.*;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 任务执行器。 通过调用此类，可以实现队列执行，RPC调用，本地调用等功能。
+ *
+ * <p>261120 分层整改后本类为业务门面 + 本地/RPC 执行编排：队列投递（含延时路由）委托
+ * {@link TaskSendCenter}（容器不再静态回调本类，getInstance 仅供业务方使用）；RPC/本地执行仍在本类。</p>
  *
  * @author axeon
  */
@@ -32,70 +41,79 @@ public class TaskFactory {
      * 日志器。
      */
     private static final Logger log = LoggerFactory.getLogger(TaskFactory.class);
-
     /**
      * 最大重试次数。
      */
     private static final int MAX_RETRY_TIMES = 20;
     /**
-     * 全局唯一实例。
+     * 全局唯一实例（业务方门面；框架内部零静态依赖）。
      */
     private static volatile TaskFactory INSTANCE;
     /**
-     * rabbitTemplate模板.
+     * 协议无关的 AMQP 操作面（RPC 通道用）。
      */
-    private final RabbitTemplate rabbitTemplate;
+    private final TaskAmqpOps taskAmqpOps;
+
+    /**
+     * 任务投递中心（全路由：延时分流 + 即时投递）。
+     */
+    private final TaskSendCenter taskSendCenter;
     /**
      * 任务meta信息管理器。
      */
     private final TaskMetaInfoManager taskMetaInfoManager;
     /**
-     * 全局sequence序列，主要用于taskLog日志。
-     */
-    /**
      * 用于本地执行任务的taskConsumer。
      */
     private final TaskRunnerContainer taskRunnerContainer;
     /**
-     * 延迟任务容器（delayTask 委派给它）。
+     * 延时任务 zset 搬运器（延时积压观测入口）。
      */
-    private final TaskDelayerContainer taskDelayerContainer;
+    private final TaskDelayTransferContainer taskDelayTransferContainer;
+    /**
+     * 监听管理器（客户端扩展点：经 {@link #getListenerManager()} 注册 runner/croner/投递监听器）。
+     */
+    private final TaskListenerManager taskListenerManager;
 
     /**
-     * rpc异步调用线程池
+     * rpc异步执行器（VT+并发上限，快速模式无队列缓冲）：满时 CallerRuns 由提交线程执行（背压）。
      */
-    private final ExecutorService taskRpcService;
+    private final LimitedVirtualThreadExecutor taskRpcService;
     /**
-     * 任务本地运行线程池。
+     * 任务本地队列执行器（VT+并发上限+有界缓冲）：缓冲也满时溢出到 MQ（SendToQueuePolicy 背压）。
      */
-    private final ExecutorService taskQueueService;
+    private final LimitedVirtualThreadExecutor taskQueueService;
 
     /**
-     * 构造 TaskFactory 并初始化两个内置线程池，同时设置全局单例。
-     * <p>线程池均为 SynchronousQueue + CallerRunsPolicy 派生策略：无缓冲队列，任务提交时若无空闲线程则由调用线程
-     * 或投递策略自身处理（taskQueueService 使用 {@code SendToQueuePolicy} 在满时回退投递 MQ）。</p>
+     * 构造 TaskFactory 并初始化两个内置执行器，同时设置全局单例。
+     * <p>虚拟线程 + 并发上限（261120 VT 化）：taskRpcService 快速模式满时 CallerRuns；taskQueueService 有界缓冲
+     * （容量=并发上限）满时经 {@code SendToQueuePolicy} 溢出到 MQ。上限值即背压闸门，与线程成本无关。</p>
      *
      * @param taskProperties      任务全局配置（提供线程数上下限等参数）
-     * @param rabbitTemplate      RabbitMQ 操作模板
+     * @param taskAmqpOps         协议无关 AMQP 操作面（RPC 通道）
+     * @param taskSendCenter      任务投递中心（全路由 sendToQueue）
      * @param taskRunnerContainer 队列任务执行容器（本地/RPC 模式实际执行入口）
      * @param taskMetaInfoManager 任务元信息管理器（runner 实例与配置索引）
-     * @param taskDelayerContainer 延迟任务容器（delayTask 委派给它）
+     * @param taskDelayTransferContainer 延时任务 zset 搬运器
+     * @param taskListenerManager        监听管理器（客户端监听器注册入口）
      */
-    public TaskFactory(TaskProperties taskProperties, RabbitTemplate rabbitTemplate, TaskRunnerContainer taskRunnerContainer,
-                       TaskMetaInfoManager taskMetaInfoManager, TaskDelayerContainer taskDelayerContainer) {
-        this.rabbitTemplate = rabbitTemplate;
+    public TaskFactory(UwTaskProperties taskProperties, TaskAmqpOps taskAmqpOps, TaskSendCenter taskSendCenter, TaskRunnerContainer taskRunnerContainer,
+                       TaskMetaInfoManager taskMetaInfoManager, TaskDelayTransferContainer taskDelayTransferContainer, TaskListenerManager taskListenerManager) {
+        this.taskAmqpOps = taskAmqpOps;
+        this.taskSendCenter = taskSendCenter;
         this.taskRunnerContainer = taskRunnerContainer;
         this.taskMetaInfoManager = taskMetaInfoManager;
-        this.taskDelayerContainer = taskDelayerContainer;
-        taskRpcService = new ThreadPoolExecutor(taskProperties.getTaskRpcThreadMinNum(), taskProperties.getTaskRpcThreadMaxNum(), 20L, TimeUnit.SECONDS,
-                new SynchronousQueue<>(), ThreadFactoryBuilder.of("TaskRpc-%d").daemon().build(), new ThreadPoolExecutor.CallerRunsPolicy());
-        taskQueueService = new ThreadPoolExecutor(taskProperties.getTaskLocalThreadMinNum(), taskProperties.getTaskLocalThreadMaxNum(), 20L, TimeUnit.SECONDS,
-                new SynchronousQueue<>(), ThreadFactoryBuilder.of("TaskQueue-%d").daemon().build(), new TaskRunnerLocalExecutor.SendToQueuePolicy());
+        this.taskDelayTransferContainer = taskDelayTransferContainer;
+        this.taskListenerManager = taskListenerManager;
+        taskRpcService = new LimitedVirtualThreadExecutor("uw.task.rpc-", taskProperties.getTaskRpcThreadMaxNum(),
+                new LimitedVirtualThreadExecutor.CallerRunsPolicy());
+        taskQueueService = new LimitedVirtualThreadExecutor("uw.task.queue-", taskProperties.getTaskLocalThreadMaxNum(),
+                taskProperties.getTaskLocalThreadMaxNum(), new TaskRunnerLocalExecutor.SendToQueuePolicy());
         INSTANCE = this;
     }
 
     /**
-     * 返回全局唯一实例。
+     * 返回全局唯一实例（业务方门面；框架内部零依赖）。
      *
      * @return 全局 TaskFactory 实例
      */
@@ -104,53 +122,19 @@ public class TaskFactory {
     }
 
     /**
-     * 提交延迟任务到 Redis zset，到点后由本机 TaskDelayer 容器 poll 执行。
-     * <p>与 {@link #sendToQueue} 对称：以 {@link TaskData} 为载体，调用方用 builder 设置
-     * taskClass（TaskDelayer 实现类）、taskDelay（延迟毫秒）、taskParam（业务参数），
-     * 可选 taskTag/rateLimitTag/refId/refTag 等。完全异步、无返回值。</p>
-     *
-     * @param taskData 延迟任务数据（taskClass/taskDelay/taskParam 必填）
-     */
-    public void delayTask(final TaskData<?, ?> taskData) {
-        if (taskData == null) {
-            throw new TaskRuntimeException("taskData must not be null");
-        }
-        taskDelayerContainer.submit(taskData);
-    }
-
-    /**
      * 将任务异步投递到 RabbitMQ 队列，由具备匹配 runner 的远端主机消费。
      * <p>
-     * 完全异步、无返回值。任务 ID 与入队时间由框架自动设置；runType 会在方法内临时置为
-     * {@link TaskData#RUN_TYPE_GLOBAL}（仅作用于本次发送，方法返回前恢复原值，不污染调用方对象）。
-     * 若任务带 taskDelay 且配置了延迟队列，将投递到 TTL 队列延迟消费。
+     * 完全异步、无返回值。若任务带 taskDelay，自动路由：支持原生延迟（1.0+4.4+quorum）以消息级延迟投递，
+     * 否则经 Redis zset 搬运（到期自动转投）。实现见 {@link TaskSendCenter#sendToQueue}。
      * <p>
-     * <b>阻塞风险</b>：RabbitMQ 出现 channelMax 资源耗尽时会在线程内重试（最多 {@value #MAX_RETRY_TIMES} 次，
-     * 退避递增），最坏阻塞约 2 分钟，避免在 Web 请求线程等敏感线程直接调用（见 README）。
+     * <b>阻塞风险</b>：即时投递遇资源类异常会在线程内退避重试（最多 {@value #MAX_RETRY_TIMES} 次，最坏约 2 分钟）；
+     * 延时投递（taskDelay&gt;0）走 MQ 原生延迟或 zset 写入，无重试循环。避免在 Web 请求线程等敏感线程直接调用（见 README）。
      *
      * @param taskData 执行任务对象（taskClass/taskParam 必须已设置）
      * @throws TaskRuntimeException 投递重试全部失败时抛出
      */
     public void sendToQueue(final TaskData<?, ?> taskData) {
-        Message message = buildTaskQueueMessage(taskData);
-        String queue = message.getMessageProperties().getConsumerQueue();
-        //此处可能出现The channelMax limit is reached.报错，所以进行重试。
-        for (int i = 0; i < MAX_RETRY_TIMES; i++) {
-            try {
-                if (i > 0) {
-                    Thread.sleep(i * 100);
-                }
-                rabbitTemplate.send(queue, queue, message);
-                return;
-            } catch (Exception e) {
-                log.error(e.getMessage(), e);
-                if (e instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
-        }
-        throw new TaskRuntimeException("The channelMax limit is reached!");
+        taskSendCenter.sendToQueue(taskData);
     }
 
     /**
@@ -183,11 +167,16 @@ public class TaskFactory {
      * @param <TP>     任务参数类型
      * @param <RD>     返回结果类型
      * @return 携带执行结果与状态的 taskData（同传入对象）
-     * @throws TaskRuntimeException RPC 超时或 channelMax 资源耗尽时抛出
+     * @throws TaskRuntimeException RPC 超时或重试耗尽时抛出
      */
     @SuppressWarnings("unchecked")
     public <TP, RD> TaskData<TP, RD> runTask(final TaskData<TP, RD> taskData) {
-        taskData.setId(GlobalSequence.nextId("uw-task-TaskRunnerLog"));
+        if (taskData.getTaskDelay() > 0) {
+            // 延时任务：等同 sendToQueue（延时后经队列执行，同步 RPC 语义不成立）
+            sendToQueue(taskData);
+            return taskData;
+        }
+        taskData.setId(TaskSequence.nextId(TaskConstants.KEY_RUNNER_LOG));
         taskData.setQueueDate(SystemClock.nowDate());
         // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
         if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && taskMetaInfoManager.checkRunnerRunLocal(taskData)) {
@@ -207,7 +196,7 @@ public class TaskFactory {
     }
 
     /**
-     * 强制本地同步执行任务，不经 MQ。
+     * 强制本地同步执行任务，不经 MQ。带 taskDelay 时在执行线程内延时（本地专属任务的延时/重试退避语义）。
      * <p>
      * {@link TaskData#RUN_TYPE_AUTO_RPC} 且本机有匹配 runner 时降级为本地执行；否则抛
      * {@link TaskRuntimeException}（不回退到队列，区别于本地队列优先的 {@link #runQueue}）。
@@ -221,7 +210,7 @@ public class TaskFactory {
      */
     @SuppressWarnings("unchecked")
     public <TP, RD> TaskData<TP, RD> runTaskLocal(final TaskData<TP, RD> taskData) {
-        taskData.setId(GlobalSequence.nextId("uw-task-TaskRunnerLog"));
+        taskData.setId(TaskSequence.nextId(TaskConstants.KEY_RUNNER_LOG));
         taskData.setQueueDate(SystemClock.nowDate());
         // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
         if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && taskMetaInfoManager.checkRunnerRunLocal(taskData)) {
@@ -251,7 +240,12 @@ public class TaskFactory {
      */
     @SuppressWarnings("unchecked")
     public <TP, RD> Future<TaskData<TP, RD>> runTaskAsync(final TaskData<TP, RD> taskData) {
-        taskData.setId(GlobalSequence.nextId("uw-task-TaskRunnerLog"));
+        if (taskData.getTaskDelay() > 0) {
+            // 延时任务：等同 sendToQueue（延时后经队列执行）
+            sendToQueue(taskData);
+            return CompletableFuture.completedFuture(taskData);
+        }
+        taskData.setId(TaskSequence.nextId(TaskConstants.KEY_RUNNER_LOG));
         taskData.setQueueDate(SystemClock.nowDate());
 
         // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
@@ -261,17 +255,72 @@ public class TaskFactory {
         }
         if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
             // 启动本地运行模式。
-            return taskRpcService.submit(() -> {
-                taskRunnerContainer.process(taskData);
-                return taskData;
+            CompletableFuture<TaskData<TP, RD>> future = new CompletableFuture<>();
+            taskRpcService.submit(() -> {
+                try {
+                    taskRunnerContainer.process(taskData);
+                    future.complete(taskData);
+                } catch (Throwable e) {
+                    future.completeExceptionally(e);
+                }
             });
+            return future;
         } else {
             // 全局运行模式
             taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
             Message message = buildRpcMessage(taskData);
             String queue = taskMetaInfoManager.getFitQueue(taskData);
-            return taskRpcService.submit(() -> doRpcCall(queue, message));
+            CompletableFuture<TaskData<TP, RD>> future = new CompletableFuture<>();
+            taskRpcService.submit(() -> {
+                try {
+                    future.complete(doRpcCall(queue, message));
+                } catch (Throwable e) {
+                    future.completeExceptionally(e);
+                }
+            });
+            return future;
         }
+    }
+
+    /**
+     * 查询指定队列的延时任务积压数（Redis zset 侧，尚未到期/待搬运）。
+     * <p>与 {@link #getQueueInfo}（MQ 侧积压）互补：延时任务在 zset 滞留期间的积压观测入口。</p>
+     *
+     * @param queueName 目标队列名
+     * @return zset 大小；查询失败返回 -1
+     */
+    public long getDelayBacklogSize(String queueName) {
+        return taskDelayTransferContainer.getBacklogSize(queueName);
+    }
+
+    /**
+     * 查询全部队列的延时积压总数（运维观测整体延时水位）。
+     *
+     * @return 各分片之和；无延时任务返回 0
+     */
+    public long getDelayBacklogTotal() {
+        return taskDelayTransferContainer.getTotalBacklog();
+    }
+
+    /**
+     * 查询指定队列的积压消息数与消费者数。
+     *
+     * @param queueName 队列名
+     * @return 长度为 2 的数组：下标 0 为消息数量，下标 1 为消费者数量
+     */
+    public int[] getQueueInfo(String queueName) {
+        int[] info = taskAmqpOps.getQueueInfo(queueName);
+        return info == null ? new int[]{0, 0} : info;
+    }
+
+    /**
+     * 清空指定队列中的全部消息（危险操作，仅供运维使用）。
+     *
+     * @param queueName 队列名
+     * @return 被清除的消息数量
+     */
+    public int purgeQueue(String queueName) {
+        return taskAmqpOps.purgeQueue(queueName);
     }
 
     /**
@@ -283,15 +332,17 @@ public class TaskFactory {
     private Message buildRpcMessage(TaskData<?, ?> taskData) {
         //加入优先级信息。
         MessageProperties messageProperties = new MessageProperties();
+        // 1.0 协议 RPC reply correlation 依赖 messageId（模板强校验）
+        messageProperties.setMessageId(String.valueOf(taskData.getId()));
         messageProperties.setPriority(10);
         messageProperties.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
         messageProperties.setExpiration("180000");
-        return rabbitTemplate.getMessageConverter().toMessage(taskData, messageProperties);
+        return new TaskMessageConverter().toMessage(taskData, messageProperties);
     }
 
     /**
-     * 执行全局 RPC 调用并处理 channelMax 重试与超时判定。
-     * <p>仅对 channelMax 类异常重试（最多 {@value #MAX_RETRY_TIMES} 次，退避递增）；RPC 超时(对方无响应 retMessage==null)
+     * 执行全局 RPC 调用与退避重试、超时判定。
+     * <p>资源类异常退避重试（最多 {@value #MAX_RETRY_TIMES} 次）；RPC 超时(对方无响应 retMessage==null)
      * 立即失败不重试（重试只会阻塞调用方且可能重复执行）；InterruptedException 中断后立即返回不重试。</p>
      *
      * @param queue   目标队列
@@ -299,21 +350,20 @@ public class TaskFactory {
      * @param <TP>    任务参数类型
      * @param <RD>    返回结果类型
      * @return 携带执行结果的 taskData
-     * @throws TaskRuntimeException RPC 超时或 channelMax 重试耗尽时抛出
+     * @throws TaskRuntimeException RPC 超时或重试耗尽时抛出
      */
     @SuppressWarnings("unchecked")
     private <TP, RD> TaskData<TP, RD> doRpcCall(String queue, Message message) {
-        //此处可能出现The channelMax limit is reached.报错，所以进行重试。
-        //注：仅对 channelMax 类 AmqpException 重试；RPC 超时(retMessage==null)不重试（重试只阻塞调用方+可能重复执行）。
+        //RPC 调用按资源类异常退避重试；RPC 超时(retMessage==null)不重试（重试只阻塞调用方+可能重复执行）。
         String rpcTimeoutQueue = null;
         for (int i = 0; i < MAX_RETRY_TIMES; i++) {
             try {
                 if (i > 0) {
                     Thread.sleep(i * 50);
                 }
-                Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
+                Message retMessage = taskAmqpOps.sendAndReceive(queue, message, 180000);
                 if (retMessage != null) {
-                    return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
+                    return (TaskData<TP, RD>) new TaskMessageConverter().fromMessage(retMessage);
                 }
                 // RPC 超时（对方没回）：立即失败，不重试
                 rpcTimeoutQueue = queue;
@@ -329,78 +379,26 @@ public class TaskFactory {
         if (rpcTimeoutQueue != null) {
             throw new TaskRuntimeException("RPC call timed out: " + rpcTimeoutQueue);
         }
-        throw new TaskRuntimeException("The channelMax limit is reached!");
+        throw new TaskRuntimeException("RPC call failed after retries: " + queue);
     }
 
     /**
-     * 查询指定队列的积压消息数与消费者数。
-     *
-     * @param queueName 队列名
-     * @return 长度为 2 的数组：下标 0 为消息数量，下标 1 为消费者数量
-     */
-    public int[] getQueueInfo(String queueName) {
-        AMQP.Queue.DeclareOk declareOk = this.rabbitTemplate.execute(channel -> channel.queueDeclarePassive(queueName));
-        return new int[]{declareOk.getMessageCount(), declareOk.getConsumerCount()};
-    }
-
-    /**
-     * 清空指定队列中的全部消息（危险操作，仅供运维使用）。
-     *
-     * @param queueName 队列名
-     * @return 被清除的消息数量
-     */
-    public int purgeQueue(String queueName) {
-        return this.rabbitTemplate.execute(channel -> {
-            AMQP.Queue.PurgeOk queuePurged = channel.queuePurge(queueName);
-            return queuePurged.getMessageCount();
-        });
-    }
-
-    /**
-     * 构造Task消息对象，此方法用于提前构造TaskData。
-     *
-     * @param taskData 用于任务执行传值对象
-     * @return Message 发送的队列信息
-     */
-    private Message buildTaskQueueMessage(final TaskData taskData) {
-        taskData.setId(GlobalSequence.nextId("uw-task-TaskRunnerLog"));
-        taskData.setQueueDate(SystemClock.nowDate());
-        // 发队列的消息体必须是 GLOBAL，消费端 process 依赖此值判定走限速/重试链路，
-        // getFitQueue 也依赖 GLOBAL 判定 TTL 队列。但调用方传入的 taskData 可能被复用
-        // （README 强调"taskData 对象不可改变"），故仅在此方法作用域内临时改为 GLOBAL，结束时恢复，
-        // 避免污染调用方持有的对象。
-        int originRunType = taskData.getRunType();
-        taskData.setRunType(TaskData.RUN_TYPE_GLOBAL);
-        try {
-            MessageProperties messageProperties = new MessageProperties();
-            messageProperties.setConsumerQueue(taskMetaInfoManager.getFitQueue(taskData));
-            // 没法拿到配置信息，除非返回。暂时先用taskDelay > 0处理
-            if (taskData.getTaskDelay() > 0) {
-                messageProperties.setExpiration(String.valueOf(taskData.getTaskDelay()));
-            }
-            return rabbitTemplate.getMessageConverter().toMessage(taskData, messageProperties);
-        } finally {
-            taskData.setRunType(originRunType);
-        }
-    }
-
-    /**
-     * 容器销毁时优雅关闭 RPC 线程池与本地队列线程池。
-     * <p>委托 {@link #shutdownQuietly(ExecutorService)} 逐个关闭：先 shutdown 阻止新任务，
-     * 最多等待 5 秒让在途任务完成，超时后 shutdownNow 强制中断。</p>
+     * 容器销毁时优雅关闭 RPC 执行器与本地队列执行器。
+     * <p>三段式关闭：先 shutdown 阻止新任务，最多等待 5 秒让在途任务完成，超时后 shutdownNow 强制中断。</p>
      */
     @PreDestroy
-    public void destroy() {
+    public void shutdown() {
         shutdownQuietly(taskRpcService);
         shutdownQuietly(taskQueueService);
     }
+
     /**
-     * 优雅关闭线程池：shutdown → awaitTermination(5s) → shutdownNow。
+     * 优雅关闭执行器：shutdown → awaitTermination(5s) → shutdownNow。
      * <p>三段式关闭保证在途任务尽量自然结束，超时才强制中断；中断后恢复线程中断状态。</p>
      *
-     * @param pool 待关闭的线程池，为 null 时直接返回
+     * @param pool 待关闭的执行器，为 null 时直接返回
      */
-    private static void shutdownQuietly(ExecutorService pool) {
+    private static void shutdownQuietly(LimitedVirtualThreadExecutor pool) {
         if (pool == null) {
             return;
         }

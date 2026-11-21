@@ -1,7 +1,6 @@
 package uw.task.util;
 
 import uw.task.TaskData;
-import uw.task.entity.TaskDelayerStats;
 import uw.task.entity.TaskCronerStats;
 import uw.task.entity.TaskRunnerStats;
 import uw.task.exception.TaskDataException;
@@ -14,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 任务运行统计聚合服务。
  *
- * <p>按 taskId 聚合 croner / runner / delayer 的执行计数与耗时，供主机状态报告周期性采集上报。</p>
+ * <p>按 taskId 聚合 croner / runner 的执行计数与耗时，供主机状态报告周期性采集上报。</p>
  *
  * <h3>并发模型</h3>
  * 单读多写：{@code updateXxxStats} 由多个任务执行线程并发调用，{@code getXxxStats} 仅由主机状态上报
@@ -43,11 +42,6 @@ public class TaskStatsService {
      * runner数据存储map。
      */
     private static final ConcurrentHashMap<Long, TaskRunnerStats> RUNNER_STATS_MAP = new ConcurrentHashMap<>();
-
-    /**
-     * delayer数据存储map。
-     */
-    private static final ConcurrentHashMap<Long, TaskDelayerStats> DELAYER_STATS_MAP = new ConcurrentHashMap<>();
 
 
     /**
@@ -120,39 +114,6 @@ public class TaskStatsService {
 
 
     /**
-     * 更新DelayerMetrics。
-     *
-     * @param taskId          任务配置 id
-     * @param numAll          执行总计数
-     * @param numFailProgram  程序失败计数
-     * @param numFailConfig   配置失败计数（如连续限速超限放弃）
-     * @param numFailData     数据失败计数
-     * @param numFailPartner  对方失败计数
-     * @param timeWaitDelay   实际延迟等待耗时（runAt→consumeDate，毫秒）
-     * @param timeRun         运行耗时（毫秒）
-     */
-    public static void updateDelayerStats(long taskId, int numAll, int numFailProgram, int numFailConfig, int numFailData, int numFailPartner, int timeWaitDelay, int timeRun) {
-        DELAYER_STATS_MAP.compute(taskId, (k, v) -> {
-            if (v != null) {
-                return v.addMetrics(numAll, numFailProgram, numFailConfig, numFailData, numFailPartner, timeWaitDelay, timeRun);
-            } else {
-                return new TaskDelayerStats(k).addMetrics(numAll, numFailProgram, numFailConfig, numFailData, numFailPartner, timeWaitDelay, timeRun);
-            }
-        });
-    }
-
-    /**
-     * 获取DelayerStats列表，同时清空map。
-     *
-     * @return 快照列表
-     */
-    public static List<TaskDelayerStats> getDelayerStats() {
-        List<TaskDelayerStats> list = new ArrayList<>(DELAYER_STATS_MAP.values());
-        DELAYER_STATS_MAP.clear();
-        return list;
-    }
-
-    /**
      * 将任务状态映射为 4 元失败计数数组：[program, config, data, partner]。
      *
      * @param state 任务状态（TaskData.STATE_FAIL_*）
@@ -169,7 +130,6 @@ public class TaskStatsService {
 
     /**
      * 将执行异常映射为任务失败状态。
-     * <p>统一 TaskRunner / TaskCroner / TaskDelayer 三处 catch 链的异常分类逻辑：
      * {@link TaskDataException}→DATA、{@link TaskPartnerException}→PARTNER、其余→PROGRAM。
      * 调用方据此 setState，并用 {@code ExceptionUtils.exceptionToString(e)} 写入 errorInfo / resultData。</p>
      *

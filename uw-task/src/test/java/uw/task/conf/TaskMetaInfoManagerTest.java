@@ -8,9 +8,7 @@ import uw.task.entity.TaskCronerConfig;
 import uw.task.entity.TaskRunnerConfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -26,7 +24,7 @@ class TaskMetaInfoManagerTest {
 
     @BeforeEach
     void setUp() {
-        TaskProperties props = new TaskProperties();
+        UwTaskProperties props = new UwTaskProperties();
         props.setTaskProject("com.demo.task");
         // ApplicationContext 仅被构造器存引用，不调用 init() 即不触发 getBeansOfType
         manager = new TaskMetaInfoManager(mock(ApplicationContext.class), props);
@@ -65,58 +63,35 @@ class TaskMetaInfoManagerTest {
     }
 
     @Test
-    void getQueueNameByConfig_variants() {
+    void getQueueNameByConfig_alwaysTaskLevel() {
         TaskRunnerConfig config = baseRunnerConfig();
         config.setTaskClass("com.demo.task.svc.Foo");
         config.setTaskTag("t1");
         config.setRunTarget("prod");
-
-        // 任务级队列：直接用 config key
-        config.setQueueType(TaskRunnerConfig.TYPE_QUEUE_TASK);
+        // classic 与 quorum 仅影响队列形态（声明期），不影响命名（全部任务级）
+        config.setQueueType(TaskRunnerConfig.QUEUE_TYPE_CLASSIC);
         assertEquals("com.demo.task.svc.Foo#t1$prod", manager.getQueueNameByConfig(config));
-
-        // 任务组默认队列：取包名 + @default$target
-        config.setQueueType(TaskRunnerConfig.TYPE_QUEUE_GROUP);
-        assertEquals("com.demo.task.svc@default$prod", manager.getQueueNameByConfig(config));
-
-        // 任务组优先级队列
-        config.setQueueType(TaskRunnerConfig.TYPE_QUEUE_GROUP_PRIORITY);
-        assertEquals("com.demo.task.svc@priority$prod", manager.getQueueNameByConfig(config));
-
-        // 项目优先级队列
-        config.setQueueType(TaskRunnerConfig.TYPE_QUEUE_PROJECT_PRIORITY);
-        assertEquals("com.demo.task@priority$prod", manager.getQueueNameByConfig(config));
-
-        // 项目默认队列
-        config.setQueueType(TaskRunnerConfig.TYPE_QUEUE_PROJECT);
-        assertEquals("com.demo.task$prod", manager.getQueueNameByConfig(config));
+        config.setQueueType(TaskRunnerConfig.QUEUE_TYPE_QUORUM);
+        assertEquals("com.demo.task.svc.Foo#t1$prod", manager.getQueueNameByConfig(config));
     }
 
-    @Test
-    void ttlQueueName_namingAndDetection() {
-        assertEquals("foo*", manager.getTTLQueueName("foo"));
-        assertTrue(manager.isTTLQueueName("foo*"));
-        assertFalse(manager.isTTLQueueName("foo"));
-    }
 
     @Test
-    void getFitQueue_returnsTtlName_whenDelayOnAndGlobalAndDelayed() {
+    void getFitQueue_returnsQueueName_regardlessOfDelay() {
         TaskRunnerConfig config = baseRunnerConfig();
         config.setTaskClass("com.demo.task.Foo");
         config.setTaskTag("t1");
         config.setRunTarget("prod");
-        config.setQueueType(TaskRunnerConfig.TYPE_QUEUE_TASK);
-        config.setDelayType(TaskRunnerConfig.TYPE_DELAY_ON);
+        config.setQueueType(TaskRunnerConfig.QUEUE_TYPE_QUORUM);
         manager.setRunnerConfig(manager.getRunnerConfigKey(config), config);
-
         TaskData<Object, Object> data = TaskData.builder().build();
         data.setTaskClass("com.demo.task.Foo");
         data.setTaskTag("t1");
         data.setRunTarget("prod");
         data.setRunType(TaskData.RUN_TYPE_GLOBAL);
         data.setTaskDelay(5000);
-
-        assertEquals("com.demo.task.Foo#t1$prod*", manager.getFitQueue(data));
+        // 延迟语义由消息层承载（MQ 原生延迟或 zset 搬运），队列名与延迟无关
+        assertEquals("com.demo.task.Foo#t1$prod", manager.getFitQueue(data));
     }
 
     @Test

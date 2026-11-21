@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.util.SnowflakeIdGenerator;
 import uw.webot.captcha.CaptchaManager;
-import uw.webot.conf.WebotProperties;
+import uw.webot.conf.UwWebotProperties;
 import uw.webot.core.BrowserBotPool;
 import uw.webot.core.BrowserTab;
 import uw.webot.proxy.ProxyManager;
@@ -35,7 +35,7 @@ public class WebotManager {
     /**
      * 配置属性。
      */
-    private final WebotProperties properties;
+    private final UwWebotProperties properties;
 
     /**
      * 浏览器实例池。
@@ -71,7 +71,7 @@ public class WebotManager {
     /**
      * 返回全局唯一实例。
      * <p>
-     * 仅当 WebotAutoConfiguration 装配（{@code uw.webot.enabled=true}，默认开启）并完成
+     * 仅当 UwWebotAutoConfiguration 装配（{@code uw.webot.enabled=true}，默认开启）并完成
      * WebotManager Bean 初始化后才可用，否则返回 {@code null}。在 {@code enabled=false} 的场景下
      * 请勿调用本方法，应直接通过 Spring 依赖注入获取（或不依赖 WebotManager）。
      * </p>
@@ -92,7 +92,7 @@ public class WebotManager {
      * @param stealthManager 反检测服务
      * @param proxyManager   代理服务
      */
-    public WebotManager(WebotProperties properties,
+    public WebotManager(UwWebotProperties properties,
                         BrowserBotPool browserBotPool,
                         SessionService sessionService,
                         CaptchaManager captchaManager,
@@ -338,7 +338,7 @@ public class WebotManager {
      *
      * @return WebotProperties实例
      */
-    public WebotProperties getProperties() {
+    public UwWebotProperties getProperties() {
         return properties;
     }
 

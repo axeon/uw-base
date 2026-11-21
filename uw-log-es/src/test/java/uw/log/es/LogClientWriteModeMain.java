@@ -15,10 +15,10 @@ public class LogClientWriteModeMain {
 
 
     public static void main(String[] args) {
-        LogClientProperties logClientProperties = new LogClientProperties();
-        LogClientProperties.EsConfig esConfig = new LogClientProperties.EsConfig();
+        UwLogEsProperties logClientProperties = new UwLogEsProperties();
+        UwLogEsProperties.EsConfig esConfig = new UwLogEsProperties.EsConfig();
         esConfig.setServer("http://localhost:9200");
-        esConfig.setMode(LogClientProperties.LogMode.READ_WRITE);
+        esConfig.setMode(UwLogEsProperties.LogMode.READ_WRITE);
         esConfig.setAppInfoOverwrite(false);
         esConfig.setMaxFlushInSeconds(10);
         esConfig.setMaxKiloBytesOfBatch(5 * 1024);

@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
-import uw.webot.conf.WebotAutoConfiguration;
+import uw.webot.conf.UwWebotAutoConfiguration;
 import uw.webot.core.BrowserBotPool;
 import uw.webot.core.BrowserConfig;
 import uw.webot.core.BrowserTab;
@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Hybrid 模式集成测试。
  * 验证 WebotManager 与 BrowserInstancePool 的集成。
  */
-@SpringBootTest(classes = {WebotAutoConfiguration.class})
+@SpringBootTest(classes = {UwWebotAutoConfiguration.class})
 @TestPropertySource(properties = {"logging.level.uw.webot=DEBUG", "uw.webot.enabled=true", "uw.webot.botPool.max-browsers-per-group=1", "uw.webot.botPool.max-tabs-per-browser=5",})
 class WebotIntegrationTest {
 

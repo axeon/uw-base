@@ -1,6 +1,7 @@
 package uw.task.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import uw.task.constant.TaskLogRecordType;
 import uw.log.es.vo.LogBaseVo;
 import uw.task.TaskData;
 
@@ -102,7 +103,7 @@ public class TaskCronerLog extends LogBaseVo implements Serializable {
     /**
      * 构造定时任务日志，指定日志级别与字段截断长度。
      *
-     * @param logLevel     日志级别（见 {@link uw.task.constant.TaskLogRecordType}）
+     * @param logLevel     日志级别（见 {@link TaskLogRecordType}）
      * @param logLimitSize 日志字符串字段（resultData/taskParam）最大长度，0 表示不限制
      */
     public TaskCronerLog(int logLevel, int logLimitSize) {

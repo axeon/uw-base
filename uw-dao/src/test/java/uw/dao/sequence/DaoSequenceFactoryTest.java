@@ -9,7 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import uw.dao.DaoFactory;
 import uw.dao.SeqTestApplication;
-import uw.dao.conf.DaoConfigManager;
+import uw.dao.util.DaoPropertiesManager;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -44,7 +44,7 @@ class DaoSequenceFactoryTest {
     void cleanup() {
         // 清理 DB 中测试用的 seq 记录（连接名在 Spring 上下文就绪后获取）
         try {
-            String rootConn = DaoConfigManager.getRouteMapping("sys_seq", "write");
+            String rootConn = DaoPropertiesManager.getRouteMapping("sys_seq", "write");
             daoFactory.execute(rootConn, "delete from sys_seq where seq_name like ?", new Object[]{SEQ_PREFIX + "%"});
         } catch (Exception e) {
             // 忽略清理异常

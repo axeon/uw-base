@@ -6,7 +6,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.client.RestClient;
 import uw.common.response.ResponseData;
 import uw.log.es.LogClient;
-import uw.task.conf.TaskProperties;
+import uw.task.conf.UwTaskProperties;
 import uw.task.entity.*;
 
 import java.util.Date;
@@ -32,7 +32,7 @@ public class TaskApiClient {
     /**
      * 任务配置（提供 task-center 地址等）。
      */
-    private final TaskProperties taskProperties;
+    private final UwTaskProperties taskProperties;
 
     /**
      * 带鉴权的 HTTP 客户端，用于调用 task-center 的 RPC 接口。
@@ -49,7 +49,7 @@ public class TaskApiClient {
      * @param authRestClient 带鉴权的 HTTP 客户端
      * @param logClient      日志客户端
      */
-    public TaskApiClient(final TaskProperties taskProperties, final RestClient authRestClient, final LogClient logClient) {
+    public TaskApiClient(final UwTaskProperties taskProperties, final RestClient authRestClient, final LogClient logClient) {
         this.taskProperties = taskProperties;
         this.authRestClient = authRestClient;
         this.logClient = logClient;
@@ -209,57 +209,6 @@ public class TaskApiClient {
         } catch (Exception e) {
             log.error("TaskApiClient.sendTaskCronerLog()发送定时任务日志/心跳异常: {}", e.getMessage());
         }
-    }
-
-    /**
-     * 初始化延迟任务配置到服务端（首次注册时上传默认配置，服务端按三元组幂等去重）。
-     *
-     * @param config 延迟任务配置
-     * @return 服务端响应（含已分配的 id）；网络失败返回 null
-     */
-    public ResponseData<TaskDelayerConfig> initTaskDelayerConfig(TaskDelayerConfig config) {
-        try {
-            ResponseData<TaskDelayerConfig> result = authRestClient.post()
-                    .uri(taskProperties.getTaskCenterHost() + "/rpc/task/delayer/init")
-                    .body(config)
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<ResponseData<TaskDelayerConfig>>() {});
-            return warnOnFailure(result, "initTaskDelayerConfig");
-        } catch (Exception e) {
-            log.error("TaskApiClient.initTaskDelayerConfig()上传延迟任务配置到服务端异常: {}", e.getMessage());
-        }
-        return null;
-    }
-
-    /**
-     * 拉取指定 runTarget 与 taskProject 下、lastUpdateTime 之后变更的延迟任务配置列表。
-     *
-     * @param runTarget      运行目标
-     * @param taskProject    任务项目（包名前缀）
-     * @param lastUpdateTime 上次更新时间戳（毫秒），仅拉取此时间之后的增量
-     * @return 服务端响应（配置列表）；网络失败返回 null
-     */
-    public ResponseData<List<TaskDelayerConfig>> getTaskDelayerConfigList(String runTarget, String taskProject, long lastUpdateTime) {
-        try {
-            ResponseData<List<TaskDelayerConfig>> result = authRestClient.get()
-                    .uri(taskProperties.getTaskCenterHost() + "/rpc/task/delayer/list?runTarget={runTarget}&taskProject={taskProject}&lastUpdateTime={lastUpdateTime}",
-                            runTarget, taskProject, lastUpdateTime)
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<ResponseData<List<TaskDelayerConfig>>>() {});
-            return warnOnFailure(result, "getTaskDelayerConfigList");
-        } catch (Exception e) {
-            log.error("TaskApiClient.getTaskDelayerConfigList()拉取延迟任务配置异常: {}", e.getMessage());
-        }
-        return null;
-    }
-
-    /**
-     * 异步写入延迟任务执行日志到 ES（索引 uw.task.delayer.log，不经服务端）。
-     *
-     * @param log 延迟任务执行日志
-     */
-    public void sendTaskDelayerLog(TaskDelayerLog log) {
-        logClient.log(log);
     }
 
     /**

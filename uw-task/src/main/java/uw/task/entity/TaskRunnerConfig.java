@@ -1,14 +1,15 @@
 package uw.task.entity;
 
 import java.io.Serializable;
+import uw.task.TaskRunner;
 import java.util.Date;
 
 /**
  * 队列任务配置。
  *
- * <p>由 {@link uw.task.TaskRunner#initConfig()} 产出默认值，首次注册时上传到 task-center，
+ * <p>由 {@link TaskRunner#initConfig()} 产出默认值，首次注册时上传到 task-center，
  * 之后以服务端下发的动态配置为准。支持多实例：同一 taskClass 通过不同 taskTag 区分。
- * 关键配置：queueType（队列粒度）、delayType（延迟投递）、rateLimitType/Value/Time/Wait（限速）、
+ * 关键配置：queueType（队列形态 classic/quorum）、rateLimitType/Value/Time/Wait（限速）、
  * consumerNum/prefetchNum（消费并发）、retryTimesByPartner/Overrated/Program（重试）、各类 alert 阈值。</p>
  *
  * @author axeon
@@ -17,39 +18,14 @@ import java.util.Date;
 public class TaskRunnerConfig implements Serializable {
 
     /**
-     * 项目队列。
+     * classic 队列（默认）：单副本、吞吐最优，适用于即时消费。
      */
-    public static final int TYPE_QUEUE_PROJECT = 0;
+    public static final int QUEUE_TYPE_CLASSIC = 0;
 
     /**
-     * 项目优先级队列。
+     * quorum 队列：Raft 复制；原生延迟消息（x-opt-delivery-time，RabbitMQ 4.4+）仅 quorum 支持。
      */
-    public static final int TYPE_QUEUE_PROJECT_PRIORITY = 1;
-
-    /**
-     * 任务组队列。
-     */
-    public static final int TYPE_QUEUE_GROUP = 2;
-
-    /**
-     * 任务组优先级队列。
-     */
-    public static final int TYPE_QUEUE_GROUP_PRIORITY = 3;
-
-    /**
-     * 任务队列。
-     */
-    public static final int TYPE_QUEUE_TASK = 5;
-
-    /**
-     * 延迟任务类型。
-     */
-    public static final int TYPE_DELAY_ON = 1;
-
-    /**
-     * 非延迟任务类型。
-     */
-    public static final int TYPE_DELAY_OFF = 0;
+    public static final int QUEUE_TYPE_QUORUM = 1;
 
     /**
      * 限速类型：不限速
@@ -154,14 +130,11 @@ public class TaskRunnerConfig implements Serializable {
     private String taskTag;
 
     /**
-     * 任务队列类型。
+     * 队列形态：QUEUE_TYPE_CLASSIC / QUEUE_TYPE_QUORUM。
+     * <p>默认 quorum（用户定案 261120）：Raft 复制安全、原生延迟消息唯一载体；
+     * 追求极致吞吐且接受单副本风险时选 classic（classic 队列的消息默认非持久化不写盘，见 TaskFactory.buildTaskQueueMessage）。</p>
      */
-    private int queueType = TYPE_QUEUE_TASK;
-
-    /**
-     * 延迟类型。
-     */
-    private int delayType = TYPE_DELAY_OFF;
+    private int queueType = QUEUE_TYPE_QUORUM;
 
     /**
      * 消费者的数量
@@ -210,7 +183,7 @@ public class TaskRunnerConfig implements Serializable {
     /**
      * 程序自身异常时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。
      * <p>同 {@link #retryTimesByOverrated}，设为 N 时总计执行 N+1 次（1 次初始 + N 次重试）。
-     * 与 TaskDelayer.retryTimesByProgram 对齐——程序异常（NPE/状态错等）也可配置自动重试。</p>
+     * 程序异常（NPE/状态错等）也可配置自动重试。</p>
      */
     private int retryTimesByProgram = 0;
 
@@ -303,7 +276,6 @@ public class TaskRunnerConfig implements Serializable {
         setTaskClass(builder.taskClass);
         setTaskTag(builder.taskTag);
         setQueueType(builder.queueType);
-        setDelayType(builder.delayType);
         setConsumerNum(builder.consumerNum);
         setPrefetchNum(builder.prefetchNum);
         setRateLimitType(builder.rateLimitType);
@@ -362,7 +334,6 @@ public class TaskRunnerConfig implements Serializable {
         builder.taskClass = copy.getTaskClass();
         builder.taskTag = copy.getTaskTag();
         builder.queueType = copy.getQueueType();
-        builder.delayType = copy.getDelayType();
         builder.consumerNum = copy.getConsumerNum();
         builder.prefetchNum = copy.getPrefetchNum();
         builder.rateLimitType = copy.getRateLimitType();
@@ -439,13 +410,6 @@ public class TaskRunnerConfig implements Serializable {
         this.queueType = queueType;
     }
 
-    public int getDelayType() {
-        return delayType;
-    }
-
-    public void setDelayType(int delayType) {
-        this.delayType = delayType;
-    }
 
     public int getConsumerNum() {
         return consumerNum;
@@ -669,12 +633,11 @@ public class TaskRunnerConfig implements Serializable {
         /**
          * 任务队列类型。
          */
-        private int queueType = TYPE_QUEUE_TASK;
+        private int queueType = QUEUE_TYPE_QUORUM;
 
         /**
          * 延迟类型。
          */
-        private int delayType = TYPE_DELAY_OFF;
 
         /**
          * 消费者的数量
@@ -875,16 +838,6 @@ public class TaskRunnerConfig implements Serializable {
             return this;
         }
 
-        /**
-         * Sets the {@code delayType} and returns a reference to this Builder enabling method chaining.
-         *
-         * @param delayType the {@code delayType} to set
-         * @return a reference to this Builder
-         */
-        public Builder delayType(int delayType) {
-            this.delayType = delayType;
-            return this;
-        }
 
         /**
          * Sets the {@code consumerNum} and returns a reference to this Builder enabling method chaining.

@@ -4,7 +4,7 @@ import com.microsoft.playwright.Page;
 import uw.webot.WebotManager;
 import uw.webot.WebotSession;
 import uw.webot.captcha.CaptchaManager;
-import uw.webot.conf.WebotProperties;
+import uw.webot.conf.UwWebotProperties;
 import uw.webot.core.BrowserBotPool;
 import uw.webot.core.BrowserConfig;
 import uw.webot.core.BrowserTab;
@@ -169,7 +169,7 @@ public class BaiduBrowseExample {
      */
     private static WebotManager createWebotManager() {
         // 创建配置
-        WebotProperties properties = createProperties();
+        UwWebotProperties properties = createProperties();
 
         // 初始化 BrowserBotPool
         BrowserBotPool browserBotPool = new BrowserBotPool(properties.getBotPool());
@@ -213,21 +213,21 @@ public class BaiduBrowseExample {
     }
 
     /**
-     * 创建 WebotProperties 配置。
+     * 创建 UwWebotProperties 配置。
      *
-     * @return WebotProperties 配置对象
+     * @return UwWebotProperties 配置对象
      */
-    private static WebotProperties createProperties() {
-        WebotProperties properties = new WebotProperties();
+    private static UwWebotProperties createProperties() {
+        UwWebotProperties properties = new UwWebotProperties();
         properties.setEnabled(true);
 
         // 配置 BotPool
-        WebotProperties.BotPoolProperties botPool = properties.getBotPool();
+        UwWebotProperties.BotPoolProperties botPool = properties.getBotPool();
         botPool.setMaxBrowsersPerGroup(2);
         botPool.setMaxTabsPerBrowser(5);
 
         // 配置 Session
-        WebotProperties.SessionProperties session = properties.getSession();
+        UwWebotProperties.SessionProperties session = properties.getSession();
         session.setDistributed(false);  // 本地模式
 
         return properties;

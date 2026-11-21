@@ -1,11 +1,12 @@
 package uw.task.exception;
+import uw.task.TaskData;
 
 /**
  * 任务合作方（第三方接口）异常。
  *
  * <p>在 {@code runTask} 中抛出此异常，表示任务所依赖的合作方/第三方接口出现错误（如超时、返回错误码、限流等），
  * 属于"可能通过重试解决"的瞬时性错误。框架捕获后会标记任务状态为
- * {@link uw.task.TaskData#STATE_FAIL_PARTNER}，并<b>根据配置 {@code retryTimesByPartner} 触发自动重试</b>。</p>
+ * {@link TaskData#STATE_FAIL_PARTNER}，并<b>根据配置 {@code retryTimesByPartner} 触发自动重试</b>。</p>
  *
  * <p>与之相对：{@link TaskDataException}（数据异常，不触发重试）。</p>
  *

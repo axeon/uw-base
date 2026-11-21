@@ -1,7 +1,7 @@
 package uw.oauth2.client.provider;
 
 import uw.common.response.ResponseData;
-import uw.oauth2.client.conf.OAuth2ClientProperties;
+import uw.oauth2.client.conf.UwOAuth2ClientProperties;
 import uw.oauth2.client.constant.OAuth2ClientAuthStatus;
 import uw.oauth2.client.vo.OAuth2Token;
 import uw.oauth2.client.vo.OAuth2UserInfo;
@@ -30,7 +30,7 @@ public interface OAuth2Provider {
      *
      * @return 配置信息
      */
-    OAuth2ClientProperties.ProviderConfig getProviderConfig();
+    UwOAuth2ClientProperties.ProviderConfig getProviderConfig();
 
     /**
      * 构建授权请求URL，引导用户跳转到第三方授权页面。

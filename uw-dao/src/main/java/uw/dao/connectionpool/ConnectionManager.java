@@ -5,8 +5,8 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.dao.conf.DaoConfig.ConnPoolConfig;
-import uw.dao.conf.DaoConfigManager;
+import uw.dao.conf.UwDaoProperties.ConnPoolConfig;
+import uw.dao.util.DaoPropertiesManager;
 import uw.dao.dialect.Dialect;
 import uw.dao.dialect.DialectManager;
 
@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static uw.dao.conf.DaoConfigManager.ROOT_CONN_NAME;
+import static uw.dao.util.DaoPropertiesManager.ROOT_CONN_NAME;
 
 /**
  * 数据库连接管理器.
@@ -42,7 +42,7 @@ public final class ConnectionManager {
      * 启动连接管理器.
      */
     public static void start() {
-        List<String> poolList = DaoConfigManager.getConnPoolNameList();
+        List<String> poolList = DaoPropertiesManager.getConnPoolNameList();
         for (String poolName : poolList) {
             try {
                 HikariDataSource dataSource = getDataSource(poolName);
@@ -266,7 +266,7 @@ public final class ConnectionManager {
             poolName = ROOT_CONN_NAME;
         }
         return DATA_SOURCE_MAP.computeIfAbsent(poolName, (key) -> {
-            ConnPoolConfig config = DaoConfigManager.getConnPoolConfig(key);
+            ConnPoolConfig config = DaoPropertiesManager.getConnPoolConfig(key);
             if (config == null) {
                 // 未配置的连接池：抛出明确异常，避免 ConcurrentHashMap.computeIfAbsent
                 // 因 mapping function 返回 null 而抛出含糊的 NPE。

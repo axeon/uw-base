@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import uw.auth.service.conf.AuthServiceProperties;
+import uw.auth.service.conf.UwAuthServiceProperties;
 import uw.auth.service.constant.*;
 import uw.auth.service.rpc.AuthServiceRpc;
 import uw.auth.service.service.MscAuthPermService;
@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  *   <li>操作日志上下文管理（{@code logRef/logInfo/logSysInfo}）</li>
  *   <li>应用信息与 {@link AuthServiceRpc} 实例访问</li>
  * </ul>
- * 全静态方法设计，由 {@code AuthServiceAutoConfiguration} 在启动时完成依赖注入与缓存初始化。
+ * 全静态方法设计，由 {@code UwAuthServiceAutoConfiguration} 在启动时完成依赖注入与缓存初始化。
  *
  * @author axeon
  */
@@ -109,15 +109,15 @@ public class AuthServiceHelper {
      */
     private static AuthServiceRpc authServiceRpc;
     /**
-     * AuthServiceProperties
+     * UwAuthServiceProperties
      */
-    private static AuthServiceProperties authServiceProperties;
+    private static UwAuthServiceProperties authServiceProperties;
     /**
      * authPermService。
      */
     private static MscAuthPermService authPermService;
 
-    public AuthServiceHelper(final AuthServiceProperties authServiceProperties, final MscAuthPermService authPermService, final AuthServiceRpc authServiceRpc) {
+    public AuthServiceHelper(final UwAuthServiceProperties authServiceProperties, final MscAuthPermService authPermService, final AuthServiceRpc authServiceRpc) {
         AuthServiceHelper.authServiceProperties = authServiceProperties;
         AuthServiceHelper.authPermService = authPermService;
         AuthServiceHelper.authServiceRpc = authServiceRpc;

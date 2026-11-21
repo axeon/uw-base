@@ -3,7 +3,7 @@ package uw.webot.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.webot.WebotSession;
-import uw.webot.conf.WebotProperties;
+import uw.webot.conf.UwWebotProperties;
 
 import java.util.List;
 import java.util.concurrent.*;
@@ -40,7 +40,7 @@ public class BrowserBotPool {
     /**
      * 配置属性。
      */
-    private final WebotProperties.BotPoolProperties botPoolProperties;
+    private final UwWebotProperties.BotPoolProperties botPoolProperties;
 
     /**
      * 浏览器组集合（按浏览器类型分组）。
@@ -70,7 +70,7 @@ public class BrowserBotPool {
      *
      * @param botPoolProperties 配置属性
      */
-    public BrowserBotPool(WebotProperties.BotPoolProperties botPoolProperties) {
+    public BrowserBotPool(UwWebotProperties.BotPoolProperties botPoolProperties) {
         this.botPoolProperties = botPoolProperties;
         this.createTime = System.currentTimeMillis();
 

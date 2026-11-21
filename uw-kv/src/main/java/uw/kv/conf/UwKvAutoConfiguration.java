@@ -1,42 +1,56 @@
 package uw.kv.conf;
 
-import io.lettuce.core.resource.ClientResources;
+import java.util.concurrent.Executors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.AsyncTaskExecutor;
-import org.springframework.core.task.support.TaskExecutorAdapter;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
+import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.core.task.support.TaskExecutorAdapter;
 import org.springframework.data.redis.serializer.GenericToStringSerializer;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+
 import uw.common.util.RedisConnectionFactoryBuilder;
-import uw.kv.*;
+import uw.kv.FusionCache;
+import uw.kv.GlobalCache;
+import uw.kv.GlobalCounter;
+import uw.kv.GlobalFixedWindowRateLimiter;
+import uw.kv.GlobalHashSet;
+import uw.kv.GlobalLeaderElector;
+import uw.kv.GlobalLocker;
+import uw.kv.GlobalSequence;
+import uw.kv.GlobalSortedSet;
+import io.lettuce.core.resource.ClientResources;
 import uw.kv.listener.FusionCacheNotifyListener;
 
-import java.util.concurrent.Executors;
-
 /**
- * uw-kv 启动自动配置。
- * <p>
- * 仅在 classpath 存在 RedisTemplate 时生效（{@link ConditionalOnClass}），
- * 在 Spring Boot RedisAutoConfiguration 之后加载。负责：
+ * uw-kv 自动配置入口。
+ *
+ * <p><b>对外 bean 面（用户定案 261120 收敛）：仅 {@link #kvRedisConnectionFactory} 一个</b>——
+ * Global* 家族为静态门面（调用方零注入直调静态方法，构造仅向 static 字段注入 template/工厂），
+ * 原 8 个 init 锚点 bean 与两个 RedisTemplate bean、Pub/Sub 监听容器全部内化为工厂 bean 方法内的手工构建，
+ * 宿主应用零冲突面。监听容器生命周期由本类 {@link SmartLifecycle} 管理。</p>
+ *
+ * <p>结构（三层）：</p>
  * <ol>
  *   <li>注册唯一的 {@code kvRedisConnectionFactory}：uw 框架协调层（缓存/计数/锁/限流/选举/发号）
- *       与业务 Redis（{@code spring.data.redis}）隔离的专用连接，配置经 Binder 平铺绑定
- *       {@code uw.kv.*} 全部连接项（standalone/sentinel/cluster、pool、lettuce、ssl 等，无属性 Bean）。</li>
- *   <li>注册两个专用 RedisTemplate：{@code dataCacheRedisTemplate}（byte[] 值，用于 Cache/HashSet/SortedSet）
+ *       私有连接，与业务 Redis 隔离。</li>
+ *   <li>构建两个专用 RedisTemplate：{@code dataCacheRedisTemplate}（byte[] 值，用于 Cache/HashSet/SortedSet）
  *       与 {@code longCacheRedisTemplate}（Long 值，用于 Counter/Locker），共用同一连接工厂。</li>
- *   <li>初始化各 Global* 组件（通过构造函数注入 static RedisTemplate）。</li>
- *   <li>注册 Redis Pub/Sub 监听容器，订阅 FusionCache 失效通知通道。</li>
+ *   <li>以模板/工厂构造全部 Global* 静态门面 + FusionCache 失效通知订阅（虚拟线程回调）。</li>
  * </ol>
  * <p>
  * 限速器（{@code GlobalFixedWindowRateLimiter}）、{@code GlobalLeaderElector}、{@code GlobalSequence}
@@ -47,178 +61,116 @@ import java.util.concurrent.Executors;
 @ConditionalOnClass({RedisTemplate.class, RedisConnectionFactory.class})
 @AutoConfigureAfter({DataRedisAutoConfiguration.class})
 @EnableConfigurationProperties(UwKvProperties.class)
-public class UwKvAutoConfiguration {
+public class UwKvAutoConfiguration implements SmartLifecycle {
+
+    /**
+     * 日志器。
+     */
     private static final Logger log = LoggerFactory.getLogger(UwKvAutoConfiguration.class);
 
     /**
-     * 初始化 GlobalCache，注入 dataCacheRedisTemplate。
-     *
-     * @param dataCacheRedisTemplate byte[] 值 RedisTemplate
-     * @return GlobalCache 实例
+     * 私有连接工厂引用（bean 方法构建后保存，SmartLifecycle start 时接订阅容器）。
      */
-    @Bean
-    public GlobalCache globalCache(RedisTemplate<String, byte[]> dataCacheRedisTemplate) {
-        return new GlobalCache(dataCacheRedisTemplate);
-    }
+    private RedisConnectionFactory kvFactory;
 
     /**
-     * 初始化 GlobalLocker，注入 longCacheRedisTemplate。
-     *
-     * @param longCacheRedisTemplate Long 值 RedisTemplate
-     * @return GlobalLocker 实例
+     * FusionCache 失效通知订阅容器（start/stop 由 SmartLifecycle 管理）。
      */
-    @Bean
-    public GlobalLocker globalLocker(RedisTemplate<String, Long> longCacheRedisTemplate) {
-        return new GlobalLocker(longCacheRedisTemplate);
-    }
-
-
-    /**
-     * 初始化 GlobalCounter，注入 longCacheRedisTemplate。
-     *
-     * @param longCacheRedisTemplate Long 值 RedisTemplate
-     * @return GlobalCounter 实例
-     */
-    @Bean
-    public GlobalCounter globalCounter(RedisTemplate<String, Long> longCacheRedisTemplate) {
-        return new GlobalCounter(longCacheRedisTemplate);
-    }
-
-    /**
-     * 初始化 GlobalHashSet，注入 dataCacheRedisTemplate。
-     *
-     * @param dataCacheRedisTemplate byte[] 值 RedisTemplate
-     * @return GlobalHashSet 实例
-     */
-    @Bean
-    public GlobalHashSet globalHashSet(RedisTemplate<String, byte[]> dataCacheRedisTemplate) {
-        return new GlobalHashSet(dataCacheRedisTemplate);
-    }
-
-    /**
-     * 初始化 GlobalSortedSet，注入 dataCacheRedisTemplate。
-     *
-     * @param dataCacheRedisTemplate byte[] 值 RedisTemplate
-     * @return GlobalSortedSet 实例
-     */
-    @Bean
-    public GlobalSortedSet globalSortedSet(RedisTemplate<String, byte[]> dataCacheRedisTemplate) {
-        return new GlobalSortedSet(dataCacheRedisTemplate);
-    }
-
-    /**
-     * 初始化 GlobalFixedWindowRateLimiter（全局限速器），注入 longCacheRedisTemplate。
-     *
-     * @param longCacheRedisTemplate Long 值 RedisTemplate
-     * @return GlobalFixedWindowRateLimiter 实例
-     */
-    @Bean
-    public GlobalFixedWindowRateLimiter globalFixedWindowRateLimiter(RedisTemplate<String, Long> longCacheRedisTemplate) {
-        return new GlobalFixedWindowRateLimiter(longCacheRedisTemplate);
-    }
-
-    /**
-     * 初始化 GlobalLeaderElector（Leader 选举器），注入 kvRedisConnectionFactory（内部自建 StringRedisTemplate）。
-     *
-     * @param kvRedisConnectionFactory uw.kv 连接工厂
-     * @return GlobalLeaderElector 实例
-     */
-    @Bean
-    public GlobalLeaderElector globalLeaderElector(RedisConnectionFactory kvRedisConnectionFactory) {
-        return new GlobalLeaderElector(kvRedisConnectionFactory);
-    }
-
-    /**
-     * 初始化 GlobalSequence（号段发号器），注入 kvRedisConnectionFactory。
-     *
-     * @param kvRedisConnectionFactory uw.kv 连接工厂
-     * @return GlobalSequence 实例
-     */
-    @Bean
-    public GlobalSequence globalSequence(RedisConnectionFactory kvRedisConnectionFactory) {
-        return new GlobalSequence(kvRedisConnectionFactory);
-    }
+    private RedisMessageListenerContainer notifyListenerContainer;
 
     /**
      * uw 框架协调层唯一的 Redis 连接工厂（standalone/sentinel/cluster 按 uw.kv.* 配置自动判断）。
      * <p>
      * 配置经 {@link UwKvProperties}（{@code uw.kv.redis.*}，与其他独立域同构）由 Spring 绑定后直接注入。
      * <p>
+     * <b>defaultCandidate=false</b>：通用类型（RedisConnectionFactory），不作宿主 by-type 注入的默认候选
+     * ——宿主注入 Redis 工厂（含 Boot 自动配置的 reactiveRedisTemplate 等）只见自己的业务工厂，零歧义冲突面。
      * <b>无条件注册</b>（不加 {@code @ConditionalOnMissingBean}）：若按"缺失才注册"判断，宿主配置了
      * {@code spring.data.redis}（业务 Redis）时本工厂会退化为借用业务连接，破坏"框架协调层与业务
      * Redis 隔离"的设计。Bean 名 {@code kvRedisConnectionFactory} 与 Spring Boot 自动配置的
      * {@code lettuceConnectionFactory}（业务连接）天然区分、互不干扰；框架组件一律注入本工厂。
+     * <p>
+     * 本方法同时是全部 Global* 静态门面的唯一 init 点（模板构建 + 构造注入 + 通知订阅），
+     * bean 创建完成即全家族可用。
      *
-     * @param environment     Spring 环境（uw.kv.* 配置源）
-     * @param clientResources Lettuce 共享 ClientResources
+     * @param kvProperties     uw.kv 配置
+     * @param clientResources  Lettuce 共享 ClientResources（可选）
      * @return Redis 连接工厂
      */
-    @Bean
-    public RedisConnectionFactory kvRedisConnectionFactory(final UwKvProperties kvProperties, final ClientResources clientResources) {
-        return RedisConnectionFactoryBuilder.build(kvProperties.getRedis(), clientResources);
+    @Bean(defaultCandidate = false)
+    public RedisConnectionFactory kvRedisConnectionFactory(final UwKvProperties kvProperties, final ObjectProvider<ClientResources> clientResources) {
+        RedisConnectionFactory factory = RedisConnectionFactoryBuilder.build(kvProperties.getRedis(), clientResources.getIfAvailable());
+        kvFactory = factory;
+        // 两个专用模板（byte[] 值 / Long 值），共用本工厂（行为对齐原独立 bean：默认序列化关闭，
+        // byte[] 模板值序列化器不设——由调用方 Kryo 自序列化；Long 模板用 GenericToStringSerializer）
+        RedisTemplate<String, byte[]> dataCacheRedisTemplate = buildTemplate(factory, null);
+        RedisTemplate<String, Long> longCacheRedisTemplate = buildTemplate(factory, new GenericToStringSerializer<>(Long.class));
+        // Global* 静态门面构造即完成 static 注入（调用方零注入直调静态方法）
+        new GlobalCache(dataCacheRedisTemplate);
+        new GlobalLocker(longCacheRedisTemplate);
+        new GlobalCounter(longCacheRedisTemplate);
+        new GlobalHashSet(dataCacheRedisTemplate);
+        new GlobalSortedSet(dataCacheRedisTemplate);
+        new GlobalFixedWindowRateLimiter(longCacheRedisTemplate);
+        new GlobalLeaderElector(factory);
+        new GlobalSequence(factory);
+        log.info("uw-kv Global* 静态门面已初始化（dataCache/longCache 模板 + LeaderElector/Sequence）");
+        return factory;
     }
 
     /**
-     * 初始化 Redis Pub/Sub 监听容器。
-     * <p>
-     * 订阅通道 {@link FusionCache#FUSION_CACHE_NOTIFY_CHANNEL}，使用虚拟线程执行器处理消息回调，
-     * 避免高频缓存通知时阻塞 Redis 订阅连接。
+     * 构建专用模板（String key + 指定值序列化器）。
      *
-     * @param kvRedisConnectionFactory uw.kv 连接工厂
-     * @return RedisMessageListenerContainer 实例
+     * @param factory  连接工厂
+     * @param valueSerializer 值序列化器
+     * @param <V>      值类型
+     * @return 已初始化模板
      */
-    @Bean
-    @ConditionalOnMissingBean
-    public RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory kvRedisConnectionFactory) {
-        RedisMessageListenerContainer redisMessageListenerContainer = new RedisMessageListenerContainer();
-        redisMessageListenerContainer.setConnectionFactory(kvRedisConnectionFactory);
-        // 使用虚拟线程执行器处理消息回调，避免高频缓存通知时阻塞 Redis 订阅连接。
-        // 虚拟线程由 JVM 在少量载体线程上调度，创建开销极低且数量可控，
-        // 相比 SimpleAsyncTaskExecutor（每条消息 new 一个平台线程）不会在批量失效/刷新时引发线程数量失控和 GC 压力。
-        AsyncTaskExecutor taskExecutor = new TaskExecutorAdapter(
-                Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("uw-kv-notify-", 0).factory()));
-        redisMessageListenerContainer.setTaskExecutor(taskExecutor);
-        FusionCacheNotifyListener cacheMessageListener = new FusionCacheNotifyListener();
-        redisMessageListenerContainer.addMessageListener(cacheMessageListener, new ChannelTopic(FusionCache.FUSION_CACHE_NOTIFY_CHANNEL));
-        return redisMessageListenerContainer;
+    private static <V> RedisTemplate<String, V> buildTemplate(RedisConnectionFactory factory, RedisSerializer<V> valueSerializer) {
+        RedisTemplate<String, V> template = new RedisTemplate<>();
+        template.setKeySerializer(new StringRedisSerializer());
+        if (valueSerializer != null) {
+            template.setValueSerializer(valueSerializer);
+        }
+        template.setConnectionFactory(factory);
+        template.setEnableDefaultSerializer(false);
+        template.afterPropertiesSet();
+        return template;
     }
 
     /**
-     * dataCacheRedisTemplate：专为 Cache/HashSet/SortedSet 优化的 RedisTemplate。
-     * <p>
-     * key 用 StringRedisSerializer，value 不启用默认序列化（由调用方自行 Kryo 序列化为 byte[]）。
-     *
-     * @param kvRedisConnectionFactory uw.kv 连接工厂
-     * @return byte[] 值 RedisTemplate
+     * 启动 FusionCache 失效通知订阅（虚拟线程回调，避免高频通知阻塞 Redis 订阅连接）。
      */
-    @Bean
-    public RedisTemplate<String, byte[]> dataCacheRedisTemplate(final RedisConnectionFactory kvRedisConnectionFactory) {
-        RedisTemplate<String, byte[]> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setConnectionFactory(kvRedisConnectionFactory);
-        redisTemplate.setEnableDefaultSerializer(false);
-        redisTemplate.afterPropertiesSet();
-        return redisTemplate;
+    @Override
+    public void start() {
+        if (notifyListenerContainer == null) {
+            notifyListenerContainer = new RedisMessageListenerContainer();
+            notifyListenerContainer.setConnectionFactory(kvFactory);
+            AsyncTaskExecutor taskExecutor = new TaskExecutorAdapter(
+                    Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("uw-kv-notify-", 0).factory()));
+            notifyListenerContainer.setTaskExecutor(taskExecutor);
+            notifyListenerContainer.addMessageListener(new FusionCacheNotifyListener(), new ChannelTopic(FusionCache.FUSION_CACHE_NOTIFY_CHANNEL));
+            notifyListenerContainer.afterPropertiesSet();
+        }
+        notifyListenerContainer.start();
+        log.info("uw-kv FusionCache 失效通知订阅已启动");
     }
 
     /**
-     * longCacheRedisTemplate：专为 Counter/Locker 优化的 RedisTemplate。
-     * <p>
-     * key 用 StringRedisSerializer，value 用 GenericToStringSerializer（Long 与字符串互转），
-     * 便于 Lua 脚本直接以字符串形式比较 stamp。
-     *
-     * @param kvRedisConnectionFactory uw.kv 连接工厂
-     * @return Long 值 RedisTemplate
+     * 停止通知订阅容器。
      */
-    @Bean
-    public RedisTemplate<String, Long> longCacheRedisTemplate(final RedisConnectionFactory kvRedisConnectionFactory) {
-        RedisTemplate<String, Long> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new GenericToStringSerializer<Long>(Long.class));
-        redisTemplate.setConnectionFactory(kvRedisConnectionFactory);
-        redisTemplate.setEnableDefaultSerializer(false);
-        redisTemplate.afterPropertiesSet();
-        return redisTemplate;
+    @Override
+    public void stop() {
+        if (notifyListenerContainer != null && notifyListenerContainer.isRunning()) {
+            notifyListenerContainer.stop();
+        }
     }
 
+    /**
+     * @return 生命周期是否运行中
+     */
+    @Override
+    public boolean isRunning() {
+        return notifyListenerContainer != null && notifyListenerContainer.isRunning();
+    }
 }

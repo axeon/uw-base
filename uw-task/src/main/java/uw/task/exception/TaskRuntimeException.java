@@ -1,12 +1,13 @@
 package uw.task.exception;
+import uw.task.TaskFactory;
 
 /**
  * 任务框架内部运行期异常。
  *
  * <p>由框架自身抛出，用于标识框架级的运行错误，例如：
  * <ul>
- *   <li>本地任务执行入口遇到非本地任务类型（{@link uw.task.TaskFactory#runTaskLocal}）；</li>
- *   <li>RabbitMQ channelMax 资源耗尽、RPC 调用超时等导致任务派发失败。</li>
+ *   <li>本地任务执行入口遇到非本地任务类型（{@link TaskFactory#runTaskLocal}）；</li>
+ *   <li>RabbitMQ 连接/通道资源异常重试耗尽、RPC 调用超时等导致任务派发失败。</li>
  * </ul>
  * 此异常<b>不</b>对应任务执行的业务状态（不映射到 STATE_FAIL_* ），而是框架在派发/调度阶段的非预期失败。</p>
  *

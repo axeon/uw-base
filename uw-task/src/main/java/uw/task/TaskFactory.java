@@ -280,16 +280,6 @@ public class TaskFactory {
         }
     }
 
-    /**
-     * 查询 project 延时任务积压总量（Redis zset 侧，尚未到期/待搬运）。
-     * <p>与 {@link #getQueueInfo}（MQ 侧积压）互补；按队列细分走 MQ 侧队列深度。</p>
-     *
-     * @return zset 大小；查询失败返回 -1
-     */
-    public long getDelayBacklogSize() {
-        return taskDelayTransferContainer.getBacklogSize();
-    }
-
 
     /**
      * 查询指定队列的积压消息数与消费者数。

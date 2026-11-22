@@ -19,7 +19,7 @@ class TaskDelayTransferContainerTest {
     @Test
     @SuppressWarnings("unchecked")
     void constructStartStopWithoutException() {
-        TaskDelayTransferContainer container = new TaskDelayTransferContainer(mock(RedisTemplate.class), null);
+        TaskDelayTransferContainer container = new TaskDelayTransferContainer(mock(RedisTemplate.class), "test", null);
         assertThat(container).isNotNull();
         container.setLeader(true);
         container.setLeader(true);

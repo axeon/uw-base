@@ -157,7 +157,7 @@ public class UwTaskAutoConfiguration implements SmartLifecycle {
         TaskListenerManager taskListenerManager = new TaskListenerManager();
         TaskApiClient taskApiClient = new TaskApiClient(taskProperties, authRestClient, logClient);
         metaInfoManager = new TaskMetaInfoManager(context, taskProperties);
-        delayTransferContainer = new TaskDelayTransferContainer(buildTaskBytesRedisTemplate(taskRedisConnectionFactory), null);
+        delayTransferContainer = new TaskDelayTransferContainer(buildTaskBytesRedisTemplate(taskRedisConnectionFactory), taskProperties.getTaskProject(), null);
         TaskSendCenter taskSendCenter = new TaskSendCenter(taskAmqpOps, metaInfoManager, delayTransferContainer, taskListenerManager);
         delayTransferContainer.bindSendCenter(taskSendCenter);
         TaskRunnerContainer taskRunnerContainer = new TaskRunnerContainer(taskProperties, taskApiClient, metaInfoManager,

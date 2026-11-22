@@ -38,15 +38,18 @@ public class TaskDelayTransferContainer {
     private static final Logger log = LoggerFactory.getLogger(TaskDelayTransferContainer.class);
 
     /**
-     * zset key 前缀（+目标队列名分片）。
+     * zset key 前缀（{project 维度隔离}+目标队列名分片）。
      */
-    private static final String ZSET_PREFIX = "uw-task-delay:";
+    private final String zsetPrefix;
 
     /**
-     * 分片登记表 Redis key（跨实例/跨主机共享：submit 方 SADD 注册，Leader mover SMEMBERS 发现——
+     * 分片登记表 Redis key（本 project 内跨实例/跨主机共享：submit 方 SADD 注册，Leader mover SMEMBERS 发现——
      * 解决本地内存 Set 只有提交方可见、Leader 在他机时扫不到分片的问题）。
+     * <p><b>project 隔离</b>（2026-11-22 定案）：原全局单注册表导致多应用共享 Redis 时，
+     * 其他应用的 mover 会抢搬本应用任务、因其 meta 无该 runner 配置而"转投失败→写回→再抢"无限循环
+     * （E2E 事故实证）。按 task-project 分域后各 mover 只扫自己 project 的分片。</p>
      */
-    private static final String QUEUE_REGISTRY_KEY = "uw-task-delay:_queues";
+    private final String queueRegistryKey;
 
     /**
      * Redis 操作模板（String key + byte[] value，Kryo 序列化 TaskData）。
@@ -98,8 +101,20 @@ public class TaskDelayTransferContainer {
      * @param taskSendCenter    任务投递中心（sendImmediate 即时投递）
      */
     public TaskDelayTransferContainer(RedisTemplate<String, byte[]> redisTemplate, TaskSendCenter taskSendCenter) {
+        this(redisTemplate, null, taskSendCenter);
+    }
+
+    /**
+     * @param redisTemplate uw-task 私有 Redis 模板（String key + byte[] value）
+     * @param taskProject   任务项目名（zset 注册表/分片的 project 维度隔离键，null 走 _default 域）
+     * @param taskSendCenter 任务投递中心（sendImmediate 即时投递）
+     */
+    public TaskDelayTransferContainer(RedisTemplate<String, byte[]> redisTemplate, String taskProject, TaskSendCenter taskSendCenter) {
         this.redisTemplate = redisTemplate;
         this.taskSendCenter = taskSendCenter;
+        String ns = "uw-task-delay:" + (taskProject == null || taskProject.isBlank() ? "_default" : taskProject) + ":";
+        this.zsetPrefix = ns;
+        this.queueRegistryKey = ns + "_queues";
     }
 
     /**
@@ -155,7 +170,7 @@ public class TaskDelayTransferContainer {
      */
     public long getBacklogSize(String queueName) {
         try {
-            Long size = redisTemplate.opsForZSet().size(ZSET_PREFIX + queueName);
+            Long size = redisTemplate.opsForZSet().size(zsetPrefix + queueName);
             return size == null ? 0 : size;
         } catch (Exception e) {
             log.warn("TaskDelayTransfer: 查询延时积压失败, queue={}: {}", queueName, e.getMessage());
@@ -191,7 +206,7 @@ public class TaskDelayTransferContainer {
      */
     private Set<String> discoverQueues() {
         try {
-            Set<byte[]> members = redisTemplate.opsForSet().members(QUEUE_REGISTRY_KEY);
+            Set<byte[]> members = redisTemplate.opsForSet().members(queueRegistryKey);
             if (members == null) {
                 return Collections.emptySet();
             }
@@ -213,8 +228,8 @@ public class TaskDelayTransferContainer {
      * @param queueName 到期后转投的目标 MQ 队列名
      */
     public void submit(TaskData<?, ?> taskData, String queueName) {
-        redisTemplate.opsForSet().add(QUEUE_REGISTRY_KEY, queueName.getBytes(StandardCharsets.UTF_8));
-        String zsetKey = ZSET_PREFIX + queueName;
+        redisTemplate.opsForSet().add(queueRegistryKey, queueName.getBytes(StandardCharsets.UTF_8));
+        String zsetKey = zsetPrefix + queueName;
         double score = taskData.getQueueDate().getTime() + taskData.getTaskDelay();
         redisTemplate.opsForZSet().add(zsetKey, KryoUtils.serialize(taskData), score);
     }
@@ -229,7 +244,7 @@ public class TaskDelayTransferContainer {
                 byte[] nowArg = String.valueOf(SystemClock.now()).getBytes();
                 byte[] batchArg = String.valueOf(BATCH).getBytes();
                 for (String queueName : discoverQueues()) {
-                    List<byte[]> members = redisTemplate.execute(POP_SCRIPT, Collections.singletonList(ZSET_PREFIX + queueName), nowArg, batchArg);
+                    List<byte[]> members = redisTemplate.execute(POP_SCRIPT, Collections.singletonList(zsetPrefix + queueName), nowArg, batchArg);
                     if (members == null || members.isEmpty()) {
                         continue;
                     }
@@ -286,7 +301,7 @@ public class TaskDelayTransferContainer {
             if (task.getRanTimes() <= MAX_TRANSFER_RETRY) {
                 task.setQueueDate(SystemClock.nowDate());
                 task.setTaskDelay(5000);
-                redisTemplate.opsForZSet().add(ZSET_PREFIX + queueName, KryoUtils.serialize(task),
+                redisTemplate.opsForZSet().add(zsetPrefix + queueName, KryoUtils.serialize(task),
                         SystemClock.now() + 5000);
                 log.warn("TaskDelayTransfer: 转投失败写回重试, queue={}, ranTimes={}: {}", queueName, task.getRanTimes(), e.getMessage());
             } else {

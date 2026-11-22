@@ -94,8 +94,7 @@ uw:
       # IP白名单列表（配置了ip-protected-paths时必须配置，否则受保护路径将无任何限制，仅输出warn）
       ip-white-list: 127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fe80::/10,FC00::/7
       
-      # 可信代理IP列表（仅当来源IP在列表内时才信任X-Forwarded-For/X-Real-IP，防伪造）
-      trusted-proxies: 127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fe80::/10,FC00::/7
+      # （trusted-proxies 已退役：客户端真实IP由容器层 web-server 策略改写 remoteAddr，见 uw-gateway README「客户端真实 IP 传输」）
       
       # 应用ID（由auth-center分配）
       app-id: 0

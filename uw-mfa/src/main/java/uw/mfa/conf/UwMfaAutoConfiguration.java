@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -28,6 +29,7 @@ import uw.mfa.helper.MfaTotpHelper;
  * <p>并配置通知服务RPC客户端。Bean可通过 @ConditionalOnMissingBean 覆盖。</p>
  */
 @Configuration
+@Conditional(UwMfaAutoConfiguration.OnMfaRedisHostCondition.class)
 @EnableConfigurationProperties({UwMfaProperties.class})
 @AutoConfigureAfter({DataRedisAutoConfiguration.class})
 public class UwMfaAutoConfiguration {
@@ -79,5 +81,27 @@ public class UwMfaAutoConfiguration {
     @ConditionalOnMissingBean
     protected MfaTotpHelper mfaTotpHelper(final UwMfaProperties uwMfaProperties, @Qualifier("mfaRedisTemplate") final RedisTemplate<String, String> mfaRedisTemplate) {
         return new MfaTotpHelper(uwMfaProperties, mfaRedisTemplate);
+    }
+
+    /**
+     * 装配门控：uw.mfa.redis.host 缺失时打 WARN（一次性）并跳过装配——未使用方应用正常启动，
+     * 不再因默认 localhost 连接阻塞（需要使用时按 WARN 提示配置即可）。
+     */
+    static class OnMfaRedisHostCondition implements org.springframework.context.annotation.Condition {
+
+        /**
+         * WARN 只打一次（Condition 可能被多次评估）。
+         */
+        private static final java.util.concurrent.atomic.AtomicBoolean WARNED = new java.util.concurrent.atomic.AtomicBoolean(false);
+
+        @Override
+        public boolean matches(org.springframework.context.annotation.ConditionContext context, org.springframework.core.type.AnnotatedTypeMetadata metadata) {
+            boolean ok = context.getEnvironment().getProperty("uw.mfa.redis.host") != null;
+            if (!ok && WARNED.compareAndSet(false, true)) {
+                LoggerFactory.getLogger(OnMfaRedisHostCondition.class).warn(
+                        "uw-mfa 未配置 uw.mfa.redis.host，跳过初始化（不使用 MFA 功能属正常；需要验证码/设备码等请配置 uw.mfa.redis.*）");
+            }
+            return ok;
+        }
     }
 }

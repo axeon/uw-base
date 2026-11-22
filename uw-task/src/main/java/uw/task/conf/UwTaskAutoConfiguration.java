@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -65,6 +66,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
  * @author axeon
  */
 @Configuration
+@Conditional(UwTaskAutoConfiguration.OnTaskHostsCondition.class)
 @EnableScheduling
 @EnableConfigurationProperties({UwTaskProperties.class})
 @AutoConfigureAfter({DataRedisAutoConfiguration.class, RabbitAutoConfiguration.class})
@@ -350,6 +352,28 @@ public class UwTaskAutoConfiguration implements SmartLifecycle {
             } catch (Exception e) {
                 log.warn("{} 属性热更新重绑失败, 保持当前生效配置: {}", CONFIG_PREFIX, e.getMessage());
             }
+        }
+    }
+
+    /**
+     * 装配门控：uw.task.rabbitmq.host 与 uw.task.redis.host 缺失时打 WARN（一次性）并跳过装配——未使用方应用正常启动，
+     * 不再因默认 localhost 连接阻塞（需要使用时按 WARN 提示配置即可）。
+     */
+    static class OnTaskHostsCondition implements org.springframework.context.annotation.Condition {
+
+        /**
+         * WARN 只打一次（Condition 可能被多次评估）。
+         */
+        private static final java.util.concurrent.atomic.AtomicBoolean WARNED = new java.util.concurrent.atomic.AtomicBoolean(false);
+
+        @Override
+        public boolean matches(org.springframework.context.annotation.ConditionContext context, org.springframework.core.type.AnnotatedTypeMetadata metadata) {
+            boolean ok = context.getEnvironment().getProperty("uw.task.rabbitmq.host") != null && context.getEnvironment().getProperty("uw.task.redis.host") != null;
+            if (!ok && WARNED.compareAndSet(false, true)) {
+                LoggerFactory.getLogger(OnTaskHostsCondition.class).warn(
+                        "uw-task 未配置 uw.task.rabbitmq.host / uw.task.redis.host，跳过初始化（不使用任务框架属正常；需要 TaskCroner/TaskRunner/sendToQueue 请配置 uw.task.*）");
+            }
+            return ok;
         }
     }
 }

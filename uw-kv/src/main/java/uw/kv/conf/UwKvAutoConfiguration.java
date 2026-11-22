@@ -12,6 +12,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.core.type.AnnotatedTypeMetadata;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -64,7 +69,7 @@ import uw.kv.listener.FusionCacheNotifyListener;
  */
 @Configuration
 @ConditionalOnClass({RedisTemplate.class, RedisConnectionFactory.class})
-@ConditionalOnProperty(prefix = "uw.kv.redis", name = "host")
+@Conditional(UwKvAutoConfiguration.OnKvRedisHostCondition.class)
 @AutoConfigureAfter({DataRedisAutoConfiguration.class})
 @EnableConfigurationProperties(UwKvProperties.class)
 public class UwKvAutoConfiguration implements SmartLifecycle {
@@ -178,5 +183,24 @@ public class UwKvAutoConfiguration implements SmartLifecycle {
     @Override
     public boolean isRunning() {
         return notifyListenerContainer != null && notifyListenerContainer.isRunning();
+    }
+
+    /**
+     * 装配门控：uw.kv.redis.host 缺失时打 WARN（一次性）并跳过装配。
+     */
+    static class OnKvRedisHostCondition implements Condition {
+
+        private static final AtomicBoolean WARNED = new AtomicBoolean(false);
+
+        @Override
+        public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+            if (context.getEnvironment().getProperty("uw.kv.redis.host") == null) {
+                if (WARNED.compareAndSet(false, true)) {
+                    log.warn("uw-kv 未配置 uw.kv.redis.host，跳过初始化（不使用 kv 属正常；需要 Global*/FusionCache 请配置 uw.kv.redis.*）");
+                }
+                return false;
+            }
+            return true;
+        }
     }
 }

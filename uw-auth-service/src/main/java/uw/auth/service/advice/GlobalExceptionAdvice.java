@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import uw.auth.service.constant.AuthServiceConstants;
 import uw.auth.service.exception.*;
-import uw.auth.service.util.IpWebUtils;
 import uw.common.response.ResponseData;
 import uw.common.util.ExceptionUtils;
 
@@ -43,7 +42,7 @@ public class GlobalExceptionAdvice {
     @ExceptionHandler({Throwable.class})
     public ResponseData<String> exceptionHandle(Throwable ex, HttpServletRequest request, HttpServletResponse response) {
         //针对不同类型异常，设置不同的详细消息。
-        String userIp = IpWebUtils.getRealIp(request);
+        String userIp = request.getRemoteAddr();
         String msg = "UserIp: [" + userIp + "], Request Path: [" + request.getRequestURI() + "], Method: [" + request.getMethod() + "], Msg: " + ex.toString();
         String data = null;
         // 针对ErrorResponse异常，设置不同的状态码。

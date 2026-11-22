@@ -34,7 +34,6 @@ import uw.auth.service.rpc.impl.AuthAppRpcImpl;
 import uw.auth.service.rpc.impl.AuthServiceRpcImpl;
 import uw.auth.service.service.MscAppUpdateService;
 import uw.auth.service.service.MscAuthPermService;
-import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.vo.MscActionLog;
 import uw.auth.service.vo.MscGuestLoginLog;
 import uw.auth.service.vo.MscLoginLog;
@@ -217,7 +216,6 @@ public class UwAuthServiceAutoConfiguration {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
-        IpWebUtils.initTrustedProxies(authServiceProperties.getTrustedProxies());
         if (appUpdateService != null) {
             appUpdateService.init();
         }

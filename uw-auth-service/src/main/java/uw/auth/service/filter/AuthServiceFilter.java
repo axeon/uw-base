@@ -23,7 +23,6 @@ import uw.auth.service.exception.AuthExceptionHelper;
 import uw.auth.service.log.AuthCriticalLogStorage;
 import uw.auth.service.service.MscAuthPermService;
 import uw.auth.service.token.AuthTokenData;
-import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.util.logging.LoggingHttpServletRequestWrapper;
 import uw.auth.service.util.logging.LoggingHttpServletResponseWrapper;
 import uw.auth.service.vo.MscActionLog;
@@ -153,7 +152,7 @@ public class AuthServiceFilter implements Filter {
         //请求方法
         String method = httpServletRequest.getMethod();
         //远端IP
-        String userIp = IpWebUtils.getRealIp(httpServletRequest);
+        String userIp = httpServletRequest.getRemoteAddr();
         //执行IP保护。
         if (ipProtectedPaths != null && ipWhiteList != null) {
             if (Strings.CS.startsWithAny(uri, ipProtectedPaths) && !IpMatchUtils.matches(ipWhiteList, userIp)) {

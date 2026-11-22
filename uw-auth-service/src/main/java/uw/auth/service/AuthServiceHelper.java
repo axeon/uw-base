@@ -16,7 +16,6 @@ import uw.auth.service.rpc.AuthServiceRpc;
 import uw.auth.service.service.MscAuthPermService;
 import uw.auth.service.token.AuthTokenData;
 import uw.auth.service.token.InvalidTokenData;
-import uw.auth.service.util.IpWebUtils;
 import uw.auth.service.vo.MscActionLog;
 import uw.common.response.ResponseData;
 import uw.common.util.SystemClock;
@@ -732,7 +731,7 @@ public class AuthServiceHelper {
      * @return
      */
     public static String getRemoteIp(HttpServletRequest request) {
-        return IpWebUtils.getRealIp(request);
+        return request.getRemoteAddr();
     }
 
     /**
@@ -746,7 +745,7 @@ public class AuthServiceHelper {
             return null;
         }
         HttpServletRequest request = ((ServletRequestAttributes) attributes).getRequest();
-        return IpWebUtils.getRealIp(request);
+        return request.getRemoteAddr();
     }
 
     /**

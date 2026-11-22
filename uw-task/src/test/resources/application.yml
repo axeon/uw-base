@@ -32,7 +32,7 @@ uw:
     task-center-host: http://uw-task-center
     # uw-task 私有 Redis（DelayTask/序列/Leader/全局限速；与 uw.kv 隔离，密码经环境变量注入）
     redis:
-      database: 7
+      database: 7          # 单测默认;E2E 需独立库隔离(见 -De2e 覆盖)
       host: 10.0.0.10
       port: 6380
       password: ${UW_TEST_REDIS_PASSWORD}
@@ -50,7 +50,7 @@ uw:
         enabled: false
   kv:
     redis:
-      database: 7
+      database: 7          # 单测默认;E2E 需独立库隔离(见 -De2e 覆盖)
       host: 10.0.0.10
       port: 6380
       username: ${REDIS_USERNAME:}

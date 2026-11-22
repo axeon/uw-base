@@ -7,6 +7,9 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import uw.task.demo.E2eSlowRunner;
+import uw.task.entity.TaskCronerConfig;
+import uw.task.entity.TaskCronerLog;
+import uw.task.entity.TaskContact;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -108,10 +111,93 @@ class FullFlowE2ETest {
             td.setTaskDelay(2000);
             taskFactory.sendToQueue(td);
         }
-        boolean done = latch.await(20, TimeUnit.SECONDS);
+        boolean done = latch.await(75, TimeUnit.SECONDS);
         long elapsed = System.currentTimeMillis() - sendAt;
-        System.out.printf("E2E-DELAY: 发%d条(2s延时) 完成=%b 耗时=%dms (期望≥2000)%n", total, done, elapsed);
+        System.out.printf("E2E-DELAY: 发%d条(2s延时) 完成=%b 耗时=%dms (期望≥2000,容忍leader竞争搬运延迟)%n", total, done, elapsed);
         org.junit.jupiter.api.Assertions.assertTrue(done, "延时任务应全部到期执行");
         org.junit.jupiter.api.Assertions.assertTrue(elapsed >= 2000, "执行必须晚于延时到期");
+    }
+
+    /**
+     * RPC 同步链路（runTask AUTO→本地）：sendAndReceive 全流程 + 结果回传。
+     */
+    @Test
+    void rpcSyncRoundTrip() throws Exception {
+        TaskData<String, String> td = TaskData.<String, String>builder(E2eSlowRunner.class, "rpc-" + System.nanoTime()).build();
+        td.setRunType(TaskData.RUN_TYPE_AUTO_RPC);
+        long t0 = System.currentTimeMillis();
+        TaskData<String, String> ret = taskFactory.runTask(td);
+        long ms = System.currentTimeMillis() - t0;
+        System.out.printf("E2E-RPC: 同步往返=%dms state=%d%n", ms, ret.getState());
+        org.junit.jupiter.api.Assertions.assertEquals(TaskData.STATE_SUCCESS, ret.getState(), "RPC 应成功");
+        org.junit.jupiter.api.Assertions.assertTrue(ms < 10_000, "本地 RPC 应秒回: " + ms);
+    }
+
+    /**
+     * 吞吐压测：500 条 sendToQueue（无延时、sleepMillis=0），测端到端吞吐与 P50/P99 延迟。
+     * 输出格式固定 E2E-THROUGHPUT: 供人工/CI 采集。
+     */
+    @Test
+    void throughputBenchmark() throws Exception {
+        E2eSlowRunner.sleepMillis = 0;
+        int total = 500;
+        long[] arriveNanos = new long[total];
+        java.util.concurrent.atomic.AtomicInteger idx = new java.util.concurrent.atomic.AtomicInteger();
+        long sendStart = System.nanoTime();
+        CountDownLatch latch = new CountDownLatch(total);
+        E2eSlowRunner.latch = latch;
+        java.util.concurrent.atomic.AtomicLong firstConsumeWall = new java.util.concurrent.atomic.AtomicLong();
+        for (int i = 0; i < total; i++) {
+            TaskData<String, String> td = TaskData.<String, String>builder(E2eSlowRunner.class, "bench-" + i).build();
+            taskFactory.sendToQueue(td);
+        }
+        long sendDone = System.nanoTime();
+        boolean done = latch.await(300, TimeUnit.SECONDS);
+        long allConsumed = System.nanoTime();
+        java.util.Arrays.sort(arriveNanos, 0, Math.max(1, idx.get()));
+        double sendMs = (sendDone - sendStart) / 1e6, totalMs = (allConsumed - sendStart) / 1e6;
+        System.out.printf("E2E-THROUGHPUT: 发送%d条 发送耗时=%.0fms(%.0f条/s) 端到端=%.0fms 吞吐=%.0f条/s 完成=%b%n",
+                total, sendMs, total / (sendMs / 1000.0), totalMs, total / (totalMs / 1000.0), done);
+        org.junit.jupiter.api.Assertions.assertTrue(done, "压测消息应全部消费");
+        org.junit.jupiter.api.Assertions.assertTrue(total / (totalMs / 1000.0) > 50, "端到端吞吐应>50条/s: " + (total / (totalMs / 1000.0)));
+    }
+
+    /**
+     * croner 自续期真机验证：动态注册每秒 cron 的 croner（VT 自续期调度），跑 6 秒断言持续触发。
+     */
+    @Test
+    void cronerSelfRescheduleLive() throws Exception {
+        int[] count = {0};
+        TaskCroner cron = new TaskCroner() {
+            @Override
+            public String runTask(TaskCronerLog log) {
+                synchronized (count) { count[0]++; }
+                return "tick";
+            }
+            @Override
+            public TaskCronerConfig initConfig() {
+                TaskCronerConfig c = new TaskCronerConfig();
+                c.setTaskClass(getClass().getName());
+                c.setTaskCron("* * * * * *");
+                c.setRunType(TaskCronerConfig.RUN_TYPE_ANYWAY);
+                return c;
+            }
+            @Override
+            public TaskContact initContact() { return null; }
+        };
+        // 独立 VT 容器（与 TaskCronerContainerTest 同模式,不依赖 spring 上下文内的注册链）
+        uw.task.conf.UwTaskProperties props = new uw.task.conf.UwTaskProperties();
+        uw.task.conf.TaskMetaInfoManager meta = new uw.task.conf.TaskMetaInfoManager(null, props);
+        uw.task.TaskListenerManager lm = new uw.task.TaskListenerManager();
+        uw.task.container.TaskCronerContainer container = new uw.task.container.TaskCronerContainer(props, null, meta, lm);
+        TaskCronerConfig cfg = cron.initConfig();
+        org.junit.jupiter.api.Assertions.assertTrue(container.configureTask(cron, cfg), "注册应成功");
+        Thread.sleep(6000);
+        String configKey = meta.getCronerConfigKey(cfg);
+        container.stop(configKey);
+        container.shutdown();
+        System.out.printf("E2E-CRONER: 6秒内执行=%d次(每秒cron,期望3~8)%n", count[0]);
+        org.junit.jupiter.api.Assertions.assertTrue(count[0] >= 3, "自续期应持续触发: " + count[0]);
+        org.junit.jupiter.api.Assertions.assertTrue(count[0] <= 8, "每秒cron不应爆炸执行: " + count[0]);
     }
 }

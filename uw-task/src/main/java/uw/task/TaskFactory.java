@@ -289,8 +289,8 @@ public class TaskFactory {
      * @param queueName 目标队列名
      * @return zset 大小；查询失败返回 -1
      */
-    public long getDelayBacklogSize(String queueName) {
-        return taskDelayTransferContainer.getBacklogSize(queueName);
+    public long getDelayBacklogSize() {
+        return taskDelayTransferContainer.getBacklogSize();
     }
 
     /**

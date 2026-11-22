@@ -155,13 +155,11 @@ public class TaskDelayTransferContainer {
     }
 
     /**
-     * 查询 project 延时积压总量（单 zset ZCARD）。
-     * <p>按队列的细分统计已随队列分片退役（单 zset 下无 O(1) 按队列计数）；如需按队列观测走 MQ 侧队列深度。</p>
+     * 查询 project 延时积压总量（单 zset ZCARD）。按队列细分走 MQ 侧队列深度。
      *
-     * @param queueName 忽略（保留签名兼容 TaskFactory 门面）
      * @return project 全部延时任务数；查询失败返回 -1
      */
-    public long getBacklogSize(String queueName) {
+    public long getBacklogSize() {
         return getTotalBacklog();
     }
 
@@ -188,20 +186,11 @@ public class TaskDelayTransferContainer {
      * @param queueName 到期后转投的目标 MQ 队列名
      */
     public void submit(TaskData<?, ?> taskData, String queueName) {
+        // member 直接 = Kryo(TaskData)：队列名不编码——TaskData 自带 taskClass/taskTag/runTarget，
+        // 搬运时经 TaskSendCenter 全路由重derive（与即时投递同一条路，单一事实源）。
+        // queueName 参数保留：与 TaskSendCenter 调用点对齐（其值即 getFitQueue 结果，仅用于校验一致）。
         double score = taskData.getQueueDate().getTime() + taskData.getTaskDelay();
-        redisTemplate.opsForZSet().add(zsetKey, concatMember(queueName, KryoUtils.serialize(taskData)), score);
-    }
-
-    /**
-     * 拼接 member：queueName + NUL + 任务体。
-     */
-    private static byte[] concatMember(String queueName, byte[] body) {
-        byte[] q = queueName.getBytes(StandardCharsets.UTF_8);
-        byte[] out = new byte[q.length + 1 + body.length];
-        System.arraycopy(q, 0, out, 0, q.length);
-        out[q.length] = 0;
-        System.arraycopy(body, 0, out, q.length + 1, body.length);
-        return out;
+        redisTemplate.opsForZSet().add(zsetKey, KryoUtils.serialize(taskData), score);
     }
 
     /**
@@ -217,22 +206,14 @@ public class TaskDelayTransferContainer {
                 if (members != null && !members.isEmpty()) {
                     for (Object member : members) {
                         byte[] bytes = (byte[]) member;
-                        int sep = indexOfNul(bytes);
-                        if (sep < 0) {
-                            log.warn("TaskDelayTransfer: member 缺少队列名分隔符,跳过(len={}): {}", bytes.length);
-                            continue;
-                        }
-                        String queueName = new String(bytes, 0, sep, StandardCharsets.UTF_8);
-                        byte[] body = new byte[bytes.length - sep - 1];
-                        System.arraycopy(bytes, sep + 1, body, 0, body.length);
                         TaskData<?, ?> task;
                         try {
-                            task = KryoUtils.deserialize(body, TaskData.class);
+                            task = KryoUtils.deserialize(bytes, TaskData.class);
                         } catch (Exception e) {
-                            log.warn("TaskDelayTransfer: 反序列化失败,跳过(queue={},len={}): {}", queueName, body.length, e.toString());
+                            log.warn("TaskDelayTransfer: 反序列化失败,跳过(len={}): {}", bytes.length, e.toString());
                             continue;
                         }
-                        moved += transfer(task, queueName);
+                        moved += transfer(task);
                     }
                 }
                 if (moved == 0) {
@@ -256,29 +237,17 @@ public class TaskDelayTransferContainer {
     }
 
     /**
-     * 定位 member 中首个 NUL 分隔符（队列名长度）。
-     */
-    private static int indexOfNul(byte[] bytes) {
-        for (int i = 0; i < bytes.length; i++) {
-            if (bytes[i] == 0) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    /**
      * 转投单条任务到目标 MQ 队列（delay 取负标记"已到期搬运"）；失败写回 zset 延迟重试。
      *
      * @return 1=成功转投；0=失败已写回
      */
-    private int transfer(TaskData<?, ?> task, String queueName) {
-        // 延时信息保留：taskDelay 取负标记"已到期搬运"（所有路由/延时判定均为严格 >0，负值安全跳过；
-        // 绝对值=原延时时长）。MQ 原生延迟路径消息体保留正 taskDelay（到期后消费端不再 sleep），
-        // 两条路径可观测口径统一：正=待执行延时，负=已到期搬运。
+    private int transfer(TaskData<?, ?> task) {
+        // taskDelay 取负标记"已到期搬运"（所有延时判定均为严格 >0，负值安全走即时分支）——
+        // 经 taskSendCenter.sendToQueue 全路由（与即时投递同一条路：getFitQueue 由 taskClass 重derive 队列名，
+        // 单一事实源，submit/搬运两侧无队列名编码冗余）。
         task.setTaskDelay(-Math.abs(task.getTaskDelay()));
         try {
-            taskSendCenter.sendImmediate(task);
+            taskSendCenter.sendToQueue(task);
             return 1;
         } catch (Exception e) {
             // MQ 不可用：写回 zset 延迟 5s 重试；搬运侧递增 ranTimes（消费端未执行不会累加，此处补计），
@@ -287,11 +256,10 @@ public class TaskDelayTransferContainer {
             if (task.getRanTimes() <= MAX_TRANSFER_RETRY) {
                 task.setQueueDate(SystemClock.nowDate());
                 task.setTaskDelay(5000);
-                redisTemplate.opsForZSet().add(zsetKey, concatMember(queueName, KryoUtils.serialize(task)),
-                        SystemClock.now() + 5000);
-                log.warn("TaskDelayTransfer: 转投失败写回重试, queue={}, ranTimes={}: {}", queueName, task.getRanTimes(), e.getMessage());
+                redisTemplate.opsForZSet().add(zsetKey, KryoUtils.serialize(task), SystemClock.now() + 5000);
+                log.warn("TaskDelayTransfer: 转投失败写回重试, taskClass={}, ranTimes={}: {}", task.getTaskClass(), task.getRanTimes(), e.getMessage());
             } else {
-                log.error("TaskDelayTransfer: 转投重试达上限({})放弃, queue={}, taskClass={}, id={}", MAX_TRANSFER_RETRY, queueName, task.getTaskClass(), task.getId());
+                log.error("TaskDelayTransfer: 转投重试达上限({})放弃, taskClass={}, id={}", MAX_TRANSFER_RETRY, task.getTaskClass(), task.getId());
             }
             return 0;
         }

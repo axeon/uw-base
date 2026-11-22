@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration;
 import org.springframework.context.SmartLifecycle;
@@ -44,6 +45,10 @@ import uw.kv.listener.FusionCacheNotifyListener;
  * 原 8 个 init 锚点 bean 与两个 RedisTemplate bean、Pub/Sub 监听容器全部内化为工厂 bean 方法内的手工构建，
  * 宿主应用零冲突面。监听容器生命周期由本类 {@link SmartLifecycle} 管理。</p>
  *
+ * <p><b>装配条件</b>：显式配置 {@code uw.kv.redis.host} 才装配——不使用 kv 的应用（如仅依赖 uw-task
+ * 私有 Redis 的 task-center）无配置时跳过全部初始化（Global* 门面保持未初始化，调用方不使用即无感知），
+ * 不再因默认 localhost 连接失败阻塞启动。</p>
+ *
  * <p>结构（三层）：</p>
  * <ol>
  *   <li>注册唯一的 {@code kvRedisConnectionFactory}：uw 框架协调层（缓存/计数/锁/限流/选举/发号）
@@ -59,6 +64,7 @@ import uw.kv.listener.FusionCacheNotifyListener;
  */
 @Configuration
 @ConditionalOnClass({RedisTemplate.class, RedisConnectionFactory.class})
+@ConditionalOnProperty(prefix = "uw.kv.redis", name = "host")
 @AutoConfigureAfter({DataRedisAutoConfiguration.class})
 @EnableConfigurationProperties(UwKvProperties.class)
 public class UwKvAutoConfiguration implements SmartLifecycle {

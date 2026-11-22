@@ -163,7 +163,7 @@ public class UwTaskAutoConfiguration implements SmartLifecycle {
         TaskRunnerContainer taskRunnerContainer = new TaskRunnerContainer(taskProperties, taskApiClient, metaInfoManager,
                 new TaskLocalRateLimiter(), taskListenerManager, taskAmqpOps, taskSendCenter);
         TaskCronerContainer taskCronerContainer = new TaskCronerContainer(taskProperties, taskApiClient, metaInfoManager, taskListenerManager);
-        serviceRegistrar = new TaskServiceRegistrar(taskProperties, taskApiClient, taskRunnerContainer, taskCronerContainer, metaInfoManager);
+        serviceRegistrar = new TaskServiceRegistrar(taskProperties, taskApiClient, taskRunnerContainer, taskCronerContainer, metaInfoManager, delayTransferContainer);
         // ④ 注册 ES 日志对象（原独立 CommandLineRunner 内联：bean 创建期即可完成，无需延迟到 runner 阶段）
         logClient.regLogObjectWithIndexName(TaskRunnerLog.class, TaskConstants.KEY_RUNNER_LOG);
         logClient.regLogObjectWithIndexName(TaskCronerLog.class, TaskConstants.KEY_CRONER_LOG);

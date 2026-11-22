@@ -143,6 +143,21 @@ public class TaskDelayTransferContainer {
     }
 
     /**
+     * 查询 project 延时积压总量（单 zset ZCARD，供主机状态上报）。
+     *
+     * @return 待搬运任务数；查询失败返回 -1
+     */
+    public long getBacklogSize() {
+        try {
+            Long size = redisTemplate.opsForZSet().size(zsetKey);
+            return size == null ? 0 : size;
+        } catch (Exception e) {
+            log.warn("TaskDelayTransfer: 查询延时积压失败: {}", e.getMessage());
+            return -1;
+        }
+    }
+
+    /**
      * 提交一个延时任务（score=queueDate+taskDelay=到期时间）。
      * <p>member = Kryo(TaskData)：队列名不编码，搬运时经 sendToQueue 全路由由 taskClass 重 derive。</p>
      *

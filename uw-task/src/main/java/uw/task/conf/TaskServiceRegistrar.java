@@ -9,6 +9,7 @@ import uw.task.TaskCroner;
 import uw.task.TaskRunner;
 import uw.task.api.TaskApiClient;
 import uw.task.container.TaskCronerContainer;
+import uw.task.container.TaskDelayTransferContainer;
 import uw.task.container.TaskRunnerContainer;
 import uw.task.entity.*;
 import uw.task.util.TaskStatsService;
@@ -67,6 +68,10 @@ public class TaskServiceRegistrar {
      * 定时任务容器。
      */
     private final TaskCronerContainer taskCronerContainer;
+    /**
+     * 延时搬运器（上报 zset 积压）。
+     */
+    private final TaskDelayTransferContainer taskDelayTransferContainer;
 
     /**
      * 任务配置。
@@ -137,10 +142,11 @@ public class TaskServiceRegistrar {
      * @param taskMetaInfoManager  任务元信息管理器
      */
     public TaskServiceRegistrar(UwTaskProperties taskProperties, TaskApiClient taskApiClient, TaskRunnerContainer taskRunnerContainer, TaskCronerContainer taskCronerContainer,
-                                TaskMetaInfoManager taskMetaInfoManager) {
+                                TaskMetaInfoManager taskMetaInfoManager, TaskDelayTransferContainer taskDelayTransferContainer) {
         this.taskProperties = taskProperties;
         this.taskRunnerContainer = taskRunnerContainer;
         this.taskCronerContainer = taskCronerContainer;
+        this.taskDelayTransferContainer = taskDelayTransferContainer;
         this.taskApiClient = taskApiClient;
         this.taskMetaInfoManager = taskMetaInfoManager;
     }
@@ -508,6 +514,8 @@ public class TaskServiceRegistrar {
         hostStats.setTaskRunnerStatsList(TaskStatsService.getRunnerStats());
         // 查询队列积压信息（queueName 反查 + queueDeclarePassive），委托 TaskRunnerContainer。
         taskRunnerContainer.fillQueueBacklog(hostStats.getTaskRunnerStatsList());
+        // 延时积压（zset 待搬运数,project 级):时间轮水位,与 MQ 侧队列积压互补
+        hostStats.setDelayBacklog(taskDelayTransferContainer.getBacklogSize());
         ResponseData<HostReportResponse> reportResult = taskApiClient.reportHostInfo(hostStats);
         reportResponse = reportResult != null && reportResult.isSuccess() ? reportResult.getData() : null;
         // 主机禁用/启用处理：服务端 HostReportResponse.state=0 表示 OPS 禁用本机。

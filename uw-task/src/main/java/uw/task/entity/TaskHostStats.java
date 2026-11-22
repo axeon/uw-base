@@ -53,12 +53,15 @@ public class TaskHostStats implements Serializable {
      */
     private int cronerNum;
 
-
     /**
      * 队列任务数量
      */
     private int runnerNum;
 
+    /**
+     * 延时任务积压数（zset 待搬运数，project 级）：时间轮中尚未到期的任务总量。
+     */
+    private long delayBacklog;
 
     /**
      * JVM最大内存（Runtime.maxMemory，堆上限）
@@ -179,6 +182,13 @@ public class TaskHostStats implements Serializable {
         this.runnerNum = runnerNum;
     }
 
+    public long getDelayBacklog() {
+        return delayBacklog;
+    }
+
+    public void setDelayBacklog(long delayBacklog) {
+        this.delayBacklog = delayBacklog;
+    }
 
     public long getJvmMemMax() {
         return jvmMemMax;
@@ -251,5 +261,6 @@ public class TaskHostStats implements Serializable {
     public void setTaskRunnerStatsList(List<TaskRunnerStats> taskRunnerStatsList) {
         this.taskRunnerStatsList = taskRunnerStatsList;
     }
+
 
 }

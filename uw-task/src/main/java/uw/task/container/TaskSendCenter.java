@@ -91,7 +91,7 @@ public class TaskSendCenter {
             }
             taskData.setId(TaskSequence.nextId(TaskConstants.KEY_RUNNER_LOG));
             taskData.setQueueDate(SystemClock.nowDate());
-            taskDelayTransferContainer.submit(taskData, delayQueue);
+            taskDelayTransferContainer.submit(taskData);
             // 投递侧监听回调（异常吞掉仅记录）
             notifyDelaySubmit(taskData, delayQueue);
             return;

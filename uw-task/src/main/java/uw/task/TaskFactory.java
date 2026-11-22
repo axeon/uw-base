@@ -121,6 +121,16 @@ public class TaskFactory {
         return INSTANCE;
     }
 
+
+    /**
+     * AUTO_RPC 本地降级判定：本机有匹配 runner 且 target 匹配时置 LOCAL（三执行入口共用）。
+     */
+    private void resolveAutoRpcToLocal(TaskData<?, ?> taskData) {
+        if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && taskMetaInfoManager.checkRunnerRunLocal(taskData)) {
+            taskData.setRunType(TaskData.RUN_TYPE_LOCAL);
+        }
+    }
+
     /**
      * 将任务异步投递到 RabbitMQ 队列，由具备匹配 runner 的远端主机消费。
      * <p>
@@ -178,11 +188,7 @@ public class TaskFactory {
         }
         taskData.setId(TaskSequence.nextId(TaskConstants.KEY_RUNNER_LOG));
         taskData.setQueueDate(SystemClock.nowDate());
-        // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
-        if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && taskMetaInfoManager.checkRunnerRunLocal(taskData)) {
-            // 启动本地运行模式。
-            taskData.setRunType(TaskData.RUN_TYPE_LOCAL);
-        }
+        resolveAutoRpcToLocal(taskData);
         if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
             taskRunnerContainer.process(taskData);
             return taskData;
@@ -212,11 +218,7 @@ public class TaskFactory {
     public <TP, RD> TaskData<TP, RD> runTaskLocal(final TaskData<TP, RD> taskData) {
         taskData.setId(TaskSequence.nextId(TaskConstants.KEY_RUNNER_LOG));
         taskData.setQueueDate(SystemClock.nowDate());
-        // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
-        if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && taskMetaInfoManager.checkRunnerRunLocal(taskData)) {
-            // 启动本地运行模式。
-            taskData.setRunType(TaskData.RUN_TYPE_LOCAL);
-        }
+        resolveAutoRpcToLocal(taskData);
         if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
             taskRunnerContainer.process(taskData);
             return taskData;
@@ -248,11 +250,7 @@ public class TaskFactory {
         taskData.setId(TaskSequence.nextId(TaskConstants.KEY_RUNNER_LOG));
         taskData.setQueueDate(SystemClock.nowDate());
 
-        // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
-        if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && taskMetaInfoManager.checkRunnerRunLocal(taskData)) {
-            // 启动本地运行模式。
-            taskData.setRunType(TaskData.RUN_TYPE_LOCAL);
-        }
+        resolveAutoRpcToLocal(taskData);
         if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
             // 启动本地运行模式。
             CompletableFuture<TaskData<TP, RD>> future = new CompletableFuture<>();
@@ -283,24 +281,15 @@ public class TaskFactory {
     }
 
     /**
-     * 查询指定队列的延时任务积压数（Redis zset 侧，尚未到期/待搬运）。
-     * <p>与 {@link #getQueueInfo}（MQ 侧积压）互补：延时任务在 zset 滞留期间的积压观测入口。</p>
+     * 查询 project 延时任务积压总量（Redis zset 侧，尚未到期/待搬运）。
+     * <p>与 {@link #getQueueInfo}（MQ 侧积压）互补；按队列细分走 MQ 侧队列深度。</p>
      *
-     * @param queueName 目标队列名
      * @return zset 大小；查询失败返回 -1
      */
     public long getDelayBacklogSize() {
         return taskDelayTransferContainer.getBacklogSize();
     }
 
-    /**
-     * 查询全部队列的延时积压总数（运维观测整体延时水位）。
-     *
-     * @return 各分片之和；无延时任务返回 0
-     */
-    public long getDelayBacklogTotal() {
-        return taskDelayTransferContainer.getTotalBacklog();
-    }
 
     /**
      * 查询指定队列的积压消息数与消费者数。

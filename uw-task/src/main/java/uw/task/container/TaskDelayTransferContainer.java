@@ -1,6 +1,5 @@
 package uw.task.container;
 
-import java.util.Set;
 import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +10,6 @@ import uw.common.util.SystemClock;
 import uw.task.TaskData;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -19,10 +17,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 延时任务 Redis zset 搬运器（091/低版本环境的延时承载通道，与 MQ 原生延迟自动二选一）。
  *
  * <p>定位（261120 用户定案"一切全自动化"）：延时任务与队列任务统一为 TaskRunner 一种类型，
- * {@code TaskData.taskDelay > 0} 即延时任务。投递路由在 {@code TaskFactory.sendToQueue} 内自动判定：
+ * {@code TaskData.taskDelay > 0} 即延时任务。投递路由在 {@code TaskSendCenter.sendToQueue} 内自动判定：
  * 1.0 + RabbitMQ 4.4+ 且目标队列为 quorum → MQ 消息级原生延迟（本容器不参与）；
- * 否则 → 本容器：submit 写 zset（score=到期时间），mover 到期原子 pop 后转投 MQ 目标队列
- * （delay 清零，由对应 TaskRunner 消费执行——执行语义统一归消费端）。</p>
+ * 否则 → 本容器：submit 写 project 级单一 zset（member=Kryo(TaskData)，score=到期时间），
+ * Leader mover 到期原子 pop 后经 sendToQueue 全路由转投 MQ（taskDelay 取负走即时分支，
+ * 队列名由 taskClass 重 derive，无编码冗余）。</p>
  *
  * <p>本容器只做<b>时间搬运</b>，不做执行——无限速/重试/日志/监听器（这些由 TaskRunner 消费端统一承担）。
  * 执行模型为 <b>Leader 单例</b>（261120 定案）：仅 Leader 实例运行 mover 线程（与 croner SINGLETON 共用
@@ -38,8 +37,7 @@ public class TaskDelayTransferContainer {
     private static final Logger log = LoggerFactory.getLogger(TaskDelayTransferContainer.class);
 
     /**
-     * zset key（project 维度单一分片：所有延时任务共一个 zset，队列名编码在 member 前缀，
-     * 搬运 O(1) 次 EVALSHA/轮——多队列分片在大规模队列数下轮询成本线性膨胀，单 zset 消除之）。
+     * zset key（project 维度单一：member=Kryo(TaskData) 自带路由要素，O(1) 次 EVALSHA/轮）。
      */
     private final String zsetKey;
 
@@ -86,16 +84,6 @@ public class TaskDelayTransferContainer {
      * mover 线程。
      */
     private Thread moverThread;
-
-    /**
-     * 构造。
-     *
-     * @param redisTemplate     uw-task 私有 Redis 模板（String key + byte[] value）
-     * @param taskSendCenter    任务投递中心（sendImmediate 即时投递）
-     */
-    public TaskDelayTransferContainer(RedisTemplate<String, byte[]> redisTemplate, TaskSendCenter taskSendCenter) {
-        this(redisTemplate, null, taskSendCenter);
-    }
 
     /**
      * @param redisTemplate uw-task 私有 Redis 模板（String key + byte[] value）
@@ -180,28 +168,24 @@ public class TaskDelayTransferContainer {
 
     /**
      * 提交一个延时任务（score=queueDate+taskDelay=到期时间）。
-     * <p>member 格式 = queueName + NUL + Kryo(TaskData)：project 单 zset 下队列名随成员携带，POP 后按前缀拆分路由。</p>
+     * <p>member = Kryo(TaskData)：队列名不编码，搬运时经 sendToQueue 全路由由 taskClass 重 derive。</p>
      *
-     * @param taskData  延时任务（taskClass/taskDelay/queueDate 已由 TaskSendCenter 设置）
-     * @param queueName 到期后转投的目标 MQ 队列名
+     * @param taskData 延时任务（taskClass/taskDelay/queueDate 已由 TaskSendCenter 设置）
      */
-    public void submit(TaskData<?, ?> taskData, String queueName) {
-        // member 直接 = Kryo(TaskData)：队列名不编码——TaskData 自带 taskClass/taskTag/runTarget，
-        // 搬运时经 TaskSendCenter 全路由重derive（与即时投递同一条路，单一事实源）。
-        // queueName 参数保留：与 TaskSendCenter 调用点对齐（其值即 getFitQueue 结果，仅用于校验一致）。
+    public void submit(TaskData<?, ?> taskData) {
         double score = taskData.getQueueDate().getTime() + taskData.getTaskDelay();
         redisTemplate.opsForZSet().add(zsetKey, KryoUtils.serialize(taskData), score);
     }
 
     /**
-     * mover 主循环：单 zset 一次 Lua 原子 pop 到期任务（批量 ≤{@value BATCH}）→ 按前缀拆分队列 → 转投 MQ（delay 取负标记已搬运）。
+     * mover 主循环：单 zset 一次 Lua 原子 pop 到期任务（批量 ≤{@value BATCH}）→ 逐条转投 MQ。
      */
     private void moveLoop() {
         while (running.get()) {
             int moved = 0;
             try {
-                byte[] nowArg = String.valueOf(SystemClock.now()).getBytes();
-                byte[] batchArg = String.valueOf(BATCH).getBytes();
+                byte[] nowArg = String.valueOf(SystemClock.now()).getBytes(StandardCharsets.UTF_8);
+                byte[] batchArg = String.valueOf(BATCH).getBytes(StandardCharsets.UTF_8);
                 List<byte[]> members = redisTemplate.execute(POP_SCRIPT, Collections.singletonList(zsetKey), nowArg, batchArg);
                 if (members != null && !members.isEmpty()) {
                     for (Object member : members) {

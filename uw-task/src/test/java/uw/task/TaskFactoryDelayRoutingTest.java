@@ -14,8 +14,8 @@ import uw.task.rabbit.TaskAmqpOps;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -88,15 +88,15 @@ class TaskFactoryDelayRoutingTest {
      * 记录型 fake 搬运器：捕获 submit，不写 Redis。
      */
     static final class FakeTransfer extends TaskDelayTransferContainer {
-        final Map<String, TaskData<?, ?>> submitted = new ConcurrentHashMap<>();
+        final AtomicInteger submittedCount = new AtomicInteger();
 
         FakeTransfer() {
-            super(null, null);
+            super(null, null, null);
         }
 
         @Override
-        public void submit(TaskData<?, ?> taskData, String queueName) {
-            submitted.put(queueName, taskData);
+        public void submit(TaskData<?, ?> taskData) {
+            submittedCount.incrementAndGet();
         }
     }
 
@@ -148,7 +148,7 @@ class TaskFactoryDelayRoutingTest {
         try {
             factory.sendToQueue(data);
             assertThat(ops.sends).isEmpty();
-            assertThat(transfer.submitted).containsKey("test.DelayTask#$default");
+            assertThat(transfer.submittedCount.get()).isEqualTo(1);
             return;
         } catch (Exception e) {
             // 无 Redis：nextId 失败抛出。此时路由尚未到达 submit——用延迟为负的旁证不可行，跳过（集成测试覆盖）。
@@ -174,7 +174,7 @@ class TaskFactoryDelayRoutingTest {
         }
         assertThat(ops.sends).hasSize(1);
         assertThat(ops.sends.get(0)[0]).isEqualTo(60000L);
-        assertThat(transfer.submitted).isEmpty();
+        assertThat(transfer.submittedCount.get()).isEqualTo(0);
     }
 
     /**
@@ -195,7 +195,7 @@ class TaskFactoryDelayRoutingTest {
         try {
             factory.sendToQueue(delayTask());
             assertThat(ops.sends).isEmpty();
-            assertThat(transfer.submitted).containsKey("test.DelayTask#$default");
+            assertThat(transfer.submittedCount.get()).isEqualTo(1);
         } catch (Exception e) {
             assertThat(e.getMessage()).contains("TaskSequence");
         }

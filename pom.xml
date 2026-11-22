@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <revision>2026.1000.0017</revision>
+        <revision>2026.1000.0018</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>25</java.version>

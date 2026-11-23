@@ -7,13 +7,6 @@ import uw.common.util.LimitedVirtualThreadExecutor;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.IOException;
-import com.rabbitmq.qpid.protonj2.client.exceptions.ClientException;
-import java.util.Locale;
-import java.net.SocketTimeoutException;
-import java.util.concurrent.TimeoutException;
-import org.springframework.amqp.AmqpException;
-import org.springframework.amqp.AmqpIOException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessageProperties;
@@ -331,11 +324,9 @@ public class TaskFactory {
      * 执行全局 RPC 调用与退避重试、超时判定。
      * <p><b>幂等性要求</b>：RPC 任务（GLOBAL_RPC）的服务端实现必须幂等——重试窗口内消息可能已被服务端
      * 消费执行（发送成功但响应丢失/连接异常），重试会导致二次执行，框架不防重。</p>
-     * <p><b>重试白名单</b>：仅 IO/连接类资源异常重试（最多 {@value #MAX_RETRY_TIMES} 次）；
-     * 业务异常（服务端已执行并返回失败语义）重试无意义——但同步 RPC 下服务端业务失败经响应消息回传
-     * （不走异常路径），故此处异常基本均为资源类；防御性排除 IllegalStateException（1.0 通道故障语义）外的
-     * 明确非资源异常仍重试——超时(对方无响应 retMessage==null)立即失败不重试（重试只会阻塞调用方且可能重复执行）；
-     * InterruptedException 中断后立即返回不重试。</p>
+     * <p><b>重试策略</b>：异常一律尽量重试（最多 {@value #MAX_RETRY_TIMES} 次）——同步 RPC 下服务端业务失败
+     * 经响应消息回传（不走异常路径），异常路径基本均为传输类；超时(对方无响应 retMessage==null)立即失败
+     * 不重试（重试只会阻塞调用方且可能重复执行）；InterruptedException 中断后立即返回不重试。</p>
      *
      * @param queue   目标队列
      * @param message 已构造的 RPC 消息
@@ -346,7 +337,7 @@ public class TaskFactory {
      */
     @SuppressWarnings("unchecked")
     private <TP, RD> TaskData<TP, RD> doRpcCall(String queue, Message message) {
-        // RPC 调用仅资源类异常白名单重试；RPC 超时(retMessage==null)不重试（重试只阻塞调用方+可能重复执行）。
+        // RPC 调用异常一律尽量重试；RPC 超时(retMessage==null)不重试（重试只阻塞调用方+可能重复执行）。
         String rpcTimeoutQueue = null;
         Exception lastError = null;
         for (int i = 0; i < MAX_RETRY_TIMES; i++) {
@@ -368,49 +359,12 @@ public class TaskFactory {
                     Thread.currentThread().interrupt();
                     break;
                 }
-                // 重试白名单：仅资源类异常（IO/超时/AMQP 连接通道族）重试——消息可能未被消费，重发安全；
-                // 非资源类异常（如明确的通道状态/参数错误）重试无意义，立即失败。
-                if (!isRetryableResourceException(e)) {
-                    break;
-                }
             }
         }
         if (rpcTimeoutQueue != null) {
             throw new TaskRuntimeException("RPC call timed out: " + rpcTimeoutQueue);
         }
         throw new TaskRuntimeException("RPC call failed after retries: " + queue + (lastError != null ? ", last=" + lastError.getMessage() : ""));
-    }
-
-    /**
-     * RPC 重试白名单判定：仅资源类异常（IO/超时/AMQP 连接通道族）允许重发。
-     * <p>资源类 = 消息大概率未被服务端消费，重发不会二次执行；其余异常重试无意义且可能放大故障。</p>
-     *
-     * @param e 捕获的异常
-     * @return true=可安全重试
-     */
-    private static boolean isRetryableResourceException(Exception e) {
-        // 展开 cause 链判定（1.0 通道把 IO 异常包在 IllegalStateException 里）
-        Throwable t = e;
-        while (t != null) {
-            if (t instanceof IOException || t instanceof SocketTimeoutException
-                    || t instanceof TimeoutException
-                    || t instanceof org.springframework.amqp.AmqpException
-                    || t instanceof org.springframework.amqp.AmqpIOException
-                    // 1.0 v2 client 异常族根：ClientException 覆盖全部资源形态
-                    //（含通道暂时繁忙——ClientResourceRemotelyClosedException[背压下链接被远端关闭]/
-                    //  ClientSendTimedOutException[发送窗口满]均其子类）；
-                    // v2 包装层 AmqpException 覆盖 StaleRecoveryException 等恢复期瞬态
-                    || t instanceof ClientException
-                    || t instanceof com.rabbitmq.client.amqp.AmqpException) { // 同名冲突唯一FQN例外(v2包装层,与spring的AmqpException同名)
-                return true;
-            }
-            t = t.getCause();
-        }
-        // 091 spring-rabbit 的资源异常族未带上述类型时（如连接拒绝 message 特征）兜底判 message 关键字
-        // （小写化匹配：v2 的 "TimedOut"/"timed out" 等驼峰/空格变体也能命中）
-        String msg = String.valueOf(e.getMessage()).toLowerCase(Locale.ROOT);
-        return msg.contains("connection") || msg.contains("channel") || msg.contains("timeout")
-                || msg.contains("timedout") || msg.contains("timed out") || msg.contains("refused") || msg.contains("busy");
     }
 
     /**

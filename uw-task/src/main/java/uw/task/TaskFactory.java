@@ -8,6 +8,8 @@ import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
+import com.rabbitmq.qpid.protonj2.client.exceptions.ClientException;
+import java.util.Locale;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeoutException;
 import org.springframework.amqp.AmqpException;
@@ -392,15 +394,23 @@ public class TaskFactory {
         while (t != null) {
             if (t instanceof IOException || t instanceof SocketTimeoutException
                     || t instanceof TimeoutException
-                    || t instanceof AmqpException
-                    || t instanceof AmqpIOException) {
+                    || t instanceof org.springframework.amqp.AmqpException
+                    || t instanceof org.springframework.amqp.AmqpIOException
+                    // 1.0 v2 client 异常族根：ClientException 覆盖全部资源形态
+                    //（含通道暂时繁忙——ClientResourceRemotelyClosedException[背压下链接被远端关闭]/
+                    //  ClientSendTimedOutException[发送窗口满]均其子类）；
+                    // v2 包装层 AmqpException 覆盖 StaleRecoveryException 等恢复期瞬态
+                    || t instanceof ClientException
+                    || t instanceof com.rabbitmq.client.amqp.AmqpException) { // 同名冲突唯一FQN例外(v2包装层,与spring的AmqpException同名)
                 return true;
             }
             t = t.getCause();
         }
         // 091 spring-rabbit 的资源异常族未带上述类型时（如连接拒绝 message 特征）兜底判 message 关键字
-        String msg = String.valueOf(e.getMessage());
-        return msg.contains("Connection") || msg.contains("Channel") || msg.contains("timeout") || msg.contains("refused");
+        // （小写化匹配：v2 的 "TimedOut"/"timed out" 等驼峰/空格变体也能命中）
+        String msg = String.valueOf(e.getMessage()).toLowerCase(Locale.ROOT);
+        return msg.contains("connection") || msg.contains("channel") || msg.contains("timeout")
+                || msg.contains("timedout") || msg.contains("timed out") || msg.contains("refused") || msg.contains("busy");
     }
 
     /**

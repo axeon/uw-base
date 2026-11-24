@@ -1,20 +1,20 @@
 package uw.task.util;
 
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.support.atomic.RedisAtomicLong;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * uw-task 私有序列发号器（号段模式，语义等价移植自 uw-kv GlobalSequence，key 空间私有 uw-task-seq:）。
+ * uw-task 私有序列发号器（号段模式，key 空间私有 uw-task-seq:）。
  *
  * <p>号段模式：批量从 Redis 原子取号（getAndAdd(step)），本地发号，段内零网络；
  * 取号失败不推进本地状态，重试 {@value #MAX_RETRY_TIMES} 次仍失败抛异常。
  * 号段起始值不发出（哨兵语义，首个返回 start+1）。序列 key 永久递增不设 TTL；
- * key 更名需先抬号迁移。name 应为有限集合（task 侧仅三个日志序列）。</p>
+ * key 更名需先抬号迁移。name 应为有限集合（task 侧仅 runner/croner 两个日志序列）。</p>
  *
  * @author axeon
  */
@@ -45,29 +45,30 @@ public final class TaskSequence {
      */
     private static final ConcurrentMap<String, RedisSequence> map = new ConcurrentHashMap<>();
 
+    /**
+     * 私有连接工厂（init 注入，须在 nextId 前调用）。
+     */
+    private static RedisConnectionFactory redisConnectionFactory;
+
+    /**
+     * 工具类，禁止实例化。
+     */
     private TaskSequence() {
     }
 
     /**
      * 注入私有连接工厂（自动配置调用一次，须在 nextId 前调用）。
+     *
+     * @param connectionFactory uw-task 私有 Redis 连接工厂
      */
     public static void init(RedisConnectionFactory connectionFactory) {
         TaskSequence.redisConnectionFactory = connectionFactory;
     }
 
     /**
-     * 私有连接工厂（init 注入，须在 nextId 前调用）。
-     */
-    private static RedisConnectionFactory redisConnectionFactory;
-
-    private static RedisConnectionFactory taskRedisConnectionFactory() {
-        return redisConnectionFactory;
-    }
-
-    /**
      * 获取序列值（惰性创建，默认步长 {@value #SEGMENT_STEP}）。
      *
-     * @param name 序列名称（有限集合，如 "uw-task-TaskRunnerLog"）
+     * @param name 序列名称（有限集合，如 {@link uw.task.constant.TaskConstants#KEY_RUNNER_LOG}）
      * @return 下一个序列值
      */
     public static long nextId(String name) {
@@ -82,12 +83,11 @@ public final class TaskSequence {
                 log.error(e.getMessage(), e);
             }
         }
-        throw new RuntimeException("TaskSequence获取序列失败: " + name, lastException);
+        throw new RuntimeException("TaskSequence failed to get id: " + name, lastException);
     }
 
     /**
-     * redis 序列发生器（号段模式）。线程安全：步长 1 走 INCR 原子快捷路径（零跳号无本地锁）；
-     * 步长 &gt;1 由 nextIdBySegment 的 synchronized 保证本地发号原子性；
+     * redis 序列发生器（号段模式）。线程安全：nextId 的 synchronized 保证本地发号原子性；
      * 多实例从 redis 取不同号段（getAndAdd 原子）互不冲突。
      */
     static final class RedisSequence {
@@ -112,21 +112,25 @@ public final class TaskSequence {
          */
         private final RedisAtomicLong counter;
 
+        /**
+         * 构建序列发生器并取首个号段。
+         *
+         * @param fullKey      redis key（含前缀）
+         * @param incrementNum 号段步长
+         */
         RedisSequence(String fullKey, int incrementNum) {
             this.incrementNum = incrementNum;
-            this.counter = new RedisAtomicLong(fullKey, taskRedisConnectionFactory());
+            this.counter = new RedisAtomicLong(fullKey, redisConnectionFactory);
             this.currentId = counter.getAndAdd(incrementNum);
             this.maxId = this.currentId + incrementNum;
         }
 
-        long nextId() {
-            if (incrementNum == 1) {
-                return counter.incrementAndGet();
-            }
-            return nextIdBySegment();
-        }
-
-        private synchronized long nextIdBySegment() {
+        /**
+         * 取下一个序列值；当前号段用尽时从 redis 取新号段。
+         *
+         * @return 下一个序列值
+         */
+        synchronized long nextId() {
             if (currentId + 1 >= maxId) {
                 currentId = counter.getAndAdd(incrementNum);
                 maxId = currentId + incrementNum;

@@ -1,5 +1,13 @@
 package uw.task.container;
 
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import uw.task.TaskCroner;
@@ -15,20 +23,11 @@ import uw.task.exception.TaskDataException;
 import uw.task.exception.TaskPartnerException;
 import uw.task.listener.TaskCronerListener;
 
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * TaskCronerContainer 自续期调度测试。
@@ -438,7 +437,7 @@ class TaskCronerContainerTest {
     }
 
     @Test
-    void destroyAll_noFurtherFire() throws Exception {
+    void shutdown_noFurtherFire() throws Exception {
         TaskCronerContainer c = newContainer();
         AtomicInteger runs = new AtomicInteger();
         assertTrue(c.configureTask(countingCroner(runs, null, "test.Destroy"), buildConfig("test.Destroy", "* * * * * *")));

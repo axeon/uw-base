@@ -62,6 +62,13 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId>
         </dependency>
+        <!-- AMQP 1.0 客户端库吞吐对照基准（AmqpClientLibraryBench）专用，仅测试期 -->
+        <dependency>
+            <groupId>org.springframework.amqp</groupId>
+            <artifactId>spring-amqp-client</artifactId>
+            <version>4.2.0</version>
+            <scope>test</scope>
+        </dependency>
         <!-- ============ 测试依赖 ============ -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

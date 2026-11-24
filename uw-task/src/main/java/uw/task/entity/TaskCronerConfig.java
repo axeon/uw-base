@@ -1,7 +1,8 @@
 package uw.task.entity;
 
-import java.io.Serializable;
 import uw.task.TaskCroner;
+
+import java.io.Serializable;
 
 /**
  * 定时任务配置。
@@ -134,18 +135,36 @@ public class TaskCronerConfig implements Serializable {
      */
     private int logLimitSize = 0;
 
+    /**
+     * 默认构造器。
+     */
     public TaskCronerConfig() {
     }
 
+    /**
+     * 带任务名称的构造器。
+     *
+     * @param taskName 任务名称
+     */
     public TaskCronerConfig(String taskName) {
         this.taskName = taskName;
     }
 
+    /**
+     * 带任务名称与 cron 表达式的构造器。
+     *
+     * @param taskName 任务名称
+     * @param taskCron cron 表达式
+     */
     public TaskCronerConfig(String taskName, String taskCron) {
         this.taskName = taskName;
         this.taskCron = taskCron;
     }
 
+    /**
+     * 由 Builder 构建实例。
+     * @param builder 已设置好字段的 Builder
+     */
     private TaskCronerConfig(Builder builder) {
         setId(builder.id);
         setTaskClass(builder.taskClass);
@@ -166,7 +185,6 @@ public class TaskCronerConfig implements Serializable {
         setLogLevel(builder.logLevel);
         setLogLimitSize(builder.logLimitSize);
     }
-
 
     /**
      * builder 模式，带 taskName 参数。
@@ -190,6 +208,8 @@ public class TaskCronerConfig implements Serializable {
     }
 
     /**
+     * 创建空 Builder。
+     *
      * @return 空白 Builder
      */
     public static Builder builder() {
@@ -225,147 +245,326 @@ public class TaskCronerConfig implements Serializable {
         return builder;
     }
 
-
+    /**
+     * 获取任务配置 id。
+     *
+     * @return 任务配置 id
+     */
     public long getId() {
         return id;
     }
 
+    /**
+     * 设置任务配置 id。
+     *
+     * @param id 任务配置 id
+     */
     public void setId(long id) {
         this.id = id;
     }
 
+    /**
+     * 获取执行类信息。
+     *
+     * @return 执行类信息
+     */
     public String getTaskClass() {
         return taskClass;
     }
 
+    /**
+     * 设置执行类信息。
+     *
+     * @param taskClass 执行类信息
+     */
     public void setTaskClass(String taskClass) {
         this.taskClass = taskClass;
     }
 
+    /**
+     * 获取执行参数，可能用于区分子任务。
+     *
+     * @return 执行参数，可能用于区分子任务
+     */
     public String getTaskParam() {
         return taskParam;
     }
 
+    /**
+     * 设置执行参数，可能用于区分子任务。
+     *
+     * @param taskParam 执行参数，可能用于区分子任务
+     */
     public void setTaskParam(String taskParam) {
         this.taskParam = taskParam;
     }
 
+    /**
+     * 获取任务名称。
+     *
+     * @return 任务名称
+     */
     public String getTaskName() {
         return taskName;
     }
 
+    /**
+     * 设置任务名称。
+     *
+     * @param taskName 任务名称
+     */
     public void setTaskName(String taskName) {
         this.taskName = taskName;
     }
 
+    /**
+     * 获取任务描述。
+     *
+     * @return 任务描述
+     */
     public String getTaskDesc() {
         return taskDesc;
     }
 
+    /**
+     * 设置任务描述。
+     *
+     * @param taskDesc 任务描述
+     */
     public void setTaskDesc(String taskDesc) {
         this.taskDesc = taskDesc;
     }
 
+    /**
+     * 获取cron表达式，默认5秒一次。
+     *
+     * @return cron表达式，默认5秒一次
+     */
     public String getTaskCron() {
         return taskCron;
     }
 
+    /**
+     * 设置cron表达式，默认5秒一次。
+     *
+     * @param taskCron cron表达式，默认5秒一次
+     */
     public void setTaskCron(String taskCron) {
         this.taskCron = taskCron;
     }
 
+    /**
+     * 获取0随意执行，1全局唯一执行。
+     *
+     * @return 0随意执行，1全局唯一执行
+     */
     public int getRunType() {
         return runType;
     }
 
+    /**
+     * 设置0随意执行，1全局唯一执行。
+     *
+     * @param runType 0随意执行，1全局唯一执行
+     */
     public void setRunType(int runType) {
         this.runType = runType;
     }
 
+    /**
+     * 获取运行目标，默认不指定。
+     *
+     * @return 运行目标，默认不指定
+     */
     public String getRunTarget() {
         return runTarget;
     }
 
+    /**
+     * 设置运行目标，默认不指定。
+     *
+     * @param runTarget 运行目标，默认不指定
+     */
     public void setRunTarget(String runTarget) {
         this.runTarget = runTarget;
     }
 
+    /**
+     * 获取失败率。
+     *
+     * @return 失败率
+     */
     public int getAlertFailRate() {
         return alertFailRate;
     }
 
+    /**
+     * 设置失败率。
+     *
+     * @param alertFailRate 失败率
+     */
     public void setAlertFailRate(int alertFailRate) {
         this.alertFailRate = alertFailRate;
     }
 
+    /**
+     * 获取接口失败率。
+     *
+     * @return 接口失败率
+     */
     public int getAlertFailPartnerRate() {
         return alertFailPartnerRate;
     }
 
+    /**
+     * 设置接口失败率。
+     *
+     * @param alertFailPartnerRate 接口失败率
+     */
     public void setAlertFailPartnerRate(int alertFailPartnerRate) {
         this.alertFailPartnerRate = alertFailPartnerRate;
     }
 
+    /**
+     * 获取程序失败率。
+     *
+     * @return 程序失败率
+     */
     public int getAlertFailProgramRate() {
         return alertFailProgramRate;
     }
 
+    /**
+     * 设置程序失败率。
+     *
+     * @param alertFailProgramRate 程序失败率
+     */
     public void setAlertFailProgramRate(int alertFailProgramRate) {
         this.alertFailProgramRate = alertFailProgramRate;
     }
 
+    /**
+     * 获取配置失败率告警阈值（百分比）。
+     *
+     * @return 配置失败率告警阈值（百分比）
+     */
     public int getAlertFailConfigRate() {
         return alertFailConfigRate;
     }
 
+    /**
+     * 设置配置失败率告警阈值（百分比）。
+     *
+     * @param alertFailConfigRate 配置失败率告警阈值（百分比）
+     */
     public void setAlertFailConfigRate(int alertFailConfigRate) {
         this.alertFailConfigRate = alertFailConfigRate;
     }
 
+    /**
+     * 获取数据失败率。
+     *
+     * @return 数据失败率
+     */
     public int getAlertFailDataRate() {
         return alertFailDataRate;
     }
 
+    /**
+     * 设置数据失败率。
+     *
+     * @param alertFailDataRate 数据失败率
+     */
     public void setAlertFailDataRate(int alertFailDataRate) {
         this.alertFailDataRate = alertFailDataRate;
     }
 
+    /**
+     * 获取等待超时。
+     *
+     * @return 等待超时
+     */
     public int getAlertWaitTimeout() {
         return alertWaitTimeout;
     }
 
+    /**
+     * 设置等待超时。
+     *
+     * @param alertWaitTimeout 等待超时
+     */
     public void setAlertWaitTimeout(int alertWaitTimeout) {
         this.alertWaitTimeout = alertWaitTimeout;
     }
 
+    /**
+     * 获取运行超时。
+     *
+     * @return 运行超时
+     */
     public int getAlertRunTimeout() {
         return alertRunTimeout;
     }
 
+    /**
+     * 设置运行超时。
+     *
+     * @param alertRunTimeout 运行超时
+     */
     public void setAlertRunTimeout(int alertRunTimeout) {
         this.alertRunTimeout = alertRunTimeout;
     }
 
+    /**
+     * 获取状态值。
+     *
+     * @return 状态值
+     */
     public int getState() {
         return state;
     }
 
+    /**
+     * 设置状态值。
+     *
+     * @param state 状态值
+     */
     public void setState(int state) {
         this.state = state;
     }
 
+    /**
+     * 获取日志类型，取 {@link #TASK_LOG_TYPE_NONE} 等常量（-1 不记录/0 基础/1 含参数/2 含返回/3 全部）。
+     *
+     * @return 日志类型，取 {@link #TASK_LOG_TYPE_NONE} 等常量（-1 不记录/0 基础/1 含参数/2 含返回/3 全部）
+     */
     public int getLogLevel() {
         return logLevel;
     }
 
+    /**
+     * 设置日志类型，取 {@link #TASK_LOG_TYPE_NONE} 等常量（-1 不记录/0 基础/1 含参数/2 含返回/3 全部）。
+     *
+     * @param logLevel 日志类型，取 {@link #TASK_LOG_TYPE_NONE} 等常量（-1 不记录/0 基础/1 含参数/2 含返回/3 全部）
+     */
     public void setLogLevel(int logLevel) {
         this.logLevel = logLevel;
     }
 
+    /**
+     * 获取日志字符串字段大小限制: 0 表示无限制。
+     *
+     * @return 日志字符串字段大小限制: 0 表示无限制
+     */
     public int getLogLimitSize() {
         return logLimitSize;
     }
 
+    /**
+     * 设置日志字符串字段大小限制: 0 表示无限制。
+     *
+     * @param logLimitSize 日志字符串字段大小限制: 0 表示无限制
+     */
     public void setLogLimitSize(int logLimitSize) {
         this.logLimitSize = logLimitSize;
     }
@@ -375,6 +574,9 @@ public class TaskCronerConfig implements Serializable {
      */
     public static final class Builder {
 
+        /**
+         * 任务配置 id（服务端分配）。
+         */
         private long id;
 
         /**
@@ -462,14 +664,17 @@ public class TaskCronerConfig implements Serializable {
          */
         private int logLimitSize = 0;
 
+        /**
+         * Builder 构造器（仅经 builder(...) 工厂方法创建）。
+         */
         private Builder() {
         }
 
         /**
          * builder模式，带taskClass参数。
          *
-         * @param taskClass
-         * @return
+         * @param taskClass 执行类信息
+         * @return 新的 Builder
          */
         public static Builder builder(String taskClass) {
             return new Builder().taskClass(taskClass);
@@ -478,18 +683,18 @@ public class TaskCronerConfig implements Serializable {
         /**
          * builder模式，带taskClass参数。
          *
-         * @param taskClass
-         * @return
+         * @param taskClass 执行类信息
+         * @return 新的 Builder
          */
         public static Builder builder(Class taskClass) {
             return new Builder().taskClass(taskClass.getName());
         }
 
         /**
-         * Sets the {@code taskClass} and returns a reference to this Builder enabling method chaining.
+         * 设置执行类信息。
          *
-         * @param taskClass the {@code taskClass} to set
-         * @return a reference to this Builder
+         * @param taskClass 执行类信息
+         * @return this（链式调用）
          */
         public Builder taskClass(String taskClass) {
             this.taskClass = taskClass;
@@ -497,10 +702,10 @@ public class TaskCronerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code taskParam} and returns a reference to this Builder enabling method chaining.
+         * 设置执行参数，可能用于区分子任务。
          *
-         * @param taskParam the {@code taskParam} to set
-         * @return a reference to this Builder
+         * @param taskParam 执行参数，可能用于区分子任务
+         * @return this（链式调用）
          */
         public Builder taskParam(String taskParam) {
             this.taskParam = taskParam;
@@ -508,10 +713,10 @@ public class TaskCronerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code taskName} and returns a reference to this Builder enabling method chaining.
+         * 设置任务名称。
          *
-         * @param taskName the {@code taskName} to set
-         * @return a reference to this Builder
+         * @param taskName 任务名称
+         * @return this（链式调用）
          */
         public Builder taskName(String taskName) {
             this.taskName = taskName;
@@ -519,10 +724,10 @@ public class TaskCronerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code taskDesc} and returns a reference to this Builder enabling method chaining.
+         * 设置任务描述。
          *
-         * @param taskDesc the {@code taskDesc} to set
-         * @return a reference to this Builder
+         * @param taskDesc 任务描述
+         * @return this（链式调用）
          */
         public Builder taskDesc(String taskDesc) {
             this.taskDesc = taskDesc;
@@ -530,10 +735,10 @@ public class TaskCronerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code taskCron} and returns a reference to this Builder enabling method chaining.
+         * 设置cron表达式，默认5秒一次。
          *
-         * @param taskCron the {@code taskCron} to set
-         * @return a reference to this Builder
+         * @param taskCron cron表达式，默认5秒一次
+         * @return this（链式调用）
          */
         public Builder taskCron(String taskCron) {
             this.taskCron = taskCron;
@@ -541,10 +746,10 @@ public class TaskCronerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code runType} and returns a reference to this Builder enabling method chaining.
+         * 设置0随意执行，1全局唯一执行。
          *
-         * @param runType the {@code runType} to set
-         * @return a reference to this Builder
+         * @param runType 0随意执行，1全局唯一执行
+         * @return this（链式调用）
          */
         public Builder runType(int runType) {
             this.runType = runType;
@@ -552,10 +757,10 @@ public class TaskCronerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code runTarget} and returns a reference to this Builder enabling method chaining.
+         * 设置运行目标，默认不指定。
          *
-         * @param runTarget the {@code runTarget} to set
-         * @return a reference to this Builder
+         * @param runTarget 运行目标，默认不指定
+         * @return this（链式调用）
          */
         public Builder runTarget(String runTarget) {
             this.runTarget = runTarget;
@@ -563,10 +768,10 @@ public class TaskCronerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code alertFailRate} and returns a reference to this Builder enabling method chaining.
+         * 设置失败率。
          *
-         * @param alertFailRate the {@code alertFailRate} to set
-         * @return a reference to this Builder
+         * @param alertFailRate 失败率
+         * @return this（链式调用）
          */
         public Builder alertFailRate(int alertFailRate) {
             this.alertFailRate = alertFailRate;
@@ -574,10 +779,10 @@ public class TaskCronerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code alertFailPartnerRate} and returns a reference to this Builder enabling method chaining.
+         * 设置接口失败率。
          *
-         * @param alertFailPartnerRate the {@code alertFailPartnerRate} to set
-         * @return a reference to this Builder
+         * @param alertFailPartnerRate 接口失败率
+         * @return this（链式调用）
          */
         public Builder alertFailPartnerRate(int alertFailPartnerRate) {
             this.alertFailPartnerRate = alertFailPartnerRate;
@@ -585,10 +790,10 @@ public class TaskCronerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code alertFailProgramRate} and returns a reference to this Builder enabling method chaining.
+         * 设置程序失败率。
          *
-         * @param alertFailProgramRate the {@code alertFailProgramRate} to set
-         * @return a reference to this Builder
+         * @param alertFailProgramRate 程序失败率
+         * @return this（链式调用）
          */
         public Builder alertFailProgramRate(int alertFailProgramRate) {
             this.alertFailProgramRate = alertFailProgramRate;
@@ -596,10 +801,10 @@ public class TaskCronerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code alertFailConfigRate} and returns a reference to this Builder enabling method chaining.
+         * 设置配置失败率告警阈值（百分比）。
          *
-         * @param alertFailConfigRate the {@code alertFailConfigRate} to set
-         * @return a reference to this Builder
+         * @param alertFailConfigRate 配置失败率告警阈值（百分比）
+         * @return this（链式调用）
          */
         public Builder alertFailConfigRate(int alertFailConfigRate) {
             this.alertFailConfigRate = alertFailConfigRate;
@@ -607,10 +812,10 @@ public class TaskCronerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code alertFailDataRate} and returns a reference to this Builder enabling method chaining.
+         * 设置数据失败率。
          *
-         * @param alertFailDataRate the {@code alertFailDataRate} to set
-         * @return a reference to this Builder
+         * @param alertFailDataRate 数据失败率
+         * @return this（链式调用）
          */
         public Builder alertFailDataRate(int alertFailDataRate) {
             this.alertFailDataRate = alertFailDataRate;
@@ -618,10 +823,10 @@ public class TaskCronerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code alertWaitTimeout} and returns a reference to this Builder enabling method chaining.
+         * 设置等待超时。
          *
-         * @param alertWaitTimeout the {@code alertWaitTimeout} to set
-         * @return a reference to this Builder
+         * @param alertWaitTimeout 等待超时
+         * @return this（链式调用）
          */
         public Builder alertWaitTimeout(int alertWaitTimeout) {
             this.alertWaitTimeout = alertWaitTimeout;
@@ -629,10 +834,10 @@ public class TaskCronerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code alertRunTimeout} and returns a reference to this Builder enabling method chaining.
+         * 设置运行超时。
          *
-         * @param alertRunTimeout the {@code alertRunTimeout} to set
-         * @return a reference to this Builder
+         * @param alertRunTimeout 运行超时
+         * @return this（链式调用）
          */
         public Builder alertRunTimeout(int alertRunTimeout) {
             this.alertRunTimeout = alertRunTimeout;
@@ -640,10 +845,10 @@ public class TaskCronerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code state} and returns a reference to this Builder enabling method chaining.
+         * 设置状态值。
          *
-         * @param state the {@code state} to set
-         * @return a reference to this Builder
+         * @param state 状态值
+         * @return this（链式调用）
          */
         public Builder state(int state) {
             this.state = state;
@@ -651,10 +856,10 @@ public class TaskCronerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code logLevel} and returns a reference to this Builder enabling method chaining.
+         * 设置日志类型，取 {@link #TASK_LOG_TYPE_NONE} 等常量（-1 不记录/0 基础/1 含参数/2 含返回/3 全部）。
          *
-         * @param logLevel the {@code logLevel} to set
-         * @return a reference to this Builder
+         * @param logLevel 日志类型，取 {@link #TASK_LOG_TYPE_NONE} 等常量（-1 不记录/0 基础/1 含参数/2 含返回/3 全部）
+         * @return this（链式调用）
          */
         public Builder logLevel(int logLevel) {
             this.logLevel = logLevel;
@@ -662,10 +867,10 @@ public class TaskCronerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code logLimitSize} and returns a reference to this Builder enabling method chaining.
+         * 设置日志字符串字段大小限制: 0 表示无限制。
          *
-         * @param logLimitSize the {@code logLimitSize} to set
-         * @return a reference to this Builder
+         * @param logLimitSize 日志字符串字段大小限制: 0 表示无限制
+         * @return this（链式调用）
          */
         public Builder logLimitSize(int logLimitSize) {
             this.logLimitSize = logLimitSize;
@@ -673,9 +878,9 @@ public class TaskCronerConfig implements Serializable {
         }
 
         /**
-         * Returns a {@code TaskCronerConfig} built from the parameters previously set.
+         * 按已设置的参数构建实例。
          *
-         * @return a {@code TaskCronerConfig} built with parameters of this {@code TaskCronerConfig.Builder}
+         * @return 构建出的对象
          */
         public TaskCronerConfig build() {
             return new TaskCronerConfig(this);

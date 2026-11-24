@@ -10,9 +10,12 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * TaskData用于任务执行的传值。以为任务完成后返回结构。 TaskParam和ResultData可通过泛型参数制定具体类型。
- * TP,TD应和TaskRunner的泛型参数完全一致，否则会导致运行时出错。
+ * 队列任务的传值与结果容器。TP/RD 必须与 {@link TaskRunner} 的泛型参数完全一致，否则运行时出错。
+ * <p>经 Kryo 手工序列化跨 MQ/Redis 传输（见 {@link #write}）：调用方设置 taskClass/taskParam 等业务字段，
+ * id/queueDate/runType 等运行期字段由框架写入，请勿在多次调用间复用同一对象。</p>
  *
+ * @param <TP> 任务参数类型
+ * @param <RD> 返回结果类型
  * @author axeon
  */
 public class TaskData<TP, RD> implements Serializable, KryoSerializable {
@@ -58,7 +61,7 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
      */
     public static final int RUN_TYPE_AUTO_RPC = 6;
     /**
-     * 自动重试[为了兼容,默认开启重试]
+     * 重试类型：自动重试（默认）
      */
     public static final int RETRY_TYPE_AUTO = 0;
     /**
@@ -98,7 +101,7 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
     private String rateLimitTag;
 
     /**
-     * 需要执行的类名，此数值必须由调用方设置。
+     * 要执行的 TaskRunner 类全限定名，必须由调用方设置。
      */
     private String taskClass = "";
 
@@ -108,22 +111,22 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
     private String taskTag = "";
 
     /**
-     * 延迟队列延迟时间
+     * 延时毫秒数：&gt;0 即延时任务（载体自动路由）；负值为框架内部"已到期搬运"标记（走即时投递分支），调用方勿设。
      */
     private long taskDelay;
 
     /**
-     * 执行参数，此数值必须有调用方设置。
+     * 执行参数，必须由调用方设置。
      */
     private TP taskParam;
 
     /**
-     * 任务运行类型，默认为自动RPC，根据情况选择本地还是远程运行。
+     * 任务运行类型，默认 AUTO_RPC：本机有匹配 runner 则本地运行，否则走远程 RPC。
      */
     private int runType = RUN_TYPE_AUTO_RPC;
 
     /**
-     * 重试类型
+     * 重试类型，默认 AUTO（失败后按 runner 配置的 retryTimes 自动重试）。
      */
     private int retryType;
 
@@ -181,7 +184,7 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
     /**
      * 带taskClass的构造器。
      *
-     * @param taskClass
+     * @param taskClass TaskRunner 类全限定名
      */
     public TaskData(String taskClass) {
         this.taskClass = taskClass;
@@ -190,14 +193,19 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
     /**
      * 带taskClass和任务参数的构造器。
      *
-     * @param taskClass
-     * @param taskParam
+     * @param taskClass TaskRunner 类全限定名
+     * @param taskParam 任务参数
      */
     public TaskData(String taskClass, TP taskParam) {
         this.taskClass = taskClass;
         this.taskParam = taskParam;
     }
 
+    /**
+     * 由 Builder 构建实例。
+     *
+     * @param builder 已设置好业务字段的 Builder
+     */
     private TaskData(Builder<TP, RD> builder) {
         setRefTag(builder.refTag);
         setRefId(builder.refId);
@@ -214,62 +222,72 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
     }
 
     /**
-     * builder模式。
+     * 创建空 Builder。
      *
-     * @return
+     * @param <TP> 任务参数类型
+     * @param <RD> 返回结果类型
+     * @return Builder
      */
     public static <TP, RD> Builder<TP, RD> builder() {
         return new Builder<TP, RD>();
     }
 
     /**
-     * builder模式，带taskClass参数。
+     * 创建带 taskClass 的 Builder。
      *
-     * @param taskClass
-     * @return
+     * @param taskClass TaskRunner 类（Class 形式或全限定名）
+     * @param <TP>      任务参数类型
+     * @param <RD>      返回结果类型
+     * @return Builder
      */
     public static <TP, RD> Builder<TP, RD> builder(String taskClass) {
         return new Builder<TP, RD>().taskClass(taskClass);
     }
 
     /**
-     * builder模式，带taskClass参数。
+     * 创建带 taskClass 的 Builder。
      *
-     * @param taskClass
-     * @return
+     * @param taskClass TaskRunner 类（Class 形式或全限定名）
+     * @param <TP>      任务参数类型
+     * @param <RD>      返回结果类型
+     * @return Builder
      */
     public static <TP, RD> Builder<TP, RD> builder(Class<? extends TaskRunner<TP, RD>> taskClass) {
         return new Builder<TP, RD>().taskClass(taskClass.getName());
     }
 
     /**
-     * builder 模式，带 taskClass 和 taskParam 参数。
+     * 创建带 taskClass 和 taskParam 的 Builder。
      *
      * @param taskClass 任务类全限定名
      * @param taskParam 任务参数
+     * @param <TP>      任务参数类型
+     * @param <RD>      返回结果类型
      * @return Builder
      */
     public static <TP, RD> Builder<TP, RD> builder(String taskClass, TP taskParam) {
         return new Builder<TP, RD>().taskClass(taskClass).taskParam(taskParam);
     }
 
-
     /**
-     * builder 模式，带 taskClass 和 taskParam 参数。
+     * 创建带 taskClass 和 taskParam 的 Builder。
      *
      * @param taskClass 任务类（TaskRunner 子类）
      * @param taskParam 任务参数
+     * @param <TP>      任务参数类型
+     * @param <RD>      返回结果类型
      * @return Builder
      */
     public static <TP, RD> Builder<TP, RD> builder(Class<? extends TaskRunner<TP, RD>> taskClass, TP taskParam) {
         return new Builder<TP, RD>().taskClass(taskClass.getName()).taskParam(taskParam);
     }
 
-
     /**
-     * 基于已有 TaskData 复制出一个 Builder（用于局部修改后重建，如重试 cleanForRetry 后 resubmit）。
+     * 基于已有 TaskData 复制出一个 Builder（业务字段同源，运行期字段不带入，可局部修改后重建）。
      *
      * @param copy 源任务数据
+     * @param <TP> 任务参数类型
+     * @param <RD> 返回结果类型
      * @return Builder
      */
     public static <TP, RD> Builder<TP, RD> builder(TaskData<TP, RD> copy) {
@@ -289,11 +307,10 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
         return builder;
     }
 
-
     /**
-     * 复制一份当前实例。
+     * 复制一份当前实例（含全部运行期字段）。
      *
-     * @return
+     * @return 复制出的新实例
      */
     public TaskData<TP, RD> copy() {
         TaskData<TP, RD> taskData = new TaskData<TP, RD>();
@@ -336,282 +353,378 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
     }
 
     /**
-     * @return the id
+     * 获取任务 id（框架自动生成，无需手工设置）。
+     *
+     * @return 任务 id（框架自动生成）
      */
     public long getId() {
         return id;
     }
 
     /**
-     * @param id the id to set
+     * 设置任务 id。
+     *
+     * @param id 任务 id
      */
     public void setId(long id) {
         this.id = id;
     }
 
     /**
-     * @return the refId
+     * 获取关联id，由调用方根据需要设置，用于第三方统计信息。
+     *
+     * @return 关联id，由调用方根据需要设置，用于第三方统计信息
      */
     public long getRefId() {
         return refId;
     }
 
     /**
-     * @param refId the refId to set
+     * 设置关联id，由调用方根据需要设置，用于第三方统计信息。
+     *
+     * @param refId 关联id，由调用方根据需要设置，用于第三方统计信息
      */
     public void setRefId(long refId) {
         this.refId = refId;
     }
 
     /**
-     * @return the refSubId
+     * 获取关联子id，由调用方根据需要设置，用于第三方统计信息。
+     *
+     * @return 关联子id，由调用方根据需要设置，用于第三方统计信息
      */
     public long getRefSubId() {
         return refSubId;
     }
 
     /**
-     * @param refSubId the refSubId to set
+     * 设置关联子id，由调用方根据需要设置，用于第三方统计信息。
+     *
+     * @param refSubId 关联子id，由调用方根据需要设置，用于第三方统计信息
      */
     public void setRefSubId(long refSubId) {
         this.refSubId = refSubId;
     }
 
     /**
-     * @return the refTag
+     * 获取关联TAG，由调用方设定，用于第三方统计信息。
+     *
+     * @return 关联TAG，由调用方设定，用于第三方统计信息
      */
     public String getRefTag() {
         return refTag;
     }
 
     /**
-     * @param refTag the refTag to set
+     * 设置关联TAG，由调用方设定，用于第三方统计信息。
+     *
+     * @param refTag 关联TAG，由调用方设定，用于第三方统计信息
      */
     public void setRefTag(String refTag) {
         this.refTag = refTag;
     }
 
     /**
-     * @return the rateLimitTag
+     * 获取流量限制TAG。
+     *
+     * @return 流量限制TAG
      */
     public String getRateLimitTag() {
         return rateLimitTag;
     }
 
     /**
-     * @param rateLimitTag the rateLimitTag to set
+     * 设置流量限制TAG。
+     *
+     * @param rateLimitTag 流量限制TAG
      */
     public void setRateLimitTag(String rateLimitTag) {
         this.rateLimitTag = rateLimitTag;
     }
 
     /**
-     * @return the refObject
+     * 返回关联对象（仅在调用方进程内有效，不序列化）。
+     *
+     * @return 关联对象
      */
     public Object getRefObject() {
         return refObject;
     }
 
     /**
-     * @param refObject the refObject to set
+     * 设置关联对象（仅在调用方进程内有效，不序列化）。
+     *
+     * @param refObject 关联对象
      */
     public void setRefObject(Object refObject) {
         this.refObject = refObject;
     }
 
     /**
-     * @return the taskClass
+     * 获取要执行的 TaskRunner 类全限定名，必须由调用方设置。
+     *
+     * @return 要执行的 TaskRunner 类全限定名，必须由调用方设置
      */
     public String getTaskClass() {
         return taskClass;
     }
 
     /**
-     * @param taskClass the taskClass to set
+     * 设置要执行的 TaskRunner 类全限定名，必须由调用方设置。
+     *
+     * @param taskClass 要执行的 TaskRunner 类全限定名，必须由调用方设置
      */
     public void setTaskClass(String taskClass) {
         this.taskClass = taskClass;
     }
 
     /**
-     * @return the taskTag
+     * 获取任务标签，用于细分任务队列，支持多实例运行。
+     *
+     * @return 任务标签，用于细分任务队列，支持多实例运行
      */
     public String getTaskTag() {
         return taskTag;
     }
 
     /**
-     * @param taskTag the taskTag to set
+     * 设置任务标签，用于细分任务队列，支持多实例运行。
+     *
+     * @param taskTag 任务标签，用于细分任务队列，支持多实例运行
      */
     public void setTaskTag(String taskTag) {
         this.taskTag = taskTag;
     }
 
+    /**
+     * 返回延时毫秒数（&gt;0 延时任务；负值为框架内部搬运标记）。
+     *
+     * @return 延时毫秒数（&gt;0 延时任务；负值为框架内部搬运标记）
+     */
     public long getTaskDelay() {
         return taskDelay;
     }
 
+    /**
+     * 设置延时毫秒数。
+     *
+     * @param taskDelay 延时毫秒数（&gt;0 即延时任务）
+     */
     public void setTaskDelay(long taskDelay) {
         this.taskDelay = taskDelay;
     }
 
     /**
-     * @return the taskParam
+     * 获取执行参数，必须由调用方设置。
+     *
+     * @return 执行参数，必须由调用方设置
      */
     public TP getTaskParam() {
         return taskParam;
     }
 
     /**
-     * @param taskParam the taskParam to set
+     * 设置执行参数，必须由调用方设置。
+     *
+     * @param taskParam 执行参数，必须由调用方设置
      */
     public void setTaskParam(TP taskParam) {
         this.taskParam = taskParam;
     }
 
     /**
-     * @return the runType
+     * 获取任务运行类型，默认 AUTO_RPC：本机有匹配 runner 则本地运行，否则走远程 RPC。
+     *
+     * @return 任务运行类型，默认 AUTO_RPC：本机有匹配 runner 则本地运行，否则走远程 RPC
      */
     public int getRunType() {
         return runType;
     }
 
     /**
-     * @param runType the runType to set
+     * 设置任务运行类型，默认 AUTO_RPC：本机有匹配 runner 则本地运行，否则走远程 RPC。
+     *
+     * @param runType 任务运行类型，默认 AUTO_RPC：本机有匹配 runner 则本地运行，否则走远程 RPC
      */
     public void setRunType(int runType) {
         this.runType = runType;
     }
 
+    /**
+     * 返回重试类型。
+     *
+     * @return 重试类型
+     */
     public int getRetryType() {
         return retryType;
     }
 
+    /**
+     * 设置重试类型。
+     *
+     * @param retryType 重试类型
+     */
     public void setRetryType(int retryType) {
         this.retryType = retryType;
     }
 
     /**
-     * @return the runTarget
+     * 获取指定运行目标。
+     *
+     * @return 指定运行目标
      */
     public String getRunTarget() {
         return runTarget;
     }
 
     /**
-     * @param runTarget the runTarget to set
+     * 设置指定运行目标。
+     *
+     * @param runTarget 指定运行目标
      */
     public void setRunTarget(String runTarget) {
         this.runTarget = runTarget;
     }
 
     /**
-     * @return the queueDate
+     * 获取进入队列时间，此信息由框架自动设置。
+     *
+     * @return 进入队列时间，此信息由框架自动设置
      */
     public Date getQueueDate() {
         return queueDate;
     }
 
     /**
-     * @param queueDate the queueDate to set
+     * 设置进入队列时间，此信息由框架自动设置。
+     *
+     * @param queueDate 进入队列时间，此信息由框架自动设置
      */
     public void setQueueDate(Date queueDate) {
         this.queueDate = queueDate;
     }
 
     /**
-     * @return the consumeDate
+     * 获取开始消费时间，此信息由框架自动设置。
+     *
+     * @return 开始消费时间，此信息由框架自动设置
      */
     public Date getConsumeDate() {
         return consumeDate;
     }
 
     /**
-     * @param consumeDate the consumeDate to set
+     * 设置开始消费时间，此信息由框架自动设置。
+     *
+     * @param consumeDate 开始消费时间，此信息由框架自动设置
      */
     public void setConsumeDate(Date consumeDate) {
         this.consumeDate = consumeDate;
     }
 
     /**
-     * @return the runDate
+     * 获取开始运行时间，此信息由框架自动设置。
+     *
+     * @return 开始运行时间，此信息由框架自动设置
      */
     public Date getRunDate() {
         return runDate;
     }
 
     /**
-     * @param runDate the runDate to set
+     * 设置开始运行时间，此信息由框架自动设置。
+     *
+     * @param runDate 开始运行时间，此信息由框架自动设置
      */
     public void setRunDate(Date runDate) {
         this.runDate = runDate;
     }
 
     /**
-     * @return the finishDate
+     * 获取运行结束日期，此信息由框架自动设置。
+     *
+     * @return 运行结束日期，此信息由框架自动设置
      */
     public Date getFinishDate() {
         return finishDate;
     }
 
     /**
-     * @param finishDate the finishDate to set
+     * 设置运行结束日期，此信息由框架自动设置。
+     *
+     * @param finishDate 运行结束日期，此信息由框架自动设置
      */
     public void setFinishDate(Date finishDate) {
         this.finishDate = finishDate;
     }
 
     /**
-     * @return the resultData
+     * 获取执行信息，用于存储框架自动设置。
+     *
+     * @return 执行信息，用于存储框架自动设置
      */
     public RD getResultData() {
         return resultData;
     }
 
     /**
-     * @param resultData the resultData to set
+     * 设置执行信息，用于存储框架自动设置。
+     *
+     * @param resultData 执行信息，用于存储框架自动设置
      */
     public void setResultData(RD resultData) {
         this.resultData = resultData;
     }
 
     /**
-     * @return the errorInfo
+     * 获取出错信息。
+     *
+     * @return 出错信息
      */
     public String getErrorInfo() {
         return errorInfo;
     }
 
     /**
-     * @param errorInfo the errorInfo to set
+     * 设置出错信息。
+     *
+     * @param errorInfo 出错信息
      */
     public void setErrorInfo(String errorInfo) {
         this.errorInfo = errorInfo;
     }
 
     /**
-     * @return the ranTimes
+     * 获取已经执行的次数，此信息由框架自动设置。
+     *
+     * @return 已经执行的次数，此信息由框架自动设置
      */
     public int getRanTimes() {
         return ranTimes;
     }
 
     /**
-     * @param ranTimes the ranTimes to set
+     * 设置已经执行的次数，此信息由框架自动设置。
+     *
+     * @param ranTimes 已经执行的次数，此信息由框架自动设置
      */
     public void setRanTimes(int ranTimes) {
         this.ranTimes = ranTimes;
     }
 
     /**
-     * @return the status
+     * 获取执行状态，此信息由框架根据异常自动设置。
+     *
+     * @return 执行状态，此信息由框架根据异常自动设置
      */
     public int getState() {
         return state;
     }
 
     /**
-     * @param status the status to set
+     * 设置执行状态，此信息由框架根据异常自动设置。
+     *
+     * @param status 执行状态，此信息由框架根据异常自动设置
      */
     public void setState(int status) {
         this.state = status;
@@ -694,9 +807,11 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
         state = input.readVarInt(true);
     }
 
-
     /**
-     * {@code TaskData} builder static inner class.
+     * {@code TaskData} builder static inner class。
+     *
+     * @param <TP> 任务参数类型
+     * @param <RD> 返回结果类型
      */
     public static final class Builder<TP, RD> {
 
@@ -726,7 +841,7 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
         private String rateLimitTag;
 
         /**
-         * 需要执行的类名，此数值必须由调用方设置。
+         * TaskRunner 类全限定名，必须设置。
          */
         private String taskClass = "";
 
@@ -736,12 +851,12 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
         private String taskTag = "";
 
         /**
-         * 延迟队列延迟时间
+         * 延时毫秒数（&gt;0 即延时任务）。
          */
         private long taskDelay;
 
         /**
-         * 执行参数，此数值必须有调用方设置。
+         * 执行参数，必须设置。
          */
         private TP taskParam;
 
@@ -751,7 +866,7 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
         private int runType = RUN_TYPE_AUTO_RPC;
 
         /**
-         * 重试类型
+         * 重试类型，默认 AUTO。
          */
         private int retryType;
 
@@ -760,15 +875,17 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
          */
         private String runTarget = "default";
 
+        /**
+         * Builder 构造器（仅经 builder(...) 工厂方法创建）。
+         */
         private Builder() {
         }
 
-
         /**
-         * Sets the {@code refTag} and returns a reference to this Builder enabling method chaining.
+         * 设置关联TAG，由调用方设定，用于第三方统计信息。
          *
-         * @param refTag the {@code refTag} to set
-         * @return a reference to this Builder
+         * @param refTag 关联TAG，由调用方设定，用于第三方统计信息
+         * @return this（链式调用）
          */
         public Builder<TP, RD> refTag(String refTag) {
             this.refTag = refTag;
@@ -776,10 +893,10 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
         }
 
         /**
-         * Sets the {@code refId} and returns a reference to this Builder enabling method chaining.
+         * 设置关联id，由调用方根据需要设置，用于第三方统计信息。
          *
-         * @param refId the {@code refId} to set
-         * @return a reference to this Builder
+         * @param refId 关联id，由调用方根据需要设置，用于第三方统计信息
+         * @return this（链式调用）
          */
         public Builder<TP, RD> refId(long refId) {
             this.refId = refId;
@@ -787,10 +904,10 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
         }
 
         /**
-         * Sets the {@code refSubId} and returns a reference to this Builder enabling method chaining.
+         * 设置关联子id，由调用方根据需要设置，用于第三方统计信息。
          *
-         * @param refSubId the {@code refSubId} to set
-         * @return a reference to this Builder
+         * @param refSubId 关联子id，由调用方根据需要设置，用于第三方统计信息
+         * @return this（链式调用）
          */
         public Builder<TP, RD> refSubId(long refSubId) {
             this.refSubId = refSubId;
@@ -798,10 +915,10 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
         }
 
         /**
-         * Sets the {@code refObject} and returns a reference to this Builder enabling method chaining.
+         * 设置关联对象，此对象不存入数据库，但可以通过Listener来访问。
          *
-         * @param refObject the {@code refObject} to set
-         * @return a reference to this Builder
+         * @param refObject 关联对象，此对象不存入数据库，但可以通过Listener来访问
+         * @return this（链式调用）
          */
         public Builder<TP, RD> refObject(Object refObject) {
             this.refObject = refObject;
@@ -809,10 +926,10 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
         }
 
         /**
-         * Sets the {@code rateLimitTag} and returns a reference to this Builder enabling method chaining.
+         * 设置流量限制TAG。
          *
-         * @param rateLimitTag the {@code rateLimitTag} to set
-         * @return a reference to this Builder
+         * @param rateLimitTag 流量限制TAG
+         * @return this（链式调用）
          */
         public Builder<TP, RD> rateLimitTag(String rateLimitTag) {
             this.rateLimitTag = rateLimitTag;
@@ -820,10 +937,10 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
         }
 
         /**
-         * Sets the {@code taskClass} and returns a reference to this Builder enabling method chaining.
+         * 设置要执行的 TaskRunner 类全限定名，必须由调用方设置。
          *
-         * @param taskClass the {@code taskClass} to set
-         * @return a reference to this Builder
+         * @param taskClass 要执行的 TaskRunner 类全限定名，必须由调用方设置
+         * @return this（链式调用）
          */
         public Builder<TP, RD> taskClass(String taskClass) {
             this.taskClass = taskClass;
@@ -831,10 +948,10 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
         }
 
         /**
-         * Sets the {@code taskTag} and returns a reference to this Builder enabling method chaining.
+         * 设置任务标签，用于细分任务队列，支持多实例运行。
          *
-         * @param taskTag the {@code taskTag} to set
-         * @return a reference to this Builder
+         * @param taskTag 任务标签，用于细分任务队列，支持多实例运行
+         * @return this（链式调用）
          */
         public Builder<TP, RD> taskTag(String taskTag) {
             this.taskTag = taskTag;
@@ -842,10 +959,10 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
         }
 
         /**
-         * Sets the {@code taskDelay} and returns a reference to this Builder enabling method chaining.
+         * 设置延时毫秒数：&gt;0 即延时任务（载体自动路由）；负值为框架内部"已到期搬运"标记（走即时投递分支），调用方勿设。
          *
-         * @param taskDelay the {@code taskDelay} to set
-         * @return a reference to this Builder
+         * @param taskDelay 延时毫秒数：&gt;0 即延时任务（载体自动路由）；负值为框架内部"已到期搬运"标记（走即时投递分支），调用方勿设
+         * @return this（链式调用）
          */
         public Builder<TP, RD> taskDelay(long taskDelay) {
             this.taskDelay = taskDelay;
@@ -853,10 +970,10 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
         }
 
         /**
-         * Sets the {@code taskParam} and returns a reference to this Builder enabling method chaining.
+         * 设置执行参数，必须由调用方设置。
          *
-         * @param taskParam the {@code taskParam} to set
-         * @return a reference to this Builder
+         * @param taskParam 执行参数，必须由调用方设置
+         * @return this（链式调用）
          */
         public Builder<TP, RD> taskParam(TP taskParam) {
             this.taskParam = taskParam;
@@ -864,10 +981,10 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
         }
 
         /**
-         * Sets the {@code runType} and returns a reference to this Builder enabling method chaining.
+         * 设置任务运行类型，默认 AUTO_RPC：本机有匹配 runner 则本地运行，否则走远程 RPC。
          *
-         * @param runType the {@code runType} to set
-         * @return a reference to this Builder
+         * @param runType 任务运行类型，默认 AUTO_RPC：本机有匹配 runner 则本地运行，否则走远程 RPC
+         * @return this（链式调用）
          */
         public Builder<TP, RD> runType(int runType) {
             this.runType = runType;
@@ -875,10 +992,10 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
         }
 
         /**
-         * Sets the {@code retryType} and returns a reference to this Builder enabling method chaining.
+         * 设置重试类型，默认 AUTO（失败后按 runner 配置的 retryTimes 自动重试）。
          *
-         * @param retryType the {@code retryType} to set
-         * @return a reference to this Builder
+         * @param retryType 重试类型，默认 AUTO（失败后按 runner 配置的 retryTimes 自动重试）
+         * @return this（链式调用）
          */
         public Builder<TP, RD> retryType(int retryType) {
             this.retryType = retryType;
@@ -886,10 +1003,10 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
         }
 
         /**
-         * Sets the {@code runTarget} and returns a reference to this Builder enabling method chaining.
+         * 设置指定运行目标。
          *
-         * @param runTarget the {@code runTarget} to set
-         * @return a reference to this Builder
+         * @param runTarget 指定运行目标
+         * @return this（链式调用）
          */
         public Builder<TP, RD> runTarget(String runTarget) {
             this.runTarget = runTarget;
@@ -897,9 +1014,9 @@ public class TaskData<TP, RD> implements Serializable, KryoSerializable {
         }
 
         /**
-         * Returns a {@code TaskData} built from the parameters previously set.
+         * 按已设置的参数构建实例。
          *
-         * @return a {@code TaskData} built with parameters of this {@code TaskData.Builder}
+         * @return 构建出的对象
          */
         public TaskData<TP, RD> build() {
             return new TaskData<TP, RD>(this);

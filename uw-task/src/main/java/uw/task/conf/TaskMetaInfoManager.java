@@ -8,6 +8,7 @@ import uw.task.entity.TaskCronerConfig;
 import uw.task.entity.TaskRunnerConfig;
 
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -20,7 +21,7 @@ public class TaskMetaInfoManager {
     /**
      * Runner任务实例缓存。
      */
-    private final Map<String, TaskRunner> runnerInstanceMap = new ConcurrentHashMap<>();
+    private final Map<String, TaskRunner<?, ?>> runnerInstanceMap = new ConcurrentHashMap<>();
 
     /**
      * Cron任务实例缓存。
@@ -47,6 +48,12 @@ public class TaskMetaInfoManager {
      */
     private final ApplicationContext context;
 
+    /**
+     * 构建任务元信息管理器。
+     *
+     * @param context       应用上下文（扫描 TaskCroner/TaskRunner bean）
+     * @param taskProperties 任务全局配置
+     */
     public TaskMetaInfoManager(ApplicationContext context, UwTaskProperties taskProperties) {
         this.context = context;
         this.taskProperties = taskProperties;
@@ -95,7 +102,7 @@ public class TaskMetaInfoManager {
      *
      * @return 队列任务实例 Map
      */
-    public Map<String, TaskRunner> getRunnerInstanceMap() {
+    public Map<String, TaskRunner<?, ?>> getRunnerInstanceMap() {
         return runnerInstanceMap;
     }
 
@@ -114,7 +121,7 @@ public class TaskMetaInfoManager {
      * @param runnerCls taskClass 全限定名
      * @return 任务实例，无匹配时返回 null
      */
-    public TaskRunner getRunnerInstance(String runnerCls) {
+    public TaskRunner<?, ?> getRunnerInstance(String runnerCls) {
         return runnerInstanceMap.get(runnerCls);
     }
 
@@ -129,11 +136,6 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 获取延迟任务实例 Map（key 为 taskClass 全限定名）。
-     *
-     * @return 延迟任务实例 Map
-     */
-    /**
      * 获取队列任务配置 Map（key 为配置键，见 {@link #getRunnerConfigKey}）。
      *
      * @return 队列任务配置 Map
@@ -145,7 +147,7 @@ public class TaskMetaInfoManager {
     /**
      * 获取定时任务配置 Map（key 为配置键，见 {@link #getCronerConfigKey}）。
      *
-     * @return
+     * @return 定时任务配置 Map
      */
     public ConcurrentHashMap<String, TaskCronerConfig> getCronerConfigMap() {
         return cronerConfigMap;
@@ -156,19 +158,19 @@ public class TaskMetaInfoManager {
      * <p>从 Spring 容器扫描所有 {@link TaskCroner} / {@link TaskRunner} Bean，按 taskClass 全限定名建立索引。</p>
      */
     public void init() {
-        // 设置当前主机上所有的TaskRunner
+        // 设置当前主机上所有的TaskCroner
         Map<String, TaskCroner> cronerMap = context.getBeansOfType(TaskCroner.class);
-        for (Map.Entry<String, TaskCroner> kv : cronerMap.entrySet()) {
+        for (Entry<String, TaskCroner> kv : cronerMap.entrySet()) {
             // 拿到任务类名
             TaskCroner taskCroner = kv.getValue();
             String taskClass = taskCroner.getClass().getName();
             cronerInstanceMap.put(taskClass, taskCroner);
         }
         // 设置当前主机上所有的TaskRunner
-        Map<String, TaskRunner> runnerMap = context.getBeansOfType(TaskRunner.class);
-        for (Map.Entry<String, TaskRunner> kv : runnerMap.entrySet()) {
+        Map<String, TaskRunner<?, ?>> runnerMap = context.getBeansOfType((Class<TaskRunner<?, ?>>) (Class<?>) TaskRunner.class);
+        for (Entry<String, TaskRunner<?, ?>> kv : runnerMap.entrySet()) {
             // 拿到任务类名
-            TaskRunner taskRunner = kv.getValue();
+            TaskRunner<?, ?> taskRunner = kv.getValue();
             String taskClass = taskRunner.getClass().getName();
             runnerInstanceMap.put(taskClass, taskRunner);
         }
@@ -185,65 +187,55 @@ public class TaskMetaInfoManager {
     }
 
     /**
-     * 客户端发送任务到队列时，通过此方法获取合适的队列。
-     * <p>根据服务端配置匹配配置键（taskClass#taskTag$runTarget），无 taskTag 时宽松匹配，
-     * 映射出任务级队列名。延迟语义由消息层承载（1.0 原生 x-opt-delivery-time 或消费端线程内延时），
-     * 不再使用 TTL+DLX 队列。</p>
+     * 按任务数据匹配 runner 配置：精确 taskTag 配置键优先，无则宽松回退到无 taskTag 的配置键。
      *
      * @param data 任务数据
-     * @return 匹配到的队列名
-     * @throws RuntimeException 找不到任何匹配配置时抛出
+     * @return 匹配到的 runner 配置；无任何匹配时返回 null
      */
-    public String getFitQueue(TaskData<?, ?> data) {
-        String fitName = getRunnerConfigKeyByData(data);
-        TaskRunnerConfig config = runnerConfigMap.get(fitName);
+    public TaskRunnerConfig findRunnerConfig(TaskData<?, ?> data) {
+        String configKey = getRunnerConfigKeyByData(data);
+        TaskRunnerConfig config = runnerConfigMap.get(configKey);
         if (config == null) {
-            // 此时再检测没有taskTag匹配的情况。
-            int pos1 = fitName.indexOf('#');
-            int pos2 = fitName.lastIndexOf('$');
+            int pos1 = configKey.indexOf('#');
+            int pos2 = configKey.lastIndexOf('$');
             if (pos1 >= 0 && pos2 > pos1) {
-                String test = fitName.substring(0, pos1 + 1) + fitName.substring(pos2);
-                config = runnerConfigMap.get(test);
-                if (config != null) {
-                    fitName = test;
-                }
+                config = runnerConfigMap.get(configKey.substring(0, pos1 + 1) + configKey.substring(pos2));
             }
         }
-        if (config != null) {
-            return getQueueNameByConfig(config);
-        } else {
-            throw new RuntimeException("No matching task config: taskClass = " + data.getTaskClass());
-        }
+        return config;
     }
 
     /**
-     * 任务执行端执行任务时，按 taskData 匹配合适的 runner 配置。
-     * <p>匹配规则同 {@link #getFitQueue}：精确 taskTag 匹配优先，无则宽松匹配无 taskTag 的配置。</p>
+     * 任务执行端执行任务时，按 taskData 匹配合适的 runner 配置（匹配规则见 {@link #findRunnerConfig}）。
      *
      * @param data 任务数据
      * @return 匹配到的 runner 配置
      * @throws RuntimeException 找不到任何匹配配置时抛出
      */
     public TaskRunnerConfig getRunnerConfigByData(TaskData<?, ?> data) {
-        TaskRunnerConfig config = null;
-        String fitName = getRunnerConfigKeyByData(data);
-        config = runnerConfigMap.get(fitName);
-        if (config != null) {
-            return config;
+        TaskRunnerConfig config = findRunnerConfig(data);
+        if (config == null) {
+            throw new RuntimeException("No matching task config: taskClass = " + data.getTaskClass());
         }
-        // 此时再检测没有taskTag匹配的情况。
-        int pos1 = fitName.indexOf('#');
-        int pos2 = fitName.lastIndexOf('$');
-        if (pos1 >= 0 && pos2 > pos1) {
-            String test = fitName.substring(0, pos1 + 1) + fitName.substring(pos2);
-            config = runnerConfigMap.get(test);
-            if (config != null) {
-                return config;
-            }
-        }
-        throw new RuntimeException("No matching task config: taskClass = " + data.getTaskClass());
+        return config;
     }
 
+    /**
+     * 客户端发送任务到队列时，通过此方法获取合适的队列。
+     * <p>按 {@link #findRunnerConfig} 匹配配置并映射出任务级队列名。延时语义由消息层承载
+     * （MQ 原生 x-opt-delivery-time 或 Redis zset 搬运），不使用 TTL+DLX 队列。</p>
+     *
+     * @param data 任务数据
+     * @return 匹配到的队列名
+     * @throws RuntimeException 找不到任何匹配配置时抛出
+     */
+    public String getFitQueue(TaskData<?, ?> data) {
+        TaskRunnerConfig config = findRunnerConfig(data);
+        if (config == null) {
+            throw new RuntimeException("No matching task config: taskClass = " + data.getTaskClass());
+        }
+        return getQueueNameByConfig(config);
+    }
 
     /**
      * 获取croner配置键。 使用 taskClass#taskParam$target 来配置。
@@ -290,7 +282,6 @@ public class TaskMetaInfoManager {
         return taskClass + "#" + (taskTag == null ? "" : taskTag) + "$" + (runTarget == null ? "" : runTarget);
     }
 
-
     /**
      * 计算实际队列名：全部为任务级队列（taskClass#taskTag$runTarget）。
      * 队列形态（classic/quorum）由 {@link TaskRunnerConfig#getQueueType()} 在声明期决定，不影响队列命名。
@@ -301,6 +292,4 @@ public class TaskMetaInfoManager {
     public String getQueueNameByConfig(TaskRunnerConfig config) {
         return getRunnerConfigKey(config);
     }
-
-
 }

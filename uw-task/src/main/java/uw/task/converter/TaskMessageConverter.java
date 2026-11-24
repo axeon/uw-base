@@ -1,5 +1,6 @@
 package uw.task.converter;
 
+import com.esotericsoftware.kryo.KryoSerializable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
@@ -10,7 +11,6 @@ import uw.common.util.KryoUtils;
 import uw.task.TaskData;
 
 import java.nio.charset.StandardCharsets;
-import com.esotericsoftware.kryo.KryoSerializable;
 
 /**
  * 用于spring-amqp的消息转换器。
@@ -25,6 +25,9 @@ import com.esotericsoftware.kryo.KryoSerializable;
  */
 public class TaskMessageConverter implements MessageConverter {
 
+    /**
+     * 日志器。
+     */
     private static final Logger log = LoggerFactory.getLogger(TaskMessageConverter.class);
 
     /**
@@ -38,7 +41,6 @@ public class TaskMessageConverter implements MessageConverter {
      * 默认构造器。
      */
     public TaskMessageConverter() {
-
     }
 
     /**
@@ -68,7 +70,7 @@ public class TaskMessageConverter implements MessageConverter {
             bytes = KryoUtils.serialize(objectToConvert);
         } catch (Exception e) {
             // 详细原因只进日志（含 kryo 内部信息），对外用固定文案避免泄露序列化实现
-            log.error("TaskData serialize failed: {}", e.toString());
+            log.error("TaskData 序列化失败: {}", e.toString());
             throw new MessageConversionException("TaskData invalid or corrupted.");
         }
         messageProperties.setContentLength(bytes.length);
@@ -101,21 +103,13 @@ public class TaskMessageConverter implements MessageConverter {
                 content = KryoUtils.deserialize(message.getBody(), TaskData.class);
             } catch (Exception e) {
                 // 详细原因只进日志（含 kryo 内部信息），对外用固定文案避免泄露序列化实现（消费端边界，可能进死信 x-exception 头）
-                log.error("TaskData deserialize failed: {}", e.toString());
+                log.error("TaskData 反序列化失败: {}", e.toString());
                 throw new MessageConversionException("TaskData invalid or corrupted.");
             }
         } else {
-            if (log.isWarnEnabled()) {
-                try {
-                    log.warn("Could not convert incoming message with content-type [{}], message: {} ",
+                    log.warn("收到无法转换的消息（content-type 不匹配），已跳过: contentType=[{}], message={}",
                             contentType, new String(message.getBody(), StandardCharsets.UTF_8));
-                } catch (Exception e) {
-                    log.warn("Could not convert incoming message with content-type [{}],message cannot be decode. {}", contentType, e.getMessage());
-                }
-            }
         }
         return content;
     }
-
-
 }

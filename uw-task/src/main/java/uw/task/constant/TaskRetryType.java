@@ -11,7 +11,7 @@ import uw.task.TaskData;
  *   <li>{@link #AUTO}：自动重试（默认），失败后按 retryTimes 配置由框架自动重新派发；</li>
  *   <li>{@link #MANUAL}：仅人工重试，框架不做自动重试。</li>
  * </ul>
- * 序列化为 OBJECT 形态（含 value/label）。</p>
+ * 序列化为 OBJECT 形态（含 value/label）。
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum TaskRetryType {
@@ -35,6 +35,18 @@ public enum TaskRetryType {
      */
     private final String label;
 
+    /**
+
+     * 构建枚举项。
+
+     *
+
+     * @param value 枚举数值
+
+     * @param label 枚举中文标签
+
+     */
+
     TaskRetryType(int value, String label) {
         this.value = value;
         this.label = label;
@@ -56,6 +68,8 @@ public enum TaskRetryType {
     }
 
     /**
+     * 返回枚举数值。
+     *
      * @return 枚举数值
      */
     public int getValue() {
@@ -78,6 +92,8 @@ public enum TaskRetryType {
     }
 
     /**
+     * 返回枚举中文标签。
+     *
      * @return 枚举中文标签
      */
     public String getLabel() {

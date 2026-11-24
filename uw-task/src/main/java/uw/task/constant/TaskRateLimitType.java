@@ -68,7 +68,6 @@ public enum TaskRateLimitType {
      */
     GLOBAL_TASK_TAG_HOST(10, "全局TASK+TAG+HOST限速");
 
-
     /**
      * 枚举数值，用于持久化与传输。
      */
@@ -78,6 +77,18 @@ public enum TaskRateLimitType {
      * 枚举中文标签，用于展示。
      */
     private final String label;
+
+    /**
+
+     * 构建枚举项。
+
+     *
+
+     * @param value 枚举数值
+
+     * @param label 枚举中文标签
+
+     */
 
     TaskRateLimitType(int value, String label) {
         this.value = value;
@@ -100,6 +111,8 @@ public enum TaskRateLimitType {
     }
 
     /**
+     * 返回枚举数值。
+     *
      * @return 枚举数值
      */
     public int getValue() {
@@ -122,6 +135,8 @@ public enum TaskRateLimitType {
     }
 
     /**
+     * 返回枚举中文标签。
+     *
      * @return 枚举中文标签
      */
     public String getLabel() {

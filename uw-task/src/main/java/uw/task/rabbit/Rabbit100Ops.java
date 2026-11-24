@@ -1,14 +1,14 @@
 package uw.task.rabbit;
 
-import com.rabbitmq.client.amqp.*;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
+import com.rabbitmq.client.amqp.Connection;
+import com.rabbitmq.client.amqp.Consumer;
+import com.rabbitmq.client.amqp.Environment;
+import com.rabbitmq.client.amqp.Publisher;
 import com.rabbitmq.client.amqp.impl.AmqpEnvironmentBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
-import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbitmq.client.RabbitAmqpAdmin;
 import org.springframework.amqp.rabbitmq.client.RabbitAmqpTemplate;
@@ -21,19 +21,21 @@ import uw.task.converter.TaskMessageConverter;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * AMQP 1.0 实现：spring-rabbitmq-client 链路（SingleAmqpConnectionFactory + RabbitAmqpTemplate + RabbitAmqpAdmin）。
  *
  * <p>原生延迟消息：RabbitMQ 4.4+ 在 quorum queue 上支持消息级延迟——发布时设置
- * x-opt-delivery-time message annotation（绝对 Unix 时间戳毫秒），消息到期前对消费者不可见，
+ * x-opt-delivery-time message annotation（绝对 Unix 时间戳毫秒；0-9-1 侧见 Rabbit091Ops），消息到期前对消费者不可见，
  * 到期后自动变为可投递（仍在原队列，无 TTL+DLX 搬运）。</p>
+ *
+ * <p>成员排列与 {@link TaskAmqpOps} 一致（见其类注释的约定）。</p>
  *
  * @author axeon
  */
@@ -45,42 +47,15 @@ public class Rabbit100Ops implements TaskAmqpOps {
     private static final Logger log = LoggerFactory.getLogger(Rabbit100Ops.class);
 
     /**
-     * 原生延迟消息 annotation key（RabbitMQ 4.4 契约：绝对 Unix 时间戳毫秒）。
+     * 消息转换器（无状态，全类共用）。
      */
-    private static final String DELIVERY_TIME_ANNOTATION = "x-opt-delivery-time";
+    private static final TaskMessageConverter CONVERTER = new TaskMessageConverter();
 
     /**
-     * 解析集群地址列表：uw.task.rabbitmq.addresses（"h1:p1,h2:p2" 或 URI 形式）。
-     * 返回 amqp:// URI 列表（含账号密码与 vhost）；单地址时返回单元素列表（调用方退回 host/port 模式）。
+     * 官方客户端判定"请求超时"的异常文案（{@code AmqpRequester} 抛的是不带子类型的 {@code AmqpException}，
+     * 只能按文案识别；客户端升级若改文案，此处需同步）。
      */
-    static List<String> buildClusterUris(RabbitProperties rabbitProperties) {
-        List<String> uris = new ArrayList<>();
-        // 账号密码/vhost URL 编码：密码含 @:/ 等字符时裸拼会破坏 URI 结构
-        for (TaskAmqpOps.AmqpEndpoint endpoint : TaskAmqpOps.resolveEndpoints(rabbitProperties)) {
-            String encodedUser = uriEncode(endpoint.username() == null ? "" : endpoint.username());
-            String encodedPass = uriEncode(endpoint.password() == null ? "" : endpoint.password());
-            String vhost = endpoint.virtualHost();
-            String vPath = (vhost == null || vhost.isBlank() || "/".equals(vhost)) ? "" : "/" + uriEncode(vhost);
-            uris.add("amqp://" + encodedUser + ":" + encodedPass + "@" + endpoint.host() + ":" + endpoint.port() + vPath);
-        }
-        return uris;
-    }
-
-    private static String uriEncode(String raw) {
-        return URLEncoder.encode(raw, StandardCharsets.UTF_8);
-    }
-
-    /**
-     * 暴露底层连接（评测/消费者等高级用途）。
-     */
-    Connection getConnection() {
-        return connectionFactory.getConnection();
-    }
-
-    /**
-     * RPC 回复队列前缀（每个应用实例独占：回复必须路由回发起请求的实例）。
-     */
-    private static final String RPC_REPLY_QUEUE_PREFIX = "uw-task.rpc.reply.";
+    private static final String RPC_REQUEST_TIMED_OUT = "Request timed out";
 
     /**
      * amqp-client 环境（连接的根资源，destroy 时关闭）。
@@ -88,10 +63,14 @@ public class Rabbit100Ops implements TaskAmqpOps {
     private final Environment environment;
 
     /**
-     * 1.0 主连接工厂（RPC 回复队列/管理通道/listener 用）。
+     * 1.0 主连接工厂（发送/RPC/管理/listener 共用的单 Connection，官方形态：并发靠 link 复用）。
      */
     private final SingleAmqpConnectionFactory connectionFactory;
+    /**
+     * 发送/管理模板（TaskMessageConverter 转换；发送与 RPC 回复共用其长驻 publisher，RPC 走官方 sendAndReceive 路径）。
+     */
     final RabbitAmqpTemplate template;
+
     /**
      * 队列声明/绑定/属性查询管理器（经 AMQP 连接内的 $management 通道）。
      */
@@ -103,29 +82,13 @@ public class Rabbit100Ops implements TaskAmqpOps {
     private final boolean nativeDelayAvailable;
 
     /**
-     * RPC 回复队列名（实例独占，非 durable，broker 重启即清防跨重启累积残留）。
+     * 构建 1.0 协议操作面：单 Connection（官方形态），按 addresses 是否配置决定单节点或集群 URI。
+     *
+     * @param rabbitProperties     rabbit 连接配置（host/port/addresses/username/password/virtualHost）
+     *
+     * @param nativeDelayAvailable 原生延迟是否可用（探测结果：broker ≥4.4）
      */
-    private final String replyQueueName;
-
-    /**
-     * 发送侧连接池：proton-j2 每连接单 IO 线程，单连接发送上限 ~2万 msg/s（261120 实测，broker 调优后），
-     * 多连接近线性扩展（4 连接=6.1万）。发送轮询取用；RPC/管理仍走主连接。
-     */
-    private final Connection[] sendConnections;
-    /**
-     * 发送 Publisher 池（每连接一个；构造失败的槽位为 null，nextSendPublisher 兜底）。
-     */
-    private final Publisher[] sendPublishers;
-    /**
-     * 发送轮询指针（正数化取模）。
-     */
-    private final AtomicInteger sendRotator = new AtomicInteger();
-
-    /**
-     * @param rabbitProperties rabbit 连接配置（host/port/username/password/virtualHost）
-     * @param instanceId       实例标识（appName@appHost:appPort），用于 RPC 回复队列命名
-     */
-    public Rabbit100Ops(RabbitProperties rabbitProperties, String instanceId, boolean nativeDelayAvailable) {
+    public Rabbit100Ops(RabbitProperties rabbitProperties, boolean nativeDelayAvailable) {
         this.nativeDelayAvailable = nativeDelayAvailable;
         // dispatching executor 用虚拟线程（默认是 newFixedThreadPool(CPU核) 平台池，全连接共享，
         // 是 1.0 消费并发天花板）：与 091 的虚拟线程消费者模型对齐，WorkPool 仍保证消费者间公平调度
@@ -138,13 +101,14 @@ public class Rabbit100Ops implements TaskAmqpOps {
         SingleAmqpConnectionFactory factory = new SingleAmqpConnectionFactory(environment)
                 .setUsername(rabbitProperties.getUsername())
                 .setPassword(rabbitProperties.getPassword());
-        List<String> uris = buildClusterUris(rabbitProperties);
-        boolean clusterMode = rabbitProperties.getAddresses() != null && !rabbitProperties.getAddresses().isEmpty();
+        List<TaskAmqpOps.AmqpEndpoint> endpoints = TaskAmqpOps.resolveEndpoints(rabbitProperties);
+        List<String> uris = buildClusterUris(endpoints);
+        boolean clusterMode = endpoints.size() > 1;
         if (clusterMode) {
             factory.setUris(uris.toArray(new String[0]));
             log.info("Rabbit100Ops: 集群模式，{} 个节点 URI 已注入", uris.size());
         } else {
-            TaskAmqpOps.AmqpEndpoint primary = TaskAmqpOps.resolveEndpoints(rabbitProperties).get(0);
+            TaskAmqpOps.AmqpEndpoint primary = endpoints.get(0);
             factory.setHost(primary.host());
             factory.setPort(primary.port());
             if (primary.virtualHost() != null && !primary.virtualHost().isBlank()) {
@@ -153,109 +117,209 @@ public class Rabbit100Ops implements TaskAmqpOps {
         }
         this.connectionFactory = factory;
         this.template = new RabbitAmqpTemplate(factory);
-        this.template.setMessageConverter(new TaskMessageConverter());
+        this.template.setMessageConverter(CONVERTER);
         this.admin = new RabbitAmqpAdmin(factory);
-        // RPC 回复队列：实例独占（classic，自动删除语义不跨实例共享），声明失败不阻断启动（首次 RPC 时再暴露）
-        this.replyQueueName = RPC_REPLY_QUEUE_PREFIX + instanceId.replaceAll("[^A-Za-z0-9._-]", "_");
-        this.template.setReplyToQueue(replyQueueName);
-        try {
-            admin.declareQueue(new Queue(replyQueueName, false, false, true));
-        } catch (Exception e) {
-            log.warn("Rabbit100Ops: RPC 回复队列[{}]声明失败，将在首次 RPC 时重试: {}", replyQueueName, e.getMessage());
-        }
-        // 发送连接池（默认 4，-Duw.task.rabbit100.send-pool-size 可调）：单连接 IO 线程是发送吞吐瓶颈，池化近线性扩展
-        int poolSize;
-        try {
-            poolSize = Integer.parseInt(System.getProperty("uw.task.rabbit100.send-pool-size", "4"));
-        } catch (NumberFormatException e) {
-            log.warn("Rabbit100Ops: send-pool-size 配置非数字，回退默认 4");
-            poolSize = 4;
-        }
-        this.sendConnections = new Connection[poolSize];
-        this.sendPublishers = new Publisher[poolSize];
-        for (int i = 0; i < poolSize; i++) {
-            try {
-                ConnectionBuilder builder = environment.connectionBuilder()
-                        .username(rabbitProperties.getUsername())
-                        .password(rabbitProperties.getPassword());
-                if (clusterMode) {
-                    builder.uris(uris.toArray(new String[0]));
-                } else {
-                    TaskAmqpOps.AmqpEndpoint primary = TaskAmqpOps.resolveEndpoints(rabbitProperties).get(0);
-                    builder.host(primary.host()).port(primary.port());
-                }
-                sendConnections[i] = builder.build();
-                sendPublishers[i] = sendConnections[i].publisherBuilder().build();
-            } catch (Exception e) {
-                log.error("Rabbit100Ops: 发送连接池第{}个连接创建失败: {}", i + 1, e.getMessage());
-            }
-        }
-        log.info("Rabbit100Ops: 发送连接池就绪，poolSize={}", poolSize);
+        // RPC 官方模板路径的等待上限（模板默认 60 秒）：publishTimeout 兼作 Requester 的 requestTimeout，
+        // completionTimeout 是 future 完成上限，两者与框架的 RPC_TIMEOUT_MILLIS 对齐
+        this.template.setPublishTimeout(Duration.ofMillis(RPC_TIMEOUT_MILLIS));
+        this.template.setCompletionTimeout(Duration.ofMillis(RPC_TIMEOUT_MILLIS));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>探测期一次判定（broker ≥4.4），运行期不变。</p>
+     */
     @Override
     public boolean supportsNativeDelay() {
         return nativeDelayAvailable;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>fire-and-forget 投递：经模板长驻 Publisher（单连接 link 复用，官方形态）发出，本方法返回只代表消息已交给客户端。
+     * broker 拒收（RELEASED/REJECTED）时经 {@code onAsyncFailure} 上报——回调在客户端 IO 线程上执行，只做转交、不阻塞。
+     * 连接建立等同步失败仍直接抛异常。
+     * <p>类型说明：{@code java.util.function.Consumer} 与本类已 import 的 amqp {@code Consumer} 同名冲突，
+     * 参数类型保留全限定；局部变量 {@code com.rabbitmq.client.amqp.Message} 与 spring-amqp 的 {@code Message} 同名冲突，同理。</p>
+     * <p>{@code delayMillis &gt; 0} 时写入原生延迟消息注解（需 quorum 队列）。</p>
+     */
     @Override
-    public void send(String queue, Message message, long delayMillis) {
-        // 走发送池轮询（单连接 IO 线程是吞吐瓶颈）；fire-and-forget（091 对齐，无 confirm 语义）
-        Publisher publisher = nextSendPublisher();
+    public void send(String queue, Message message, long delayMillis, java.util.function.Consumer<Exception> onAsyncFailure) {
+        Publisher publisher = template.getPublisher();
         long deliveryTime = delayMillis > 0 ? System.currentTimeMillis() + delayMillis : 0;
-        // com.rabbitmq.client.amqp.Message 与 spring-amqp 的 Message 同名冲突，此处保留全限定
         com.rabbitmq.client.amqp.Message amqpMessage = publisher.message()
                 .toAddress().queue(queue).message();
         RabbitAmqpUtils.toAmqpMessage(message, amqpMessage);
         if (deliveryTime > 0) {
-            amqpMessage.annotation(DELIVERY_TIME_ANNOTATION, deliveryTime);
+            amqpMessage.annotation(DELIVERY_TIME_KEY, deliveryTime);
         }
         publisher.publish(amqpMessage, context -> {
             if (context.status() == Publisher.Status.RELEASED || context.status() == Publisher.Status.REJECTED) {
-                log.error("Rabbit100Ops send 失败: queue={}, delay={}, status={}", queue, delayMillis, context.status());
+                onAsyncFailure.accept(new IllegalStateException("broker refused message: status=" + context.status()));
             }
         });
     }
 
     /**
-     * 轮询取发送 Publisher；池未就绪时退回模板的 publisher（保证可用性优先）。
+     * {@inheritDoc}
+     * <p>1.0 走官方模板路径：模板每次调用新建并关闭一个 Requester（Direct Reply-To），各多一次网络往返。</p>
      */
-    private Publisher nextSendPublisher() {
-        for (int i = 0; i < sendPublishers.length; i++) {
-            Publisher p = sendPublishers[(sendRotator.getAndIncrement() & 0x7fffffff) % sendPublishers.length];
-            if (p != null) {
-                return p;
-            }
-        }
-        return template.getPublisher();
-    }
-
-
     @Override
-    public Message sendAndReceive(String queue, Message message, long timeoutMillis) {
+    public Message sendAndReceive(String queue, Message message) {
         try {
-            return template.sendAndReceive(queue, queue, message).get(timeoutMillis, TimeUnit.MILLISECONDS);
+            return template.sendAndReceive(queue, queue, message).get(RPC_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            if (e.getCause() instanceof TimeoutException || e instanceof TimeoutException) {
+            if (isRpcTimeout(e)) {
                 return null;
             }
-            throw new IllegalStateException("Rabbit100Ops RPC 失败: queue=" + queue + ", " + e.getMessage(), e);
+            throw new IllegalStateException("Rabbit100Ops RPC failed: queue=" + queue + ", " + e.getMessage(), e);
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>经 RabbitAmqpAdmin（AMQP 连接内的 $management 通道）声明。</p>
+     */
     @Override
     public void declareDurableQueue(String queueName, boolean quorum) {
         TaskAmqpOps.declareTopology(admin, queueName, quorum);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>自管消费者组（见 {@link ElasticConsumerGroup}）：不经 spring 容器，直接经 connection.consumerBuilder() 构建；
+     * 消费并发=consumerNum，每消费者 credit=prefetchNum，任务在虚拟线程上执行（线程名={队列名}-N）；
+     * 带 reply-to 的请求（RPC）由消费者组回复结果。</p>
+     */
     @Override
     public TaskAmqpListenerContainer createListener(String queueName, int consumerNum, int prefetchNum, TaskRunnerContainer runnerContainer) {
         // 自管消费者（不经 spring 容器）：直接经 connection.consumerBuilder() 构建，
-        // 支持 pause/unpause 弹性伸缩；消息转换直连 TaskMessageConverter → process，
-        // 直连转换+process（不经 spring 适配器层）。
+        // 支持 pause/unpause 弹性伸缩；消息经 TaskMessageConverter 直连 process（不经 spring 适配器层——
+        // MessagingMessageListenerAdapter 是注解驱动监听专用，直连构造会静默丢任务），
+        // RPC 请求（带 reply-to）由 ElasticConsumerGroup.reply 回结果。
         ElasticConsumerGroup group = new ElasticConsumerGroup(queueName, prefetchNum, runnerContainer);
         group.resize(consumerNum);
         return TaskAmqpListenerContainer.of(group);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>1.0 没有 passive declare：经 $management 通道查询队列属性。</p>
+     */
+    @Override
+    public int[] getQueueInfo(String queueName) {
+        // 1.0 无 passive declare；经 AMQP 连接内的 $management 通道查询队列属性
+        try {
+            Properties props = admin.getQueueProperties(queueName);
+            if (props == null) {
+                return null;
+            }
+            Object count = props.get(RabbitAdmin.QUEUE_MESSAGE_COUNT);
+            Object consumers = props.get(RabbitAdmin.QUEUE_CONSUMER_COUNT);
+            return new int[]{count == null ? 0 : Integer.parseInt(count.toString()),
+                    consumers == null ? 0 : Integer.parseInt(consumers.toString())};
+        } catch (Exception e) {
+            log.warn("Rabbit100Ops 查询队列信息失败 {}: {}", queueName, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>管理通道不返回清除条数，成功恒为 0。</p>
+     */
+    @Override
+    public int purgeQueue(String queueName) {
+        try {
+            admin.purgeQueue(queueName, false);
+            return 0;
+        } catch (Exception e) {
+            log.warn("Rabbit100Ops 清空队列失败 {}: {}", queueName, e.getMessage());
+            return -1;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public TaskAmqpProtocol getProtocol() {
+        return TaskAmqpProtocol.AMQP_100;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>依次关闭模板、主连接工厂与 amqp-client 环境；任一步失败不阻断后续回收。</p>
+     */
+    @Override
+    public void shutdown() {
+        try {
+            template.destroy();
+        } catch (Exception ignore) {
+            // 关闭失败不阻断后续回收
+        }
+        try {
+            connectionFactory.destroy();
+        } catch (Exception ignore) {
+            // 关闭失败不阻断后续回收
+        }
+        try {
+            environment.close();
+        } catch (Exception ignore) {
+            // 关闭失败不阻断后续回收
+        }
+    }
+
+    /**
+     * 暴露底层连接（测试探针直建消费者用，框架内部不调用）。
+     *
+     * @return 1.0 主连接
+     */
+    Connection getConnection() {
+        return connectionFactory.getConnection();
+    }
+
+    /**
+     * 把全部解析端点拼成 amqp:// URI 列表（含 URL 编码后的账号密码与 vhost）。
+     *
+     * @param endpoints 已解析的连接端点
+     *
+     * @return 与端点一一对应的 amqp:// URI 列表
+     */
+    static List<String> buildClusterUris(List<TaskAmqpOps.AmqpEndpoint> endpoints) {
+        List<String> uris = new ArrayList<>();
+        // 账号密码/vhost URL 编码：密码含 @:/ 等字符时裸拼会破坏 URI 结构
+        for (TaskAmqpOps.AmqpEndpoint endpoint : endpoints) {
+            String encodedUser = uriEncode(endpoint.username() == null ? "" : endpoint.username());
+            String encodedPass = uriEncode(endpoint.password() == null ? "" : endpoint.password());
+            String vhost = endpoint.virtualHost();
+            String vPath = (vhost == null || vhost.isBlank() || "/".equals(vhost)) ? "" : "/" + uriEncode(vhost);
+            uris.add("amqp://" + encodedUser + ":" + encodedPass + "@" + endpoint.host() + ":" + endpoint.port() + vPath);
+        }
+        return uris;
+    }
+
+    /**
+     * 是否 RPC 等待超时（等待上限到期，或客户端按 requestTimeout 判定请求超时）。
+     *
+     * @param e sendAndReceive 抛出的异常（ExecutionException 取其 cause）
+     *
+     * @return 超时返回 true
+     */
+    private static boolean isRpcTimeout(Exception e) {
+        Throwable cause = e instanceof ExecutionException ? e.getCause() : e;
+        return cause instanceof TimeoutException || RPC_REQUEST_TIMED_OUT.equals(cause.getMessage());
+    }
+
+    /**
+     * URL 编码（UTF-8）。
+     *
+     * @param raw 原始字符串
+     *
+     * @return URL 编码后的字符串
+     */
+    private static String uriEncode(String raw) {
+        return URLEncoder.encode(raw, StandardCharsets.UTF_8);
     }
 
     /**
@@ -300,10 +364,13 @@ public class Rabbit100Ops implements TaskAmqpOps {
         private final List<Consumer> consumers = new CopyOnWriteArrayList<>();
 
         /**
-         * 当前激活并发数。
+         * 构建弹性消费者组。
+         *
+         * @param queueName       目标队列名
+         *
+         * @param initialCredits   每 consumer 的初始 credit（=prefetchNum）
+         * @param runnerContainer 消息回调目标（process 方法）
          */
-        private volatile int active;
-
         ElasticConsumerGroup(String queueName, int initialCredits, TaskRunnerContainer runnerContainer) {
             this.queueName = queueName;
             this.initialCredits = initialCredits;
@@ -325,7 +392,8 @@ public class Rabbit100Ops implements TaskAmqpOps {
                 Consumer consumer = connectionFactory.getConnection().consumerBuilder()
                         .queue(queueName)
                         .initialCredits(initialCredits)
-                        .messageHandler(this::onMessage)
+                        // 此处以 lambda 桥接：amqp Message 与 spring Message 同名，lambda 参数类型推断可避免内联全限定名
+                        .messageHandler((context, message) -> onMessage(context, RabbitAmqpUtils.fromAmqpMessage(message, null)))
                         .build();
                 consumers.add(consumer);
             }
@@ -337,29 +405,35 @@ public class Rabbit100Ops implements TaskAmqpOps {
                     consumer.pause();
                 }
             }
-            if (active != targetCount) {
-                log.info("Rabbit100Ops: 队列[{}]消费并发调整为 {} (总建 {})", queueName, targetCount, consumers.size());
-            }
-            active = targetCount;
+            log.info("Rabbit100Ops: 队列[{}]消费并发调整为 {} (总建 {})", queueName, targetCount, consumers.size());
         }
 
         /**
          * 消息入口：信号量封顶执行并发（满时在 dispatching 虚拟线程上 park，零平台成本），
          * 每任务一个虚拟线程（线程名={队列名}-N），执行完成后 settle（credit 释放=背压传导）。
+         *
+         * @param context 消费者上下文（settle 用）
+         * @param message 消息
          */
-        private void onMessage(Consumer.Context context, com.rabbitmq.client.amqp.Message message) {
+        private void onMessage(Consumer.Context context, Message message) {
             Semaphore semaphore = permits;
             try {
                 semaphore.acquire();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                // 未执行：requeue 把消息退回队列重新投递（与 091 未确认消息重新入队同语义），
+                // 同时归还 credit——不做 settle 的话该消息会悬挂并永久占用一个 credit 位
+                context.requeue();
                 return;
             }
             Thread.ofVirtual().name(queueName + "-", threadIndex.getAndIncrement()).start(() -> {
                 try {
-                    Message springMessage = RabbitAmqpUtils.fromAmqpMessage(message, null);
-                    TaskData<?, ?> taskData = (TaskData<?, ?>) new TaskMessageConverter().fromMessage(springMessage);
-                    runnerContainer.process(taskData);
+                    TaskData<?, ?> taskData = (TaskData<?, ?>) CONVERTER.fromMessage(message);
+                    TaskData<?, ?> result = runnerContainer.process(taskData);
+                    // 带回复地址的请求即 RPC（调用方在 sendAndReceive 上等待）：把执行结果按 messageId 关联回给调用方
+                    if (result != null && message.getMessageProperties().getReplyTo() != null) {
+                        reply(message, result);
+                    }
                 } catch (Exception ex) {
                     log.error("Rabbit100Ops: 消息处理异常, queue={}: {}", queueName, ex.getMessage(), ex);
                 } finally {
@@ -374,10 +448,27 @@ public class Rabbit100Ops implements TaskAmqpOps {
         }
 
         /**
-         * 当前激活并发数。
+         * RPC 回复：结果消息按请求的 reply-to 地址发出、correlation-id 取请求的 messageId（调用方模板据此匹配等待中的请求）。
+         *
+         * @param request 请求消息（需带 reply-to 与 messageId）
+         * @param result  执行结果（process 的返回值）
          */
-        int activeCount() {
-            return active;
+        private void reply(Message request, TaskData<?, ?> result) {
+            try {
+                Publisher publisher = template.getPublisher();
+                com.rabbitmq.client.amqp.Message reply = publisher.message();
+                RabbitAmqpUtils.toAmqpMessage(CONVERTER.toMessage(result, new MessageProperties()), reply);
+                reply.correlationId(request.getMessageProperties().getMessageId());
+                reply.to(request.getMessageProperties().getReplyTo());
+                publisher.publish(reply, context -> {
+                    if (context.status() == Publisher.Status.RELEASED || context.status() == Publisher.Status.REJECTED) {
+                        log.error("Rabbit100Ops RPC 回复发布失败: queue={}, status={}", queueName, context.status());
+                    }
+                });
+            } catch (Exception e) {
+                // 回复失败调用方会等到超时；此处留痕便于排查
+                log.error("Rabbit100Ops RPC 回复异常: queue={}", queueName, e);
+            }
         }
 
         /**
@@ -391,66 +482,6 @@ public class Rabbit100Ops implements TaskAmqpOps {
                 }
             }
             consumers.clear();
-        }
-    }
-
-    @Override
-    public int[] getQueueInfo(String queueName) {
-        // 1.0 无 passive declare；经 AMQP 连接内的 $management 通道查询队列属性
-        try {
-            Properties props = admin.getQueueProperties(queueName);
-            if (props == null) {
-                return null;
-            }
-            Object count = props.get(RabbitAdmin.QUEUE_MESSAGE_COUNT);
-            Object consumers = props.get(RabbitAdmin.QUEUE_CONSUMER_COUNT);
-            return new int[]{count == null ? 0 : Integer.parseInt(count.toString()),
-                    consumers == null ? 0 : Integer.parseInt(consumers.toString())};
-        } catch (Exception e) {
-            log.warn("Rabbit100Ops 查询队列信息失败 {}: {}", queueName, e.getMessage());
-            return null;
-        }
-    }
-
-    @Override
-    public int purgeQueue(String queueName) {
-        try {
-            admin.purgeQueue(queueName, false);
-            return 0;
-        } catch (Exception e) {
-            log.warn("Rabbit100Ops 清空队列失败 {}: {}", queueName, e.getMessage());
-            return -1;
-        }
-    }
-
-    @Override
-    public TaskAmqpProtocol getProtocol() {
-        return TaskAmqpProtocol.AMQP_100;
-    }
-
-    @Override
-    public void shutdown() {
-        for (int i = 0; i < sendPublishers.length; i++) {
-            try {
-                if (sendPublishers[i] != null) sendPublishers[i].close();
-            } catch (Exception ignore) {
-            }
-            try {
-                if (sendConnections[i] != null) sendConnections[i].close();
-            } catch (Exception ignore) {
-            }
-        }
-        try {
-            template.destroy();
-        } catch (Exception ignore) {
-        }
-        try {
-            connectionFactory.destroy();
-        } catch (Exception ignore) {
-        }
-        try {
-            environment.close();
-        } catch (Exception ignore) {
         }
     }
 }

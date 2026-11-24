@@ -12,7 +12,7 @@ import uw.task.util.TaskLeaderElector;
  *   <li>{@link #SINGLETON}：全局唯一执行，由 {@link TaskLeaderElector} 选出的 Leader
  *       主机独占运行，其余主机直接跳过。</li>
  * </ul>
- * 序列化为 OBJECT 形态（含 value/label），便于前端展示与服务端存储。</p>
+ * 序列化为 OBJECT 形态（含 value/label），便于前端展示与服务端存储。
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum TaskCronerRunType {
@@ -26,7 +26,6 @@ public enum TaskCronerRunType {
      */
     SINGLETON(1, "单例运行");
 
-
     /**
      * 枚举数值，用于持久化与传输。
      */
@@ -36,6 +35,18 @@ public enum TaskCronerRunType {
      * 枚举中文标签，用于展示。
      */
     private final String label;
+
+    /**
+
+     * 构建枚举项。
+
+     *
+
+     * @param value 枚举数值
+
+     * @param label 枚举中文标签
+
+     */
 
     TaskCronerRunType(int value, String label) {
         this.value = value;
@@ -58,6 +69,8 @@ public enum TaskCronerRunType {
     }
 
     /**
+     * 返回枚举数值。
+     *
      * @return 枚举数值
      */
     public int getValue() {
@@ -80,6 +93,8 @@ public enum TaskCronerRunType {
     }
 
     /**
+     * 返回枚举中文标签。
+     *
      * @return 枚举中文标签
      */
     public String getLabel() {

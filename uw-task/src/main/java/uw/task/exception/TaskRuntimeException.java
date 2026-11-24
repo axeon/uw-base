@@ -9,11 +9,16 @@ import uw.task.TaskFactory;
  *   <li>本地任务执行入口遇到非本地任务类型（{@link TaskFactory#runTaskLocal}）；</li>
  *   <li>RabbitMQ 连接/通道资源异常重试耗尽、RPC 调用超时等导致任务派发失败。</li>
  * </ul>
- * 此异常<b>不</b>对应任务执行的业务状态（不映射到 STATE_FAIL_* ），而是框架在派发/调度阶段的非预期失败。</p>
+ * 此异常<b>不</b>对应任务执行的业务状态（不映射到 STATE_FAIL_* ），而是框架在派发/调度阶段的非预期失败。
  *
  * @author axeon
  */
 public class TaskRuntimeException extends RuntimeException {
+
+    /**
+     * 序列化版本号。
+     */
+    private static final long serialVersionUID = 1L;
 
     /**
      * 构造一个不带详细信息的运行期异常。
@@ -49,5 +54,4 @@ public class TaskRuntimeException extends RuntimeException {
     public TaskRuntimeException(String msg, Throwable nestedThrowable) {
         super(msg, nestedThrowable);
     }
-
 }

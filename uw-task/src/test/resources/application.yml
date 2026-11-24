@@ -30,15 +30,12 @@ uw:
     # task-center 地址。默认 http://uw-task-center，你的环境需能解析该域名（内网 DNS / hosts）。
     # 若 task-center 部署在别处，改成实际地址（如 http://10.0.0.10:10010）。
     task-center-host: http://uw-task-center
-    # uw-task 私有 Redis（DelayTask/序列/Leader/全局限速；与 uw.kv 隔离，密码经环境变量注入）
+    # uw-task 私有 Redis（延时 zset/序列/Leader/全局限速；与 uw.kv 隔离，密码经环境变量注入）
     redis:
       database: 7          # 单测默认;E2E 需独立库隔离(见 -De2e 覆盖)
       host: 10.0.0.10
       port: 6380
       password: ${UW_TEST_REDIS_PASSWORD}
-    # 协议版本：auto（默认，探测 1.0 可用则 1.0）/091/100（强制）
-    # rabbit:
-    #   version: auto
     rabbitmq:
       host: 10.0.0.10
       port: 5672

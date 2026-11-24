@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <revision>2026.1000.0019</revision>
+        <revision>2026.1000.0020</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>25</java.version>
@@ -39,7 +39,7 @@
         <uw-nacos-client.version>1.0.12</uw-nacos-client.version>
         <uw-notify-client.version>1.1.52</uw-notify-client.version>
         <uw-oauth2-client.version>1.1.52</uw-oauth2-client.version>
-        <uw-task.version>5.3.0</uw-task.version>
+        <uw-task.version>5.3.1</uw-task.version>
         <uw-tinyurl-client.version>1.1.52</uw-tinyurl-client.version>
         <uw-webot.version>1.0.23</uw-webot.version>
     </properties>
@@ -324,6 +324,23 @@
                         <execution>
                             <id>flatten.clean</id>
                             <phase>clean</phase>
+                            <goals>
+                                <goal>clean</goal>
+                            </goals>
+                        </execution>
+                        <!-- install/deploy 之后自动清掉 .flattened-pom.xml：拍平后的 pom 只在这两个阶段被用到，同阶段内默认的
+                             install/deploy 插件先执行，清理一定发生在安装或发布之后。compile/package 构建不经过这两个阶段，
+                             文件会保留到下次 mvn clean。 -->
+                        <execution>
+                            <id>flatten.clean-after-install</id>
+                            <phase>install</phase>
+                            <goals>
+                                <goal>clean</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>flatten.clean-after-deploy</id>
+                            <phase>deploy</phase>
                             <goals>
                                 <goal>clean</goal>
                             </goals>

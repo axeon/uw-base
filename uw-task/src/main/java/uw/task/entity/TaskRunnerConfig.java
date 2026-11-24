@@ -1,7 +1,8 @@
 package uw.task.entity;
 
-import java.io.Serializable;
 import uw.task.TaskRunner;
+
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -18,7 +19,13 @@ import java.util.Date;
 public class TaskRunnerConfig implements Serializable {
 
     /**
-     * classic 队列（默认）：单副本、吞吐最优，适用于即时消费。
+     * 默认预取数。quorum 队列每批确认都要等 WAL 落盘后才放行下一批投递，预取 1 时每条消息一次落盘
+     * （dev 实测约 450~550 msg/s）；10 把在途消息数放大 10 倍，同时仍限制单消费者的内存占用与失败时的重投范围。
+     */
+    public static final int DEFAULT_PREFETCH_NUM = 10;
+
+    /**
+     * classic 队列：单副本、吞吐最优，适用于即时消费。
      */
     public static final int QUEUE_TYPE_CLASSIC = 0;
 
@@ -107,6 +114,9 @@ public class TaskRunnerConfig implements Serializable {
      */
     public static final int TASK_LOG_TYPE_RECORD_ALL = 3;
 
+    /**
+     * 任务配置 id（服务端分配）。
+     */
     private long id;
 
     /**
@@ -131,8 +141,8 @@ public class TaskRunnerConfig implements Serializable {
 
     /**
      * 队列形态：QUEUE_TYPE_CLASSIC / QUEUE_TYPE_QUORUM。
-     * <p>默认 quorum（用户定案 261120）：Raft 复制安全、原生延迟消息唯一载体；
-     * 追求极致吞吐且接受单副本风险时选 classic（classic 队列的消息默认非持久化不写盘，见 TaskFactory.buildTaskQueueMessage）。</p>
+     * <p>默认 quorum（用户定案 261120、261124 复核保留）：数据安全、原生延迟消息唯一载体，
+     * 吞吐靠调大 prefetchNum 与 broker 侧流控调优解决；追求极致吞吐且接受单副本风险时选 classic（classic 队列的消息默认非持久化不写盘，见 TaskFactory.buildTaskQueueMessage）。</p>
      */
     private int queueType = QUEUE_TYPE_QUORUM;
 
@@ -142,9 +152,9 @@ public class TaskRunnerConfig implements Serializable {
     private int consumerNum = 1;
 
     /**
-     * 预取任务数。
+     * 预取任务数（在途未确认消息上限，默认 {@value #DEFAULT_PREFETCH_NUM}；quorum 队列吞吐敏感场景建议 ≥50）。
      */
-    private int prefetchNum = 1;
+    private int prefetchNum = DEFAULT_PREFETCH_NUM;
 
     /**
      * 详见流量限制类型说明。
@@ -262,13 +272,25 @@ public class TaskRunnerConfig implements Serializable {
      */
     private int logLimitSize = 0;
 
+    /**
+     * 默认构造器。
+     */
     public TaskRunnerConfig() {
     }
 
+    /**
+     * 带任务名称的构造器。
+     *
+     * @param taskName 任务名称
+     */
     public TaskRunnerConfig(String taskName) {
         this.taskName = taskName;
     }
 
+    /**
+     * 由 Builder 构建实例。
+     * @param builder 已设置好字段的 Builder
+     */
     private TaskRunnerConfig(Builder builder) {
         setId(builder.id);
         setTaskName(builder.taskName);
@@ -303,12 +325,13 @@ public class TaskRunnerConfig implements Serializable {
     }
 
     /**
+     * 创建空 Builder。
+     *
      * @return 空白 Builder
      */
     public static Builder builder() {
         return new Builder();
     }
-
 
     /**
      * builder 模式，带 taskName 参数。
@@ -361,244 +384,542 @@ public class TaskRunnerConfig implements Serializable {
         return builder;
     }
 
-
+    /**
+     * 获取任务配置 id。
+     *
+     * @return 任务配置 id
+     */
     public long getId() {
         return id;
     }
 
+    /**
+     * 设置任务配置 id。
+     *
+     * @param id 任务配置 id
+     */
     public void setId(long id) {
         this.id = id;
     }
 
+    /**
+     * 获取任务名称。
+     *
+     * @return 任务名称
+     */
     public String getTaskName() {
         return taskName;
     }
 
+    /**
+     * 设置任务名称。
+     *
+     * @param taskName 任务名称
+     */
     public void setTaskName(String taskName) {
         this.taskName = taskName;
     }
 
+    /**
+     * 获取任务描述。
+     *
+     * @return 任务描述
+     */
     public String getTaskDesc() {
         return taskDesc;
     }
 
+    /**
+     * 设置任务描述。
+     *
+     * @param taskDesc 任务描述
+     */
     public void setTaskDesc(String taskDesc) {
         this.taskDesc = taskDesc;
     }
 
+    /**
+     * 获取执行类信息。
+     *
+     * @return 执行类信息
+     */
     public String getTaskClass() {
         return taskClass;
     }
 
+    /**
+     * 设置执行类信息。
+     *
+     * @param taskClass 执行类信息
+     */
     public void setTaskClass(String taskClass) {
         this.taskClass = taskClass;
     }
 
+    /**
+     * 获取执行类TAG，可能用于区分子任务。
+     *
+     * @return 执行类TAG，可能用于区分子任务
+     */
     public String getTaskTag() {
         return taskTag;
     }
 
+    /**
+     * 设置执行类TAG，可能用于区分子任务。
+     *
+     * @param taskTag 执行类TAG，可能用于区分子任务
+     */
     public void setTaskTag(String taskTag) {
         this.taskTag = taskTag;
     }
 
+    /**
+     * 获取队列形态：QUEUE_TYPE_CLASSIC / QUEUE_TYPE_QUORUM。<p>默认 quorum（用户定案 261120）：Raft 复制安全、原生延迟消息唯一载体；追求极致吞吐且接受单副本风险时选 classic（classic 队列的消息默认非持久化不写盘，见 TaskFactory.buildTaskQueueMessage）。</p>。
+     *
+     * @return 队列形态：QUEUE_TYPE_CLASSIC / QUEUE_TYPE_QUORUM。<p>默认 quorum（用户定案 261120）：Raft 复制安全、原生延迟消息唯一载体；追求极致吞吐且接受单副本风险时选 classic（classic 队列的消息默认非持久化不写盘，见 TaskFactory.buildTaskQueueMessage）。</p>
+     */
     public int getQueueType() {
         return queueType;
     }
 
+    /**
+     * 设置队列形态：QUEUE_TYPE_CLASSIC / QUEUE_TYPE_QUORUM。<p>默认 quorum（用户定案 261120）：Raft 复制安全、原生延迟消息唯一载体；追求极致吞吐且接受单副本风险时选 classic（classic 队列的消息默认非持久化不写盘，见 TaskFactory.buildTaskQueueMessage）。</p>。
+     *
+     * @param queueType 队列形态：QUEUE_TYPE_CLASSIC / QUEUE_TYPE_QUORUM。<p>默认 quorum（用户定案 261120）：Raft 复制安全、原生延迟消息唯一载体；追求极致吞吐且接受单副本风险时选 classic（classic 队列的消息默认非持久化不写盘，见 TaskFactory.buildTaskQueueMessage）。</p>
+     */
     public void setQueueType(int queueType) {
         this.queueType = queueType;
     }
 
-
+    /**
+     * 获取消费者的数量。
+     *
+     * @return 消费者的数量
+     */
     public int getConsumerNum() {
         return consumerNum;
     }
 
+    /**
+     * 设置消费者的数量。
+     *
+     * @param consumerNum 消费者的数量
+     */
     public void setConsumerNum(int consumerNum) {
         this.consumerNum = consumerNum;
     }
 
+    /**
+     * 获取预取任务数。
+     *
+     * @return 预取任务数
+     */
     public int getPrefetchNum() {
         return prefetchNum;
     }
 
+    /**
+     * 设置预取任务数。
+     *
+     * @param prefetchNum 预取任务数
+     */
     public void setPrefetchNum(int prefetchNum) {
         this.prefetchNum = prefetchNum;
     }
 
+    /**
+     * 获取详见流量限制类型说明。
+     *
+     * @return 详见流量限制类型说明
+     */
     public int getRateLimitType() {
         return rateLimitType;
     }
 
+    /**
+     * 设置详见流量限制类型说明。
+     *
+     * @param rateLimitType 详见流量限制类型说明
+     */
     public void setRateLimitType(int rateLimitType) {
         this.rateLimitType = rateLimitType;
     }
 
+    /**
+     * 获取流量限定数值，默认为10次。
+     *
+     * @return 流量限定数值，默认为10次
+     */
     public int getRateLimitValue() {
         return rateLimitValue;
     }
 
+    /**
+     * 设置流量限定数值，默认为10次。
+     *
+     * @param rateLimitValue 流量限定数值，默认为10次
+     */
     public void setRateLimitValue(int rateLimitValue) {
         this.rateLimitValue = rateLimitValue;
     }
 
+    /**
+     * 获取流量限定时间(S)，默认为1秒。
+     *
+     * @return 流量限定时间(S)，默认为1秒
+     */
     public int getRateLimitTime() {
         return rateLimitTime;
     }
 
+    /**
+     * 设置流量限定时间(S)，默认为1秒。
+     *
+     * @param rateLimitTime 流量限定时间(S)，默认为1秒
+     */
     public void setRateLimitTime(int rateLimitTime) {
         this.rateLimitTime = rateLimitTime;
     }
 
+    /**
+     * 获取当发生流量限制时，等待的秒数，默认30秒。
+     *
+     * @return 当发生流量限制时，等待的秒数，默认30秒
+     */
     public int getRateLimitWait() {
         return rateLimitWait;
     }
 
+    /**
+     * 设置当发生流量限制时，等待的秒数，默认30秒。
+     *
+     * @param rateLimitWait 当发生流量限制时，等待的秒数，默认30秒
+     */
     public void setRateLimitWait(int rateLimitWait) {
         this.rateLimitWait = rateLimitWait;
     }
 
+    /**
+     * 获取超过流量限制时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。<p>实现说明（见 {@code TaskRunnerContainer.process()}）：以 {@code ranTimes <= retryTimesByOverrated}作为是否继续重试的判定，{@code ranTimes} 在每次进入 process 时自增（含首次执行）。设为 N 时，任务总计执行 {@code N+1} 次（1 次初始 + N 次重试）；N=0 时仅执行 1 次不重试。</p>。
+     *
+     * @return 超过流量限制时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。<p>实现说明（见 {@code TaskRunnerContainer.process()}）：以 {@code ranTimes <= retryTimesByOverrated}作为是否继续重试的判定，{@code ranTimes} 在每次进入 process 时自增（含首次执行）。设为 N 时，任务总计执行 {@code N+1} 次（1 次初始 + N 次重试）；N=0 时仅执行 1 次不重试。</p>
+     */
     public int getRetryTimesByOverrated() {
         return retryTimesByOverrated;
     }
 
+    /**
+     * 设置超过流量限制时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。<p>实现说明（见 {@code TaskRunnerContainer.process()}）：以 {@code ranTimes <= retryTimesByOverrated}作为是否继续重试的判定，{@code ranTimes} 在每次进入 process 时自增（含首次执行）。设为 N 时，任务总计执行 {@code N+1} 次（1 次初始 + N 次重试）；N=0 时仅执行 1 次不重试。</p>。
+     *
+     * @param retryTimesByOverrated 超过流量限制时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。<p>实现说明（见 {@code TaskRunnerContainer.process()}）：以 {@code ranTimes <= retryTimesByOverrated}作为是否继续重试的判定，{@code ranTimes} 在每次进入 process 时自增（含首次执行）。设为 N 时，任务总计执行 {@code N+1} 次（1 次初始 + N 次重试）；N=0 时仅执行 1 次不重试。</p>
+     */
     public void setRetryTimesByOverrated(int retryTimesByOverrated) {
         this.retryTimesByOverrated = retryTimesByOverrated;
     }
 
+    /**
+     * 获取对方接口错误时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。<p>同 {@link #retryTimesByOverrated}，设为 N 时总计执行 N+1 次（1 次初始 + N 次重试）。</p>。
+     *
+     * @return 对方接口错误时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。<p>同 {@link #retryTimesByOverrated}，设为 N 时总计执行 N+1 次（1 次初始 + N 次重试）。</p>
+     */
     public int getRetryTimesByPartner() {
         return retryTimesByPartner;
     }
 
+    /**
+     * 设置对方接口错误时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。<p>同 {@link #retryTimesByOverrated}，设为 N 时总计执行 N+1 次（1 次初始 + N 次重试）。</p>。
+     *
+     * @param retryTimesByPartner 对方接口错误时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。<p>同 {@link #retryTimesByOverrated}，设为 N 时总计执行 N+1 次（1 次初始 + N 次重试）。</p>
+     */
     public void setRetryTimesByPartner(int retryTimesByPartner) {
         this.retryTimesByPartner = retryTimesByPartner;
     }
 
+    /**
+     * 获取程序自身异常时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。<p>同 {@link #retryTimesByOverrated}，设为 N 时总计执行 N+1 次（1 次初始 + N 次重试）。程序异常（NPE/状态错等）也可配置自动重试。</p>。
+     *
+     * @return 程序自身异常时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。<p>同 {@link #retryTimesByOverrated}，设为 N 时总计执行 N+1 次（1 次初始 + N 次重试）。程序异常（NPE/状态错等）也可配置自动重试。</p>
+     */
     public int getRetryTimesByProgram() {
         return retryTimesByProgram;
     }
 
+    /**
+     * 设置程序自身异常时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。<p>同 {@link #retryTimesByOverrated}，设为 N 时总计执行 N+1 次（1 次初始 + N 次重试）。程序异常（NPE/状态错等）也可配置自动重试。</p>。
+     *
+     * @param retryTimesByProgram 程序自身异常时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。<p>同 {@link #retryTimesByOverrated}，设为 N 时总计执行 N+1 次（1 次初始 + N 次重试）。程序异常（NPE/状态错等）也可配置自动重试。</p>
+     */
     public void setRetryTimesByProgram(int retryTimesByProgram) {
         this.retryTimesByProgram = retryTimesByProgram;
     }
 
+    /**
+     * 获取运行目标，不用指定，由程序运行期配置。
+     *
+     * @return 运行目标，不用指定，由程序运行期配置
+     */
     public String getRunTarget() {
         return runTarget;
     }
 
+    /**
+     * 设置运行目标，不用指定，由程序运行期配置。
+     *
+     * @param runTarget 运行目标，不用指定，由程序运行期配置
+     */
     public void setRunTarget(String runTarget) {
         this.runTarget = runTarget;
     }
 
+    /**
+     * 获取失败率。
+     *
+     * @return 失败率
+     */
     public int getAlertFailRate() {
         return alertFailRate;
     }
 
+    /**
+     * 设置失败率。
+     *
+     * @param alertFailRate 失败率
+     */
     public void setAlertFailRate(int alertFailRate) {
         this.alertFailRate = alertFailRate;
     }
 
+    /**
+     * 获取接口失败率。
+     *
+     * @return 接口失败率
+     */
     public int getAlertFailPartnerRate() {
         return alertFailPartnerRate;
     }
 
+    /**
+     * 设置接口失败率。
+     *
+     * @param alertFailPartnerRate 接口失败率
+     */
     public void setAlertFailPartnerRate(int alertFailPartnerRate) {
         this.alertFailPartnerRate = alertFailPartnerRate;
     }
 
+    /**
+     * 获取程序失败率。
+     *
+     * @return 程序失败率
+     */
     public int getAlertFailProgramRate() {
         return alertFailProgramRate;
     }
 
+    /**
+     * 设置程序失败率。
+     *
+     * @param alertFailProgramRate 程序失败率
+     */
     public void setAlertFailProgramRate(int alertFailProgramRate) {
         this.alertFailProgramRate = alertFailProgramRate;
     }
 
+    /**
+     * 获取数据失败率。
+     *
+     * @return 数据失败率
+     */
     public int getAlertFailDataRate() {
         return alertFailDataRate;
     }
 
+    /**
+     * 设置数据失败率。
+     *
+     * @param alertFailDataRate 数据失败率
+     */
     public void setAlertFailDataRate(int alertFailDataRate) {
         this.alertFailDataRate = alertFailDataRate;
     }
 
+    /**
+     * 获取配置失败率。
+     *
+     * @return 配置失败率
+     */
     public int getAlertFailConfigRate() {
         return alertFailConfigRate;
     }
 
+    /**
+     * 设置配置失败率。
+     *
+     * @param alertFailConfigRate 配置失败率
+     */
     public void setAlertFailConfigRate(int alertFailConfigRate) {
         this.alertFailConfigRate = alertFailConfigRate;
     }
 
+    /**
+     * 获取队列超长度。
+     *
+     * @return 队列超长度
+     */
     public int getAlertQueueOversize() {
         return alertQueueOversize;
     }
 
+    /**
+     * 设置队列超长度。
+     *
+     * @param alertQueueOversize 队列超长度
+     */
     public void setAlertQueueOversize(int alertQueueOversize) {
         this.alertQueueOversize = alertQueueOversize;
     }
 
+    /**
+     * 获取队列等待超时。
+     *
+     * @return 队列等待超时
+     */
     public int getAlertQueueTimeout() {
         return alertQueueTimeout;
     }
 
+    /**
+     * 设置队列等待超时。
+     *
+     * @param alertQueueTimeout 队列等待超时
+     */
     public void setAlertQueueTimeout(int alertQueueTimeout) {
         this.alertQueueTimeout = alertQueueTimeout;
     }
 
+    /**
+     * 获取等待超时。
+     *
+     * @return 等待超时
+     */
     public int getAlertWaitTimeout() {
         return alertWaitTimeout;
     }
 
+    /**
+     * 设置等待超时。
+     *
+     * @param alertWaitTimeout 等待超时
+     */
     public void setAlertWaitTimeout(int alertWaitTimeout) {
         this.alertWaitTimeout = alertWaitTimeout;
     }
 
+    /**
+     * 获取运行超时。
+     *
+     * @return 运行超时
+     */
     public int getAlertRunTimeout() {
         return alertRunTimeout;
     }
 
+    /**
+     * 设置运行超时。
+     *
+     * @param alertRunTimeout 运行超时
+     */
     public void setAlertRunTimeout(int alertRunTimeout) {
         this.alertRunTimeout = alertRunTimeout;
     }
 
+    /**
+     * 获取创建日期。
+     *
+     * @return 创建日期
+     */
     public Date getCreateDate() {
         return createDate;
     }
 
+    /**
+     * 设置创建日期。
+     *
+     * @param createDate 创建日期
+     */
     public void setCreateDate(Date createDate) {
         this.createDate = createDate;
     }
 
+    /**
+     * 获取修改日期。
+     *
+     * @return 修改日期
+     */
     public Date getModifyDate() {
         return modifyDate;
     }
 
+    /**
+     * 设置修改日期。
+     *
+     * @param modifyDate 修改日期
+     */
     public void setModifyDate(Date modifyDate) {
         this.modifyDate = modifyDate;
     }
 
+    /**
+     * 获取状态值。
+     *
+     * @return 状态值
+     */
     public int getState() {
         return state;
     }
 
+    /**
+     * 设置状态值。
+     *
+     * @param state 状态值
+     */
     public void setState(int state) {
         this.state = state;
     }
 
+    /**
+     * 获取详见日志类型说明。
+     *
+     * @return 详见日志类型说明
+     */
     public int getLogLevel() {
         return logLevel;
     }
 
+    /**
+     * 设置详见日志类型说明。
+     *
+     * @param logLevel 详见日志类型说明
+     */
     public void setLogLevel(int logLevel) {
         this.logLevel = logLevel;
     }
 
+    /**
+     * 获取日志字符串字段大小限制: 0 表示无限制。
+     *
+     * @return 日志字符串字段大小限制: 0 表示无限制
+     */
     public int getLogLimitSize() {
         return logLimitSize;
     }
 
+    /**
+     * 设置日志字符串字段大小限制: 0 表示无限制。
+     *
+     * @param logLimitSize 日志字符串字段大小限制: 0 表示无限制
+     */
     public void setLogLimitSize(int logLimitSize) {
         this.logLimitSize = logLimitSize;
     }
@@ -608,6 +929,9 @@ public class TaskRunnerConfig implements Serializable {
      */
     public static final class Builder {
 
+        /**
+         * 任务配置 id（服务端分配）。
+         */
         private long id;
 
         /**
@@ -647,7 +971,7 @@ public class TaskRunnerConfig implements Serializable {
         /**
          * 预取任务数。
          */
-        private int prefetchNum = 1;
+        private int prefetchNum = DEFAULT_PREFETCH_NUM;
 
         /**
          * 详见流量限制类型说明。
@@ -759,15 +1083,17 @@ public class TaskRunnerConfig implements Serializable {
          */
         private int logLimitSize = 0;
 
-
+        /**
+         * Builder 构造器（仅经 builder(...) 工厂方法创建）。
+         */
         private Builder() {
         }
 
         /**
          * builder模式，带taskClass参数。
          *
-         * @param taskClass
-         * @return
+         * @param taskClass 执行类信息
+         * @return 新的 Builder
          */
         public static Builder builder(String taskClass) {
             return new Builder().taskClass(taskClass);
@@ -776,18 +1102,18 @@ public class TaskRunnerConfig implements Serializable {
         /**
          * builder模式，带taskClass参数。
          *
-         * @param taskClass
-         * @return
+         * @param taskClass 执行类信息
+         * @return 新的 Builder
          */
         public static Builder builder(Class taskClass) {
             return new Builder().taskClass(taskClass.getName());
         }
 
         /**
-         * Sets the {@code taskName} and returns a reference to this Builder enabling method chaining.
+         * 设置任务名称。
          *
-         * @param taskName the {@code taskName} to set
-         * @return a reference to this Builder
+         * @param taskName 任务名称
+         * @return this（链式调用）
          */
         public Builder taskName(String taskName) {
             this.taskName = taskName;
@@ -795,10 +1121,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code taskDesc} and returns a reference to this Builder enabling method chaining.
+         * 设置任务描述。
          *
-         * @param taskDesc the {@code taskDesc} to set
-         * @return a reference to this Builder
+         * @param taskDesc 任务描述
+         * @return this（链式调用）
          */
         public Builder taskDesc(String taskDesc) {
             this.taskDesc = taskDesc;
@@ -806,10 +1132,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code taskClass} and returns a reference to this Builder enabling method chaining.
+         * 设置执行类信息。
          *
-         * @param taskClass the {@code taskClass} to set
-         * @return a reference to this Builder
+         * @param taskClass 执行类信息
+         * @return this（链式调用）
          */
         public Builder taskClass(String taskClass) {
             this.taskClass = taskClass;
@@ -817,10 +1143,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code taskTag} and returns a reference to this Builder enabling method chaining.
+         * 设置执行类TAG，可能用于区分子任务。
          *
-         * @param taskTag the {@code taskTag} to set
-         * @return a reference to this Builder
+         * @param taskTag 执行类TAG，可能用于区分子任务
+         * @return this（链式调用）
          */
         public Builder taskTag(String taskTag) {
             this.taskTag = taskTag;
@@ -828,22 +1154,21 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code queueType} and returns a reference to this Builder enabling method chaining.
+         * 设置队列形态：QUEUE_TYPE_CLASSIC / QUEUE_TYPE_QUORUM。<p>默认 quorum（用户定案 261120）：Raft 复制安全、原生延迟消息唯一载体；追求极致吞吐且接受单副本风险时选 classic（classic 队列的消息默认非持久化不写盘，见 TaskFactory.buildTaskQueueMessage）。</p>。
          *
-         * @param queueType the {@code queueType} to set
-         * @return a reference to this Builder
+         * @param queueType 队列形态：QUEUE_TYPE_CLASSIC / QUEUE_TYPE_QUORUM。<p>默认 quorum（用户定案 261120）：Raft 复制安全、原生延迟消息唯一载体；追求极致吞吐且接受单副本风险时选 classic（classic 队列的消息默认非持久化不写盘，见 TaskFactory.buildTaskQueueMessage）。</p>
+         * @return this（链式调用）
          */
         public Builder queueType(int queueType) {
             this.queueType = queueType;
             return this;
         }
 
-
         /**
-         * Sets the {@code consumerNum} and returns a reference to this Builder enabling method chaining.
+         * 设置消费者的数量。
          *
-         * @param consumerNum the {@code consumerNum} to set
-         * @return a reference to this Builder
+         * @param consumerNum 消费者的数量
+         * @return this（链式调用）
          */
         public Builder consumerNum(int consumerNum) {
             this.consumerNum = consumerNum;
@@ -851,10 +1176,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code prefetchNum} and returns a reference to this Builder enabling method chaining.
+         * 设置预取任务数。
          *
-         * @param prefetchNum the {@code prefetchNum} to set
-         * @return a reference to this Builder
+         * @param prefetchNum 预取任务数
+         * @return this（链式调用）
          */
         public Builder prefetchNum(int prefetchNum) {
             this.prefetchNum = prefetchNum;
@@ -862,10 +1187,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code rateLimitType} and returns a reference to this Builder enabling method chaining.
+         * 设置详见流量限制类型说明。
          *
-         * @param rateLimitType the {@code rateLimitType} to set
-         * @return a reference to this Builder
+         * @param rateLimitType 详见流量限制类型说明
+         * @return this（链式调用）
          */
         public Builder rateLimitType(int rateLimitType) {
             this.rateLimitType = rateLimitType;
@@ -873,10 +1198,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code rateLimitValue} and returns a reference to this Builder enabling method chaining.
+         * 设置流量限定数值，默认为10次。
          *
-         * @param rateLimitValue the {@code rateLimitValue} to set
-         * @return a reference to this Builder
+         * @param rateLimitValue 流量限定数值，默认为10次
+         * @return this（链式调用）
          */
         public Builder rateLimitValue(int rateLimitValue) {
             this.rateLimitValue = rateLimitValue;
@@ -884,10 +1209,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code rateLimitTime} and returns a reference to this Builder enabling method chaining.
+         * 设置流量限定时间(S)，默认为1秒。
          *
-         * @param rateLimitTime the {@code rateLimitTime} to set
-         * @return a reference to this Builder
+         * @param rateLimitTime 流量限定时间(S)，默认为1秒
+         * @return this（链式调用）
          */
         public Builder rateLimitTime(int rateLimitTime) {
             this.rateLimitTime = rateLimitTime;
@@ -895,10 +1220,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code rateLimitWait} and returns a reference to this Builder enabling method chaining.
+         * 设置当发生流量限制时，等待的秒数，默认30秒。
          *
-         * @param rateLimitWait the {@code rateLimitWait} to set
-         * @return a reference to this Builder
+         * @param rateLimitWait 当发生流量限制时，等待的秒数，默认30秒
+         * @return this（链式调用）
          */
         public Builder rateLimitWait(int rateLimitWait) {
             this.rateLimitWait = rateLimitWait;
@@ -906,10 +1231,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code retryTimesByOverrated} and returns a reference to this Builder enabling method chaining.
+         * 设置超过流量限制时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。<p>实现说明（见 {@code TaskRunnerContainer.process()}）：以 {@code ranTimes <= retryTimesByOverrated}作为是否继续重试的判定，{@code ranTimes} 在每次进入 process 时自增（含首次执行）。设为 N 时，任务总计执行 {@code N+1} 次（1 次初始 + N 次重试）；N=0 时仅执行 1 次不重试。</p>。
          *
-         * @param retryTimesByOverrated the {@code retryTimesByOverrated} to set
-         * @return a reference to this Builder
+         * @param retryTimesByOverrated 超过流量限制时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。<p>实现说明（见 {@code TaskRunnerContainer.process()}）：以 {@code ranTimes <= retryTimesByOverrated}作为是否继续重试的判定，{@code ranTimes} 在每次进入 process 时自增（含首次执行）。设为 N 时，任务总计执行 {@code N+1} 次（1 次初始 + N 次重试）；N=0 时仅执行 1 次不重试。</p>
+         * @return this（链式调用）
          */
         public Builder retryTimesByOverrated(int retryTimesByOverrated) {
             this.retryTimesByOverrated = retryTimesByOverrated;
@@ -917,26 +1242,32 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code retryTimesByPartner} and returns a reference to this Builder enabling method chaining.
+         * 设置对方接口错误时的额外重试次数。
          *
-         * @param retryTimesByPartner the {@code retryTimesByPartner} to set
-         * @return a reference to this Builder
+         * @param retryTimesByPartner 对方接口错误时的额外重试次数
+         * @return this（链式调用）
          */
         public Builder retryTimesByPartner(int retryTimesByPartner) {
             this.retryTimesByPartner = retryTimesByPartner;
             return this;
         }
 
+        /**
+         * 设置程序自身异常时的额外重试次数。
+         *
+         * @param retryTimesByProgram 程序自身异常时的额外重试次数
+         * @return this（链式调用）
+         */
         public Builder retryTimesByProgram(int retryTimesByProgram) {
             this.retryTimesByProgram = retryTimesByProgram;
             return this;
         }
 
         /**
-         * Sets the {@code runTarget} and returns a reference to this Builder enabling method chaining.
+         * 设置运行目标，不用指定，由程序运行期配置。
          *
-         * @param runTarget the {@code runTarget} to set
-         * @return a reference to this Builder
+         * @param runTarget 运行目标，不用指定，由程序运行期配置
+         * @return this（链式调用）
          */
         public Builder runTarget(String runTarget) {
             this.runTarget = runTarget;
@@ -944,10 +1275,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code alertFailRate} and returns a reference to this Builder enabling method chaining.
+         * 设置失败率。
          *
-         * @param alertFailRate the {@code alertFailRate} to set
-         * @return a reference to this Builder
+         * @param alertFailRate 失败率
+         * @return this（链式调用）
          */
         public Builder alertFailRate(int alertFailRate) {
             this.alertFailRate = alertFailRate;
@@ -955,10 +1286,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code alertFailPartnerRate} and returns a reference to this Builder enabling method chaining.
+         * 设置接口失败率。
          *
-         * @param alertFailPartnerRate the {@code alertFailPartnerRate} to set
-         * @return a reference to this Builder
+         * @param alertFailPartnerRate 接口失败率
+         * @return this（链式调用）
          */
         public Builder alertFailPartnerRate(int alertFailPartnerRate) {
             this.alertFailPartnerRate = alertFailPartnerRate;
@@ -966,10 +1297,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code alertFailProgramRate} and returns a reference to this Builder enabling method chaining.
+         * 设置程序失败率。
          *
-         * @param alertFailProgramRate the {@code alertFailProgramRate} to set
-         * @return a reference to this Builder
+         * @param alertFailProgramRate 程序失败率
+         * @return this（链式调用）
          */
         public Builder alertFailProgramRate(int alertFailProgramRate) {
             this.alertFailProgramRate = alertFailProgramRate;
@@ -977,10 +1308,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code alertFailConfigRate} and returns a reference to this Builder enabling method chaining.
+         * 设置配置失败率。
          *
-         * @param alertFailConfigRate the {@code alertFailConfigRate} to set
-         * @return a reference to this Builder
+         * @param alertFailConfigRate 配置失败率
+         * @return this（链式调用）
          */
         public Builder alertFailConfigRate(int alertFailConfigRate) {
             this.alertFailConfigRate = alertFailConfigRate;
@@ -988,10 +1319,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code alertFailDataRate} and returns a reference to this Builder enabling method chaining.
+         * 设置数据失败率。
          *
-         * @param alertFailDataRate the {@code alertFailDataRate} to set
-         * @return a reference to this Builder
+         * @param alertFailDataRate 数据失败率
+         * @return this（链式调用）
          */
         public Builder alertFailDataRate(int alertFailDataRate) {
             this.alertFailDataRate = alertFailDataRate;
@@ -999,10 +1330,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code alertQueueOversize} and returns a reference to this Builder enabling method chaining.
+         * 设置队列超长度。
          *
-         * @param alertQueueOversize the {@code alertQueueOversize} to set
-         * @return a reference to this Builder
+         * @param alertQueueOversize 队列超长度
+         * @return this（链式调用）
          */
         public Builder alertQueueOversize(int alertQueueOversize) {
             this.alertQueueOversize = alertQueueOversize;
@@ -1010,10 +1341,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code alertQueueTimeout} and returns a reference to this Builder enabling method chaining.
+         * 设置队列等待超时。
          *
-         * @param alertQueueTimeout the {@code alertQueueTimeout} to set
-         * @return a reference to this Builder
+         * @param alertQueueTimeout 队列等待超时
+         * @return this（链式调用）
          */
         public Builder alertQueueTimeout(int alertQueueTimeout) {
             this.alertQueueTimeout = alertQueueTimeout;
@@ -1021,10 +1352,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code alertWaitTimeout} and returns a reference to this Builder enabling method chaining.
+         * 设置等待超时。
          *
-         * @param alertWaitTimeout the {@code alertWaitTimeout} to set
-         * @return a reference to this Builder
+         * @param alertWaitTimeout 等待超时
+         * @return this（链式调用）
          */
         public Builder alertWaitTimeout(int alertWaitTimeout) {
             this.alertWaitTimeout = alertWaitTimeout;
@@ -1032,10 +1363,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code alertRunTimeout} and returns a reference to this Builder enabling method chaining.
+         * 设置运行超时。
          *
-         * @param alertRunTimeout the {@code alertRunTimeout} to set
-         * @return a reference to this Builder
+         * @param alertRunTimeout 运行超时
+         * @return this（链式调用）
          */
         public Builder alertRunTimeout(int alertRunTimeout) {
             this.alertRunTimeout = alertRunTimeout;
@@ -1043,10 +1374,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code createDate} and returns a reference to this Builder enabling method chaining.
+         * 设置创建日期。
          *
-         * @param createDate the {@code createDate} to set
-         * @return a reference to this Builder
+         * @param createDate 创建日期
+         * @return this（链式调用）
          */
         public Builder createDate(Date createDate) {
             this.createDate = createDate;
@@ -1054,10 +1385,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code modifyDate} and returns a reference to this Builder enabling method chaining.
+         * 设置修改日期。
          *
-         * @param modifyDate the {@code modifyDate} to set
-         * @return a reference to this Builder
+         * @param modifyDate 修改日期
+         * @return this（链式调用）
          */
         public Builder modifyDate(Date modifyDate) {
             this.modifyDate = modifyDate;
@@ -1065,10 +1396,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code state} and returns a reference to this Builder enabling method chaining.
+         * 设置状态值。
          *
-         * @param state the {@code state} to set
-         * @return a reference to this Builder
+         * @param state 状态值
+         * @return this（链式调用）
          */
         public Builder state(int state) {
             this.state = state;
@@ -1076,10 +1407,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code logLevel} and returns a reference to this Builder enabling method chaining.
+         * 设置详见日志类型说明。
          *
-         * @param logLevel the {@code logLevel} to set
-         * @return a reference to this Builder
+         * @param logLevel 详见日志类型说明
+         * @return this（链式调用）
          */
         public Builder logLevel(int logLevel) {
             this.logLevel = logLevel;
@@ -1087,10 +1418,10 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Sets the {@code logLimitSize} and returns a reference to this Builder enabling method chaining.
+         * 设置日志字符串字段大小限制: 0 表示无限制。
          *
-         * @param logLimitSize the {@code logLimitSize} to set
-         * @return a reference to this Builder
+         * @param logLimitSize 日志字符串字段大小限制: 0 表示无限制
+         * @return this（链式调用）
          */
         public Builder logLimitSize(int logLimitSize) {
             this.logLimitSize = logLimitSize;
@@ -1098,9 +1429,9 @@ public class TaskRunnerConfig implements Serializable {
         }
 
         /**
-         * Returns a {@code TaskRunnerConfig} built from the parameters previously set.
+         * 按已设置的参数构建实例。
          *
-         * @return a {@code TaskRunnerConfig} built with parameters of this {@code TaskRunnerConfig.Builder}
+         * @return 构建出的对象
          */
         public TaskRunnerConfig build() {
             return new TaskRunnerConfig(this);

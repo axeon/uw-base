@@ -17,6 +17,9 @@ public final class TaskConstants {
      */
     public static final String KEY_CRONER_LOG = "uw.task.croner.log";
 
+    /**
+     * 常量类，禁止实例化。
+     */
     private TaskConstants() {
     }
 }

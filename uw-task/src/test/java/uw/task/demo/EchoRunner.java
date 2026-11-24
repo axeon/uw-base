@@ -1,13 +1,13 @@
 package uw.task.demo;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.springframework.stereotype.Component;
 import uw.task.TaskData;
 import uw.task.TaskRunner;
 import uw.task.entity.TaskContact;
 import uw.task.entity.TaskRunnerConfig;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 测试用业务 Runner：模拟 uw-task 使用方定义的任务。

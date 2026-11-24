@@ -1,13 +1,16 @@
 package uw.task.demo;
 
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.springframework.stereotype.Component;
 import uw.task.TaskData;
 import uw.task.TaskRunner;
 import uw.task.entity.TaskContact;
 import uw.task.entity.TaskRunnerConfig;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 全流程 E2E 专用 Runner：独立队列名（首次声明为 quorum，延时消息生效）+ 可调业务耗时（线程观测采样）。
@@ -35,18 +38,18 @@ public class E2eSlowRunner extends TaskRunner<String, String> {
     /**
      * 执行线程名记录（线程观测断言：名字必须含队列名）。
      */
-    public static final java.util.Set<String> executingThreadNames = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    public static final Set<String> executingThreadNames = ConcurrentHashMap.newKeySet();
 
     /**
      * 执行线程虚拟性记录（VT 断言）。
      */
-    public static final java.util.Set<Boolean> executingThreadVirtual = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    public static final Set<Boolean> executingThreadVirtual = ConcurrentHashMap.newKeySet();
 
     /**
      * 真实并发峰值（进入/离开 runTask 原子增减）：并发封顶断言依据。
      */
-    public static final java.util.concurrent.atomic.AtomicInteger currentConcurrency = new java.util.concurrent.atomic.AtomicInteger();
-    public static final java.util.concurrent.atomic.AtomicInteger peakConcurrency = new java.util.concurrent.atomic.AtomicInteger();
+    public static final AtomicInteger currentConcurrency = new AtomicInteger();
+    public static final AtomicInteger peakConcurrency = new AtomicInteger();
 
     @Override
     public String runTask(TaskData<String, String> taskData) {

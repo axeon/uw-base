@@ -8,12 +8,11 @@ import uw.task.TaskData;
  *
  * <p>对应 {@link TaskData#getState()} 与日志实体的状态字段。框架根据执行结果（成功 / 各类异常）
  * 自动设置：{@link #SUCCESS} 表示成功；{@code FAIL_*} 系列表示不同类型的失败，其中
- * {@link #FAIL_PARTNER} 与 {@link #FAIL_CONFIG} 可按配置触发重试，{@link #FAIL_PROGRAM} 与
- * {@link #FAIL_DATA} 不重试。序列化为 OBJECT 形态（含 value/label）便于前端展示。</p>
+ * {@link #FAIL_PARTNER}/{@link #FAIL_CONFIG}/{@link #FAIL_PROGRAM} 各按对应 retryTimes 配置触发重试
+ * （默认 0=不重试），{@link #FAIL_DATA} 不重试。序列化为 OBJECT 形态（含 value/label）便于前端展示。
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum TaskRunState {
-
 
     /**
      * 任务状态:未设置
@@ -45,7 +44,6 @@ public enum TaskRunState {
      */
     FAIL_DATA(5, "数据错误");
 
-
     /**
      * 枚举数值，用于持久化与传输。
      */
@@ -55,6 +53,18 @@ public enum TaskRunState {
      * 枚举中文标签，用于展示。
      */
     private final String label;
+
+    /**
+
+     * 构建枚举项。
+
+     *
+
+     * @param value 枚举数值
+
+     * @param label 枚举中文标签
+
+     */
 
     TaskRunState(int value, String label) {
         this.value = value;
@@ -77,6 +87,8 @@ public enum TaskRunState {
     }
 
     /**
+     * 返回枚举数值。
+     *
      * @return 枚举数值
      */
     public int getValue() {
@@ -99,6 +111,8 @@ public enum TaskRunState {
     }
 
     /**
+     * 返回枚举中文标签。
+     *
      * @return 枚举中文标签
      */
     public String getLabel() {

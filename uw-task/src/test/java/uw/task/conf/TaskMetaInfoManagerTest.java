@@ -75,7 +75,6 @@ class TaskMetaInfoManagerTest {
         assertEquals("com.demo.task.svc.Foo#t1$prod", manager.getQueueNameByConfig(config));
     }
 
-
     @Test
     void getFitQueue_returnsQueueName_regardlessOfDelay() {
         TaskRunnerConfig config = baseRunnerConfig();
@@ -124,5 +123,4 @@ class TaskMetaInfoManagerTest {
         config.setState(1);
         return config;
     }
-
 }

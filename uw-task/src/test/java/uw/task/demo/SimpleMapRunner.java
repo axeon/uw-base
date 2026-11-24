@@ -1,12 +1,13 @@
 package uw.task.demo;
 
 import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import uw.task.TaskData;
 import uw.task.converter.TaskMessageConverter;
-
-import java.util.Map;
+import uw.task.demo.SimpleMapRunner;
 
 /**
  *
@@ -21,7 +22,6 @@ public class SimpleMapRunner extends SimpleBaseMapRunner {
         taskData.setTaskParam(new HashMap<>());
         taskData.setResultData(new HashMap<>());
         taskData.setTaskClass("uw.task.demo.SimpleMapRunner");
-
 
         MessageProperties properties = new MessageProperties();
         Message message = converter.toMessage(taskData, properties);

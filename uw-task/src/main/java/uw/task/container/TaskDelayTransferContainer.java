@@ -1,6 +1,5 @@
 package uw.task.container;
 
-import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -9,22 +8,23 @@ import uw.common.util.KryoUtils;
 import uw.common.util.SystemClock;
 import uw.task.TaskData;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * 延时任务 Redis zset 搬运器（091/低版本环境的延时承载通道，与 MQ 原生延迟自动二选一）。
+ * 延时任务 Redis zset 搬运器（低版本 broker / classic 队列的延时承载通道，与 MQ 原生延迟自动二选一）。
  *
- * <p>定位（261120 用户定案"一切全自动化"）：延时任务与队列任务统一为 TaskRunner 一种类型，
- * {@code TaskData.taskDelay > 0} 即延时任务。投递路由在 {@code TaskSendCenter.sendToQueue} 内自动判定：
- * 1.0 + RabbitMQ 4.4+ 且目标队列为 quorum → MQ 消息级原生延迟（本容器不参与）；
+ * <p>延时任务与队列任务统一为 TaskRunner 一种类型，{@code TaskData.taskDelay > 0} 即延时任务。
+ * 投递路由在 {@code TaskSendCenter.sendToQueue} 内自动判定：
+ * RabbitMQ 4.4+ 且目标队列为 quorum（两种协议） → MQ 消息级原生延迟（本容器不参与）；
  * 否则 → 本容器：submit 写 project 级单一 zset（member=Kryo(TaskData)，score=到期时间），
- * Leader mover 到期原子 pop 后经 sendToQueue 全路由转投 MQ（taskDelay 取负走即时分支，
- * 队列名由 taskClass 重 derive，无编码冗余）。</p>
+ * Leader mover 到期原子 pop 后经 sendToQueue 转投 MQ（taskDelay 取负走即时分支，
+ * 队列名由 taskClass 重新推导，无编码冗余）。</p>
  *
  * <p>本容器只做<b>时间搬运</b>，不做执行——无限速/重试/日志/监听器（这些由 TaskRunner 消费端统一承担）。
- * 执行模型为 <b>Leader 单例</b>（261120 定案）：仅 Leader 实例运行 mover 线程（与 croner SINGLETON 共用
+ * 执行模型为 <b>Leader 单例</b>：仅 Leader 实例运行 mover 线程（与 croner SINGLETON 共用
  * TaskLeaderElector 选举，60s 检查周期里同步启停），消除多实例并发竞争——每次批量 pop 不与其他实例交错，
  * Redis 扫描频次降为单实例量级。选主切换的短暂重叠窗口由 Lua 原子 pop 兜底（不会重复搬运），
  * Leader 空窗期内任务滞留 zset（不丢，新 Leader 接续搬运）。MQ 故障写回保留 ranTimes 自然累计，
@@ -34,6 +34,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class TaskDelayTransferContainer {
 
+    /**
+     * 日志器。
+     */
     private static final Logger log = LoggerFactory.getLogger(TaskDelayTransferContainer.class);
 
     /**
@@ -41,29 +44,29 @@ public class TaskDelayTransferContainer {
      */
     private final String zsetKey;
 
-
     /**
      * Redis 操作模板（String key + byte[] value，Kryo 序列化 TaskData）。
      */
     private final RedisTemplate<String, byte[]> redisTemplate;
 
     /**
-     * 投递中心（到期转投 MQ 用其 sendImmediate 即时入口）。与 SendCenter 互指，装配期经
-     * {@link #bindSendCenter(TaskSendCenter)} 单次回填破构造环（单线程装配，无并发可见性问题）。
+     * 投递中心（到期转投 MQ）。与 SendCenter 互指，装配期经 {@link #bindSendCenter(TaskSendCenter)}
+     * 单次回填破构造环（先建本容器再建 SendCenter；mover 仅在 Leader 选举周期任务中启动，晚于装配）。
      */
     private TaskSendCenter taskSendCenter;
-
-    /**
-     * Lua 原子 pop 脚本：ZRANGEBYSCORE 取出到期成员并 ZREM 删除，避免多实例重复取与查删竞态。
-     * KEYS[1]=zset key，ARGV[1]=当前时间戳(now)，ARGV[2]=批量数。
-     */
-    @SuppressWarnings("unchecked")
-    private static final DefaultRedisScript<List<byte[]>> POP_SCRIPT = new DefaultRedisScript<>("local members = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'LIMIT', 0, ARGV[2]) " + "if #members > 0 then for i=1,#members do redis.call('ZREM', KEYS[1], members[i]) end end " + "return members", (Class<List<byte[]>>) (Class<?>) List.class);
 
     /**
      * mover 单次批量。
      */
     private static final int BATCH = 100;
+
+    /**
+     * Lua 原子 pop 脚本：ZRANGEBYSCORE 取出到期成员并 ZREM 删除（单次 Lua 执行保证原子，
+     * 选主切换的重叠窗口内两个 mover 也不会取到同一成员）。
+     * KEYS[1]=zset key，ARGV[1]=当前时间戳(毫秒)，ARGV[2]=批量数。
+     */
+    @SuppressWarnings("unchecked")
+    private static final DefaultRedisScript<List<byte[]>> POP_SCRIPT = new DefaultRedisScript<>("local members = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'LIMIT', 0, ARGV[2]) " + "if #members > 0 then for i=1,#members do redis.call('ZREM', KEYS[1], members[i]) end end " + "return members", (Class<List<byte[]>>) (Class<?>) List.class);
 
     /**
      * 空转轮询间隔（毫秒）。
@@ -86,20 +89,19 @@ public class TaskDelayTransferContainer {
     private Thread moverThread;
 
     /**
+     * 构建延时任务搬运器。
+     *
      * @param redisTemplate uw-task 私有 Redis 模板（String key + byte[] value）
-     * @param taskProject   任务项目名（zset 注册表/分片的 project 维度隔离键，null 走 _default 域）
-     * @param taskSendCenter 任务投递中心（sendImmediate 即时投递）
+     * @param taskProject   任务项目名（zset 的 project 维度隔离键，空值走 _default）
      */
-    public TaskDelayTransferContainer(RedisTemplate<String, byte[]> redisTemplate, String taskProject, TaskSendCenter taskSendCenter) {
+    public TaskDelayTransferContainer(RedisTemplate<String, byte[]> redisTemplate, String taskProject) {
         this.redisTemplate = redisTemplate;
-        this.taskSendCenter = taskSendCenter;
-        String ns = "uw-task-delay:" + (taskProject == null || taskProject.isBlank() ? "_default" : taskProject);
-        this.zsetKey = ns;
+        this.zsetKey = "uw-task-delay:" + (taskProject == null || taskProject.isBlank() ? "_default" : taskProject);
     }
 
     /**
-     * 装配期回填投递中心（Transfer↔SendCenter 互指破环：先建 Transfer（SendCenter 可为 null），
-     * 再建 SendCenter 后单次回填；运行期不可再改）。
+     * 装配期回填投递中心（Transfer↔SendCenter 互指破环：先建 Transfer，再建 SendCenter 后单次回填；
+     * 运行期不可再改）。
      *
      * @param taskSendCenter 任务投递中心
      */
@@ -133,7 +135,7 @@ public class TaskDelayTransferContainer {
     }
 
     /**
-     * 停止 mover（bean 销毁回调；在途任务留 zset，重启后继续搬运不丢）。
+     * 停止 mover（应用关闭时调用；在途任务留 zset，重启后继续搬运不丢）。
      */
     public void shutdown() {
         running.set(false);
@@ -179,8 +181,7 @@ public class TaskDelayTransferContainer {
                 byte[] batchArg = String.valueOf(BATCH).getBytes(StandardCharsets.UTF_8);
                 List<byte[]> members = redisTemplate.execute(POP_SCRIPT, Collections.singletonList(zsetKey), nowArg, batchArg);
                 if (members != null && !members.isEmpty()) {
-                    for (Object member : members) {
-                        byte[] bytes = (byte[]) member;
+                    for (byte[] bytes : members) {
                         TaskData<?, ?> task;
                         try {
                             task = KryoUtils.deserialize(bytes, TaskData.class);
@@ -214,6 +215,7 @@ public class TaskDelayTransferContainer {
     /**
      * 转投单条任务到目标 MQ 队列（delay 取负标记"已到期搬运"）；失败写回 zset 延迟重试。
      *
+     * @param task 已到期的延时任务
      * @return 1=成功转投；0=失败已写回
      */
     private int transfer(TaskData<?, ?> task) {

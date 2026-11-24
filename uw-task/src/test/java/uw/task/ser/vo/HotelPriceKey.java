@@ -1,9 +1,9 @@
 package uw.task.ser.vo;
 
+import java.time.LocalDate;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import java.time.LocalDate;
 
 /**
  * 酒店报价KEY。
@@ -74,7 +74,6 @@ public class HotelPriceKey {
      */
     @JsonIgnore
     private boolean isGlobalOrderCheckPrice;
-
 
     public HotelPriceKey() {
     }

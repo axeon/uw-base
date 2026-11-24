@@ -2,9 +2,6 @@ package uw.task.container;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.task.rabbit.TaskAmqpListenerContainer;
-import uw.task.rabbit.TaskAmqpOps;
-
 import uw.common.util.ExceptionUtils;
 import uw.common.util.SystemClock;
 import uw.task.TaskData;
@@ -18,20 +15,23 @@ import uw.task.entity.TaskRunnerConfig;
 import uw.task.entity.TaskRunnerLog;
 import uw.task.entity.TaskRunnerStats;
 import uw.task.listener.TaskRunnerListener;
+import uw.task.rabbit.TaskAmqpListenerContainer;
+import uw.task.rabbit.TaskAmqpOps;
 import uw.task.util.TaskLocalRateLimiter;
-import uw.task.util.TaskSequence;
 import uw.task.util.TaskRateLimitHelper;
+import uw.task.util.TaskSequence;
 import uw.task.util.TaskStatsService;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 /**
  * 队列任务执行容器：MQ 消费端 / 本地执行 / RPC 服务端的统一执行入口。
  *
- * <p>由 TaskFactory 的各个 run* 方法或 RabbitMQ MessageListenerAdapter 调用 {@link #process}，
+ * <p>由 TaskFactory 的各个 run* 方法或协议适配层的队列监听器调用 {@link #process}，
  * 统一处理限速、延时、异常分类、监听器回调、统计与日志、失败重试。支持三种 runType：
  * {@code RUN_TYPE_GLOBAL}（MQ 消费）、{@code RUN_TYPE_LOCAL}（本地同步）、{@code RUN_TYPE_GLOBAL_RPC}（RPC 同步）。</p>
  *
@@ -43,7 +43,6 @@ public class TaskRunnerContainer {
      * 日志器。
      */
     private static final Logger log = LoggerFactory.getLogger(TaskRunnerContainer.class);
-
 
     /**
      * 任务配置
@@ -81,7 +80,7 @@ public class TaskRunnerContainer {
     private final TaskSendCenter taskSendCenter;
 
     /**
-     * 消息回调方法名（协议适配层反射调用）。
+     * 消息回调方法名（091 协议 MessageListenerAdapter 反射调用）。
      */
     public static final String PROCESS_METHOD = "process";
 
@@ -90,9 +89,8 @@ public class TaskRunnerContainer {
      */
     private final ConcurrentHashMap<String, TaskAmqpListenerContainer> queueListenerMap = new ConcurrentHashMap<>();
 
-
     /**
-     * 默认构造器。
+     * 构造队列任务执行容器。
      *
      * @param taskProperties        任务全局配置
      * @param taskApiClient         服务端任务 API 客户端（发送日志等）
@@ -100,7 +98,7 @@ public class TaskRunnerContainer {
      * @param taskLocalRateLimiter  进程内限速器（LOCAL 系列限速）
      * @param taskListenerManager   任务监听管理器（pre/postExecute 回调）
      * @param taskAmqpOps           协议无关 AMQP 操作面（声明/收发/监听/查询）
-     * @param taskSendCenter          任务投递中心（GLOBAL 重试重投，全路由）
+     * @param taskSendCenter         任务投递中心（GLOBAL 重试重投，全路由）
      */
     public TaskRunnerContainer(UwTaskProperties taskProperties, TaskApiClient taskApiClient, TaskMetaInfoManager taskMetaInfoManager,
                                TaskLocalRateLimiter taskLocalRateLimiter, TaskListenerManager taskListenerManager,
@@ -113,7 +111,6 @@ public class TaskRunnerContainer {
         this.taskAmqpOps = taskAmqpOps;
         this.taskSendCenter = taskSendCenter;
     }
-
 
     /**
      * 执行单个队列任务（MQ 消费端 / 本地执行 / RPC 服务端的统一入口）。
@@ -130,7 +127,7 @@ public class TaskRunnerContainer {
      *       GLOBAL（MQ 队列任务）走 {@link TaskSendCenter#sendToQueue} 重新投递；
      *       <b>GLOBAL_RPC 不在服务端重试</b>（RPC 调用方同步等待，服务端重试易致调用方超时——失败结果直接返回调用方自行决策）。</li>
      * </ol>
-     * RPC/LOCAL 模式返回携带结果的 taskData；GLOBAL 模式（MQ 消费）返回 null（结果已随重试/日志处理）。</p>
+     * RPC/LOCAL 模式返回携带结果的 taskData；GLOBAL 模式（MQ 消费）返回 null（结果已随重试/日志处理）。
      *
      * @param taskData 任务数据
      * @return RPC/LOCAL 模式返回 taskData（含结果）；GLOBAL 模式返回 null；入参为 null 时返回 null
@@ -145,7 +142,7 @@ public class TaskRunnerContainer {
             return processInternal(taskData);
         } catch (Throwable e) {
             // 兜底守护：未守护路径（getRunnerConfigByData 找不到配置 / 限速 tryAcquire Redis 故障 / 重试 runTaskLocal·sendToQueue 抛等）
-            // 逃逸到 MessageListenerAdapter 配合 defaultRequeueRejected(false) 会直接丢消息——此处 catch 保证消息 ack（不丢）。
+            // 逃逸到 091 监听器（defaultRequeueRejected=false）会直接丢消息——此处 catch 保证消息 ack（不丢）。
             // 防双计：finishDate==null 说明异常发生在正常统计/日志落盘之前（配置缺失/限速故障），补写 stats/log；
             // finishDate!=null 说明异常发生在重试投递阶段（runTaskLocal/sendToQueue 抛），正常路径已用真实失败态写过 stats/log，
             // 此处仅记录日志，不重复写统计、不覆盖真实 state。
@@ -153,27 +150,19 @@ public class TaskRunnerContainer {
                 taskData.setState(TaskData.STATE_FAIL_PROGRAM);
                 taskData.setErrorInfo(ExceptionUtils.exceptionToString(e));
                 taskData.setFinishDate(SystemClock.nowDate());
-                long taskId = 0;
-                try {
-                    TaskRunnerConfig cfg = taskMetaInfoManager.getRunnerConfigByData(taskData);
-                    if (cfg != null) {
-                        taskId = cfg.getId();
-                    }
-                } catch (Exception ignore) {
-                    // 配置缺失（正是本 catch 常见触发原因），taskId 保持 0
-                }
-                int[] failCounters = TaskStatsService.toFailCounters(taskData.getState());
-                TaskStatsService.updateRunnerStats(taskId, 1, failCounters[0], failCounters[1], failCounters[2], failCounters[3], 0, 0, 0);
-                TaskRunnerLog runnerLog = new TaskRunnerLog(taskData);
-                runnerLog.setTaskId(taskId);
-                runnerLog.setLogLevel(TaskRunnerConfig.TASK_LOG_TYPE_RECORD);
-                taskApiClient.sendTaskRunnerLog(runnerLog);
+                recordProgramFail(taskData);
             }
             log.error("TaskRunner process 未预期异常(已捕获防丢消息),taskClass={}: {}", taskData.getTaskClass(), e.getMessage(), e);
             return taskData;
         }
     }
 
+    /**
+     * 单轮执行主体：定位 runner 与配置 → 限速 → 执行 → 统计与日志 → 按失败类型重试（流程说明见 {@link #process}）。
+     *
+     * @param taskData 任务数据
+     * @return RPC/LOCAL 模式返回 taskData；GLOBAL 模式返回 null
+     */
     private TaskData processInternal(TaskData taskData) {
         // 设置开始消费时间
         taskData.setConsumeDate(SystemClock.nowDate());
@@ -191,19 +180,7 @@ public class TaskRunnerContainer {
             taskData.setErrorInfo("TaskRunner not found: " + taskData.getTaskClass());
             taskData.setFinishDate(SystemClock.nowDate());
             // 错投/未注册：强制写一条 ES 日志让可观测；明确不重试（不调用 sendToQueue/runTaskLocal）。
-            long taskId = 0;
-            try {
-                TaskRunnerConfig cfg = taskMetaInfoManager.getRunnerConfigByData(taskData);
-                if (cfg != null) {
-                    taskId = cfg.getId();
-                }
-            } catch (Exception ignore) {
-                // 未注册配置（实例/配置同进退），taskId 保持 0
-            }
-            TaskRunnerLog runnerLog = new TaskRunnerLog(taskData);
-            runnerLog.setTaskId(taskId);
-            runnerLog.setLogLevel(TaskRunnerConfig.TASK_LOG_TYPE_RECORD);
-            taskApiClient.sendTaskRunnerLog(runnerLog);
+            recordProgramFail(taskData);
             return taskData;
         }
         // 获取任务设置数据
@@ -252,6 +229,9 @@ public class TaskRunnerContainer {
         // 如果允许，则开始执行。
         if (rateLimitPassed) {
             List<TaskRunnerListener> runnerListenerList = taskListenerManager.getRunnerListenerList();
+            // taskData 在下方重试分支可能被重新赋值，监听器回调固定引用本轮执行的这个对象
+            final TaskData<?, ?> executing = taskData;
+            notifyRunnerListeners(runnerListenerList, listener -> listener.onPreExecute(executing));
             try {
                 // 执行任务
                 taskData.setResultData(taskRunner.runTask(taskData));
@@ -267,15 +247,7 @@ public class TaskRunnerContainer {
                 }
             }
             // 执行监听器操作
-            if (runnerListenerList != null && runnerListenerList.size() > 0) {
-                try {
-                    for (TaskRunnerListener listener : runnerListenerList) {
-                        listener.onPostExecute(taskData);
-                    }
-                } catch (Throwable e) {
-                    log.error(e.getMessage(), e);
-                }
-            }
+            notifyRunnerListeners(runnerListenerList, listener -> listener.onPostExecute(executing));
             // 清除refObject。
             taskData.setRefObject(null);
         } else {
@@ -301,55 +273,81 @@ public class TaskRunnerContainer {
             taskApiClient.sendTaskRunnerLog(log);
         }
 
-        if (taskData.getRunType() == TaskData.RUN_TYPE_GLOBAL_RPC || taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
-            // GLOBAL_RPC（RPC 调用，调用方同步等待）不在服务端重试——重新执行会让调用方因等待而超时，
-            // 失败结果直接返回调用方由其决策是否重试；仅 LOCAL 任务在本地重跑。
-            if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL && taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO) {
-                if (taskData.getState() > TaskData.STATE_SUCCESS) {
-                    //设置任务延时
-                    taskData.setTaskDelay(taskData.getRanTimes() * taskProperties.getTaskRpcRetryDelay());
-                    if (taskData.getState() == TaskData.STATE_FAIL_CONFIG) {
-                        // 重试判定用 <=：ranTimes 含本次执行，N 次额外重试意味着 ranTimes 可达 N+1。
-                        // 即 retryTimesByOverrated=N 时，总计执行 N+1 次（1 次初始 + N 次重试）。
-                        if (taskData.getRanTimes() <= taskConfig.getRetryTimesByOverrated()) {
-                            taskData = retryLocal(cleanTaskInfo(taskData));
-                        }
-                    } else if (taskData.getState() == TaskData.STATE_FAIL_PARTNER) {
-                        if (taskData.getRanTimes() <= taskConfig.getRetryTimesByPartner()) {
-                            taskData = retryLocal(cleanTaskInfo(taskData));
-                        }
-                    } else if (taskData.getState() == TaskData.STATE_FAIL_PROGRAM) {
-                        if (taskData.getRanTimes() <= taskConfig.getRetryTimesByProgram()) {
-                            taskData = retryLocal(cleanTaskInfo(taskData));
-                        }
-                    }
-                }
+        if (taskData.getRunType() == TaskData.RUN_TYPE_GLOBAL_RPC) {
+            // RPC 调用（调用方同步等待）不在服务端重试——重新执行会让调用方因等待而超时，
+            // 失败结果直接返回调用方由其决策是否重试。
+            return taskData;
+        }
+        if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
+            // 仅 LOCAL 任务在本地重跑；GLOBAL 任务重新入队。
+            if (taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO && taskData.getState() > TaskData.STATE_SUCCESS
+                    && taskData.getRanTimes() <= retryLimit(taskConfig, taskData.getState())) {
+                taskData.setTaskDelay(taskData.getRanTimes() * taskProperties.getTaskRpcRetryDelay());
+                taskData = retryLocal(cleanTaskInfo(taskData));
             }
             return taskData;
-        } else {
-            // 如果异常，根据任务设置，重新跑
-            if (taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO) {
-                if (taskData.getState() > TaskData.STATE_SUCCESS) {
-                    //设置任务延时
-                    taskData.setTaskDelay(taskData.getRanTimes() * taskProperties.getTaskQueueRetryDelay());
-                    if (taskData.getState() == TaskData.STATE_FAIL_CONFIG) {
-                        // 重试判定用 <=：ranTimes 含本次执行，N 次额外重试意味着 ranTimes 可达 N+1。
-                        if (taskData.getRanTimes() <= taskConfig.getRetryTimesByOverrated()) {
-                            taskSendCenter.sendToQueue(cleanTaskInfo(taskData));
-                        }
-                    } else if (taskData.getState() == TaskData.STATE_FAIL_PARTNER) {
-                        if (taskData.getRanTimes() <= taskConfig.getRetryTimesByPartner()) {
-                            taskSendCenter.sendToQueue(cleanTaskInfo(taskData));
-                        }
-                    } else if (taskData.getState() == TaskData.STATE_FAIL_PROGRAM) {
-                        if (taskData.getRanTimes() <= taskConfig.getRetryTimesByProgram()) {
-                            taskSendCenter.sendToQueue(cleanTaskInfo(taskData));
-                        }
-                    }
-                }
-            }
+        }
+        if (taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO && taskData.getState() > TaskData.STATE_SUCCESS
+                && taskData.getRanTimes() <= retryLimit(taskConfig, taskData.getState())) {
+            taskData.setTaskDelay(taskData.getRanTimes() * taskProperties.getTaskQueueRetryDelay());
+            taskSendCenter.sendToQueue(cleanTaskInfo(taskData));
         }
         return null;
+    }
+
+    /**
+     * 逐个回调 runner 监听器（COW 列表快照遍历，单个监听器异常只记日志不中断其余回调）。
+     *
+     * @param listeners 监听器列表
+     * @param callback  本次要触发的回调
+     */
+    private static void notifyRunnerListeners(List<TaskRunnerListener> listeners, Consumer<TaskRunnerListener> callback) {
+        for (TaskRunnerListener listener : listeners) {
+            try {
+                callback.accept(listener);
+            } catch (Throwable e) {
+                log.error(e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
+     * 按失败状态取重试上限（OVERRATED 即限速超限 FAIL_CONFIG）。STATE_FAIL_DATA 无重试通道，返回 0。
+     *
+     * @param taskConfig 任务配置
+     * @param state      失败状态
+     * @return 额外重试次数上限
+     */
+    private static int retryLimit(TaskRunnerConfig taskConfig, int state) {
+        // 重试判定用 <=：ranTimes 含本次执行，上限 N 时总计执行 N+1 次（1 次初始 + N 次重试）。
+        if (state == TaskData.STATE_FAIL_CONFIG) {
+            return taskConfig.getRetryTimesByOverrated();
+        }
+        if (state == TaskData.STATE_FAIL_PARTNER) {
+            return taskConfig.getRetryTimesByPartner();
+        }
+        if (state == TaskData.STATE_FAIL_PROGRAM) {
+            return taskConfig.getRetryTimesByProgram();
+        }
+        return 0;
+    }
+
+    /**
+     * 框架级程序失败落盘（runner 缺失 / process 兜底异常）：写统计并强制记一条 ES 日志。
+     * <p>taskId 与日志截断长度按任务数据反查配置（配置缺失记 0，即 taskId=0、日志不截断）。</p>
+     *
+     * @param taskData 已置 STATE_FAIL_PROGRAM 与 finishDate 的任务数据
+     */
+    private void recordProgramFail(TaskData<?, ?> taskData) {
+        TaskRunnerConfig config = taskMetaInfoManager.findRunnerConfig(taskData);
+        long taskId = config == null ? 0 : config.getId();
+        int[] failCounters = TaskStatsService.toFailCounters(taskData.getState());
+        TaskStatsService.updateRunnerStats(taskId, 1, failCounters[0], failCounters[1], failCounters[2], failCounters[3], 0, 0, 0);
+        TaskRunnerLog runnerLog = new TaskRunnerLog(taskData);
+        runnerLog.setTaskId(taskId);
+        runnerLog.setLogLevel(TaskRunnerConfig.TASK_LOG_TYPE_RECORD);
+        runnerLog.setLogLimitSize(config == null ? 0 : config.getLogLimitSize());
+        taskApiClient.sendTaskRunnerLog(runnerLog);
     }
 
     /**
@@ -367,9 +365,10 @@ public class TaskRunnerContainer {
     }
 
     /**
-     * 清理任务信息。
+     * 复制任务数据并清场运行期字段，得到可重投/重跑的副本（原对象保留执行结果供日志与返回）。
      *
-     * @param srcData
+     * @param srcData 已执行失败的任务数据
+     * @return 清场后的副本
      */
     private TaskData cleanTaskInfo(TaskData srcData) {
         TaskData taskData = srcData.copy();
@@ -386,6 +385,11 @@ public class TaskRunnerContainer {
      * @param runnerConfig runner 配置信息
      */
     public void registerQueueListener(TaskRunnerConfig runnerConfig) {
+        if (taskAmqpOps == null) {
+            // 仅定时任务档（未配置 MQ）：不声明队列、不启动监听（否则每分钟连接失败刷警告）
+            log.debug("未配置 MQ，跳过队列监听注册: [{}]", runnerConfig.getTaskClass());
+            return;
+        }
         String queueName = taskMetaInfoManager.getQueueNameByConfig(runnerConfig);
         TaskAmqpListenerContainer sysContainer = queueListenerMap.computeIfAbsent(queueName, key -> {
             if (runnerConfig.getState() != 1) {
@@ -417,30 +421,22 @@ public class TaskRunnerContainer {
                     log.error(e.getMessage(), e);
                 }
             } else {
-                // state<1：销毁前检查是否仍有其他活跃配置映射到同一 queueName，避免误销毁共享 listener
-                boolean stillInUse = taskMetaInfoManager.getRunnerConfigMap().values().stream()
-                        .anyMatch(c -> queueName.equals(taskMetaInfoManager.getQueueNameByConfig(c)));
-                if (!stillInUse) {
-                    queueListenerMap.remove(queueName);
-                    sysContainer.destroy();
-                } else if (log.isDebugEnabled()) {
-                    log.debug("TaskRunner[{}]仍有活跃配置共享此队列，跳过 destroy", queueName);
-                }
+                // state<1：队列名即配置键（任务级队列，一对一），销毁监听并摘除缓存
+                queueListenerMap.remove(queueName);
+                sysContainer.destroy();
             }
         }
     }
-
 
     /**
      * 暂停所有队列监听容器（destroy listener + 清 map），保留底层 connectionFactory 以便恢复。
      * <p>用于主机被禁用(state=0)或降级恢复切换时停 listener 却保留连接，解除禁用后可重新注册。</p>
      */
     public void suspendAll() {
-        log.info("All TaskRunner Suspended....");
+        log.info("TaskRunner 全部队列监听已暂停");
         for (TaskAmqpListenerContainer container : queueListenerMap.values()) {
             try {
-                // shutdown() 是彻底关闭、stop() 是优雅停止；先 shutdown 后 stop 状态会异常。
-                // 091 走 destroy()（Spring 生命周期顺序关闭）；100 走 stop()（协议适配层内分发）。
+                // 经协议适配层分发：091 走 destroy()（Spring 生命周期顺序关闭），1.0 关闭全部消费者。
                 container.destroy();
             } catch (Throwable e) {
                 // 单个 listener destroy 失败不阻断其余 listener 停机 + clear（host-disable 是运维关键操作，须保证后续 croner 也被停）
@@ -452,21 +448,23 @@ public class TaskRunnerContainer {
     }
 
     /**
-     * 销毁所有队列监听容器（@PreDestroy 场景）：Runner 的 suspend=destroy（listener destroy 停消费，connectionFactory 由 UwTaskAutoConfiguration 关）。
+     * 销毁所有队列监听容器（应用关闭场景）：listener 销毁即停消费，底层连接由 AMQP 操作面统一关闭。
      */
     public void shutdown() {
-        log.info("All TaskRunner Destroy....");
+        log.info("TaskRunner 开始销毁，暂停全部队列监听");
         suspendAll();
     }
 
     /**
      * 填充 runner stats 的 queueSize（队列积压数）与 consumerNum（消费者数）。
-     * <p>reportHostInfo 上报前调用，按 stats.taskId 反查 configMap 得到 queueName，用 queueDeclarePassive 查询积压。</p>
+     * <p>reportHostInfo 上报前调用，按 stats.taskId 反查 configMap 得到 queueName，经协议操作面查询积压
+     * （091 用 queueDeclarePassive，1.0 用管理通道）；同一队列只查一次。</p>
      *
      * @param taskRunnerStatsList runner 统计列表（原地填充 queueSize/consumerNum）
      */
     public void fillQueueBacklog(List<TaskRunnerStats> taskRunnerStatsList) {
-        if (taskRunnerStatsList == null || taskRunnerStatsList.isEmpty()) {
+        if (taskAmqpOps == null || taskRunnerStatsList == null || taskRunnerStatsList.isEmpty()) {
+            // 未配置 MQ（仅定时任务档）：无队列积压可查
             return;
         }
         // 预先构建 taskId -> queueName 索引，避免对每个 stats 遍历全部 config（O(n*m)）。
@@ -495,6 +493,5 @@ public class TaskRunnerContainer {
             stats.setConsumerNum(info[1]);
         }
     }
-
 }
 

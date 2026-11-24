@@ -1,10 +1,10 @@
 package uw.task;
 
-import org.junit.jupiter.api.Test;
-import uw.common.util.KryoUtils;
-
 import java.util.Date;
 import java.util.Objects;
+
+import org.junit.jupiter.api.Test;
+import uw.common.util.KryoUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

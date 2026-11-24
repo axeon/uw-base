@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>按 taskId 聚合 croner / runner 的执行计数与耗时，供主机状态报告周期性采集上报。</p>
  *
- * <h3>并发模型</h3>
+ * <p><b>并发模型</b></p>
  * 单读多写：{@code updateXxxStats} 由多个任务执行线程并发调用，{@code getXxxStats} 仅由主机状态上报
  * 的单一调度线程（每 180 秒一次）调用。
  * <ul>
@@ -43,6 +43,11 @@ public class TaskStatsService {
      */
     private static final ConcurrentHashMap<Long, TaskRunnerStats> RUNNER_STATS_MAP = new ConcurrentHashMap<>();
 
+    /**
+     * 工具类，禁止实例化。
+     */
+    private TaskStatsService() {
+    }
 
     /**
      * 更新 croner 统计（聚合到内存 map，reportHostInfo 上报时取快照清空）。
@@ -57,13 +62,8 @@ public class TaskStatsService {
      * @param timeRun        运行耗时（毫秒）
      */
     public static void updateCronerStats(long taskId, int numAll, int numFailProgram, int numFailConfig, int numFailData, int numFailPartner, int timeWait, int timeRun) {
-        CRONER_STATS_MAP.compute(taskId, (k, v) -> {
-            if (v != null) {
-                return v.addMetrics(numAll, numFailProgram, numFailConfig, numFailData, numFailPartner, timeWait, timeRun);
-            } else {
-                return new TaskCronerStats(k).addMetrics(numAll, numFailProgram, numFailConfig, numFailData, numFailPartner, timeWait, timeRun);
-            }
-        });
+        CRONER_STATS_MAP.compute(taskId, (k, v) -> (v == null ? new TaskCronerStats(k) : v)
+                .addMetrics(numAll, numFailProgram, numFailConfig, numFailData, numFailPartner, timeWait, timeRun));
     }
 
     /**
@@ -76,7 +76,6 @@ public class TaskStatsService {
         CRONER_STATS_MAP.clear();
         return list;
     }
-
 
     /**
      * 更新 runner 统计（聚合到内存 map，reportHostInfo 上报时取快照清空）。
@@ -92,13 +91,8 @@ public class TaskStatsService {
      * @param timeRun        运行耗时（毫秒）
      */
     public static void updateRunnerStats(long taskId, int numAll, int numFailProgram, int numFailConfig, int numFailData, int numFailPartner, int timeWaitQueue, int timeWaitDelay, int timeRun) {
-        RUNNER_STATS_MAP.compute(taskId, (k, v) -> {
-            if (v != null) {
-                return v.addMetrics(numAll, numFailProgram, numFailConfig, numFailData, numFailPartner, timeWaitQueue, timeWaitDelay, timeRun);
-            } else {
-                return new TaskRunnerStats(k).addMetrics(numAll, numFailProgram, numFailConfig, numFailData, numFailPartner, timeWaitQueue, timeWaitDelay, timeRun);
-            }
-        });
+        RUNNER_STATS_MAP.compute(taskId, (k, v) -> (v == null ? new TaskRunnerStats(k) : v)
+                .addMetrics(numAll, numFailProgram, numFailConfig, numFailData, numFailPartner, timeWaitQueue, timeWaitDelay, timeRun));
     }
 
     /**
@@ -111,7 +105,6 @@ public class TaskStatsService {
         RUNNER_STATS_MAP.clear();
         return list;
     }
-
 
     /**
      * 将任务状态映射为 4 元失败计数数组：[program, config, data, partner]。
@@ -131,7 +124,7 @@ public class TaskStatsService {
     /**
      * 将执行异常映射为任务失败状态。
      * {@link TaskDataException}→DATA、{@link TaskPartnerException}→PARTNER、其余→PROGRAM。
-     * 调用方据此 setState，并用 {@code ExceptionUtils.exceptionToString(e)} 写入 errorInfo / resultData。</p>
+     * 调用方据此 setState，并用 {@code ExceptionUtils.exceptionToString(e)} 写入 errorInfo / resultData。
      *
      * @param e 任务执行抛出的异常
      * @return 对应的 STATE_FAIL_* 常量
@@ -155,5 +148,4 @@ public class TaskStatsService {
     public static int toIntClamped(long value) {
         return Math.clamp(value, 0, Integer.MAX_VALUE);
     }
-
 }

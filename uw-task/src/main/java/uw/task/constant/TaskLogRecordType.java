@@ -12,7 +12,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum TaskLogRecordType {
 
-
     /**
      * 什么都不记录
      */
@@ -48,6 +47,18 @@ public enum TaskLogRecordType {
      */
     private final String label;
 
+    /**
+
+     * 构建枚举项。
+
+     *
+
+     * @param value 枚举数值
+
+     * @param label 枚举中文标签
+
+     */
+
     TaskLogRecordType(int value, String label) {
         this.value = value;
         this.label = label;
@@ -69,6 +80,8 @@ public enum TaskLogRecordType {
     }
 
     /**
+     * 返回枚举数值。
+     *
      * @return 枚举数值
      */
     public int getValue() {
@@ -91,6 +104,8 @@ public enum TaskLogRecordType {
     }
 
     /**
+     * 返回枚举中文标签。
+     *
      * @return 枚举中文标签
      */
     public String getLabel() {

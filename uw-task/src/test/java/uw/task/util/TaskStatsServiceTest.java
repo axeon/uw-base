@@ -1,10 +1,10 @@
 package uw.task.util;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import uw.task.entity.TaskCronerStats;
 import uw.task.entity.TaskRunnerStats;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -75,5 +75,4 @@ class TaskStatsServiceTest {
 
         assertTrue(TaskStatsService.getCronerStats().isEmpty());
     }
-
 }

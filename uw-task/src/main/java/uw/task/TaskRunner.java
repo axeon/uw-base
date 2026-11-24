@@ -1,14 +1,13 @@
 package uw.task;
 
 import uw.task.entity.TaskContact;
+import uw.task.entity.TaskRunnerConfig;
 import uw.task.exception.TaskDataException;
 import uw.task.exception.TaskPartnerException;
-import uw.task.entity.TaskRunnerConfig;
 
 /**
- * 任务执行器。 所有的任务都通过实现此接口实现.
- * TaskParam和ResultData可通过泛型参数制定具体类型。
- * TP,TD应和TaskData的泛型参数完全一致，否则会导致运行时出错。
+ * 队列任务基类，所有队列任务继承此类实现。
+ * <p>TP/RD 必须与 {@link TaskData} 的泛型参数完全一致，否则运行时出错。</p>
  *
  * @param <TP> taskParam参数
  * @param <RD> ResultData返回结果
@@ -17,11 +16,17 @@ import uw.task.entity.TaskRunnerConfig;
 public abstract class TaskRunner<TP, RD> {
 
     /**
+     * 默认构造器。
+     */
+    public TaskRunner() {
+    }
+
+    /**
      * 执行任务。
-     * 业务层面的异常请根据实际情况手动抛出以下受识别的异常：
-     * 1. {@link TaskPartnerException} 任务合作方异常，此异常会引发任务重试。
-     * 2. {@link TaskDataException} 任务数据异常，此异常不会引发任务重试。
-     * ！！！其它未捕获异常一律认为是程序异常，不会引发任务重试。
+     * 业务层面的异常请根据实际情况抛出以下受识别的异常（未捕获的异常框架按类型归入失败统计）：
+     * 1. {@link TaskPartnerException} 合作方异常：状态 FAIL_PARTNER，按 {@code retryTimesByPartner} 自动重试。
+     * 2. {@link TaskDataException} 数据异常：状态 FAIL_DATA，不自动重试。
+     * 3. 其它未捕获异常：程序异常，状态 FAIL_PROGRAM，按 {@code retryTimesByProgram} 自动重试（默认 0=不重试）。
      *
      * @param taskData 数据
      * @return 指定的返回对象
@@ -30,9 +35,9 @@ public abstract class TaskRunner<TP, RD> {
     public abstract RD runTask(TaskData<TP, RD> taskData) throws Exception;
 
     /**
-     * 初始化配置信息
+     * 初始化默认配置（首次注册时上传到 task-center，center 不可达时作为本地降级配置）。
      *
-     * @return TaskRunnerConfig配置
+     * @return 队列任务配置
      */
     public abstract TaskRunnerConfig initConfig();
 

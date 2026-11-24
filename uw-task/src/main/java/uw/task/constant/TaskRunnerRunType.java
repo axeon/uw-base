@@ -13,11 +13,10 @@ import uw.task.TaskData;
  *   <li>{@link #GLOBAL_RPC}：全局同步 RPC 执行，经 MQ 发送并等待结果返回；</li>
  *   <li>{@link #AUTO_RPC}：自动判定——本机存在匹配 runner 则本地执行，否则走 GLOBAL_RPC。</li>
  * </ul>
- * 序列化为 OBJECT 形态（含 value/label）。</p>
+ * 序列化为 OBJECT 形态（含 value/label）。
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum TaskRunnerRunType {
-
 
     /**
      * 运行模式：本地运行
@@ -39,7 +38,6 @@ public enum TaskRunnerRunType {
      */
     AUTO_RPC(6, "自动运行RPC");
 
-
     /**
      * 枚举数值，用于持久化与传输。
      */
@@ -49,6 +47,18 @@ public enum TaskRunnerRunType {
      * 枚举中文标签，用于展示。
      */
     private final String label;
+
+    /**
+
+     * 构建枚举项。
+
+     *
+
+     * @param value 枚举数值
+
+     * @param label 枚举中文标签
+
+     */
 
     TaskRunnerRunType(int value, String label) {
         this.value = value;
@@ -71,6 +81,8 @@ public enum TaskRunnerRunType {
     }
 
     /**
+     * 返回枚举数值。
+     *
      * @return 枚举数值
      */
     public int getValue() {
@@ -93,6 +105,8 @@ public enum TaskRunnerRunType {
     }
 
     /**
+     * 返回枚举中文标签。
+     *
      * @return 枚举中文标签
      */
     public String getLabel() {

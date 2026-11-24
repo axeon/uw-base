@@ -1,12 +1,13 @@
 package uw.task.demo;
 
+import java.util.List;
+
 import org.assertj.core.util.Lists;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import uw.task.TaskData;
 import uw.task.converter.TaskMessageConverter;
-
-import java.util.List;
+import uw.task.demo.SimpleListRunner;
 
 /**
  *

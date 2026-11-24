@@ -9,22 +9,12 @@ package uw.task.rabbit;
 public enum TaskAmqpProtocol {
 
     /**
-     * AMQP 0-9-1：默认保守路径，兼容全部托管/自建环境。
+     * AMQP 0-9-1：1.0 握手不可用时的回退路径，兼容全部托管/自建环境。
      */
     AMQP_091,
 
     /**
-     * AMQP 1.0：RabbitMQ 4.x 与 0-9-1 同端口协议头协商（无需独立监听端口）；4.4+ 可用原生延迟消息。
+     * AMQP 1.0：RabbitMQ 4.x 与 0-9-1 同端口协议头协商（无需独立监听端口）；原生延迟消息与协议无关（4.4+ 两种协议都可用）。
      */
     AMQP_100;
-
-    public static TaskAmqpProtocol fromConfig(String value) {
-        if (value == null || value.isBlank() || "auto".equalsIgnoreCase(value.trim())) {
-            return null;
-        }
-        if ("100".equals(value.trim()) || "1.0".equalsIgnoreCase(value.trim()) || "amqp10".equalsIgnoreCase(value.trim())) {
-            return AMQP_100;
-        }
-        return AMQP_091;
-    }
 }

@@ -1,11 +1,11 @@
 package uw.task.demo;
 
+import java.util.List;
+
 import uw.task.TaskData;
 import uw.task.TaskRunner;
 import uw.task.entity.TaskContact;
 import uw.task.entity.TaskRunnerConfig;
-
-import java.util.List;
 
 /**
  *

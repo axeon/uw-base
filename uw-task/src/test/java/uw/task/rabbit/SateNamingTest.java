@@ -1,6 +1,10 @@
 package uw.task.rabbit;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.jupiter.api.Test;
+import org.springframework.core.task.TaskExecutor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,8 +22,8 @@ class SateNamingTest {
     @Test
     void threadNameIsQueueNamePlusIndex() throws Exception {
         String queueName = "uw.task.demo.E2eSlowRunner#$default";
-        org.springframework.core.task.TaskExecutor executor = new org.springframework.core.task.TaskExecutor() {
-            private final java.util.concurrent.atomic.AtomicInteger idx = new java.util.concurrent.atomic.AtomicInteger();
+        TaskExecutor executor = new TaskExecutor() {
+            private final AtomicInteger idx = new AtomicInteger();
             @Override
             public void execute(Runnable task) {
                 Thread.ofVirtual().name(queueName + "-", idx.getAndIncrement()).start(task);
@@ -27,7 +31,7 @@ class SateNamingTest {
         };
         String[] names = new String[3];
         boolean[] virtual = new boolean[1];
-        java.util.concurrent.CountDownLatch done = new java.util.concurrent.CountDownLatch(3);
+        CountDownLatch done = new CountDownLatch(3);
         for (int i = 0; i < 3; i++) {
             final int idx = i;
             executor.execute(() -> {

@@ -1,6 +1,5 @@
 package uw.task.conf;
 
-import java.net.InetAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.response.ResponseData;
@@ -16,38 +15,35 @@ import uw.task.util.TaskStatsService;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
+import java.net.InetAddress;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * 任务服务注册器：负责与 task-center 交互，拉取/上传 runner、croner 三类任务的动态配置，
+ * 任务服务注册器：负责与 task-center 交互，拉取/上传 TaskRunner、TaskCroner 两类任务的动态配置，
  * 并驱动各自容器的启动、热更新与暂停。
  *
- * <p>由 {@link UwTaskAutoConfiguration} 的调度线程池周期性调用（默认 60s）：
- * {@link #updateConfig} 编排三类配置的拉取与刷新，分别委托给三个独立方法——
- * {@link #updateTaskRunnerConfig}（基于 {@link #runnerLastUpdateTime} 增量拉取 runner 配置，首次上传本地默认配置并注册队列监听）、
- * {@link #updateTaskCronerConfig}（基于 {@link #cronerLastUpdateTime} 增量拉取 croner 配置，首次上传本地默认配置并配置调度）、
- * {@link #reportHostInfo} 上报 JVM/线程/统计/队列积压等信息。</p>
+ * <p>由 {@link UwTaskAutoConfiguration} 的调度线程池周期性调用：
+ * {@link #updateConfig}（60s）编排两类配置的增量拉取与刷新，
+ * {@link #reportHostInfo}（180s）上报 JVM/线程/统计/队列积压等信息并处理主机禁用/启用。</p>
  *
- * <h3>降级与恢复（center 不可达时）</h3>
- * <p>三类任务各自独立判定，核心机制：<b>fetch 失败时 {@code xxxLastUpdateTime} 不推进</b>（拉取失败直接 return，不更新时间戳），
- * 保证 center 恢复后能按断联前的时间点补拉增量，不丢配置变更窗口。</p>
+ * <p><b>降级与恢复（center 不可达时）</b></p>
+ * <p>两类任务各自独立判定，核心机制：<b>拉取失败时 {@code xxxLastUpdateTime} 不推进</b>（直接 return，
+ * 不更新时间戳），保证 center 恢复后能按断联前的时间点补拉增量，不丢配置变更窗口。</p>
  * <ul>
  *   <li><b>启动降级</b>：仅首次拉取失败（{@code xxxFirstRun && !xxxDegraded}）触发，用 {@code initConfig()} 本地默认配置
- *       仍为初始 0，且降级分支<b>不</b>把 {@code xxxFirstRun} 置 false。center 恢复后 fetch 用 {@code lastUpdateTime=0} 拉全量，
- *       firstRun 块重新执行（upload 缺失配置 + register/configure），按 configKey 覆盖本地降级 config，无残留。</li>
+ *       启动。此时 {@code xxxLastUpdateTime} 仍为初始 0，且降级分支<b>不</b>把 {@code xxxFirstRun} 置 false。center 恢复后
+ *       fetch 用 {@code lastUpdateTime=0} 拉全量，firstRun 块重新执行（上传缺失配置 + register/configure），
+ *       按 configKey 覆盖本地降级 config，无残留。</li>
  *   <li><b>运行中断联</b>：非首次拉取失败不触发降级（firstRun 已 false），直接 fail-fast return 保留上次配置，
  *       {@code xxxLastUpdateTime} 冻在断联前。center 恢复后按断联前时间点拉增量，补齐断联期间的配置变更。</li>
- *   <li><b>无需重置 lastUpdateTime</b>：启动降级必然发生在 {@code lastUpdateTime=0}（初始值），恢复即全量拉取；
- *       运行中断联靠"时间戳不推进"自然补齐增量，两类场景都不需要额外的 lastUpdateTime 重置。</li>
  * </ul>
- * 一旦拉取成功就不再因后续失败重新降级——运行中故障靠 fail-fast 保留配置，避免降级/恢复反复抖动。</p>
+ * <p>一旦拉取成功就不再因后续失败重新降级——运行中故障靠 fail-fast 保留配置，避免降级/恢复反复抖动。</p>
  *
- * <h3>主循环增量驱动</h3>
- * （updatedXxxConfigMap）</b>，不遍历全量 configMap：配置无变化时 fetch 返回空、主循环不遍历，避免每 60s 对全量 config 重复
+ * <p><b>主循环增量驱动</b></p>
+ * <p>只遍历本次 fetch 的增量（updatedXxxConfigMap），不遍历全量 configMap：配置无变化时 fetch 返回空、主循环不遍历。
  * firstRun 上传的 config（center 没返回过、不在增量里）在 firstRun 分支直接 register/configure 启动。</p>
  *
  * @author axeon
@@ -109,10 +105,13 @@ public class TaskServiceRegistrar {
     private boolean cronerFirstRun = true;
 
     /**
-     * 三类任务是否处于本地降级模式（center 不可用时用 initConfig 默认配置启动）。
+     * 两类任务是否处于本地降级模式（center 不可用时用 initConfig 默认配置启动）。
      * 拉取失败+首次进入降级；拉取成功退出降级（center 配置覆盖/重建）。各自独立，互不影响。
      */
     private volatile boolean runnerDegraded = false;
+    /**
+     * croner 是否处于本地降级模式（语义同 runnerDegraded）。
+     */
     private volatile boolean cronerDegraded = false;
     /**
      * 上次报告结果。
@@ -127,19 +126,20 @@ public class TaskServiceRegistrar {
 
     /**
      * 配置更新与主机禁用/启用的互斥锁：保护 updateConfig 与 reportHostInfo 的停机/恢复段，
-     * 防止并发踩踏（suspendAll/destroyAll 与 registerQueueListener/configureTask 交错致被禁主机残留资源）。
+     * 防止并发踩踏（suspendAll 与 registerQueueListener/configureTask 交错致被禁主机残留资源）。
      * 可重入：reportHostInfo 恢复段持锁后内嵌调 updateConfig（同线程重入），不阻塞自己。
      */
     private final ReentrantLock configLock = new ReentrantLock();
 
     /**
-     * 默认构造器。
+     * 构建任务服务注册器。
      *
      * @param taskProperties       任务配置
      * @param taskApiClient        任务中心 API 客户端
      * @param taskRunnerContainer  队列任务容器
      * @param taskCronerContainer  定时任务容器
      * @param taskMetaInfoManager  任务元信息管理器
+     * @param taskDelayTransferContainer 延时搬运器（上报 zset 积压）
      */
     public TaskServiceRegistrar(UwTaskProperties taskProperties, TaskApiClient taskApiClient, TaskRunnerContainer taskRunnerContainer, TaskCronerContainer taskCronerContainer,
                                 TaskMetaInfoManager taskMetaInfoManager, TaskDelayTransferContainer taskDelayTransferContainer) {
@@ -160,10 +160,9 @@ public class TaskServiceRegistrar {
         return taskProperties.isEnableRegistry();
     }
 
-
     /**
-     * 注册并刷新当前主机的任务配置。
-     * 各类配置使用独立的时间戳与 fail-fast，互不影响。</p>
+     * 注册并刷新当前主机的任务配置（持 configLock；主机被禁用时跳过）。
+     * <p>各类配置使用独立的时间戳与 fail-fast，互不影响。</p>
      */
     public void updateConfig() {
         configLock.lock();
@@ -217,11 +216,18 @@ public class TaskServiceRegistrar {
         if (runnerFirstRun) {
             runnerFirstRun = false;
             // 获取当前主机上所有的TaskRunner
-            for (Entry<String, TaskRunner> kv : taskMetaInfoManager.getRunnerInstanceMap().entrySet()) {
+            for (Entry<String, TaskRunner<?, ?>> kv : taskMetaInfoManager.getRunnerInstanceMap().entrySet()) {
                 try {
                     // 拿到任务类名
                     TaskRunner<?, ?> taskRunner = kv.getValue();
                     String taskClass = kv.getKey();
+                    // 只处理 task-project 前缀下的任务（与服务端配置过滤、降级启动同口径）
+                    if (!belongsToProject(taskClass)) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("TaskProject 不匹配，跳过本机任务: [{}].", taskClass);
+                        }
+                        continue;
+                    }
                     TaskRunnerConfig localConfig = taskRunner.initConfig();
                     TaskContact contact = taskRunner.initContact();
                     if (localConfig == null || contact == null) {
@@ -254,11 +260,11 @@ public class TaskServiceRegistrar {
         }
 
         // 只处理本次 fetch 增量（updatedRunnerConfigMap），不遍历全量 runnerConfigMap：
-        // 配置无变化时 fetch 返回空，避免每 60s 对全量 config 调 registerQueueListener 白跑（含 stillInUse 扫描）。
+        // 配置无变化时 fetch 返回空，避免每 60s 对全量 config 调 registerQueueListener 白跑（含声明与并发调整）。
         // firstRun 上传的 config 已在上方 firstRun 分支直接 register 启动，不依赖此循环。
         for (TaskRunnerConfig taskRunnerConfig : updatedRunnerConfigMap.values()) {
             //必须是本项目任务，否则跳过
-            if (!taskRunnerConfig.getTaskClass().startsWith(taskProperties.getTaskProject())) {
+            if (!belongsToProject(taskRunnerConfig.getTaskClass())) {
                 if (log.isDebugEnabled()) {
                     log.debug("因为TaskProject不匹配，跳过配置ID: [{}], RUNNER: [{}].", taskRunnerConfig.getId(), taskRunnerConfig.getTaskClass());
                 }
@@ -329,6 +335,13 @@ public class TaskServiceRegistrar {
                     // 拿到任务类名
                     TaskCroner taskCroner = kv.getValue();
                     String taskClass = taskCroner.getClass().getName();
+                    // 只处理 task-project 前缀下的任务（与服务端配置过滤、降级启动同口径）
+                    if (!belongsToProject(taskClass)) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("TaskProject 不匹配，跳过本机任务: [{}].", taskClass);
+                        }
+                        continue;
+                    }
                     if (log.isDebugEnabled()) {
                         log.debug("正在初始化TaskCroner: [{}].", taskClass);
                     }
@@ -365,7 +378,7 @@ public class TaskServiceRegistrar {
         // firstRun 上传的 config 已在上方 firstRun 分支直接 configure 启动，不依赖此循环。
         for (TaskCronerConfig taskCronerConfig : updatedCronerConfigMap.values()) {
             //必须是本项目任务，否则跳过
-            if (!taskCronerConfig.getTaskClass().startsWith(taskProperties.getTaskProject())) {
+            if (!belongsToProject(taskCronerConfig.getTaskClass())) {
                 if (log.isDebugEnabled()) {
                     log.debug("因为TaskProject不匹配，跳过配置ID: [{}], CRONER:[{}], CRON:[{}].", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(),
                             taskCronerConfig.getTaskCron());
@@ -389,7 +402,7 @@ public class TaskServiceRegistrar {
                     if (log.isDebugEnabled()) {
                         log.debug("正在配置ID: [{}], CRONER:[{}], CRON:[{}].", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron());
                     }
-                    boolean runFlag = taskCronerContainer.configureTask(taskCroner, taskCronerConfig);
+                    taskCronerContainer.configureTask(taskCroner, taskCronerConfig);
                 } catch (Exception e) {
                     // 带业务上下文（configId/taskClass/cron），便于排查是哪个 croner 配置失败
                     log.error("配置CRONER异常, ID: [{}], taskClass: [{}], CRON: [{}]: {}", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron(), e.getMessage(), e);
@@ -405,7 +418,7 @@ public class TaskServiceRegistrar {
     }
 
     /**
-     * 应用关闭(@PreDestroy)时停所有任务，持 configLock 与在途 updateConfig/reportHostInfo 互斥，
+     * 应用关闭时停所有任务，持 configLock 与在途 updateConfig/reportHostInfo 互斥，
      * 避免 shutdown 的 clear/destroy 与并发的 registerQueueListener/configureTask 交错（listener 泄漏或写入已销毁容器）。
      */
     public void shutdown() {
@@ -424,10 +437,17 @@ public class TaskServiceRegistrar {
      * configureTask 内 stop cancel(false) 让在途跑完 + schedule new，不丢不中断）。</p>
      */
     private void startCronersLocal() {
-        for (Map.Entry<String, TaskCroner> kv : taskMetaInfoManager.getCronerInstanceMap().entrySet()) {
+        for (Entry<String, TaskCroner> kv : taskMetaInfoManager.getCronerInstanceMap().entrySet()) {
             try {
                 TaskCroner taskCroner = kv.getValue();
                 String taskClass = kv.getKey();
+                // 只处理 task-project 前缀下的任务（与服务端配置过滤、降级启动同口径）
+                if (!belongsToProject(taskClass)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("TaskProject 不匹配，跳过本机任务: [{}].", taskClass);
+                    }
+                    continue;
+                }
                 TaskCronerConfig localConfig = taskCroner.initConfig();
                 if (localConfig == null) {
                     continue;
@@ -446,12 +466,18 @@ public class TaskServiceRegistrar {
      * <p>center 恢复后 updateTaskRunnerConfig 检测到 degraded → taskRunnerContainer.suspendAll() 清降级 listener
      *（unacked 消息 RabbitMQ 重新入队不丢）→ 主循环 taskRunnerContainer.registerQueueListener 用 center 配置重建。</p>
      */
-    @SuppressWarnings("rawtypes")
     private void startRunnersLocal() {
-        for (Map.Entry<String, TaskRunner> kv : taskMetaInfoManager.getRunnerInstanceMap().entrySet()) {
+        for (Entry<String, TaskRunner<?, ?>> kv : taskMetaInfoManager.getRunnerInstanceMap().entrySet()) {
             try {
-                TaskRunner taskRunner = kv.getValue();
+                TaskRunner<?, ?> taskRunner = kv.getValue();
                 String taskClass = kv.getKey();
+                // 只处理 task-project 前缀下的任务（与服务端配置过滤、降级启动同口径）
+                if (!belongsToProject(taskClass)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("TaskProject 不匹配，跳过本机任务: [{}].", taskClass);
+                    }
+                    continue;
+                }
                 TaskRunnerConfig localConfig = taskRunner.initConfig();
                 if (localConfig == null) {
                     continue;
@@ -468,15 +494,15 @@ public class TaskServiceRegistrar {
 
     /**
      * 上报主机状态。
-     * <p>采集 JVM 内存/线程、任务统计、各队列积压与消费者数，提交到 task-center；
-     * 返回值（含主机记录 id）缓存供下次上报定位记录。</p>
+     * <p>采集 JVM 内存/线程、任务统计、各队列积压与消费者数、延时 zset 积压，提交到 task-center；
+     * 返回值（含主机记录 id）缓存供下次上报定位记录。随后按响应的 state 处理主机禁用/启用
+     * （state=0 停两容器；恢复为非 0 时重置增量时间戳并立即全量重拉）。</p>
      *
      * @return 服务端响应；网络失败返回 null
      */
     public HostReportResponse reportHostInfo() {
-        //最后提交主机状态报告。
         if (log.isDebugEnabled()) {
-            log.debug("正在提交主机状态报告...");
+            log.debug("开始采集并提交主机状态报告...");
         }
         TaskHostStats hostStats = new TaskHostStats();
         if (reportResponse != null && reportResponse.getId() > 0) {
@@ -512,9 +538,9 @@ public class TaskServiceRegistrar {
         //保存任务统计信息。
         hostStats.setTaskCronerStatsList(TaskStatsService.getCronerStats());
         hostStats.setTaskRunnerStatsList(TaskStatsService.getRunnerStats());
-        // 查询队列积压信息（queueName 反查 + queueDeclarePassive），委托 TaskRunnerContainer。
+        // 查询队列积压信息，委托 TaskRunnerContainer。
         taskRunnerContainer.fillQueueBacklog(hostStats.getTaskRunnerStatsList());
-        // 延时积压（zset 待搬运数,project 级):时间轮水位,与 MQ 侧队列积压互补
+        // 延时积压（project 级 zset 待搬运数，与 MQ 侧队列积压互补）
         hostStats.setDelayBacklog(taskDelayTransferContainer.getBacklogSize());
         ResponseData<HostReportResponse> reportResult = taskApiClient.reportHostInfo(hostStats);
         reportResponse = reportResult != null && reportResult.isSuccess() ? reportResult.getData() : null;
@@ -548,12 +574,20 @@ public class TaskServiceRegistrar {
         } finally {
             configLock.unlock();
         }
-        //最后提交主机状态报告。
         if (log.isDebugEnabled()) {
             log.debug("完成提交主机状态报告...");
         }
         return reportResponse;
+    }
 
+    /**
+     * 任务类是否属于本项目的 task-project 前缀（首次上传、本地降级启动、服务端配置过滤三处同口径）。
+     *
+     * @param taskClass 任务类全限定名
+     * @return 以前缀开头返回 true
+     */
+    private boolean belongsToProject(String taskClass) {
+        return taskClass.startsWith(taskProperties.getTaskProject());
     }
 
     /**
@@ -643,5 +677,4 @@ public class TaskServiceRegistrar {
         taskMetaInfoManager.setCronerConfig(taskMetaInfoManager.getCronerConfigKey(config), config);
         return config;
     }
-
 }

@@ -20,19 +20,23 @@ uw:
     enable-registry: true
 ```
 
+其他启动参数不合法时不阻断启动：并发上限 ≤0、重试延时 <0、`run-target`/`task-center-host` 空白，均打 WARN 并按默认值生效。
+
+不配置 MQ（`uw.task.rabbitmq.*`）只配置 Redis 时，uw-task 以"仅定时任务档"运行：定时任务与队列任务的本地执行可用，`sendToQueue`/远程 RPC/延时提交直接抛 `TaskRuntimeException`（不进入重试）。不配置 Redis 则整个 uw-task 不初始化（Redis 是必需项：任务 id 发号等依赖它）。
+
 `enable-registry=false` 的服务仅能作为任务调用方（`sendToQueue`/`runTask`），不会注册主机、不执行任务、不参与 Leader 选举。
 
 #### 3. 配置属性 task-project 和 run-target 有什么作用？
 
-- **task-project**：任务项目，必须是包名前缀，用于扫描任务注册。框架只扫描该包下的 `TaskCroner`/`TaskRunner`。
+- **task-project**：任务项目，须为任务类的包名前缀：本机只注册并执行 taskClass 以此开头的任务（服务端配置过滤、首次上传、本地降级启动同口径）；同时作为延时 zset 与 Leader 锁的隔离键。执行主机（`enable-registry=true`）必填，未配置时 uw-task 打 WARN 并跳过装配。
 - **run-target**：运行目标，用于识别任务执行集群，默认 `default`。
 
 两者一起决定任务配置的同步关系：任务执行主机只拉取与自身 `taskProject + runTarget` 匹配的配置并执行。调用方也可在 `TaskData` 中临时指定 runTarget，将任务路由到特定集群。
 
 #### 4. 设定定时任务和队列任务分别需要继承什么类？实现什么方法？
 
-- **定时任务**：继承 `TaskCroner`，实现 `runTask(TaskCronerLog)`、`initConfig()`、`initContact()`。
-- **队列任务**：继承 `TaskRunner<TP, RD>`，实现 `runTask(TaskData<TP, RD>)`、`initConfig()`、`initContact()`。
+- **定时任务**：继承 `TaskCroner`，实现 `runTask(TaskCronerLog)`、`initConfig()`（`initContact()` 默认返回空联系人，可选覆写）。
+- **队列任务**：继承 `TaskRunner<TP, RD>`，实现 `runTask(TaskData<TP, RD>)`、`initConfig()`（`initContact()` 默认返回空联系人，可选覆写）。
 
 两类任务都必须加 `@Component` 注解，且类需位于 `task-project` 包路径下。
 
@@ -55,7 +59,7 @@ TaskRunner 是**单例**（Spring Bean），类的属性被多线程共享。`co
 | `runTaskAsync` | AUTO 自动选 | 否（Future） | 有（get 时） | 回退远程 RPC | 异步拿结果，注意线程池 |
 | `runQueue` | 本地优先，否则入队 | 否 | 无 | 入队 | 高频短任务优化，省 MQ |
 
-> **延时任务**（`taskDelay > 0`）：上述 5 个方法**完全等同**——统一走自动路由（quorum+1.0/4.4→MQ 原生延迟，否则→Redis zset 搬运），同步语义（runTask 等）对延时任务不成立，投递后立即返回。
+> **延时任务**（`taskDelay > 0`）：上述 5 个方法**完全等同**——统一走自动路由（quorum+RabbitMQ 4.4+→MQ 原生延迟，091 / 1.0 均可；否则→Redis zset 搬运），同步语义（runTask 等）对延时任务不成立，投递后立即返回。
 
 **快速选型决策树**：
 
@@ -94,7 +98,7 @@ TaskRunner 是**单例**（Spring Bean），类的属性被多线程共享。`co
 
 - **`TaskPartnerException`（合作方异常）→ STATE_FAIL_PARTNER**：合作方/第三方接口错误（HTTP 超时、非 200、限流等）。需程序员手工抛出。**会触发重试**（按 `retryTimesByPartner`）。
 - **`TaskDataException`（数据异常）→ STATE_FAIL_DATA**：任务入参数据本身错误（格式非法、缺失、业务规则不满足）。**不触发重试**。
-- **其他未捕获异常 → STATE_FAIL_PROGRAM**：程序 bug（空指针等），框架自动捕获。**不触发重试**。
+- **其他未捕获异常 → STATE_FAIL_PROGRAM**：程序 bug（空指针等），框架自动捕获。按 `retryTimesByProgram` 重试（默认 0=不重试）。
 - **限速超时 → STATE_FAIL_CONFIG**：超过流量限制，框架自动生成。**会触发重试**（按 `retryTimesByOverrated`）。
 
 正确抛出异常有助于监控与统计，发现潜在问题。非必要不要在 `runTask` 内吞掉异常。
@@ -110,7 +114,7 @@ TaskRunner 是**单例**（Spring Bean），类的属性被多线程共享。`co
 
 #### 10. 在哪里设置队列任务的限流类型？请详述不同限流类型的差异和使用场景。
 
-在 `TaskRunnerConfig` 的 `rateLimitType` 中设置。分为本地（进程内 Guava 令牌桶）与全局（Redis 固定窗口）两类：
+在 `TaskRunnerConfig` 的 `rateLimitType` 中设置。分为本地（进程内固定窗口）与全局（Redis 固定窗口）两类：
 
 **本地限速（进程内）**：
 - `RATE_LIMIT_LOCAL`：进程共享，所有任务共用一个限速器（**慎用，易卡死**）。
@@ -129,7 +133,7 @@ TaskRunner 是**单例**（Spring Bean），类的属性被多线程共享。`co
 
 #### 11. uw-task 什么情况下使用全局限流器？什么情况下使用本地限流器？全局限流器的限制是什么？
 
-- **全局限流器**基于 Redis，跨进程共享配额；**本地限流器**基于 Guava RateLimiter，仅进程内生效。资源消耗上，全局远大于本地。
+- **全局限流器**基于 Redis Lua（固定窗口），跨进程共享配额；**本地限流器**基于进程内固定窗口，仅进程内生效。资源消耗上，全局远大于本地。
 - 确定仅单实例运行的项目，建议用本地限流器，大幅降低开销。
 - 多实例需要共享配额时用全局限流器。
 - 全局限流器建议检测窗口（`rateLimitTime`）不低于 5 秒，减小网络 IO。
@@ -148,25 +152,26 @@ TaskRunner 是**单例**（Spring Bean），类的属性被多线程共享。`co
 
 - `STATE_FAIL_PARTNER`（合作方异常）按 `retryTimesByPartner` 重试。
 - `STATE_FAIL_CONFIG`（超限流）按 `retryTimesByOverrated` 重试。
-- `STATE_FAIL_PROGRAM` / `STATE_FAIL_DATA` 不重试。
+- `STATE_FAIL_PROGRAM`：按 `retryTimesByProgram` 重试（默认 0=不重试）。
+- `STATE_FAIL_DATA`：不重试。
 
-设 `retryTimes = N` 时，**总计执行 N+1 次**（1 次初始 + N 次重试）。重试延时按执行轮次线性递增。LOCAL/RPC 模式在本地重跑，GLOBAL 模式重新入队。
+设 `retryTimes = N` 时，**总计执行 N+1 次**（1 次初始 + N 次重试）。重试延时按执行轮次线性递增（`ranTimes ×` 重试延时配置）。LOCAL 模式在本地重跑，GLOBAL 模式重新入队；远程 RPC 模式不在服务端重试（失败结果直接返回调用方）。
 
 #### 14. uw-task 的延时任务如何使用？（5.2.0 全自动化）
 
 无需任何配置：`TaskData.taskDelay > 0` 即延时任务（`sendToQueue/runQueue/runTask` 三入口等同）。载体自动路由——
 
-- **quorum 队列 + 1.0 + RabbitMQ 4.4+**：MQ 消息级原生延迟（`x-opt-delivery-time`），到期自动可见即执行，精度 ~0.5s、无队头阻塞、任意时长可用；
-- **其余（classic 队列 / 091 / 低版本 broker）**：Redis zset 搬运（Leader 单例 mover，到期自动转投目标队列）。
+- **quorum 队列 + RabbitMQ 4.4+（091 / 1.0 均可）**：MQ 消息级原生延迟（`x-opt-delivery-time`：1.0 为消息注解，091 为同名消息头），到期自动可见即执行，精度 ~0.5s、无队头阻塞、任意时长可用；
+- **其余（classic 队列 / 低版本 broker / 启动时 MQ 不可达）**：Redis zset 搬运（Leader 单例 mover，到期自动转投目标队列）。
 
-观测：`taskFactory.getDelayBacklogSize(queueName)` / `getDelayBacklogTotal()` 查询 zset 侧积压。
+观测：zset 侧积压量（project 级 zset 的成员数）随主机状态上报（`TaskHostStats.delayBacklog`），MQ 侧按队列上报 `queueSize`/`consumerNum`。
 
 #### 15. 多实例任务如何配置？
 
 - **TaskCroner** 通过 `taskParam` 区分多实例（同一 taskClass 不同 taskParam = 不同实例）。
 - **TaskRunner** 通过 `taskTag` 区分多实例。
 
-多实例唯一性由服务端按三元组（`taskClass + 区分维度 + runTarget`）保证。无法精确匹配时框架会宽松匹配最合适的配置。
+多实例唯一性由服务端按三元组（`taskClass + 区分维度 + runTarget`）保证。taskTag 无精确匹配时，框架回退到同 taskClass、同 runTarget 的无 taskTag 配置。
 
 #### 16. 全局单例定时任务（SINGLETON）如何保证唯一执行？
 

@@ -1,12 +1,12 @@
 package uw.task.ser.vo;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import uw.common.util.SystemClock;
-
 import java.time.LocalTime;
 import java.util.Map;
 import java.util.Objects;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uw.common.util.SystemClock;
 
 /**
  * 酒店价格信息。
@@ -182,7 +182,6 @@ public class HotelPriceValue {
             this.value = value;
         }
 
-
     }
 
     /**
@@ -257,7 +256,6 @@ public class HotelPriceValue {
 
         public RuleInfo() {
         }
-
 
         public static RuleInfo init() {
             RuleInfo ruleInfo = new RuleInfo();
@@ -643,8 +641,6 @@ public class HotelPriceValue {
                 this.label = label;
             }
 
-
         }
     }
-
 }

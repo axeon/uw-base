@@ -1,28 +1,34 @@
 package uw.task.rabbit;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
 import com.rabbitmq.client.amqp.Consumer;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.boot.rabbitmq.autoconfigure.RabbitProperties;
+import uw.common.util.LimitedVirtualThreadExecutor;
 import uw.task.TaskData;
 import uw.task.container.TaskRunnerContainer;
 import uw.task.converter.TaskMessageConverter;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import uw.task.demo.EchoRunner;
 
 /**
  * 1.0 线程伸缩与背压实测（显式触发：-Damqp.bench=true）。
  *
- * <p>用与 ElasticConsumerGroup 相同的组件直建（LimitedVirtualThreadExecutor 执行通道 + credit 消费者 +
- * settle-after-execute），实测三个命题：
- * ①执行并发严格封顶 consumerNum（慢任务下 activeCount 峰值==上限）；
- * ②resize 收缩/扩张即时生效（pause/unpause + 重建执行器）；
+ * <p>执行通道用与 ElasticConsumerGroup 等价的并发上限执行器直建（命题①），伸缩与背压走生产路径 createListener/tune
+ * （命题②③），实测三个命题：
+ * ①执行并发严格封顶 consumerNum（慢任务下同时在执行的线程数峰值==上限）；
+ * ②resize 收缩/扩张即时生效（pause/unpause + 重建 Semaphore）；
  * ③背压传导 broker（credit 耗尽后 unacked 停在 initialCredits，不会无限预取）。</p>
  */
 @EnabledIfSystemProperty(named = "amqp.bench", matches = "true")
@@ -35,10 +41,10 @@ class ConcurrencyControlProbe {
     static void setUp() {
         RabbitProperties props = new RabbitProperties();
         props.setHost(System.getProperty("uw.task.rabbitmq.host", "10.0.0.10"));
-        props.setPort(Integer.parseInt(System.getProperty("uw.task.rabbitmq.port", "30772")));
+        props.setPort(Integer.parseInt(System.getProperty("uw.task.rabbitmq.port", "5672")));
         props.setUsername(System.getProperty("uw.task.rabbitmq.username", "rabbit"));
-        props.setPassword(System.getProperty("uw.task.rabbitmq.password", "rabbit44eval"));
-        ops = new Rabbit100Ops(props, "cc-probe", true);
+        props.setPassword(System.getProperty("uw.task.rabbitmq.password"));
+        ops = new Rabbit100Ops(props, true);
         ops.declareDurableQueue(QUEUE, true);
     }
 
@@ -50,18 +56,17 @@ class ConcurrencyControlProbe {
 
     private static Message build() {
         return new TaskMessageConverter().toMessage(
-                TaskData.<String, String>builder(uw.task.demo.EchoRunner.class, "cc").build(), new MessageProperties());
+                TaskData.<String, String>builder(EchoRunner.class, "cc").build(), new MessageProperties());
     }
 
     /**
      * 命题①：执行并发严格封顶。3 路并发上限，投 30 条每条 sleep 300ms，
-     * 采样 activeCount 峰值应 ==3（若超标说明限流失效）。
+     * 采样同时在执行的线程数峰值应 ==3（若超标说明限流失效）。
      */
     @Test
     void executionConcurrencyCapped() throws Exception {
         int cap = 3;
-        uw.common.util.LimitedVirtualThreadExecutor worker = new uw.common.util.LimitedVirtualThreadExecutor(
-                "cc-cap-", cap, 64, new uw.common.util.LimitedVirtualThreadExecutor.BlockPolicy());
+        LimitedVirtualThreadExecutor worker = new LimitedVirtualThreadExecutor("cc-cap-", cap, 64, new LimitedVirtualThreadExecutor.BlockPolicy());
         AtomicInteger active = new AtomicInteger();
         AtomicInteger peak = new AtomicInteger();
         AtomicInteger done = new AtomicInteger();
@@ -80,8 +85,8 @@ class ConcurrencyControlProbe {
         }
         Thread.sleep(2500);
         System.out.printf("CC-CAP: done=%d/30 peakActive=%d (cap=%d)%n", done.get(), peak.get(), cap);
-        org.junit.jupiter.api.Assertions.assertEquals(cap, peak.get(), "执行并发峰值必须==上限");
-        org.junit.jupiter.api.Assertions.assertTrue(done.get() < 30, "3路×300ms 下 2.5s 不应跑完 30 条（背压排队中）");
+        Assertions.assertEquals(cap, peak.get(), "执行并发峰值必须==上限");
+        Assertions.assertTrue(done.get() < 30, "3路×300ms 下 2.5s 不应跑完 30 条（背压排队中）");
         worker.shutdown();
     }
 
@@ -91,22 +96,22 @@ class ConcurrencyControlProbe {
      */
     @Test
     void consumerPauseResumeScaling() throws Exception {
-        // 走真实生产路径：createListener（ElasticConsumerGroup + LimitedVirtualThreadExecutor）
+        // 走真实生产路径：createListener（ElasticConsumerGroup：Semaphore + 每任务一个虚拟线程）
         // + tune 伸缩。process mock 为 20ms 业务耗时——并发=吞吐（4 路≈200/s，2 路≈100/s）。
         // 关键对照：裸消费者 pause 不减吞吐（credit 超发），生产路径靠执行通道封顶才有效。
-        uw.task.container.TaskRunnerContainer mockRunner = org.mockito.Mockito.mock(uw.task.container.TaskRunnerContainer.class);
-        java.util.concurrent.atomic.AtomicInteger consumed = new java.util.concurrent.atomic.AtomicInteger();
-        org.mockito.Mockito.doAnswer(inv -> {
+        TaskRunnerContainer mockRunner = Mockito.mock(TaskRunnerContainer.class);
+        AtomicInteger consumed = new AtomicInteger();
+        Mockito.doAnswer(inv -> {
             Thread.sleep(20);
             consumed.incrementAndGet();
             return null;
-        }).when(mockRunner).process(org.mockito.ArgumentMatchers.any(uw.task.TaskData.class));
+        }).when(mockRunner).process(ArgumentMatchers.any(TaskData.class));
         TaskAmqpListenerContainer container = ops.createListener(QUEUE, 4, 10, mockRunner);
         ops.purgeQueue(QUEUE);
-        java.util.concurrent.atomic.AtomicBoolean sending = new java.util.concurrent.atomic.AtomicBoolean(true);
+        AtomicBoolean sending = new AtomicBoolean(true);
         Thread sender = new Thread(() -> {
             while (sending.get()) {
-                ops.send(QUEUE, build(), 0);
+                ops.send(QUEUE, build(), 0, e -> { });
             }
         }, "cc-sender");
         sender.setDaemon(true);
@@ -130,8 +135,8 @@ class ConcurrencyControlProbe {
         container.destroy();
         ops.purgeQueue(QUEUE);
         System.out.printf("CC-SCALE(生产路径): 4路=%d/s, tune(2)=%d/s, tune(4)=%d/s%n", full, shrunk, expanded);
-        org.junit.jupiter.api.Assertions.assertTrue(shrunk < full * 0.7, "tune 收缩后速率应显著下降 (shrunk=%d full=%d)".formatted(shrunk, full));
-        org.junit.jupiter.api.Assertions.assertTrue(expanded > shrunk * 1.3, "tune 扩张后速率应回升 (expanded=%d shrunk=%d)".formatted(expanded, shrunk));
+        Assertions.assertTrue(shrunk < full * 0.7, "tune 收缩后速率应显著下降 (shrunk=%d full=%d)".formatted(shrunk, full));
+        Assertions.assertTrue(expanded > shrunk * 1.3, "tune 扩张后速率应回升 (expanded=%d shrunk=%d)".formatted(expanded, shrunk));
     }
 
     /**
@@ -157,7 +162,7 @@ class ConcurrencyControlProbe {
         holder.set(consumer);
         ops.purgeQueue(QUEUE);
         for (int i = 0; i < 50; i++) {
-            ops.send(QUEUE, build(), 0);
+            ops.send(QUEUE, build(), 0, e -> { });
         }
         Thread.sleep(2000);
         int[] info = ops.getQueueInfo(QUEUE);
@@ -166,9 +171,9 @@ class ConcurrencyControlProbe {
         consumer.close();
         System.out.printf("CC-BACKPRESSURE: 投50条 credits=%d, broker侧ready=%d (已预取=%d, 窗口封顶应≈%d)%n",
                 credits, info[0], 50 - info[0], credits);
-        org.junit.jupiter.api.Assertions.assertTrue(50 - info[0] <= credits * 2,
+        Assertions.assertTrue(50 - info[0] <= credits * 2,
                 "broker 预取应被 credit 窗口封顶（ready 不应远小于 50-credits）");
-        org.junit.jupiter.api.Assertions.assertTrue(info[0] >= 50 - credits * 2,
+        Assertions.assertTrue(info[0] >= 50 - credits * 2,
                 "大部分消息应留在 broker（ready），仅 credit 窗口内被预取");
     }
 }

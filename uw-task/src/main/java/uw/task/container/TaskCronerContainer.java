@@ -3,9 +3,6 @@ package uw.task.container;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.support.CronExpression;
-
-import uw.task.util.TaskLeaderElector;
-import uw.task.util.TaskSequence;
 import uw.common.util.ExceptionUtils;
 import uw.common.util.SystemClock;
 import uw.task.TaskCroner;
@@ -18,6 +15,8 @@ import uw.task.constant.TaskConstants;
 import uw.task.entity.TaskCronerConfig;
 import uw.task.entity.TaskCronerLog;
 import uw.task.listener.TaskCronerListener;
+import uw.task.util.TaskLeaderElector;
+import uw.task.util.TaskSequence;
 import uw.task.util.TaskStatsService;
 
 import java.time.ZonedDateTime;
@@ -25,11 +24,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -41,7 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 因此 VT 执行器无需并发上限——挂起等待在虚拟线程上零成本。不使用 Spring TaskScheduler 的 Trigger 回调通道——
  * cancel 后回调被跳过的契约坑随之消失，stats/日志只在一个地方（任务体内）落盘。</p>
  *
- * <p>{@code RUN_TYPE_SINGLETON} 的任务仅在 Leader 实例上执行（通过 {@link TaskLeaderElector#isLeader()} 判定）。</p>
+ * <p>{@code RUN_TYPE_SINGLETON} 的任务仅在 Leader 实例上执行（通过 {@link TaskLeaderElector#isLeader(String)} 判定）。</p>
  *
  * @author axeon
  */
@@ -54,7 +49,7 @@ public class TaskCronerContainer {
     /**
      * cronerTask任务索引。
      */
-    private final Map<String, CronerSchedule> cronerTasks = new ConcurrentHashMap<>(128);
+    private final Map<String, CronerSchedule> cronerTasks = new ConcurrentHashMap<>();
 
     /**
      * croner 执行器（每 croner 一个虚拟线程，睡到触发点再执行；无需并发上限，见类注释）。
@@ -93,7 +88,7 @@ public class TaskCronerContainer {
         this.taskListenerManager = taskListenerManager;
         executorService = Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual().name("uw-task-croner-", 0).factory());
-        log.info("TaskCronerContainer start with virtual threads...");
+        log.info("TaskCronerContainer 已启动（虚拟线程调度）....");
     }
 
     /**
@@ -196,6 +191,11 @@ public class TaskCronerContainer {
 
     /**
      * 单轮任务体：leader 判定、执行、异常分类、listener 回调、stats 与日志落库。
+     *
+     * @param taskCroner       任务实例
+     * @param taskCronerConfig 任务配置
+     * @param cronExpression   cron 表达式（计算日志的 nextDate）
+     * @param scheduleDate     本轮计划执行时间
      */
     private void runCroner(TaskCroner taskCroner, TaskCronerConfig taskCronerConfig, CronExpression cronExpression,
                            Date scheduleDate) {
@@ -291,7 +291,7 @@ public class TaskCronerContainer {
      * @return 成功取消返回 true；map 中无对应调度返回 false
      */
     public boolean stop(String configKey) {
-        CronerSchedule schedule = this.cronerTasks.get(configKey);
+        CronerSchedule schedule = cronerTasks.get(configKey);
         if (schedule == null) {
             return false;
         }
@@ -305,7 +305,7 @@ public class TaskCronerContainer {
                 future.cancel(false);
             }
         }
-        this.cronerTasks.remove(configKey);
+        cronerTasks.remove(configKey);
         return true;
     }
 
@@ -314,7 +314,7 @@ public class TaskCronerContainer {
      * <p>用于主机被禁用(state=0)时停任务却保留 executorService，以便解除禁用后重新调度。</p>
      */
     public void suspendAll() {
-        log.info("All TaskCroner Suspended....");
+        log.info("所有TaskCroner已暂停....");
         for (Entry<String, CronerSchedule> kv : this.cronerTasks.entrySet()) {
             CronerSchedule schedule = kv.getValue();
             // synchronized(schedule)：与 scheduleNext 的"检查+排期+赋值"互斥（见 scheduleNext 注释），杜绝孤儿续期
@@ -326,14 +326,14 @@ public class TaskCronerContainer {
                 }
             }
         }
-        this.cronerTasks.clear();
+        cronerTasks.clear();
     }
 
     /**
-     * 关闭所有定时任务（bean 销毁回调，关 VT 执行器）。
+     * 关闭所有定时任务并关闭 VT 执行器（应用关闭时调用）。
      */
     public void shutdown() {
-        log.info("All TaskCroner Destroy....");
+        log.info("所有TaskCroner已销毁....");
         suspendAll();
         executorService.shutdownNow();
     }
@@ -342,6 +342,13 @@ public class TaskCronerContainer {
      * 单个 croner 配置的调度句柄：active 门闩控制自续期，future 为当前一次性任务。
      */
     private static final class CronerSchedule {
+
+        /**
+         * 数据句柄（随调度创建，禁止外部实例化）。
+         */
+        private CronerSchedule() {
+        }
+
         /**
          * 自续期门闩：stop/suspendAll 关闭后，在途任务跑完不再排下一轮。
          */
@@ -351,5 +358,4 @@ public class TaskCronerContainer {
          */
         volatile Future<?> future;
     }
-
 }

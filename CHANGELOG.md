@@ -1,3 +1,31 @@
+# 2026.1000.0020 版本升级说明
+
+uw-task 5.3.1（全面评审修订）+ 根 pom flatten 自动清理。
+
+## uw-task（5.3.1）
+1. 协议默认值改为 091（仅对端不提供 0-9-1 而提供 1.0 时走 1.0，仍零配置）；091 + quorum 接入 RabbitMQ 4.4 原生延迟消息；`prefetchNum` 默认值 1 → 10。
+2. 运行档位三档（完整 / 仅定时任务 / 不装配）与启动参数校验；task-project 前缀全链路一致。
+3. 评审修复：1.0 远程 RPC 回结果、1.0 异步发布失败可重发、`getListenerManager()` 补回、`onPreExecute` 回调恢复等；javadoc 全面补齐、日志与异常文案语言对齐。详见 uw-task/CHANGELOG.md。
+
+## 根 pom
+1. flatten 插件：`flatten:clean` 追加绑定到 install / deploy 阶段，安装或发布之后自动清掉各模块的 `.flattened-pom.xml`（compile / package 构建后仍保留，`mvn clean` 清理）。
+
+# 2026.1000.0019 版本升级说明
+
+uw-task 5.3.0：延时 zset 收敛为 project 单分片（`uw-task-delay:{task-project}`）、延时积压 `delayBacklog` 随主机上报、RPC 远程调用异常一律重试（上限 20 次，用户裁决）。
+
+# 2026.1000.0018 版本升级说明
+
+重发字面化根 pom：0017 的根 pom 误用 deploy-file 上传，`${revision}` 占位符原样进入私服，导致下游 CI 解析失败。本版只重发根 pom。
+
+# 2026.1000.0017 版本升级说明
+
+装配门控 + WARN 全面铺开：连接型自动配置（uw-kv 1.5.3 / uw-mfa 1.1.83 / uw-task 5.2.1）未配置必需 host 时一次性 WARN 并跳过装配。
+
+# 2026.1000.0016 版本升级说明
+
+uw-kv 1.5.2 装配门控（单模块改动，只发根 pom 与 uw-kv）。
+
 # 2026.1000.0015 版本升级说明
 
 uw-task 5.2.0 终态重构 + 全仓 bean 收敛 + nacos 热更新 + 命名一致化（19 模块全部 +1，uw-task 5.2.0 首发）。

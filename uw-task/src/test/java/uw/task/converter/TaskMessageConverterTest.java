@@ -89,5 +89,4 @@ class TaskMessageConverterTest {
         assertNull(back.getRefObject(), "refObject 不应被序列化（内存态字段，不跨 MQ 传输）");
         assertEquals("p", back.getTaskParam());
     }
-
 }

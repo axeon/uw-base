@@ -1,17 +1,21 @@
 package uw.task.util;
 
-
-import uw.task.util.TaskGlobalRateLimiter;
 import uw.common.util.SystemClock;
 import uw.task.entity.TaskRunnerConfig;
 
 /**
- * 限速 locker key 构造工具。
+ * 限速 locker key 构造与全局限速等待工具。
  */
-public class TaskRateLimitHelper {
+public final class TaskRateLimitHelper {
 
     /**
-     * 构建 GLOBAL 限速的 locker（name，交由 {@link TaskGlobalRateLimiter} 统一加 uw-rate: key 前缀）。
+     * 工具类，禁止实例化。
+     */
+    private TaskRateLimitHelper() {
+    }
+
+    /**
+     * 构建 GLOBAL 限速的 locker（name，交由 {@link TaskGlobalRateLimiter} 统一加 uw-task-rate: key 前缀）。
      * <p>name 拼接规则（统一以 "uw-task-" 域前缀开头，与其他应用域的配额池隔离）：
      * <ul>
      *   <li>GLOBAL_TASK* 系列（TASK/TASK_TAG/TASK_HOST/TASK_TAG_HOST）：name 含 taskClass 前缀，
@@ -33,7 +37,7 @@ public class TaskRateLimitHelper {
     }
 
     /**
-     * 构建 GLOBAL 限速的裸 name（不含域前缀，原拼接逻辑）。
+     * 构建 GLOBAL 限速的裸 name（不含域前缀）。
      *
      * @param type          限速类型（RATE_LIMIT_GLOBAL_*）
      * @param taskClass     任务类名
@@ -86,20 +90,20 @@ public class TaskRateLimitHelper {
      * @return locker key 字符串
      */
     public static String buildLocalLocker(int type, String taskClass, String rateLimitTag) {
+        if (type == TaskRunnerConfig.RATE_LIMIT_LOCAL_TASK_TAG) {
+            return taskClass + "$" + rateLimitTag;
+        }
         if (type == TaskRunnerConfig.RATE_LIMIT_LOCAL_TASK) {
             return taskClass;
-        } else if (type == TaskRunnerConfig.RATE_LIMIT_LOCAL_TASK_TAG) {
-            return taskClass + "$" + rateLimitTag;
-        } else {
-            // RATE_LIMIT_LOCAL 或兜底：全进程共享
-            return "";
         }
+        // RATE_LIMIT_LOCAL：全进程共享
+        return "";
     }
 
     /**
-     * GLOBAL 限速等待：在 waitSec 内循环 tryAcquire，命中(返回 0)即返回 true，否则 sleep 到下个窗口后重试，
-     * 超时返回 false。TaskRunner 的 GLOBAL 限速等待循环。
-     * <p>rateLimitWait 为 int（秒），乘 1000L 转毫秒用 long 字面量避免 int 溢出。</p>
+     * GLOBAL 限速等待：在 waitSec 内循环 tryAcquire，命中(返回 0)即返回 true，否则 sleep 后重试，
+     * 超时返回 false。sleep 取"到窗口结束的剩余时间"与"到等待截止的剩余时间"的较小值，
+     * 保证总等待时长不超过 waitSec。TaskRunner 的 GLOBAL 限速等待循环。
      *
      * @param locker  限流 key（由 {@link #buildGlobalLocker} 构造，已含 uw-task- 域前缀）
      * @param value   限速值
@@ -110,13 +114,14 @@ public class TaskRateLimitHelper {
     public static boolean acquireGlobalWithWait(String locker, int value, int time, int waitSec) {
         long end = SystemClock.now() + waitSec * 1000L;
         long windowMillis = time * 1000L;
-        while (SystemClock.now() <= end) {
+        long now;
+        while ((now = SystemClock.now()) <= end) {
             long waitMillis = TaskGlobalRateLimiter.tryAcquire(locker, value, windowMillis, 1);
             if (waitMillis == 0) {
                 return true;
             }
             try {
-                Thread.sleep(waitMillis);
+                Thread.sleep(Math.min(waitMillis, end - now));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return false;

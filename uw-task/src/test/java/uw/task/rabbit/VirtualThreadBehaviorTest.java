@@ -1,8 +1,9 @@
 package uw.task.rabbit;
 
-import org.junit.jupiter.api.Test;
-
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,7 +36,7 @@ class VirtualThreadBehaviorTest {
                 allDone.countDown();
             });
         }
-        boolean done = allDone.await(5, java.util.concurrent.TimeUnit.SECONDS);
+        boolean done = allDone.await(5, TimeUnit.SECONDS);
         System.out.printf("VT-BLOCK: %d个VT并发sleep(500ms)完成=%b 耗时=%dms (若占carrier则需%dms+)%n",
                 n, done, System.currentTimeMillis() - start, n * 500 / carriers);
         assertThat(done).isTrue();

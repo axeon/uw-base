@@ -16,7 +16,7 @@ import java.util.List;
  * 任务中心（task-center）服务端 API 客户端。
  *
  * <p>封装与 uw-task-center 的全部交互：主机状态上报、任务配置初始化与拉取、
- * 任务日志/统计写入、定时任务心跳等。HTTP 调用委托给 {@link RestClient}（带鉴权），
+ * 任务日志写入、定时任务心跳等。HTTP 调用委托给 {@link RestClient}（带鉴权），
  * 日志写入委托给 {@link LogClient}（ES）。所有方法对网络异常做了兜底：
  * 调用失败时记录日志并返回 {@code null}，由上层据返回值判断是否进入 fail-fast。</p>
  *
@@ -45,6 +45,8 @@ public class TaskApiClient {
     private final LogClient logClient;
 
     /**
+     * 构建 task-center API 客户端。
+     *
      * @param taskProperties 任务配置
      * @param authRestClient 带鉴权的 HTTP 客户端
      * @param logClient      日志客户端
@@ -54,7 +56,6 @@ public class TaskApiClient {
         this.authRestClient = authRestClient;
         this.logClient = logClient;
     }
-
 
     /**
      * 上报主机状态（含 JVM、线程、任务统计与队列信息）。
@@ -139,8 +140,8 @@ public class TaskApiClient {
     /**
      * 拉取指定 runTarget 与 taskProject 下、lastUpdateTime 之后变更的队列任务配置列表。
      *
-     * @param runTarget     运行目标
-     * @param taskProject   任务项目（包名前缀）
+     * @param runTarget      运行目标
+     * @param taskProject    任务项目（包名前缀）
      * @param lastUpdateTime 上次更新时间戳（毫秒），仅拉取此时间之后的增量
      * @return 服务端响应（配置列表）；网络失败返回 null
      */
@@ -161,8 +162,8 @@ public class TaskApiClient {
     /**
      * 拉取指定 runTarget 与 taskProject 下、lastUpdateTime 之后变更的定时任务配置列表。
      *
-     * @param runTarget     运行目标
-     * @param taskProject   任务项目（包名前缀）
+     * @param runTarget      运行目标
+     * @param taskProject    任务项目（包名前缀）
      * @param lastUpdateTime 上次更新时间戳（毫秒），仅拉取此时间之后的增量
      * @return 服务端响应（配置列表）；网络失败返回 null
      */

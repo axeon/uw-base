@@ -6,13 +6,18 @@ import uw.task.TaskData;
  *
  * <p>在 {@code runTask} 中抛出此异常，表示任务所依赖的合作方/第三方接口出现错误（如超时、返回错误码、限流等），
  * 属于"可能通过重试解决"的瞬时性错误。框架捕获后会标记任务状态为
- * {@link TaskData#STATE_FAIL_PARTNER}，并<b>根据配置 {@code retryTimesByPartner} 触发自动重试</b>。</p>
+ * {@link TaskData#STATE_FAIL_PARTNER}，并<b>根据配置 {@code retryTimesByPartner} 触发自动重试</b>。
  *
  * <p>与之相对：{@link TaskDataException}（数据异常，不触发重试）。</p>
  *
  * @author axeon
  */
 public class TaskPartnerException extends RuntimeException {
+
+    /**
+     * 序列化版本号。
+     */
+    private static final long serialVersionUID = 1L;
 
     /**
      * 构造一个不带详细信息的合作方异常。
@@ -48,5 +53,4 @@ public class TaskPartnerException extends RuntimeException {
     public TaskPartnerException(String msg, Throwable nestedThrowable) {
         super(msg, nestedThrowable);
     }
-
 }

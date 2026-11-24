@@ -1,7 +1,7 @@
 package uw.task.listener;
 
-import uw.task.entity.TaskCronerLog;
 import uw.task.TaskListenerManager;
+import uw.task.entity.TaskCronerLog;
 
 /**
  * 定时任务（TaskCroner）的监听器。
@@ -27,5 +27,4 @@ public interface TaskCronerListener {
      * @param data 本次执行的日志对象（已包含执行结果、状态、耗时等信息）
      */
     void onPostExecute(TaskCronerLog data);
-
 }

@@ -4,6 +4,7 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import uw.task.TaskData;
 import uw.task.converter.TaskMessageConverter;
+import uw.task.demo.SimpleRunner;
 import uw.task.entity.TaskContact;
 import uw.task.entity.TaskRunnerConfig;
 
@@ -35,7 +36,6 @@ public class SimpleRunner extends SimpleBaseRunner {
         taskData.setTaskParam("我是简单的Java String");
         taskData.setResultData("我是简单的Java String");
         taskData.setTaskClass("uw.task.demo.SimpleRunner");
-
 
         MessageProperties properties = new MessageProperties();
         Message message = converter.toMessage(taskData, properties);

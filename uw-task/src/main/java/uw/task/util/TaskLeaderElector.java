@@ -1,8 +1,8 @@
 package uw.task.util;
 
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 
@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * uw-task 私有 Leader 选举器（语义等价移植自 uw-kv GlobalLeaderElector，key 空间私有 uw-task-leader:）。
+ * uw-task 私有 Leader 选举器（key 空间私有 uw-task-leader:），供 SINGLETON croner 与延时搬运 mover 共用。
  *
  * <p>注册制：config(name, instanceId) 注册稳定实例标识（跨重启续期）；checkLeader 周期执行
  * Lua（持有则续期 / 空则抢锁 / 否则失败），异常时保留上次状态不翻转。SINGLETON croner 仅在
@@ -56,11 +56,16 @@ public final class TaskLeaderElector {
      */
     private static final ConcurrentMap<String, ElectorState> states = new ConcurrentHashMap<>();
 
+    /**
+     * 工具类，禁止实例化。
+     */
     private TaskLeaderElector() {
     }
 
     /**
      * 注入私有连接工厂（自动配置调用一次）。
+     *
+     * @param connectionFactory uw-task 私有 Redis 连接工厂
      */
     public static void init(RedisConnectionFactory connectionFactory) {
         StringRedisTemplate template = new StringRedisTemplate(connectionFactory);
@@ -83,6 +88,9 @@ public final class TaskLeaderElector {
 
     /**
      * 本实例当前是否 Leader（未注册/未检查过返回 false）。
+     *
+     * @param name 选举名
+     * @return 是 Leader 返回 true
      */
     public static boolean isLeader(String name) {
         ElectorState state = states.get(name);
@@ -91,6 +99,9 @@ public final class TaskLeaderElector {
 
     /**
      * 执行一次选举检查（周期调用，如 60s）；异常保留上次状态。
+     *
+     * @param name 选举名
+     * @return 检查后本实例是否 Leader
      */
     public static boolean checkLeader(String name) {
         ElectorState state = states.get(name);
@@ -107,14 +118,36 @@ public final class TaskLeaderElector {
         return state.leader;
     }
 
+    /**
+     * 选举参与者状态：稳定实例标识 + 当前是否 Leader。
+     */
     private static final class ElectorState {
+
+        /**
+         * 稳定实例标识（appName:version@host:port），写入锁 value 用于续期与身份识别。
+         */
         final String instanceId;
+
+        /**
+         * 本实例当前是否 Leader（volatile：选举线程写、任务线程读）。
+         */
         volatile boolean leader;
 
+        /**
+         * 构建参与者状态（初始非 Leader）。
+         *
+         * @param instanceId 稳定实例标识
+         */
         ElectorState(String instanceId) {
             this.instanceId = instanceId;
         }
 
+        /**
+         * 更新 Leader 身份；变化时记日志。
+         *
+         * @param lockKey   锁 key（仅用于日志）
+         * @param nowLeader 最新判定结果
+         */
         void markLeader(String lockKey, boolean nowLeader) {
             if (nowLeader != leader) {
                 leader = nowLeader;

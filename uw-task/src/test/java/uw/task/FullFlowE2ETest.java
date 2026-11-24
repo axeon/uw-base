@@ -1,29 +1,38 @@
 package uw.task;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import uw.task.TaskData;
+import uw.task.TaskListenerManager;
+import uw.task.conf.TaskMetaInfoManager;
+import uw.task.conf.UwTaskProperties;
+import uw.task.container.TaskCronerContainer;
 import uw.task.demo.E2eSlowRunner;
+import uw.task.entity.TaskContact;
 import uw.task.entity.TaskCronerConfig;
 import uw.task.entity.TaskCronerLog;
-import uw.task.entity.TaskContact;
-
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 全流程真机 E2E（依托 uw-task 完整上下文 + dev RabbitMQ，非 mock）：
  * sendToQueue → MQ 投递 → ElasticConsumerGroup 消费 → TaskRunnerContainer.process → EchoRunner.runTask。
  *
  * <p>观测性核验（用户要求）：执行时经 JMX（ThreadMXBean）检查实时线程——
- * ①线程名必须含队列名（uw-task-100-{queueName}-N 命名约定，运维可按队列定位线程）；
- * ②执行并发峰值必须 == consumerNum（LimitedVirtualThreadExecutor 封顶）；
+ * ①线程名必须为 {队列名}-N（运维可按队列定位线程）；
+ * ②执行并发峰值必须 == consumerNum（Semaphore 封顶，每任务一个虚拟线程）；
  * ③虚拟线程载体正确（carrier 线程数远小于业务线程数）。</p>
  *
  * <p>显式触发：-De2e=true；Rabbit 连接经 -Duw.task.rabbitmq.* 注入（4.4.1 评测容器或 dev 4.3.5 均可）。</p>
@@ -34,7 +43,6 @@ class FullFlowE2ETest {
 
     @Autowired
     private TaskFactory taskFactory;
-
 
     private static final ThreadMXBean THREAD_MX = ManagementFactory.getThreadMXBean();
 
@@ -56,7 +64,7 @@ class FullFlowE2ETest {
         long deadline = System.currentTimeMillis() + 30_000;
         while (System.currentTimeMillis() < deadline) {
             try {
-                taskFactory.sendToQueue(uw.task.TaskData.<String, String>builder(E2eSlowRunner.class, "config-probe").build());
+                taskFactory.sendToQueue(TaskData.<String, String>builder(E2eSlowRunner.class, "config-probe").build());
                 return; // 未注册会抛 No matching task config
             } catch (RuntimeException e) {
                 Thread.sleep(500);
@@ -76,24 +84,24 @@ class FullFlowE2ETest {
             taskFactory.sendToQueue(td);
         }
         boolean done = latch.await(120, TimeUnit.SECONDS);
-        java.util.Set<String> names = E2eSlowRunner.executingThreadNames;
+        Set<String> names = E2eSlowRunner.executingThreadNames;
         System.out.printf("E2E-FLOW: 发%d条 消费完成=%b latch剩余=%d%n", total, done, latch.getCount());
         System.out.printf("E2E-THREADS: 执行线程名=%s 虚拟=%s%n", names, E2eSlowRunner.executingThreadVirtual);
         String queueName = "uw.task.demo.E2eSlowRunner#$default";
-        org.junit.jupiter.api.Assertions.assertTrue(done, "消息应全部经 MQ 消费执行");
-        org.junit.jupiter.api.Assertions.assertFalse(names.isEmpty(), "必须观测到执行线程");
+        Assertions.assertTrue(done, "消息应全部经 MQ 消费执行");
+        Assertions.assertFalse(names.isEmpty(), "必须观测到执行线程");
         // 线程名=队列名（用户定案观测性原则）：执行线程名必须为 {队列名}-N 形态，与 091 命名一致
-        org.junit.jupiter.api.Assertions.assertTrue(names.stream().allMatch(n -> n.startsWith(queueName + "-")),
+        Assertions.assertTrue(names.stream().allMatch(n -> n.startsWith(queueName + "-")),
                 "执行线程名必须为 {队列名}-N 形态: " + names);
         // 虚拟线程载体
-        org.junit.jupiter.api.Assertions.assertEquals(java.util.Set.of(true), E2eSlowRunner.executingThreadVirtual,
+        Assertions.assertEquals(Set.of(true), E2eSlowRunner.executingThreadVirtual,
                 "执行线程必须是虚拟线程");
         // 真实并发封顶：runTask 同时执行数峰值 ≤ consumerNum（4）
-        // （distinct 线程数可超 4：接力 worker 排空即退、新任务起新线程，是 LimitedVirtualThreadExecutor 设计行为）
+        // （distinct 线程数可超 4：每任务一个虚拟线程，任务结束线程即退出）
         int peak = E2eSlowRunner.peakConcurrency.get();
         System.out.printf("E2E-CONCURRENCY: 并发峰值=%d (consumerNum=4)%n", peak);
-        org.junit.jupiter.api.Assertions.assertTrue(peak <= 4, "并发峰值必须 ≤ consumerNum(4): " + peak);
-        org.junit.jupiter.api.Assertions.assertTrue(peak >= 2, "并发峰值应达多路并发(≥2，20条×500ms/4路): " + peak);
+        Assertions.assertTrue(peak <= 4, "并发峰值必须 ≤ consumerNum(4): " + peak);
+        Assertions.assertTrue(peak >= 2, "并发峰值应达多路并发(≥2，20条×500ms/4路): " + peak);
     }
 
     /**
@@ -114,12 +122,12 @@ class FullFlowE2ETest {
         boolean done = latch.await(75, TimeUnit.SECONDS);
         long elapsed = System.currentTimeMillis() - sendAt;
         System.out.printf("E2E-DELAY: 发%d条(2s延时) 完成=%b 耗时=%dms (期望≥2000,容忍leader竞争搬运延迟)%n", total, done, elapsed);
-        org.junit.jupiter.api.Assertions.assertTrue(done, "延时任务应全部到期执行");
-        org.junit.jupiter.api.Assertions.assertTrue(elapsed >= 2000, "执行必须晚于延时到期");
+        Assertions.assertTrue(done, "延时任务应全部到期执行");
+        Assertions.assertTrue(elapsed >= 2000, "执行必须晚于延时到期");
     }
 
     /**
-     * RPC 同步链路（runTask AUTO→本地）：sendAndReceive 全流程 + 结果回传。
+     * RPC 同步链路（runTask AUTO→本地）：本机有 runner，实际本地执行、不经 MQ；经 MQ 的 sendAndReceive 往返见 RpcRoundTripProbe。
      */
     @Test
     void rpcSyncRoundTrip() throws Exception {
@@ -129,8 +137,8 @@ class FullFlowE2ETest {
         TaskData<String, String> ret = taskFactory.runTask(td);
         long ms = System.currentTimeMillis() - t0;
         System.out.printf("E2E-RPC: 同步往返=%dms state=%d%n", ms, ret.getState());
-        org.junit.jupiter.api.Assertions.assertEquals(TaskData.STATE_SUCCESS, ret.getState(), "RPC 应成功");
-        org.junit.jupiter.api.Assertions.assertTrue(ms < 10_000, "本地 RPC 应秒回: " + ms);
+        Assertions.assertEquals(TaskData.STATE_SUCCESS, ret.getState(), "RPC 应成功");
+        Assertions.assertTrue(ms < 10_000, "本地 RPC 应秒回: " + ms);
     }
 
     /**
@@ -142,11 +150,11 @@ class FullFlowE2ETest {
         E2eSlowRunner.sleepMillis = 0;
         int total = 500;
         long[] arriveNanos = new long[total];
-        java.util.concurrent.atomic.AtomicInteger idx = new java.util.concurrent.atomic.AtomicInteger();
+        AtomicInteger idx = new AtomicInteger();
         long sendStart = System.nanoTime();
         CountDownLatch latch = new CountDownLatch(total);
         E2eSlowRunner.latch = latch;
-        java.util.concurrent.atomic.AtomicLong firstConsumeWall = new java.util.concurrent.atomic.AtomicLong();
+        AtomicLong firstConsumeWall = new AtomicLong();
         for (int i = 0; i < total; i++) {
             TaskData<String, String> td = TaskData.<String, String>builder(E2eSlowRunner.class, "bench-" + i).build();
             taskFactory.sendToQueue(td);
@@ -154,12 +162,12 @@ class FullFlowE2ETest {
         long sendDone = System.nanoTime();
         boolean done = latch.await(300, TimeUnit.SECONDS);
         long allConsumed = System.nanoTime();
-        java.util.Arrays.sort(arriveNanos, 0, Math.max(1, idx.get()));
+        Arrays.sort(arriveNanos, 0, Math.max(1, idx.get()));
         double sendMs = (sendDone - sendStart) / 1e6, totalMs = (allConsumed - sendStart) / 1e6;
         System.out.printf("E2E-THROUGHPUT: 发送%d条 发送耗时=%.0fms(%.0f条/s) 端到端=%.0fms 吞吐=%.0f条/s 完成=%b%n",
                 total, sendMs, total / (sendMs / 1000.0), totalMs, total / (totalMs / 1000.0), done);
-        org.junit.jupiter.api.Assertions.assertTrue(done, "压测消息应全部消费");
-        org.junit.jupiter.api.Assertions.assertTrue(total / (totalMs / 1000.0) > 50, "端到端吞吐应>50条/s: " + (total / (totalMs / 1000.0)));
+        Assertions.assertTrue(done, "压测消息应全部消费");
+        Assertions.assertTrue(total / (totalMs / 1000.0) > 50, "端到端吞吐应>50条/s: " + (total / (totalMs / 1000.0)));
     }
 
     /**
@@ -186,18 +194,18 @@ class FullFlowE2ETest {
             public TaskContact initContact() { return null; }
         };
         // 独立 VT 容器（与 TaskCronerContainerTest 同模式,不依赖 spring 上下文内的注册链）
-        uw.task.conf.UwTaskProperties props = new uw.task.conf.UwTaskProperties();
-        uw.task.conf.TaskMetaInfoManager meta = new uw.task.conf.TaskMetaInfoManager(null, props);
-        uw.task.TaskListenerManager lm = new uw.task.TaskListenerManager();
-        uw.task.container.TaskCronerContainer container = new uw.task.container.TaskCronerContainer(props, null, meta, lm);
+        UwTaskProperties props = new UwTaskProperties();
+        TaskMetaInfoManager meta = new TaskMetaInfoManager(null, props);
+        TaskListenerManager lm = new TaskListenerManager();
+        TaskCronerContainer container = new TaskCronerContainer(props, null, meta, lm);
         TaskCronerConfig cfg = cron.initConfig();
-        org.junit.jupiter.api.Assertions.assertTrue(container.configureTask(cron, cfg), "注册应成功");
+        Assertions.assertTrue(container.configureTask(cron, cfg), "注册应成功");
         Thread.sleep(6000);
         String configKey = meta.getCronerConfigKey(cfg);
         container.stop(configKey);
         container.shutdown();
         System.out.printf("E2E-CRONER: 6秒内执行=%d次(每秒cron,期望3~8)%n", count[0]);
-        org.junit.jupiter.api.Assertions.assertTrue(count[0] >= 3, "自续期应持续触发: " + count[0]);
-        org.junit.jupiter.api.Assertions.assertTrue(count[0] <= 8, "每秒cron不应爆炸执行: " + count[0]);
+        Assertions.assertTrue(count[0] >= 3, "自续期应持续触发: " + count[0]);
+        Assertions.assertTrue(count[0] <= 8, "每秒cron不应爆炸执行: " + count[0]);
     }
 }

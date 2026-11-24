@@ -8,7 +8,7 @@ uw-task 5.3.1（全面评审修订）+ 根 pom flatten 自动清理。
 3. 评审修复：1.0 远程 RPC 回结果、1.0 异步发布失败可重发、`getListenerManager()` 补回、`onPreExecute` 回调恢复等；javadoc 全面补齐、日志与异常文案语言对齐。详见 uw-task/CHANGELOG.md。
 
 ## 根 pom
-1. flatten 插件：`flatten:clean` 追加绑定到 install / deploy 阶段，安装或发布之后自动清掉各模块的 `.flattened-pom.xml`（compile / package 构建后仍保留，`mvn clean` 清理）。
+1. flatten 插件：`flatten:clean` 追加绑定到 deploy 阶段，发布之后自动清掉各模块的 `.flattened-pom.xml`（install / compile / package 构建后仍保留，`mvn clean` 清理）。
 
 # 2026.1000.0019 版本升级说明
 

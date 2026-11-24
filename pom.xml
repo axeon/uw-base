@@ -328,16 +328,9 @@
                                 <goal>clean</goal>
                             </goals>
                         </execution>
-                        <!-- install/deploy 之后自动清掉 .flattened-pom.xml：拍平后的 pom 只在这两个阶段被用到，同阶段内默认的
-                             install/deploy 插件先执行，清理一定发生在安装或发布之后。compile/package 构建不经过这两个阶段，
-                             文件会保留到下次 mvn clean。 -->
-                        <execution>
-                            <id>flatten.clean-after-install</id>
-                            <phase>install</phase>
-                            <goals>
-                                <goal>clean</goal>
-                            </goals>
-                        </execution>
+                        <!-- deploy 之后自动清掉 .flattened-pom.xml：同阶段内默认的 deploy 插件先执行，清理发生在发布之后。
+                             不能绑到 install 阶段——mvn deploy 会先走 install 阶段，提前删掉后 deploy 插件找不到拍平的 pom
+                             （"The POM for project could not be attached"）。install/compile/package 构建后文件保留，mvn clean 清理。 -->
                         <execution>
                             <id>flatten.clean-after-deploy</id>
                             <phase>deploy</phase>

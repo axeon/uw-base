@@ -122,6 +122,21 @@ public class TaskServiceRegistrar {
     private HostReportResponse reportResponse;
 
     /**
+     * 首次拉取配置失败后的重试次数。
+     */
+    private static final int FIRST_FETCH_RETRY_TIMES = 3;
+
+    /**
+     * 首次拉取重试的间隔步长（毫秒）：第 i 次重试前等待 i×本值。
+     */
+    private static final long FIRST_FETCH_RETRY_STEP_MILLIS = 1000L;
+
+    /**
+     * 首次拉取重试的总时长预算（毫秒，自本轮拉取开始起算）：覆盖三次重试的等待，又不明显拖慢降级。
+     */
+    private static final long FIRST_FETCH_RETRY_BUDGET_MILLIS = 8000L;
+
+    /**
      * 主机是否被服务端禁用（HostReportResponse.state=0）。禁用时停所有任务容器（保留底层线程池）、updateConfig 跳过；
      * 解除禁用(state=1)后清标志并重置增量时间戳，下次 updateConfig 全量拉取重新注册所有任务，自动恢复。
      */
@@ -200,6 +215,11 @@ public class TaskServiceRegistrar {
         long startUpdateTimeMills = SystemClock.now();
         // 优先拉取runnerConfig，因为是否注册任务，都要更新系统队列。
         ConcurrentHashMap<String, TaskRunnerConfig> updatedRunnerConfigMap = fetchRunnerConfig();
+        if (updatedRunnerConfigMap == null && runnerFirstRun && !runnerDegraded) {
+            // 首次拉取失败先短暂重试再降级：uw-task-center 自身启动时，它作为执行主机经注册中心拉自己的配置，
+            // 第一次拉取常早于自身注册完成；其他应用与 center 同时冷启动也会遇到同样的瞬时空窗
+            updatedRunnerConfigMap = fetchRunnerConfigWithRetry(startUpdateTimeMills);
+        }
         if (updatedRunnerConfigMap == null) {
             // 注册主机 + 首次拉取失败（从未拿到配置）+ 未降级 → 本地降级启动（initConfig 默认配置注册 listener）
             if (taskProperties.isEnableRegistry() && runnerFirstRun && !runnerDegraded) {
@@ -207,7 +227,7 @@ public class TaskServiceRegistrar {
                 startRunnersLocal();
                 runnerDegraded = true;
             }
-            log.warn("!拉取TaskRunner服务器配置失败, 进入Fail-Fast模式!");
+            log.warn("拉取TaskRunner服务器配置失败, 进入Fail-Fast模式。");
             return;
         }
         if (log.isDebugEnabled()) {
@@ -322,13 +342,17 @@ public class TaskServiceRegistrar {
         long startUpdateTimeMills = SystemClock.now();
         // 取得有变化的croner配置列表
         ConcurrentHashMap<String, TaskCronerConfig> updatedCronerConfigMap = fetchCronerConfig();
+        if (updatedCronerConfigMap == null && cronerFirstRun && !cronerDegraded) {
+            // 同 runner：首次拉取失败先短暂重试再降级
+            updatedCronerConfigMap = fetchCronerConfigWithRetry(startUpdateTimeMills);
+        }
         if (updatedCronerConfigMap == null) {
             if (taskProperties.isEnableRegistry() && cronerFirstRun && !cronerDegraded) {
                 log.warn("拉取TaskCroner配置失败，启用本地降级模式（initConfig 默认配置）。");
                 startCronersLocal();
                 cronerDegraded = true;
             }
-            log.warn("!拉取TaskCroner服务器配置失败, 进入Fail-Fast模式!");
+            log.warn("拉取TaskCroner服务器配置失败, 进入Fail-Fast模式。");
             return;
         }
         if (log.isDebugEnabled()) {
@@ -618,6 +642,63 @@ public class TaskServiceRegistrar {
         String project = taskProperties.getTaskProject();
         // 带点号边界：project 是包名前缀，saas.mall 不能匹配到 saas.mall2 下的任务
         return taskClass.equals(project) || taskClass.startsWith(project + ".");
+    }
+
+    /**
+     * croner 配置首次拉取失败后的短暂重试（最多 {@value #FIRST_FETCH_RETRY_TIMES} 次，间隔 1 秒、2 秒、3 秒），全部失败返回 null。
+     * 重试受总时长约束：自本轮拉取开始起超过 {@value #FIRST_FETCH_RETRY_BUDGET_MILLIS} 毫秒不再重试——
+     * 单次尝试本身就很慢（如连接超时）时按原有节奏直接降级，不把启动拖长。
+     *
+     * @param startUpdateTimeMills 本轮拉取的开始时刻（毫秒）
+     * @return 拉取成功返回配置 map；重试耗尽或超出时间预算返回 null
+     */
+    private ConcurrentHashMap<String, TaskCronerConfig> fetchCronerConfigWithRetry(long startUpdateTimeMills) {
+        for (int i = 1; i <= FIRST_FETCH_RETRY_TIMES; i++) {
+            sleepQuietly(FIRST_FETCH_RETRY_STEP_MILLIS * i);
+            if (SystemClock.now() - startUpdateTimeMills >= FIRST_FETCH_RETRY_BUDGET_MILLIS) {
+                return null;
+            }
+            ConcurrentHashMap<String, TaskCronerConfig> map = fetchCronerConfig();
+            if (map != null) {
+                log.info("拉取TaskCroner配置第{}次重试成功。", i);
+                return map;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * runner 配置首次拉取失败后的短暂重试（口径同 croner：次数、间隔与总时长预算）。
+     *
+     * @param startUpdateTimeMills 本轮拉取的开始时刻（毫秒）
+     * @return 拉取成功返回配置 map；重试耗尽或超出时间预算返回 null
+     */
+    private ConcurrentHashMap<String, TaskRunnerConfig> fetchRunnerConfigWithRetry(long startUpdateTimeMills) {
+        for (int i = 1; i <= FIRST_FETCH_RETRY_TIMES; i++) {
+            sleepQuietly(FIRST_FETCH_RETRY_STEP_MILLIS * i);
+            if (SystemClock.now() - startUpdateTimeMills >= FIRST_FETCH_RETRY_BUDGET_MILLIS) {
+                return null;
+            }
+            ConcurrentHashMap<String, TaskRunnerConfig> map = fetchRunnerConfig();
+            if (map != null) {
+                log.info("拉取TaskRunner配置第{}次重试成功。", i);
+                return map;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 静默休眠：被中断时恢复中断标记并立即返回（停机场景不继续重试）。
+     *
+     * @param millis 休眠毫秒
+     */
+    private static void sleepQuietly(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     /**

@@ -82,6 +82,12 @@ public class UwTaskAutoConfiguration implements SmartLifecycle {
      */
     private static final Logger log = LoggerFactory.getLogger(UwTaskAutoConfiguration.class);
 
+    /**
+     * 首次配置拉取的延迟（秒）。
+     */
+    private static final long CONFIG_UPDATE_FIRST_DELAY_SECONDS = 2L;
+
+
     // ==================== 内部组件（taskFactory 方法构建，非 bean） ====================
 
     /**
@@ -254,14 +260,16 @@ public class UwTaskAutoConfiguration implements SmartLifecycle {
                 }
             }, 0, 60, TimeUnit.SECONDS);
         }
-        // 配置更新任务（60s，0s 首次驱动 Croner/Runner 启动：center 可用用 center 配置，失败且首次则本地降级）
+        // 配置更新任务（60s；首次延迟 CONFIG_UPDATE_FIRST_DELAY_SECONDS 秒驱动 Croner/Runner 启动：center 可用用 center 配置，
+        // 失败且首次则短暂重试后本地降级）。首次拉取走注册中心找 uw-task-center，而本进程自身的注册与本方法几乎同时发生——
+        // uw-task-center 自己就是执行主机，0 秒首拉必然早于自身注册完成，给一个短延迟避开这个瞬时空窗。
         scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
                 serviceRegistrar.updateConfig();
             } catch (Throwable e) {
                 log.error("配置刷新定时任务异常", e);
             }
-        }, 0, 60, TimeUnit.SECONDS);
+        }, CONFIG_UPDATE_FIRST_DELAY_SECONDS, 60, TimeUnit.SECONDS);
     }
 
     /**

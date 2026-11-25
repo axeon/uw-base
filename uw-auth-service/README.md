@@ -204,6 +204,9 @@ public @interface MscPermDeclare {
 - 自动包装 Controller 返回值
 - 支持 `@ResponseAdviceIgnore` 注解跳过包装
 - 统一响应格式便于前端处理
+- **查无数据返回 404**：响应体是 `ResponseData` 且为 `warn` + `uw.dao.data.not.found.warn`（uw-dao 的 `load` / `queryForObject` 查不到、`update` / `delete` 影响 0 行）时，HTTP 状态码改为 404，响应体不变。这样探测一个不存在的资源与正常请求在状态码上可以区分
+  - **服务间 RPC 接口除外**（路径含 `/rpc/`）：保持 200 + warn。RPC 调用方对 4xx 抛异常、拿不到 `ResponseData`，而不少 RPC 接口把查无数据的结果直接返回（如按 ID 取用户）
+  - 标了 `@ResponseAdviceIgnore` 的接口不经过这里，状态码不变
 
 ### 4.7 全局异常处理
 
@@ -445,6 +448,10 @@ public class MyCriticalLogStorage implements AuthCriticalLogStorage {
 - **不会**退出 JVM（SDK 不应决定宿主进程生死）；
 - 周期状态上报（每分钟）会持续尝试补注册；
 - 在权限表初始化完成前，`auth = AuthType.PERM/SUDO` 接口会返回 503，`NONE/USER` 接口不受影响。
+
+每次注册成功（权限表与应用 ID 初始化完成）后会发布 `uw.auth.service.event.AuthAppRegisteredEvent`。**启动期要用到权限表或应用 ID 的后续动作，应监听这个事件**，
+不要在 `ApplicationReadyEvent` 里直接读——注册是异步的，那时多半还没完成，读到的是空。事件在注册线程上同步派发，每次注册成功都会发布
+（含补注册、配置热更新后的重新注册），监听方要能重复执行；监听方抛出的异常不会影响注册流程。
 
 ### Q7: auth-center 短暂不可用时，合法 Token 会被误判失效吗？
 

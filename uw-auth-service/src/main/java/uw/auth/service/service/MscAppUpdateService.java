@@ -10,6 +10,8 @@ import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -22,6 +24,7 @@ import uw.auth.service.annotation.MscPermDeclare;
 import uw.auth.service.conf.UwAuthServiceProperties;
 import uw.auth.service.constant.AuthType;
 import uw.auth.service.constant.UserType;
+import uw.auth.service.event.AuthAppRegisteredEvent;
 import uw.auth.service.filter.AuthServiceFilter;
 import uw.auth.service.rpc.AuthAppRpc;
 import uw.auth.service.token.InvalidTokenData;
@@ -46,11 +49,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 扫描 {@code @MscPermDeclare} 注解组装权限列表，获取 appId 并初始化 {@code MscAuthPermService.appPermMap}；
  * 之后周期性（每分钟）上报主机运行状态，并处理 auth-center 下发的非法 Token 踢人指令。
  * 注册失败时进入降级模式（不退出 JVM），通过状态上报持续重试。
+ * <p>
+ * 每次注册成功（权限映射初始化完成）后发布 {@link AuthAppRegisteredEvent}：启动期依赖权限映射或应用 ID 的后续动作
+ * 应监听该事件，而不是在应用就绪事件里直接读取——注册是异步的，那时多半尚未完成。
  *
  * @author axeon
  * @since 2017/11/29
  */
-public class MscAppUpdateService {
+public class MscAppUpdateService implements ApplicationEventPublisherAware {
 
     private static final Logger logger = LoggerFactory.getLogger(MscAppUpdateService.class);
 
@@ -78,6 +84,11 @@ public class MscAppUpdateService {
      * spring-mvc HandleMapping
      */
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
+
+    /**
+     * 事件发布器（Spring 容器注入；未经容器管理时为 null，此时不发布事件）.
+     */
+    private ApplicationEventPublisher applicationEventPublisher;
 
     /**
      * 最大注册重试次数。
@@ -325,6 +336,37 @@ public class MscAppUpdateService {
         }
         authServiceProperties.setAppId(appRegResponse.getAppId());
         authPermService.initAppPerm(appRegResponse.getAppId(), appRegResponse.getAppPerm(), appRegResponse.getState());
+        publishAppRegistered(appRegResponse.getAppId(), appRegResponse.getState());
+    }
+
+    /**
+     * 发布应用注册成功事件（权限映射与应用 ID 已就绪）.
+     * <p>
+     * 监听方同步执行在当前注册线程上；监听方的异常在此隔离，不能让它冒泡到注册流程——
+     * 否则会被 {@link #registryWithRetry} 当作注册失败而重新注册。
+     *
+     * @param appId    应用 ID
+     * @param regState 注册状态
+     */
+    private void publishAppRegistered(long appId, int regState) {
+        if (applicationEventPublisher == null) {
+            return;
+        }
+        try {
+            applicationEventPublisher.publishEvent(new AuthAppRegisteredEvent(appId, regState));
+        } catch (Throwable e) {
+            logger.error("AuthAppRegisteredEvent listener failed, appId={}: {}", appId, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 注入事件发布器.
+     *
+     * @param applicationEventPublisher Spring 事件发布器
+     */
+    @Override
+    public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     @PreDestroy

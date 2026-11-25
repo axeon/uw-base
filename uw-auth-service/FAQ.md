@@ -27,6 +27,8 @@ uw-auth由uw-auth-center，uw-auth-service，uw-auth-client三部分组成。
 
 某些程序内部调用的REST接口（如RPC接口），建议使用@ResponseAdviceIgnore注解来避免ResponseData<>封装，减小封装开销。
 
+另外：uw-dao 查无数据的响应（`warn` + `uw.dao.data.not.found.warn`）会被 `GlobalResponseAdvice` 改成 HTTP 404（响应体不变），网关与前端据此能区分"数据不存在"。路径含 `/rpc/` 的服务间接口不受影响，仍是 200 + warn。
+
 #### 6.可以通过AuthServiceHelper的哪个方法获取用户token信息？AuthServiceHelper还有什么功能？
 
 AuthServiceHelper.getContextToken()用于获取当前用户的token信息。

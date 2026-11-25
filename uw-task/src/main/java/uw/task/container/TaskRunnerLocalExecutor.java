@@ -6,7 +6,6 @@ import uw.common.util.LimitedVirtualThreadExecutor;
 import uw.task.TaskData;
 import uw.task.TaskFactory;
 import uw.task.conf.TaskMetaInfoManager;
-import uw.task.exception.TaskRuntimeException;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
@@ -65,10 +64,15 @@ public class TaskRunnerLocalExecutor implements Runnable {
             try {
                 // AUTO_RPC 在 runTaskLocal 内部会判定为 LOCAL；本地同步执行。
                 taskFactory.runTaskLocal(taskData);
-            } catch (TaskRuntimeException e) {
-                // 极端情况下本地执行入口判定失败（不应发生），降级到队列以保证任务不丢。
+            } catch (Throwable e) {
+                // 本地执行入口本身失败（不应发生，如取任务号时 Redis 故障）：尽量捕获并降级到队列，保证任务不丢。
+                // 任务体 runTask 的异常由 TaskRunnerContainer.process 统一处理，不会走到这里。
                 log.warn("TaskRunnerLocalExecutor 本地执行失败, 降级入队: taskClass=[{}]", taskData.getTaskClass(), e);
-                taskFactory.sendToQueue(taskData);
+                try {
+                    taskFactory.sendToQueue(taskData);
+                } catch (Throwable se) {
+                    log.error("TaskRunnerLocalExecutor 降级入队也失败, 任务丢弃: taskClass=[{}]", taskData.getTaskClass(), se);
+                }
             }
         } else {
             // 本机无 runner：降级投递到 MQ 队列，由具备该 runner 的远端主机消费。

@@ -1,11 +1,13 @@
 package uw.task.conf;
 
 import org.springframework.context.ApplicationContext;
+import org.springframework.util.ClassUtils;
 import uw.task.TaskCroner;
 import uw.task.TaskData;
 import uw.task.TaskRunner;
 import uw.task.entity.TaskCronerConfig;
 import uw.task.entity.TaskRunnerConfig;
+import uw.task.util.TaskConfigValidator;
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -63,9 +65,11 @@ public class TaskMetaInfoManager {
      * 设置队列任务配置。
      *
      * @param runnerConfigKey 配置键（见 {@link #getRunnerConfigKey}）
-     * @param config          队列任务配置
+     * @param config          队列任务配置（调用时会就地规整非法取值，见 {@link TaskConfigValidator}）
      */
     public void setRunnerConfig(String runnerConfigKey, TaskRunnerConfig config) {
+        // 配置进入框架的唯一入口：先规整取值（initConfig 手填、center 下发的配置都经此，含 uw-dao 直接写字段加载的实体），全链条只在这里调一次
+        TaskConfigValidator.normalize(config);
         runnerConfigMap.put(runnerConfigKey, config);
     }
 
@@ -82,9 +86,11 @@ public class TaskMetaInfoManager {
      * 设置定时任务配置。
      *
      * @param cronerConfigKey 配置键（见 {@link #getCronerConfigKey}）
-     * @param config          定时任务配置
+     * @param config          定时任务配置（调用时会就地规整非法取值，见 {@link TaskConfigValidator}）
      */
     public void setCronerConfig(String cronerConfigKey, TaskCronerConfig config) {
+        // 同 setRunnerConfig：配置进入框架的唯一入口
+        TaskConfigValidator.normalize(config);
         cronerConfigMap.put(cronerConfigKey, config);
     }
 
@@ -163,7 +169,8 @@ public class TaskMetaInfoManager {
         for (Entry<String, TaskCroner> kv : cronerMap.entrySet()) {
             // 拿到任务类名
             TaskCroner taskCroner = kv.getValue();
-            String taskClass = taskCroner.getClass().getName();
+            // 取用户类而非代理类：bean 被 CGLIB 代理（如 @Transactional/@Async）时 getClass().getName() 带 $$SpringCGLIB$$ 后缀，会与任务类名对不上
+            String taskClass = ClassUtils.getUserClass(taskCroner).getName();
             cronerInstanceMap.put(taskClass, taskCroner);
         }
         // 设置当前主机上所有的TaskRunner
@@ -171,7 +178,7 @@ public class TaskMetaInfoManager {
         for (Entry<String, TaskRunner<?, ?>> kv : runnerMap.entrySet()) {
             // 拿到任务类名
             TaskRunner<?, ?> taskRunner = kv.getValue();
-            String taskClass = taskRunner.getClass().getName();
+            String taskClass = ClassUtils.getUserClass(taskRunner).getName();
             runnerInstanceMap.put(taskClass, taskRunner);
         }
     }

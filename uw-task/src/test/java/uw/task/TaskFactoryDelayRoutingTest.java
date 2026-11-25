@@ -86,6 +86,16 @@ class TaskFactoryDelayRoutingTest {
         }
 
         @Override
+        public boolean isEmptyWithoutConsumers(String queueName) {
+            return true;
+        }
+
+        @Override
+        public boolean deleteQueue(String queueName) {
+            return true;
+        }
+
+        @Override
         public void shutdown() {
         }
     }

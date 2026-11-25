@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <revision>2026.1000.0020</revision>
+        <revision>2026.1000.0021</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>25</java.version>
@@ -39,7 +39,7 @@
         <uw-nacos-client.version>1.0.12</uw-nacos-client.version>
         <uw-notify-client.version>1.1.52</uw-notify-client.version>
         <uw-oauth2-client.version>1.1.52</uw-oauth2-client.version>
-        <uw-task.version>5.3.1</uw-task.version>
+        <uw-task.version>5.3.2</uw-task.version>
         <uw-tinyurl-client.version>1.1.52</uw-tinyurl-client.version>
         <uw-webot.version>1.0.23</uw-webot.version>
     </properties>

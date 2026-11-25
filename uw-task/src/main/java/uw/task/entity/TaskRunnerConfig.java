@@ -25,6 +25,31 @@ public class TaskRunnerConfig implements Serializable {
     public static final int DEFAULT_PREFETCH_NUM = 10;
 
     /**
+     * 默认消费并发。
+     */
+    public static final int DEFAULT_CONSUMER_NUM = 1;
+
+    /**
+     * 默认限速次数（每个限速时间窗口内允许的次数）。
+     */
+    public static final int DEFAULT_RATE_LIMIT_VALUE = 10;
+
+    /**
+     * 默认限速时间窗口（秒）。
+     */
+    public static final int DEFAULT_RATE_LIMIT_TIME = 1;
+
+    /**
+     * 默认限速超限后的最长等待（秒）。
+     */
+    public static final int DEFAULT_RATE_LIMIT_WAIT = 30;
+
+    /**
+     * 默认运行目标。
+     */
+    public static final String DEFAULT_RUN_TARGET = "default";
+
+    /**
      * classic 队列：单副本、吞吐最优，适用于即时消费。
      */
     public static final int QUEUE_TYPE_CLASSIC = 0;
@@ -149,7 +174,7 @@ public class TaskRunnerConfig implements Serializable {
     /**
      * 消费者的数量
      */
-    private int consumerNum = 1;
+    private int consumerNum = DEFAULT_CONSUMER_NUM;
 
     /**
      * 预取任务数（在途未确认消息上限，默认 {@value #DEFAULT_PREFETCH_NUM}；quorum 队列吞吐敏感场景建议 ≥50）。
@@ -164,17 +189,17 @@ public class TaskRunnerConfig implements Serializable {
     /**
      * 流量限定数值，默认为10次
      */
-    private int rateLimitValue = 10;
+    private int rateLimitValue = DEFAULT_RATE_LIMIT_VALUE;
 
     /**
      * 流量限定时间(S)，默认为1秒
      */
-    private int rateLimitTime = 1;
+    private int rateLimitTime = DEFAULT_RATE_LIMIT_TIME;
 
     /**
      * 当发生流量限制时，等待的秒数，默认30秒
      */
-    private int rateLimitWait = 30;
+    private int rateLimitWait = DEFAULT_RATE_LIMIT_WAIT;
 
     /**
      * 超过流量限制时的<b>额外</b>重试次数，默认 0 表示不重试、直接放弃任务。
@@ -200,7 +225,7 @@ public class TaskRunnerConfig implements Serializable {
     /**
      * 运行目标，不用指定，由程序运行期配置。
      */
-    private String runTarget = "default";
+    private String runTarget = DEFAULT_RUN_TARGET;
 
     /**
      * 失败率
@@ -966,7 +991,7 @@ public class TaskRunnerConfig implements Serializable {
         /**
          * 消费者的数量
          */
-        private int consumerNum = 1;
+        private int consumerNum = DEFAULT_CONSUMER_NUM;
 
         /**
          * 预取任务数。
@@ -981,17 +1006,17 @@ public class TaskRunnerConfig implements Serializable {
         /**
          * 流量限定数值，默认为10次
          */
-        private int rateLimitValue = 10;
+        private int rateLimitValue = DEFAULT_RATE_LIMIT_VALUE;
 
         /**
          * 流量限定时间(S)，默认为1秒
          */
-        private int rateLimitTime = 1;
+        private int rateLimitTime = DEFAULT_RATE_LIMIT_TIME;
 
         /**
          * 当发生流量限制时，等待的秒数，默认30秒
          */
-        private int rateLimitWait = 30;
+        private int rateLimitWait = DEFAULT_RATE_LIMIT_WAIT;
 
         /**
          * 超过流量限制重试次数，默认不再重试，放弃任务。
@@ -1011,7 +1036,7 @@ public class TaskRunnerConfig implements Serializable {
         /**
          * 运行目标，不用指定，由程序运行期配置。
          */
-        private String runTarget = "default";
+        private String runTarget = DEFAULT_RUN_TARGET;
 
         /**
          * 失败率

@@ -46,6 +46,11 @@ public class TaskFactory {
      * 最大重试次数。
      */
     private static final int MAX_RETRY_TIMES = 20;
+
+    /**
+     * 消息转换器（无状态，全类共用）。
+     */
+    private static final TaskMessageConverter CONVERTER = new TaskMessageConverter();
     /**
      * 全局唯一实例（业务方门面；框架内部零静态依赖）。
      */
@@ -327,7 +332,7 @@ public class TaskFactory {
         messageProperties.setPriority(10);
         messageProperties.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
         messageProperties.setExpiration(String.valueOf(TaskAmqpOps.RPC_TIMEOUT_MILLIS));
-        return new TaskMessageConverter().toMessage(taskData, messageProperties);
+        return CONVERTER.toMessage(taskData, messageProperties);
     }
 
     /**
@@ -362,7 +367,7 @@ public class TaskFactory {
                     // RPC 超时（对方没回）：立即失败，不重试
                     break;
                 }
-                TaskData<TP, RD> result = (TaskData<TP, RD>) new TaskMessageConverter().fromMessage(retMessage);
+                TaskData<TP, RD> result = (TaskData<TP, RD>) CONVERTER.fromMessage(retMessage);
                 if (!failures.isEmpty()) {
                     log.warn("RPC 调用重试 {} 次后成功 queue={}: {}", i, queue, summarize(failures));
                 }

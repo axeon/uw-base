@@ -39,6 +39,11 @@ public class TaskSendCenter {
     private static final int MAX_RETRY_TIMES = 20;
 
     /**
+     * 消息转换器（无状态，全类共用）。
+     */
+    private static final TaskMessageConverter CONVERTER = new TaskMessageConverter();
+
+    /**
      * 协议无关的 AMQP 操作面。
      */
     private final TaskAmqpOps taskAmqpOps;
@@ -276,7 +281,7 @@ public class TaskSendCenter {
             if (config != null && config.getQueueType() == TaskRunnerConfig.QUEUE_TYPE_CLASSIC) {
                 messageProperties.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
             }
-            return new TaskMessageConverter().toMessage(taskData, messageProperties);
+            return CONVERTER.toMessage(taskData, messageProperties);
         } finally {
             taskData.setRunType(originRunType);
         }

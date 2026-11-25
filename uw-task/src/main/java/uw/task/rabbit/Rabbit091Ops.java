@@ -127,7 +127,7 @@ public class Rabbit091Ops implements TaskAmqpOps {
      */
     @Override
     public void declareDurableQueue(String queueName, boolean quorum) {
-        TaskAmqpOps.declareTopology(rabbitAdmin, queueName, quorum);
+        AmqpQueueDeclarer.declare(this, rabbitAdmin, queueName, quorum);
     }
 
     /**
@@ -190,6 +190,29 @@ public class Rabbit091Ops implements TaskAmqpOps {
             log.warn("Rabbit091Ops 清空队列失败 {}: {}", queueName, e.getMessage());
             return -1;
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>经 passive declare 读取：待投递消息数为 0 且消费者数为 0 才返回 true（未到期的原生延迟消息不计入）。</p>
+     */
+    @Override
+    public boolean isEmptyWithoutConsumers(String queueName) {
+        try {
+            AMQP.Queue.DeclareOk declareOk = rabbitTemplate.execute(channel -> channel.queueDeclarePassive(queueName));
+            return declareOk != null && declareOk.getMessageCount() == 0 && declareOk.getConsumerCount() == 0;
+        } catch (Exception e) {
+            log.warn("Rabbit091Ops 无法确认队列是否为空 {}: {}", queueName, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean deleteQueue(String queueName) {
+        return rabbitAdmin.deleteQueue(queueName);
     }
 
     /**

@@ -135,7 +135,7 @@ public class TaskRunnerContainer {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public TaskData process(TaskData taskData) {
         if (taskData == null) {
-            log.warn("正在处理的TaskData为NULL，请检查日志.");
+            log.warn("正在处理的TaskData为NULL，请检查日志。");
             return null;
         }
         try {
@@ -393,7 +393,7 @@ public class TaskRunnerContainer {
         String queueName = taskMetaInfoManager.getQueueNameByConfig(runnerConfig);
         TaskAmqpListenerContainer sysContainer = queueListenerMap.computeIfAbsent(queueName, key -> {
             if (runnerConfig.getState() != 1) {
-                log.warn("!TaskRunner: [{}]状态为暂停，不进行注册。。。", queueName);
+                log.warn("TaskRunner: [{}]状态为暂停，不进行注册。", queueName);
                 return null;
             }
             if (log.isDebugEnabled()) {

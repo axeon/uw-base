@@ -23,7 +23,6 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestClient;
 import uw.common.util.RedisConnectionFactoryBuilder;
 import uw.common.util.ThreadFactoryBuilder;
@@ -68,7 +67,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Configuration
 @Conditional(UwTaskAutoConfiguration.OnTaskSettingsCondition.class)
-@EnableScheduling
 @EnableConfigurationProperties({UwTaskProperties.class})
 @AutoConfigureAfter({DataRedisAutoConfiguration.class, RabbitAutoConfiguration.class})
 public class UwTaskAutoConfiguration implements SmartLifecycle {
@@ -432,8 +430,7 @@ public class UwTaskAutoConfiguration implements SmartLifecycle {
             try {
                 properties = Binder.get(context.getEnvironment()).bind("uw.task", Bindable.of(UwTaskProperties.class)).orElseGet(UwTaskProperties::new);
             } catch (Exception e) {
-                // 裸 Binder 遇到未知配置键会抛异常（@ConfigurationProperties 则默认忽略）：此处不拦截，
-                // 交由装配处按已绑定的属性 bean 判定档位
+                // 绑定失败（如取值类型不符）不拦截：交由装配处按已绑定的属性 bean 判定档位
                 return true;
             }
             String missing = properties.missingRequiredSetting(context.getEnvironment());

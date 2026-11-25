@@ -1,5 +1,13 @@
 # uw-task CHANGELOG
 
+## 5.3.2（2026-11-25）
+
+- **逐行评审修复**：①任务 bean 被 CGLIB 代理时按真实类名建索引（原用 `getClass().getName()`，代理类名带 `$$SpringCGLIB$$` 后缀会报"未找到 TaskRunner 实例"）；②默认配置上传 task-center 失败不再静默：先以本地默认配置（id=0）启动并打 WARN，之后每周期重试上传，成功后换成 center 配置；③默认配置上传前先规整取值；④去掉多余的 `@EnableScheduling`（uw-task 没有 `@Scheduled` 方法，由宿主自行声明）；⑤`runQueue` 本地执行入口失败时捕获所有异常并降级入队；⑥content-type 不匹配的外来消息只打消息体前 256 字节；⑦项目前缀匹配带点号边界；⑧未接入 nacos 时主机地址 `unknown` 用本机 IP 兜底；⑨全局限速被拒的请求不再占用窗口配额；⑩定时任务调度句柄按键加句柄删除；⑪1.0 集群地址改用 RFC 3986 百分号编码；⑫日志文案去掉 `!`、`。。。` 等旧式标点；⑬修正"裸 Binder 遇未知键会抛"的错误注释；消息转换器改为类级常量复用。
+- **队列形态迁移**：判定的报错文案补上 1.0 协议（`Unexpected response code: 409 … inequivalent arg 'x-queue-type'`，此前只认 091 的 `PRECONDITION_FAILED`，1.0 下不会触发迁移）；两个方向都迁移（用户裁决），并在文档写明取舍：判空用的是待投递消息数，quorum 改回 classic 时队列里未到期的原生延迟消息会随旧队列删除。`QueueTypeMigrationProbe` 补 1.0 场景（队列形态经管理接口确认）。
+
+- **任务配置的校验与规整**：新增外部类 `uw.task.util.TaskConfigValidator`——`normalize(config)` 把非法取值回退默认值并汇总打一条 WARN，只在配置进入框架的唯一入口调用一次（`TaskMetaInfoManager.setRunnerConfig` / `setCronerConfig`），`validate(config)` 只报告不合法项、不修改配置，供 task-center 保存配置时拒绝非法输入（center 侧尚未接入）。覆盖：`queueType` / `rateLimitType` / `runType` / `logLevel` 越界、`consumerNum` / `prefetchNum` / `rateLimitValue` / `rateLimitTime` < 1、重试次数与告警阈值为负、`runTarget` 空白。不在 setter 里做（uw-dao 读实体直接写字段会绕过）。起因：saas 侧 28 处 `setQueueType(5)`（旧常量值）在新版里被当成非 quorum 建成 classic 队列。
+- **队列形态变更的有条件迁移**：收在协议操作面内部（`TaskAmqpOps.declareDurableQueue`，两种协议共用）：同名队列的 `x-queue-type` 与配置不一致（`PRECONDITION_FAILED`）时，在"队列确认无消息且无消费者"时删除旧队列并按新形态重建（不依赖 Leader 身份）；队列非空只打 ERROR、不删，下一次声明重试。`TaskAmqpOps` 新增 `isEmptyWithoutConsumers` / `deleteQueue`。真实 MQ 验证：`QueueTypeMigrationProbe`（`-Damqp.bench=true`）。
+
 ## 5.3.1（2026-11-24）
 
 5.2.1 / 5.3.0（2026-11-22 已发布）之后的全面 code review + simplify + dev 实机性能对照修订版。

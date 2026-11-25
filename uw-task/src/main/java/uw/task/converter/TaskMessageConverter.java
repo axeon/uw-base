@@ -82,7 +82,7 @@ public class TaskMessageConverter implements MessageConverter {
      * <p>
      * 仅当消息 content-type 为 {@link #CONTENT_TYPE_TASK_DATA} 时处理：用
      * {@link KryoUtils#deserialize(byte[], Class)} 还原为 {@link TaskData}。
-     * 其他 content-type 的消息不处理（返回 null），并以 WARN 级别记录消息内容便于排查。
+     * 其他 content-type 的消息不处理（返回 null），并以 WARN 级别记录消息体前 256 字节便于排查。
      * <p>
      * null 消息、空 body、无消息头时直接返回 null。
      *
@@ -107,8 +107,10 @@ public class TaskMessageConverter implements MessageConverter {
                 throw new MessageConversionException("TaskData invalid or corrupted.");
             }
         } else {
-                    log.warn("收到无法转换的消息（content-type 不匹配），已跳过: contentType=[{}], message={}",
-                            contentType, new String(message.getBody(), StandardCharsets.UTF_8));
+            // 只打消息体前 256 字节便于排查：全文可能很大，也可能含敏感内容
+            byte[] body = message.getBody();
+            log.warn("收到无法转换的消息（content-type 不匹配），已跳过: contentType=[{}], bodyLength={}, bodyHead={}",
+                    contentType, body.length, new String(body, 0, Math.min(body.length, 256), StandardCharsets.UTF_8));
         }
         return content;
     }

@@ -88,7 +88,7 @@ public class TaskCronerContainer {
         this.taskListenerManager = taskListenerManager;
         executorService = Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual().name("uw-task-croner-", 0).factory());
-        log.info("TaskCronerContainer 已启动（虚拟线程调度）....");
+        log.info("TaskCronerContainer 已初始化（虚拟线程调度）。");
     }
 
     /**
@@ -113,7 +113,7 @@ public class TaskCronerContainer {
         stop(configKey);
         // 标记删除的，直接返回了。
         if (taskCronerConfig.getState() < 1) {
-            log.warn("定时任务状态不符，无法启动！ID:{}, CRONER:{}, CRON:{}.", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron());
+            log.warn("定时任务状态不符，无法启动。ID:{}, CRONER:{}, CRON:{}.", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron());
             return false;
         }
         // cron 解析（6 域 Spring cron 语法）：不可解析直接拒绝注册
@@ -121,7 +121,7 @@ public class TaskCronerContainer {
         try {
             cronExpression = CronExpression.parse(taskCronerConfig.getTaskCron());
         } catch (IllegalArgumentException e) {
-            log.warn("CRON表达式非法，无法启动！ID:{}, CRONER:{}, CRON:{}.", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron());
+            log.warn("CRON表达式非法，无法启动。ID:{}, CRONER:{}, CRON:{}.", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), taskCronerConfig.getTaskCron());
             return false;
         }
         CronerSchedule schedule = new CronerSchedule();
@@ -145,7 +145,7 @@ public class TaskCronerContainer {
         ZonedDateTime next = cronExpression.next(now);
         if (next == null) {
             // 防御分支：Spring 6 域 cron 无年份域、正常表达式恒有未来触发点；若 cron 语义扩展（年份域）出现 next==null，任务自然终止并摘除索引
-            log.warn("CRON表达式无未来触发时间，任务终止！ID:{}, CRONER:{}, CRON:{}.", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), cronExpression.toString());
+            log.warn("CRON表达式无未来触发时间，任务终止。ID:{}, CRONER:{}, CRON:{}.", taskCronerConfig.getId(), taskCronerConfig.getTaskClass(), cronExpression.toString());
             cronerTasks.remove(configKey, schedule);
             return;
         }
@@ -305,7 +305,8 @@ public class TaskCronerContainer {
                 future.cancel(false);
             }
         }
-        cronerTasks.remove(configKey);
+        // 按句柄删除：并发时若同键已被新配置的句柄替换，不误删新句柄（否则新调度脱离管理，suspendAll 停不掉）
+        cronerTasks.remove(configKey, schedule);
         return true;
     }
 
@@ -314,7 +315,7 @@ public class TaskCronerContainer {
      * <p>用于主机被禁用(state=0)时停任务却保留 executorService，以便解除禁用后重新调度。</p>
      */
     public void suspendAll() {
-        log.info("所有TaskCroner已暂停....");
+        log.info("所有TaskCroner已暂停。");
         for (Entry<String, CronerSchedule> kv : this.cronerTasks.entrySet()) {
             CronerSchedule schedule = kv.getValue();
             // synchronized(schedule)：与 scheduleNext 的"检查+排期+赋值"互斥（见 scheduleNext 注释），杜绝孤儿续期
@@ -333,7 +334,7 @@ public class TaskCronerContainer {
      * 关闭所有定时任务并关闭 VT 执行器（应用关闭时调用）。
      */
     public void shutdown() {
-        log.info("所有TaskCroner已销毁....");
+        log.info("所有TaskCroner已销毁。");
         suspendAll();
         executorService.shutdownNow();
     }

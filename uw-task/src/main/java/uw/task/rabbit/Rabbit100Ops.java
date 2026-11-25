@@ -182,7 +182,7 @@ public class Rabbit100Ops implements TaskAmqpOps {
      */
     @Override
     public void declareDurableQueue(String queueName, boolean quorum) {
-        TaskAmqpOps.declareTopology(admin, queueName, quorum);
+        AmqpQueueDeclarer.declare(this, admin, queueName, quorum);
     }
 
     /**
@@ -237,6 +237,32 @@ public class Rabbit100Ops implements TaskAmqpOps {
             log.warn("Rabbit100Ops 清空队列失败 {}: {}", queueName, e.getMessage());
             return -1;
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>经 $management 通道读取；属性缺失（如该队列形态不暴露消息数）时无法确认，返回 false。</p>
+     */
+    @Override
+    public boolean isEmptyWithoutConsumers(String queueName) {
+        try {
+            Properties props = admin.getQueueProperties(queueName);
+            Object count = props == null ? null : props.get(RabbitAdmin.QUEUE_MESSAGE_COUNT);
+            Object consumers = props == null ? null : props.get(RabbitAdmin.QUEUE_CONSUMER_COUNT);
+            return count != null && consumers != null
+                    && Integer.parseInt(count.toString()) == 0 && Integer.parseInt(consumers.toString()) == 0;
+        } catch (Exception e) {
+            log.warn("Rabbit100Ops 无法确认队列是否为空 {}: {}", queueName, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean deleteQueue(String queueName) {
+        return admin.deleteQueue(queueName);
     }
 
     /**
@@ -312,14 +338,14 @@ public class Rabbit100Ops implements TaskAmqpOps {
     }
 
     /**
-     * URL 编码（UTF-8）。
+     * URI 百分号编码（UTF-8，RFC 3986）：URLEncoder 是表单编码，空格会编成 +，这里还原为 %20。
      *
      * @param raw 原始字符串
      *
-     * @return URL 编码后的字符串
+     * @return 百分号编码后的字符串
      */
     private static String uriEncode(String raw) {
-        return URLEncoder.encode(raw, StandardCharsets.UTF_8);
+        return URLEncoder.encode(raw, StandardCharsets.UTF_8).replace("+", "%20");
     }
 
     /**

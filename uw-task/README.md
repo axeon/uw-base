@@ -4,7 +4,7 @@
 
 uw-task 是一个分布式任务框架，基于 Spring Boot + RabbitMQ + Redis 实现，可快速构建分布式任务体系，支持定时任务（TaskCroner）与队列任务（TaskRunner，含延时语义），并提供任务运维监控、动态配置与多规则报警。
 
-**双协议版（5.2.0 重写，现行 5.3.1）**：AMQP 0-9-1 / 1.0（默认 091，仅对端不提供 091 时走 1.0）、队列形态 classic/quorum 可选、RabbitMQ 4.4+ 原生延迟消息、私有 Redis 连接（详见文末「双协议与队列形态」章）。
+**双协议版（5.2.0 重写，现行 5.3.2）**：AMQP 0-9-1 / 1.0（默认 091，仅对端不提供 091 时走 1.0）、队列形态 classic/quorum 可选、RabbitMQ 4.4+ 原生延迟消息、私有 Redis 连接（详见文末「双协议与队列形态」章）。
 
 配合服务端 [uw-task-center](../../uw-task-center) 使用：任务执行主机向 task-center 注册、上报状态、拉取动态配置；task-center 负责配置管理、统计汇总与报警分发。
 
@@ -53,6 +53,19 @@ uw-task 是一个分布式任务框架，基于 Spring Boot + RabbitMQ + Redis �
 | `task-rpc-max-thread-num` / `task-local-max-thread-num` ≤ 0 | WARN，按默认值 60 生效 |
 | `task-queue-retry-delay` / `task-rpc-retry-delay` < 0 | WARN，按默认值（2000 / 100 毫秒）生效 |
 | `run-target` / `task-center-host` 空白 | WARN，按默认值（`default` / `http://uw-task-center`）生效 |
+
+**任务配置的取值规整**（规则集中在外部类 `TaskConfigValidator`）：配置进入框架的唯一入口是 `TaskMetaInfoManager.setRunnerConfig` / `setCronerConfig`（业务代码的 `initConfig()` 返回值、task-center 下发的配置都经过这里），配置进入框架时在那里调一次 `TaskConfigValidator.normalize`，非法取值回退默认值，每份配置只打一条 WARN，列出"字段=原值→默认值"。默认配置在首次上传 task-center 之前也会规整一次（center 里存的就是合法值）。同一个类还提供只报告不修改的 `validate(config)`，供 task-center 保存配置时拒绝非法输入：
+
+| 配置 | 不合法时 |
+|---|---|
+| `queueType`（只认 0=classic / 1=quorum）、`rateLimitType`、`runType` | WARN，回默认值（`queueType` 回 quorum） |
+| `consumerNum` / `prefetchNum` < 1 | WARN，回默认值（1 / 10） |
+| `rateLimitValue` / `rateLimitTime` < 1 | WARN，回默认值（10 / 1） |
+| 重试次数、各项告警阈值、`rateLimitWait`、`logLimitSize` < 0 | WARN，回 0（`rateLimitWait` 回 30） |
+| `logLevel` 不在 -1~3 | WARN，回 0（RECORD） |
+| `runTarget` 空白 | WARN，回 `default` |
+
+不在 setter 里做：uw-dao 读实体直接写字段、不经 setter，数据库加载的配置会绕过 setter。uw-task-center 保存侧目前尚未接入 `validate`。`id`、`taskClass`、`state` 不处理；cron 表达式非法仍由调度容器拒绝注册，不会悄悄换成默认表达式。
 
 ## 应用配置
 
@@ -425,7 +438,7 @@ TaskData<MyParam, MyResult> data = TaskData.<MyParam, MyResult>builder(DemoTask.
 
 `runTarget` 是非常重要的参数，与 `taskProject` 一起决定任务配置的同步关系：
 
-- 任务执行主机只注册、执行 taskClass 以自身 `taskProject` 开头且 `runTarget` 匹配的任务：服务端下发的配置按此过滤，首次上传与 center 不可用时的本地降级启动也只遍历前缀内的任务 bean。
+- 任务执行主机只注册、执行 taskClass 以自身 `taskProject` 为包名前缀（带点号边界，`saas.mall` 不会匹配 `saas.mall2`）且 `runTarget` 匹配的任务：服务端下发的配置按此过滤，首次上传与 center 不可用时的本地降级启动也只遍历前缀内的任务 bean。
 - 调用方可在 `TaskData` 中指定 runTarget，将任务路由到特定服务器集群。
 - 默认 runTarget 为 `default`。
 
@@ -446,6 +459,7 @@ uw-task 客户端在 uw-task-center 不可用时，两类任务（TaskCroner / T
 
 - **拉取成功** → 用 center 配置启动任务，**不降级**（零浪费，不在启动阶段叠加重建）
 - **拉取失败 + 首次（firstRun）** → 用 `initConfig` 本地默认配置启动（降级模式）
+- **拉取成功但默认配置上传 task-center 失败** → 先用本地默认配置启动（配置 id 为 0，任务可执行），打 WARN 并每 60 秒重试上传；补传成功后自动换成 center 配置
 
 判定依据是「是否曾成功拉取过配置」（firstRun），**不是失败次数**。一旦成功过，运行中再故障走 fail-fast（保留上次 center 配置继续跑），不重新降级。
 
@@ -517,6 +531,15 @@ uw-task 的部分操作是同步阻塞的，直接在调用线程执行，务必
 ### 队列形态与持久化语义
 
 `TaskRunnerConfig.queueType`：`QUEUE_TYPE_QUORUM=1`（**默认**）/ `QUEUE_TYPE_CLASSIC=0`。两种队列可并存。
+
+**修改 queueType 后同名旧队列的迁移**：RabbitMQ 不允许改队列形态，新配置去声明旧的 classic（或反过来）同名队列会报 `PRECONDITION_FAILED`。迁移逻辑在协议操作面内部（`TaskAmqpOps.declareDurableQueue`，两种协议共用一套判断），只在同时满足以下条件时删除旧队列并按新形态重建，否则不动队列、每分钟重试：
+
+- 报错原因确认是队列形态不一致（其他声明失败照旧重试）；
+- 旧队列已确认无积压消息且无消费者（无在途未确认消息）。
+
+队列非空时打一条 ERROR 说明队列名与目标形态：把消息消费完后，下一周期自动完成迁移；需要保留这些消息又不便等待时，人工把它们转到新形态的队列再处理。迁移不依赖 Leader 身份（启动初期 Leader 尚未选出）；多实例同时启动时各实例都会走这一判断，队列此时为空，先后重建结果一致。两种协议（091 / 1.0）的报错文案不同，判定都覆盖。
+
+**已知取舍**：判空用的是待投递消息数，未到期的原生延迟消息不计入。classic → quorum 方向没有延迟消息，是安全的；quorum → classic 方向上，队列里尚未到期的延迟消息会随旧队列一起删除——需要把 quorum 队列改回 classic 时，先确认没有未到期的延时任务。
 
 | 队列形态 | 持久化 | 说明 |
 |---|---|---|
@@ -605,6 +628,9 @@ uw-task 的部分操作是同步阻塞的，直接在调用线程执行，务必
 - AMQP 1.0 不支持事务（本框架应用层重试，无影响）
 - `receive()` 拉模式在 1.0 下会静默吞消息（超时后链路仍持 credit），禁用
 - Boot 4.2 starter 语义：依赖 `spring-boot-starter-rabbitmq`（经典 0-9-1）+ 显式 `spring-rabbitmq-client`（1.0）
+- uw-task 不再带 `@EnableScheduling`（自身没有 `@Scheduled` 方法）：宿主应用用到 `@Scheduled` 时自行声明
+- 队列里出现 content-type 不匹配的外来消息时跳过，WARN 只打消息体前 256 字节
+- 任务 bean 被 CGLIB 代理（如加了 `@Transactional`、`@Async`）不影响识别：索引按真实类名建立
 
 ## 配置热更新（nacos）
 

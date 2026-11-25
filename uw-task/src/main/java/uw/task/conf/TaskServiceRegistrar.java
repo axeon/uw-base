@@ -11,12 +11,15 @@ import uw.task.container.TaskCronerContainer;
 import uw.task.container.TaskDelayTransferContainer;
 import uw.task.container.TaskRunnerContainer;
 import uw.task.entity.*;
+import uw.task.util.TaskConfigValidator;
 import uw.task.util.TaskStatsService;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.net.InetAddress;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -125,6 +128,16 @@ public class TaskServiceRegistrar {
     private volatile boolean hostDisabled = false;
 
     /**
+     * 默认配置上传 task-center 失败、待重试的队列任务类名（先用本地默认配置启动，下一周期起重试上传）。
+     */
+    private final Set<String> runnerUploadPending = ConcurrentHashMap.newKeySet();
+
+    /**
+     * 默认配置上传 task-center 失败、待重试的定时任务类名（语义同 runnerUploadPending）。
+     */
+    private final Set<String> cronerUploadPending = ConcurrentHashMap.newKeySet();
+
+    /**
      * 配置更新与主机禁用/启用的互斥锁：保护 updateConfig 与 reportHostInfo 的停机/恢复段，
      * 防止并发踩踏（suspendAll 与 registerQueueListener/configureTask 交错致被禁主机残留资源）。
      * 可重入：reportHostInfo 恢复段持锁后内嵌调 updateConfig（同线程重入），不阻塞自己。
@@ -190,7 +203,7 @@ public class TaskServiceRegistrar {
         if (updatedRunnerConfigMap == null) {
             // 注册主机 + 首次拉取失败（从未拿到配置）+ 未降级 → 本地降级启动（initConfig 默认配置注册 listener）
             if (taskProperties.isEnableRegistry() && runnerFirstRun && !runnerDegraded) {
-                log.warn("!拉取TaskRunner配置失败，启用本地降级模式（initConfig 默认配置）！");
+                log.warn("拉取TaskRunner配置失败，启用本地降级模式（initConfig 默认配置）。");
                 startRunnersLocal();
                 runnerDegraded = true;
             }
@@ -208,10 +221,12 @@ public class TaskServiceRegistrar {
         }
         // 降级 → 恢复切换：清降级 listener（unacked 消息 RabbitMQ 重新入队不丢），主循环用 center 配置重建
         if (runnerDegraded) {
-            log.warn("!TaskRunner center 恢复，从降级模式切换到 center 配置！");
+            log.warn("TaskRunner center 恢复，从降级模式切换到 center 配置。");
             taskRunnerContainer.suspendAll();
             runnerDegraded = false;
         }
+        // 首次启动时上传失败的默认配置：每周期重试，成功后用 center 配置（含分配的 id）覆盖本地的 id=0 配置
+        retryPendingRunnerUploads();
         // 第一次执行初始化操作
         if (runnerFirstRun) {
             runnerFirstRun = false;
@@ -231,16 +246,14 @@ public class TaskServiceRegistrar {
                     TaskRunnerConfig localConfig = taskRunner.initConfig();
                     TaskContact contact = taskRunner.initContact();
                     if (localConfig == null || contact == null) {
-                        log.warn("!TaskRunner: [{}]默认配置或联系人信息为空，无法启动！", taskClass);
+                        log.warn("TaskRunner: [{}]默认配置或联系人信息为空，无法启动。", taskClass);
                         continue;
                     }
                     if (log.isDebugEnabled()) {
                         log.debug("正在初始化TaskRunner: [{}].", taskClass);
                     }
-                    // 防止有人瞎胡搞，任务参数强制设死。
-                    localConfig.setTaskClass(taskClass);
-                    localConfig.setRunTarget(taskProperties.getRunTarget());
-                    contact.setTaskClass(taskClass);
+                    // 上传前先规整取值（center 保存的默认配置即合法值）；taskClass 与 runTarget 由框架设死（防止调用方误填）
+                    buildLocalRunnerConfig(taskClass, localConfig, contact);
                     String configKey = taskMetaInfoManager.getRunnerConfigKey(localConfig);
                     TaskRunnerConfig serverConfig = updatedRunnerConfigMap.get(configKey);
                     // 上传配置
@@ -249,6 +262,12 @@ public class TaskServiceRegistrar {
                             log.debug("TaskRunner: [{}]未找到服务器端配置，上传默认配置...", taskClass);
                         }
                         serverConfig = uploadRunnerInfo(localConfig, contact);
+                        if (serverConfig == null) {
+                            // 上传失败：先以本地默认配置（id=0）启动监听保证任务可执行，并登记为待重试
+                            runnerUploadPending.add(taskClass);
+                            serverConfig = localConfig;
+                            taskMetaInfoManager.setRunnerConfig(taskMetaInfoManager.getRunnerConfigKey(localConfig), localConfig);
+                        }
                         // 首次上传的 config 不在 fetch 增量(updatedRunnerConfigMap)里，这里直接 register 启动 listener；
                         // 后续由下方主循环按 fetch 增量驱动
                         taskRunnerContainer.registerQueueListener(serverConfig);
@@ -305,7 +324,7 @@ public class TaskServiceRegistrar {
         ConcurrentHashMap<String, TaskCronerConfig> updatedCronerConfigMap = fetchCronerConfig();
         if (updatedCronerConfigMap == null) {
             if (taskProperties.isEnableRegistry() && cronerFirstRun && !cronerDegraded) {
-                log.warn("!拉取TaskCroner配置失败，启用本地降级模式（initConfig 默认配置）！");
+                log.warn("拉取TaskCroner配置失败，启用本地降级模式（initConfig 默认配置）。");
                 startCronersLocal();
                 cronerDegraded = true;
             }
@@ -323,9 +342,11 @@ public class TaskServiceRegistrar {
         }
         // 降级 → 恢复切换：Croner configKey 覆盖（主循环 configureTask 内 stop cancel(false) 让在途跑完 + schedule new），不清 map
         if (cronerDegraded) {
-            log.warn("!TaskCroner center 恢复，从降级模式切换到 center 配置！");
+            log.warn("TaskCroner center 恢复，从降级模式切换到 center 配置。");
             cronerDegraded = false;
         }
+        // 首次启动时上传失败的默认配置：每周期重试，成功后用 center 配置覆盖本地的 id=0 配置
+        retryPendingCronerUploads();
         // 第一次执行初始化操作
         if (cronerFirstRun) {
             cronerFirstRun = false;
@@ -348,13 +369,11 @@ public class TaskServiceRegistrar {
                     TaskCronerConfig localConfig = taskCroner.initConfig();
                     TaskContact contact = taskCroner.initContact();
                     if (localConfig == null || contact == null) {
-                        log.warn("!TaskCroner: [{}]默认配置或联系人信息为空，无法启动！", taskClass);
+                        log.warn("TaskCroner: [{}]默认配置或联系人信息为空，无法启动。", taskClass);
                         continue;
                     }
-                    // 防止有人瞎胡搞，任务参数强制设死。
-                    localConfig.setTaskClass(taskClass);
-                    localConfig.setRunTarget(taskProperties.getRunTarget());
-                    contact.setTaskClass(taskClass);
+                    // 上传前先规整取值（center 保存的默认配置即合法值）；taskClass 与 runTarget 由框架设死（防止调用方误填）
+                    buildLocalCronerConfig(taskClass, localConfig, contact);
                     String configKey = taskMetaInfoManager.getCronerConfigKey(localConfig);
                     TaskCronerConfig serverConfig = updatedCronerConfigMap.get(configKey);
                     // 上传配置
@@ -363,6 +382,12 @@ public class TaskServiceRegistrar {
                             log.debug("TaskCroner: [{}]未找到服务器端配置，上传默认配置...", taskClass);
                         }
                         serverConfig = uploadCronerInfo(localConfig, contact);
+                        if (serverConfig == null) {
+                            // 上传失败：先以本地默认配置（id=0）启动调度，并登记为待重试
+                            cronerUploadPending.add(taskClass);
+                            serverConfig = localConfig;
+                            taskMetaInfoManager.setCronerConfig(taskMetaInfoManager.getCronerConfigKey(localConfig), localConfig);
+                        }
                         // 首次上传的 config 不在 fetch 增量(updatedCronerConfigMap)里，这里直接 configure 启动调度；
                         // 后续由下方主循环按 fetch 增量驱动
                         taskCronerContainer.configureTask(taskCroner, serverConfig);
@@ -511,8 +536,8 @@ public class TaskServiceRegistrar {
         hostStats.setAppName(taskProperties.getAppName());
         hostStats.setAppVersion(taskProperties.getAppVersion());
         String appHost = taskProperties.getAppHost();
-        if (appHost == null || appHost.isEmpty()) {
-            // 未接入 nacos（appHost 配置为空）时用本机 IP 兜底，避免上报空 host
+        if (appHost == null || appHost.isEmpty() || "unknown".equals(appHost)) {
+            // 未接入 nacos（appHost 为空或是占位值 unknown）时用本机 IP 兜底，避免上报无效 host
             try {
                 appHost = InetAddress.getLocalHost().getHostAddress();
             } catch (Exception e) {
@@ -552,7 +577,7 @@ public class TaskServiceRegistrar {
             if (reportResponse != null) {
                 if (reportResponse.getState() == 0 && !hostDisabled) {
                     hostDisabled = true;
-                    log.warn("!本主机被服务端禁用(state=0)，停止所有任务容器（runner/croner），保留底层线程池以便恢复！");
+                    log.warn("本主机被服务端禁用(state=0)，停止所有任务容器（runner/croner），保留底层线程池以便恢复。");
                     // 三容器统一 suspendAll（禁用，保池）：runner destroy listener + 清 map；croner cancel future + 清 map；
                     taskRunnerContainer.suspendAll();
                     taskCronerContainer.suspendAll();
@@ -562,9 +587,12 @@ public class TaskServiceRegistrar {
                     cronerDegraded = false;
                     runnerFirstRun = true;
                     cronerFirstRun = true;
+                    // 恢复时按全新启动重新上传默认配置，旧的待重试记录作废
+                    runnerUploadPending.clear();
+                    cronerUploadPending.clear();
                 } else if (reportResponse.getState() != 0 && hostDisabled) {
                     hostDisabled = false;
-                    log.warn("!本主机已解除禁用，重置增量时间戳并立即全量拉取重新注册所有任务！");
+                    log.warn("本主机已解除禁用，重置增量时间戳并立即全量拉取重新注册所有任务。");
                     // 重置两类增量时间戳为 0，强制 updateConfig 全量拉取；各容器 map 已在禁用时清空，主循环会重建 listener/调度/handle
                     runnerLastUpdateTime = 0;
                     cronerLastUpdateTime = 0;
@@ -584,10 +612,12 @@ public class TaskServiceRegistrar {
      * 任务类是否属于本项目的 task-project 前缀（首次上传、本地降级启动、服务端配置过滤三处同口径）。
      *
      * @param taskClass 任务类全限定名
-     * @return 以前缀开头返回 true
+     * @return taskClass 等于该前缀或以"前缀."开头返回 true
      */
     private boolean belongsToProject(String taskClass) {
-        return taskClass.startsWith(taskProperties.getTaskProject());
+        String project = taskProperties.getTaskProject();
+        // 带点号边界：project 是包名前缀，saas.mall 不能匹配到 saas.mall2 下的任务
+        return taskClass.equals(project) || taskClass.startsWith(project + ".");
     }
 
     /**
@@ -647,34 +677,126 @@ public class TaskServiceRegistrar {
     /**
      * 首次上传 runner 默认配置与联系人信息到 task-center，并将服务端返回的 config 写入本地缓存。
      *
-     * @param config  本地默认配置
+     * @param config  本地默认配置（已规整）
      * @param contact 联系人信息
-     * @return 服务端确认后的配置（含分配的 id）
+     * @return 服务端确认后的配置（含分配的 id）；上传失败返回 null
      */
     private TaskRunnerConfig uploadRunnerInfo(TaskRunnerConfig config, TaskContact contact) {
         ResponseData<TaskRunnerConfig> response = taskApiClient.initTaskRunnerConfig(config);
-        if (response != null && response.isSuccess() && response.getData() != null) {
-            config = response.getData();
+        if (response == null || !response.isSuccess() || response.getData() == null) {
+            return null;
         }
+        TaskRunnerConfig serverConfig = response.getData();
         taskApiClient.initTaskContact(contact);
-        taskMetaInfoManager.setRunnerConfig(taskMetaInfoManager.getRunnerConfigKey(config), config);
-        return config;
+        taskMetaInfoManager.setRunnerConfig(taskMetaInfoManager.getRunnerConfigKey(serverConfig), serverConfig);
+        return serverConfig;
+    }
+
+    /**
+     * 重试上传首次启动时上传失败的 runner 默认配置：成功的用 center 配置覆盖本地的 id=0 配置（监听已存在，只按新配置调整并发）；
+     * 仍失败的保留到下一周期。
+     */
+    private void retryPendingRunnerUploads() {
+        for (Iterator<String> it = runnerUploadPending.iterator(); it.hasNext(); ) {
+            String taskClass = it.next();
+            TaskRunner<?, ?> taskRunner = taskMetaInfoManager.getRunnerInstance(taskClass);
+            if (taskRunner == null) {
+                it.remove();
+                continue;
+            }
+            try {
+                TaskRunnerConfig localConfig = taskRunner.initConfig();
+                TaskContact contact = taskRunner.initContact();
+                TaskRunnerConfig serverConfig = localConfig == null || contact == null ? null : uploadRunnerInfo(buildLocalRunnerConfig(taskClass, localConfig, contact), contact);
+                if (serverConfig != null) {
+                    it.remove();
+                    taskRunnerContainer.registerQueueListener(serverConfig);
+                    log.info("TaskRunner: [{}]默认配置补传 task-center 成功，已切换为 center 配置(id={})。", taskClass, serverConfig.getId());
+                } else {
+                    log.warn("TaskRunner: [{}]默认配置补传 task-center 失败，下一周期继续重试（当前仍以本地默认配置运行）。", taskClass);
+                }
+            } catch (Exception e) {
+                log.warn("TaskRunner: [{}]默认配置补传 task-center 异常，下一周期继续重试: {}", taskClass, e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 构造待上传的本地默认配置：规整取值，taskClass 与 runTarget 由框架设死（防止调用方误填）。
+     *
+     * @param taskClass   任务类全限定名
+     * @param localConfig initConfig 返回的默认配置
+     * @param contact     联系人信息（taskClass 同步设死）
+     * @return 规整后的本地默认配置
+     */
+    private TaskRunnerConfig buildLocalRunnerConfig(String taskClass, TaskRunnerConfig localConfig, TaskContact contact) {
+        TaskConfigValidator.normalize(localConfig);
+        localConfig.setTaskClass(taskClass);
+        localConfig.setRunTarget(taskProperties.getRunTarget());
+        contact.setTaskClass(taskClass);
+        return localConfig;
     }
 
     /**
      * 首次上传 croner 默认配置与联系人信息到 task-center，并将服务端返回的 config 写入本地缓存。
      *
-     * @param config  本地默认配置
+     * @param config  本地默认配置（已规整）
      * @param contact 联系人信息
-     * @return 服务端确认后的配置（含分配的 id）
+     * @return 服务端确认后的配置（含分配的 id）；上传失败返回 null
      */
     private TaskCronerConfig uploadCronerInfo(TaskCronerConfig config, TaskContact contact) {
         ResponseData<TaskCronerConfig> response = taskApiClient.initTaskCronerConfig(config);
-        if (response != null && response.isSuccess() && response.getData() != null) {
-            config = response.getData();
+        if (response == null || !response.isSuccess() || response.getData() == null) {
+            return null;
         }
+        TaskCronerConfig serverConfig = response.getData();
         taskApiClient.initTaskContact(contact);
-        taskMetaInfoManager.setCronerConfig(taskMetaInfoManager.getCronerConfigKey(config), config);
-        return config;
+        taskMetaInfoManager.setCronerConfig(taskMetaInfoManager.getCronerConfigKey(serverConfig), serverConfig);
+        return serverConfig;
+    }
+
+    /**
+     * 重试上传首次启动时上传失败的 croner 默认配置：成功的用 center 配置重新调度（覆盖本地的 id=0 配置）；
+     * 仍失败的保留到下一周期。
+     */
+    private void retryPendingCronerUploads() {
+        for (Iterator<String> it = cronerUploadPending.iterator(); it.hasNext(); ) {
+            String taskClass = it.next();
+            TaskCroner taskCroner = taskMetaInfoManager.getCronerInstance(taskClass);
+            if (taskCroner == null) {
+                it.remove();
+                continue;
+            }
+            try {
+                TaskCronerConfig localConfig = taskCroner.initConfig();
+                TaskContact contact = taskCroner.initContact();
+                TaskCronerConfig serverConfig = localConfig == null || contact == null ? null : uploadCronerInfo(buildLocalCronerConfig(taskClass, localConfig, contact), contact);
+                if (serverConfig != null) {
+                    it.remove();
+                    taskCronerContainer.configureTask(taskCroner, serverConfig);
+                    log.info("TaskCroner: [{}]默认配置补传 task-center 成功，已切换为 center 配置(id={})。", taskClass, serverConfig.getId());
+                } else {
+                    log.warn("TaskCroner: [{}]默认配置补传 task-center 失败，下一周期继续重试（当前仍以本地默认配置运行）。", taskClass);
+                }
+            } catch (Exception e) {
+                log.warn("TaskCroner: [{}]默认配置补传 task-center 异常，下一周期继续重试: {}", taskClass, e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 构造待上传的本地默认配置：规整取值，taskClass 与 runTarget 由框架设死（防止调用方误填）。
+     *
+     * @param taskClass   任务类全限定名
+     * @param localConfig initConfig 返回的默认配置
+     * @param contact     联系人信息（taskClass 同步设死）
+     * @return 规整后的本地默认配置
+     */
+    private TaskCronerConfig buildLocalCronerConfig(String taskClass, TaskCronerConfig localConfig, TaskContact contact) {
+        TaskConfigValidator.normalize(localConfig);
+        localConfig.setTaskClass(taskClass);
+        localConfig.setRunTarget(taskProperties.getRunTarget());
+        contact.setTaskClass(taskClass);
+        return localConfig;
     }
 }

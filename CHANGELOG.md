@@ -1,3 +1,12 @@
+# 2026.1000.0021 版本升级说明
+
+uw-task 5.3.2（配置取值规整 + 队列形态迁移 + 逐行评审修复）。
+
+## uw-task（5.3.2）
+1. 任务配置取值规整：新增 `uw.task.util.TaskConfigValidator`，`normalize(config)` 把非法取值回退默认值并打一条 WARN（配置进入框架时调用，默认配置上传 task-center 前也规整）；`validate(config)` 只报告不修改，供 task-center 保存配置时拒绝非法输入。
+2. 队列形态变更的有条件迁移：同名队列的 `x-queue-type` 与配置不一致时，队列确认无消息且无消费者才删除重建（两个方向都迁，不依赖 Leader）；判空用的是待投递消息数，quorum 改回 classic 时未到期的原生延迟消息会随旧队列删除。
+3. 逐行评审修复：任务 bean 被 CGLIB 代理时按真实类名建索引；默认配置上传 task-center 失败不再静默（先以本地默认配置启动，每周期重试上传）；去掉多余的 `@EnableScheduling`；`runQueue` 本地执行入口失败时降级入队；外来消息日志只打消息体前 256 字节；项目前缀匹配带点号边界；全局限速被拒的请求不占用配额等。详见 uw-task/CHANGELOG.md。
+
 # 2026.1000.0020 版本升级说明
 
 uw-task 5.3.1（全面评审修订）+ 根 pom flatten 自动清理。

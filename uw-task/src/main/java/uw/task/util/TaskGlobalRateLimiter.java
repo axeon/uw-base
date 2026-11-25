@@ -31,11 +31,13 @@ public final class TaskGlobalRateLimiter {
     private static final String REDIS_PREFIX = "uw-task-rate:";
 
     /**
-     * 固定窗口 Lua：INCRBY + PEXPIREAT(窗口终点) 单往返原子，返回累加后计数。
+     * 固定窗口 Lua：INCRBY + PEXPIREAT(窗口终点) 单往返原子，返回累加后计数；
+     * 累加后超过上限（ARGV[3]）则把本次加的量减回去——被拒的请求不占用窗口配额。
      */
     private static final DefaultRedisScript<Long> FIXED_WINDOW_SCRIPT = new DefaultRedisScript<>(
             "local n = redis.call('INCRBY', KEYS[1], ARGV[1]) "
                     + "redis.call('PEXPIREAT', KEYS[1], ARGV[2]) "
+                    + "if n > tonumber(ARGV[3]) then redis.call('DECRBY', KEYS[1], ARGV[1]) end "
                     + "return n",
             Long.class);
 
@@ -82,7 +84,7 @@ public final class TaskGlobalRateLimiter {
         String key = REDIS_PREFIX + name;
         try {
             Long count = stringRedisTemplate.execute(FIXED_WINDOW_SCRIPT,
-                    Collections.singletonList(key), String.valueOf(permits), String.valueOf(windowEnd));
+                    Collections.singletonList(key), String.valueOf(permits), String.valueOf(windowEnd), String.valueOf(limitPermits));
             long c = count != null ? count : 0;
             if (c > limitPermits) {
                 long remain = windowEnd - SystemClock.now();

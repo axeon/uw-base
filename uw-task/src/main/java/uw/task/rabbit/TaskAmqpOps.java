@@ -23,8 +23,8 @@ import java.util.function.Consumer;
  * 上层（TaskFactory/TaskSendCenter/TaskRunnerContainer）只面向本接口编程，协议选择在启动期一次定死。</p>
  *
  * <p>成员排列约定（接口与两个实现类一致）：常量 → 字段 → 构造器 → 按本接口声明顺序排列的实例方法
- * （supportsNativeDelay、send、sendAndReceive、declareDurableQueue、createListener、getQueueInfo、purgeQueue、getProtocol、shutdown）
- * → 包内辅助方法 → 私有辅助方法 → 嵌套类型。</p>
+ * （supportsNativeDelay、send、sendAndReceive、declareDurableQueue、createListener、getQueueInfo、purgeQueue、
+ * isEmptyWithoutConsumers、deleteQueue、getProtocol、shutdown）→ 包内辅助方法 → 私有辅助方法 → 嵌套类型。</p>
  *
  * @author axeon
  */
@@ -53,7 +53,6 @@ public interface TaskAmqpOps {
         }
         return ops;
     }
-
 
     /**
      * 原生延迟消息头/注解 key（RabbitMQ 4.4 契约：值为绝对 Unix 时间戳毫秒）。
@@ -97,6 +96,8 @@ public interface TaskAmqpOps {
 
     /**
      * 声明持久化队列 + 同名直连 exchange + 绑定（routing key=队列名，与既有拓扑一致）。
+     * 现有同名队列的形态与目标不一致时做有条件迁移（两个方向都迁）：仅当队列已确认无消息且无消费者才删除并重建，否则原样抛出。
+     * <p><b>注意</b>：判空用的是待投递消息数，未到期的原生延迟消息不计入——quorum 队列改回 classic 时，队列里尚未到期的延迟消息会随旧队列一起删除。</p>
      *
      * @param queueName 队列名
      * @param quorum    true=quorum 队列；false=classic 队列
@@ -129,6 +130,23 @@ public interface TaskAmqpOps {
      * @return 清除的消息数；1.0 的管理通道不返回该值，成功恒为 0；失败返回 -1
      */
     int purgeQueue(String queueName);
+
+    /**
+     * 队列是否可安全重建：已确认无待投递消息且无消费者（消费者数为 0 即无在途未确认消息）。供队列形态迁移判断，无法确认时返回 false。
+     * <p>未到期的原生延迟消息不计入待投递数，判断结果对它们不成立。</p>
+     *
+     * @param queueName 队列名
+     * @return 确认无消息且无消费者返回 true；否则或查询失败返回 false
+     */
+    boolean isEmptyWithoutConsumers(String queueName);
+
+    /**
+     * 删除队列（队列上的绑定随之删除；同名 exchange 保留，重建队列时需重新声明绑定）。仅用于队列形态迁移等运维性场景，不校验队列是否为空。
+     *
+     * @param queueName 队列名
+     * @return 队列存在并已删除返回 true；队列不存在或失败返回 false
+     */
+    boolean deleteQueue(String queueName);
 
     /**
      * 本实现运行的协议（启动期探测选定，运行期不变）。

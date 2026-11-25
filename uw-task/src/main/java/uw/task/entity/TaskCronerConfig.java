@@ -46,6 +46,11 @@ public class TaskCronerConfig implements Serializable {
     public static final int TASK_LOG_TYPE_RECORD_ALL = 3;
 
     /**
+     * 默认运行目标。
+     */
+    public static final String DEFAULT_RUN_TARGET = "default";
+
+    /**
      * id。
      */
     private long id;
@@ -83,7 +88,7 @@ public class TaskCronerConfig implements Serializable {
     /**
      * 运行目标，默认不指定
      */
-    private String runTarget = "default";
+    private String runTarget = DEFAULT_RUN_TARGET;
 
     /**
      * 失败率
@@ -612,7 +617,7 @@ public class TaskCronerConfig implements Serializable {
         /**
          * 运行目标，默认不指定
          */
-        private String runTarget = "default";
+        private String runTarget = DEFAULT_RUN_TARGET;
 
         /**
          * 失败率
